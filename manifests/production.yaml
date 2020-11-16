@@ -1,0 +1,241 @@
+##============================================================================##
+#                                                                              #
+# SFR DCDW Kubernetes Manifest - PRODUCTION
+# This file defines a Kubernetes cluster for deploying the SFR backend         # 
+# in a production environment (such as the AWS EKS or other cloud provider)    #
+#                                                                              #
+# This iteration of the Kubernetes deployment relies on external postgresql    #
+# and elasticsearch instances for easier data persistence, and these must be   #
+# provisioned/configured prior to deployment. See README for information on    #
+# how to do so.                                                                #
+#                                                                              # 
+##============================================================================##
+
+# Deploy RabbitMQ and Redis instances for communication between processes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: communication-apps
+  labels:
+    app: rabbitmq-redis
+    type: cronjobs
+    group: 
+    environment: production
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq-redis
+  template:
+    metadata:
+      labels:
+        app: rabbitmq-redis
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:latest
+          ports:
+            - containerPort: 5672
+        - name: redis
+          image: redis:latest
+          ports:
+            - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+spec:
+  selector:
+    app: rabbitmq-redis
+  ports:
+    - protocol: TCP
+      port: 5672
+      targetPort: 5672
+  clusterIP: 10.97.170.200
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+spec:
+  selector:
+    app: rabbitmq-redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+  clusterIP: 10.97.170.100
+---
+# Start up the API and expose it externally
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sfr-api
+  labels:
+    app: sfr-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sfr-api
+  template:
+    metadata:
+      labels:
+        app: sfr-api
+    spec:
+      containers:
+        - name: api
+          image: sfr/dcdw
+          args:
+            - --process
+            - APIProcess 
+            - --environment
+            - development
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+spec:
+  selector:
+    app: sfr-api
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 5000
+---
+# Set up the readers
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: data-readers
+  labels:
+    app: data-readers
+    type: cronjobs
+    group: readers
+    environment: development
+spec:
+  schedule: "10 1 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: hathi-trust-reader
+              image: sfr/dcdw
+              args:
+                - --process
+                - HathiTrustProcess
+                - --ingestType
+                - daily
+                - --environment
+                - development
+              imagePullPolicy: Never
+          restartPolicy: OnFailure
+---
+# Set up the FRBRization Process
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: oclc-classify
+  labels:
+    app: oclc-classify
+    type: cronjobs
+    group: enhancers
+    environment: development
+spec:
+  schedule: "15 4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: oclc-catalog
+              image: sfr/dcdw
+              args:
+                - --process
+                - CatalogProcess
+                - --environment
+                - development
+              imagePullPolicy: Never
+          restartPolicy: OnFailure
+---
+# Set up the OCLC Catalog Fetch Process
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: oclc-catalog
+  labels:
+    app: oclc-catalog
+    type: cronjobs
+    group: enhancers
+    environment: development
+spec:
+  schedule: "18 4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: oclc-catalog
+              image: sfr/dcdw
+              args:
+                - --process
+                - CatalogProcess
+                - --environment
+                - development
+              imagePullPolicy: Never
+          restartPolicy: OnFailure
+      parallelism: 3
+  concurrencyPolicy: Allow
+---
+# Set up the clustering process
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: data-clustering
+  labels:
+    app: data-clustering
+    type: cronjobs
+    group: processing
+    environment: development
+spec:
+  schedule: "20 10 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: sfr-clustering
+              image: sfr/dcdw
+              args:
+                - --process
+                - ClusterProcess
+                - --ingestType
+                - daily
+                - --environment
+                - development
+              imagePullPolicy: Never
+          restartPolicy: OnFailure

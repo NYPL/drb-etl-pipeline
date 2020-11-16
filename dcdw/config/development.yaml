@@ -1,0 +1,31 @@
+# POSTGRES CONNECTION DETAILS
+# DB_USER, DB_PSWD, ADMIN_USER, ADMIN_PSWD and DB_NAME must be configured in secrets file 
+DB_HOST: '10.97.170.25'
+DB_PORT: '5432'
+
+# REDIS CONFIGURATION
+REDIS_HOST: '10.97.170.100'
+REDIS_PORT: '6379'
+
+# ELASTICSEARCH CONFIGURATION
+ES_INDEX: sfr_dcdw
+ES_HOST: '10.97.170.50'
+ES_PORT: '9200'
+ES_TIMEOUT: '10'
+
+# RABBITMQ CONFIGURATION
+RABBIT_HOST: '10.97.170.200'
+RABBIT_PORT: '5672'
+OCLC_QUEUE: oclc_catalog
+EPUB_QUEUE: epub_files
+
+# HATHITRUST CONFIGURATION
+HATHI_DATAFILES: https://www.hathitrust.org/filebrowser/download/244651
+
+# OCLC CONFIGURATION
+# OCLC_API_KEY must be configured in secrets file
+
+# AWS CONFIGURATION
+# AWS_ACCESS and AWS_SECRET must be configured in secrets file
+AWS_REGION: 'us-east-1'
+EPUB_BUCKET: 'sfr_files'

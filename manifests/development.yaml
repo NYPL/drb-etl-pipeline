@@ -1,0 +1,362 @@
+##============================================================================##
+#                                                                              #
+# SFR DCDW Kubernetes Manifest - DEVELOPMENT                                   #
+# This file defines a Kubernetes cluster for deploying the SFR backend         # 
+# in a development environment with a set of test data                         #
+#                                                                              #
+# NOTE: This creates ephermal postgres and elasticsearch instances so do not   #
+# do any work in this environment that you would like to persist.              #
+# Any function can be run locally with a persistent data store to look at      #
+# specific data issues.                                                        #
+#                                                                              # 
+##============================================================================##
+
+# Deploy RabbitMQ and Redis instances for communication between processes
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: communication-apps
+  labels:
+    app: rabbitmq-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq-redis
+  template:
+    metadata:
+      labels:
+        app: rabbitmq-redis
+    spec:
+      containers:
+        - name: rabbitmq
+          image: rabbitmq:latest
+          ports:
+            - containerPort: 5672
+        - name: redis
+          image: redis:latest
+          ports:
+            - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-service
+spec:
+  selector:
+    app: rabbitmq-redis
+  ports:
+    - protocol: TCP
+      port: 5672
+      targetPort: 5672
+  clusterIP: 10.97.170.200
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+spec:
+  selector:
+    app: rabbitmq-redis
+  ports:
+    - protocol: TCP
+      port: 6379
+      targetPort: 6379
+  clusterIP: 10.97.170.100
+---
+# Deploy a postgres and elastisearch instance for development work
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: persistence-apps
+  labels:
+    app: postgresql-elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql-elasticsearch
+  template:
+    metadata:
+      labels:
+        app: postgresql-elasticsearch
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:12.4
+          env:
+            - name: POSTGRES_PASSWORD
+              value: postgres
+          ports:
+            - containerPort: 5432
+        - name: elasticsearch
+          image: elasticsearch:6.8.13
+          env:
+            - name: ES_JAVA_OPTS
+              value: '-Xms512m -Xmx512m'
+            - name: discovery.type
+              value: single-node
+          ports:
+            - containerPort: 9200
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-service
+spec:
+  selector:
+    app: postgresql-elasticsearch
+  ports:
+    - protocol: TCP
+      port: 9200
+      targetPort: 9200
+  clusterIP: 10.97.170.50
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-service
+spec:
+  selector:
+    app: postgresql-elasticsearch
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  clusterIP: 10.97.170.25
+---
+# Populate development instance with sample data
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: service-initializer
+spec:
+  template:
+    spec:
+      containers:
+        - name: service-initializer
+          image: sfr/dcdw
+          args:
+            - --process
+            - DevelopmentSetupProcess
+            - --environment
+            - development
+          resources: {}
+          imagePullPolicy: Never
+          envFrom:
+            - secretRef:
+                name: dbSecrets
+            - secretRef:
+                name: oclcSecrets
+            - secretRef:
+                name: awsSecrets
+      restartPolicy: Never
+---
+# Start up the API and expose it externally
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sfr-api
+  labels:
+    app: sfr-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sfr-api
+  template:
+    metadata:
+      labels:
+        app: sfr-api
+    spec:
+      containers:
+        - name: api
+          image: sfr/dcdw
+          args:
+            - --process
+            - APIProcess 
+            - --environment
+            - development
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - secretRef:
+                name: dbSecrets
+            - secretRef:
+                name: oclcSecrets
+            - secretRef:
+                name: awsSecrets
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-service
+spec:
+  type: NodePort
+  selector:
+    app: sfr-api
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-service
+                port:
+                  number: 5000
+---
+# Set up the readers
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: data-readers
+  labels:
+    app: data-readers
+    type: cronjobs
+    group: readers
+    environment: development
+spec:
+  schedule: "10 1 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: hathi-trust-reader
+              image: sfr/dcdw
+              args:
+                - --process
+                - HathiTrustProcess
+                - --ingestType
+                - daily
+                - --environment
+                - development
+              imagePullPolicy: Never
+              envFrom:
+                - secretRef:
+                    name: dbSecrets
+                - secretRef:
+                    name: oclcSecrets
+                - secretRef:
+                    name: awsSecrets
+          restartPolicy: OnFailure
+---
+# Set up the FRBRization Process
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: oclc-classify
+  labels:
+    app: oclc-classify
+    type: cronjobs
+    group: enhancers
+    environment: development
+spec:
+  schedule: "15 4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: oclc-catalog
+              image: sfr/dcdw
+              args:
+                - --process
+                - CatalogProcess
+                - --environment
+                - development
+              imagePullPolicy: Never
+              envFrom:
+                - secretRef:
+                    name: dbSecrets
+                - secretRef:
+                    name: oclcSecrets
+                - secretRef:
+                    name: awsSecrets
+          restartPolicy: OnFailure
+---
+# Set up the OCLC Catalog Fetch Process
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: oclc-catalog
+  labels:
+    app: oclc-catalog
+    type: cronjobs
+    group: enhancers
+    environment: development
+spec:
+  schedule: "18 4 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: oclc-catalog
+              image: sfr/dcdw
+              args:
+                - --process
+                - CatalogProcess
+                - --environment
+                - development
+              imagePullPolicy: Never
+              envFrom:
+                - secretRef:
+                    name: dbSecrets
+                - secretRef:
+                    name: oclcSecrets
+                - secretRef:
+                    name: awsSecrets
+          restartPolicy: OnFailure
+      parallelism: 3
+  concurrencyPolicy: Allow
+---
+# Set up the clustering process
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: data-clustering
+  labels:
+    app: data-clustering
+    type: cronjobs
+    group: processing
+    environment: development
+spec:
+  schedule: "20 10 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: sfr-clustering
+              image: sfr/dcdw
+              args:
+                - --process
+                - ClusterProcess
+                - --ingestType
+                - daily
+                - --environment
+                - development
+              imagePullPolicy: Never
+          envFrom:
+            - secretRef:
+                name: dbSecrets
+            - secretRef:
+                name: oclcSecrets
+            - secretRef:
+                name: awsSecrets
+          restartPolicy: OnFailure
