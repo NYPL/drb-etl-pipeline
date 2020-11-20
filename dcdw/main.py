@@ -77,7 +77,7 @@ if __name__ == '__main__':
     parser = createArgParser()
     args = parser.parse_args() 
 
-    loadEnvFile('local', './config/{}.yaml'.format(args.environment))
+    loadEnvFile(args.environment, './config/{}.yaml')
     os.environ['ENVIRONMENT'] = args.environment
 
     import processes
