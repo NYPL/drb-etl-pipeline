@@ -44,9 +44,10 @@ class ClassifyProcess(CoreProcess):
         
         for rec in baseQuery.yield_per(100):
             self.frbrizeRecord(rec)
+            rec.frbr_status = 'complete'
+            self.records.append(rec)
     
     def frbrizeRecord(self, record):
-        completed = False
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
             identifier, idenType = tuple(iden.split('|'))
 
@@ -55,22 +56,16 @@ class ClassifyProcess(CoreProcess):
             except IndexError:
                 author = None
 
-            if self.checkSetRedis('classify', identifier, idenType) is True:
-                completed = True
-                continue
+            # Check if this identifier has been queried in the past 24 hours
+            # Skip if it has already been looked up
+            if self.checkSetRedis('classify', identifier, idenType): continue
 
             try:
                 self.classifyRecordByMetadata(
                     identifier, idenType, author, record.title
                 )
-                completed = True
             except ClassifyError as err:
                 print(err.message)
-                return None
-
-        if completed:
-            record.frbr_status = 'complete'
-            self.records.append(record)
 
     def classifyRecordByMetadata(self, identifier, idType, author, title):
         classifier = ClassifyManager(
