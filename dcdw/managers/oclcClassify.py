@@ -175,7 +175,7 @@ class ClassifyManager:
             
             return outRecords
         else:
-            print(responesXML)
+            print(responseXML)
             raise ClassifyError(message='Got unexpected response code')
     
     def checkTitle(self, oclcTitle):
