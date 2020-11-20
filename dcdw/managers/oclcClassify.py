@@ -137,7 +137,7 @@ class ClassifyManager:
             raise ClassifyError(message='No matching Classify records found')
         elif responseCode == 200:
             raise ClassifyError(message='Internal Classify API error encountered')
-        if responseCode == 101:
+        elif responseCode == 101:
             print('Invalid identifier received. Cleaning and retrying')
             oldID = self.identifier
             cleanIdentifier = self.cleanIdentifier()
@@ -174,6 +174,9 @@ class ClassifyManager:
                     outRecords.append(multiRec.getClassifyResponse()[0])
             
             return outRecords
+        else:
+            print(responesXML)
+            raise ClassifyError(message='Got unexpected response code')
     
     def checkTitle(self, oclcTitle):
         oclcCode = ClassifyManager.getStrLang(oclcTitle)
