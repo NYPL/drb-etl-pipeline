@@ -29,6 +29,7 @@ class Item(Base, Core):
     modified = Column(DateTime)
     drm = Column(Unicode)
     measurements = Column(JSONB)
+    physicalLocation = Column(JSONB)
 
     edition_id = Column(Integer, ForeignKey('editions.id'))
 

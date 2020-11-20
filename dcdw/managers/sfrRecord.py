@@ -220,10 +220,20 @@ class SFRRecordManager:
             editionData['items'][itemPos]['links'].append('{}|{}|{}'.format(uri, linkType, flags))
 
             editionData['items'][itemPos]['identifiers'].extend([
-                i for i in list(filter(lambda x: re.search(r'\|(?!isbn|issn|oclc|lccn|owi|ddc|lcc).*$', x), rec.identifiers))
+                i for i in list(filter(lambda x: re.search(r'\|(?!isbn|issn|oclc|lccn|owi|ddc|lcc|nypl).*$', x), rec.identifiers))
             ])
 
             editionData['items'][itemPos]['contributors'].update(itemContributors)
+
+            if len(rec.coverage) > 0:
+                for location in rec.coverage:
+                    locationCode, locationName, itemNo = tuple(rec.split('|'))
+                    if itemNo == no:
+                        editionData['items'][itemPos]['physicalLocation'] = {
+                            'code': locationCode,
+                            'name': locationName
+                        }
+                        break
         
     def saveWork(self, workData):
         # Set Titles
