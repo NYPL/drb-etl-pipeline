@@ -18,6 +18,7 @@ def main(args):
 
 
 def registerProcesses():
+    import processes
     procs = inspect.getmembers(processes, inspect.isclass)
     return dict(procs)
 
@@ -38,7 +39,7 @@ def createArgParser():
     return parser
 
 
-def loadEnvFile(runType, fileString):
+def loadEnvFile(runType, fileString=None):
     """Loads configuration details from a specific yaml file.
     Arguments:
         runType {string} -- The environment to load configuration details for.
@@ -67,6 +68,7 @@ def loadEnvFile(runType, fileString):
 
     except FileNotFoundError as err:
         print('Missing config YAML file! Check directory')
+        raise err
 
     if envDict:
         for key, value in envDict.items():
@@ -79,7 +81,5 @@ if __name__ == '__main__':
 
     loadEnvFile(args.environment, './config/{}.yaml')
     os.environ['ENVIRONMENT'] = args.environment
-
-    import processes
 
     main(args)
