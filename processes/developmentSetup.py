@@ -25,8 +25,6 @@ class DevelopmentSetupProcess(CoreProcess):
         )
         self.initializeDB()
 
-        # TODO Initialize Elasticsearch index
-
         super(DevelopmentSetupProcess, self).__init__(process, customFile, ingestPeriod)
 
     def runProcess(self):
@@ -63,12 +61,10 @@ class DevelopmentSetupProcess(CoreProcess):
         self.adminDBConnection.generateEngine()
         with self.adminDBConnection.engine.connect() as conn:
             conn.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            conn.execute('CREATE DATABASE {};'.format(os.environ['DB_NAME']))
-            '''
+            conn.execute('CREATE DATABASE {}'.format(os.environ['DB_NAME']))
             conn.execute('CREATE USER {} WITH PASSWORD \'{}\''.format(
                 os.environ['DB_USER'], os.environ['DB_PSWD']
             ))
-            '''
             conn.execute('GRANT ALL PRIVILEGES ON DATABASE {} TO {}'.format(
                 os.environ['DB_NAME'], os.environ['DB_USER'])
             )
@@ -80,7 +76,7 @@ class DevelopmentSetupProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
-    def importFromHathiTrustDataFile(self, limit=5000):
+    def importFromHathiTrustDataFile(self):
         fileList = requests.get(os.environ['HATHI_DATAFILES'])
         if fileList.status_code != 200:
             raise IOError('Unable to load data files')

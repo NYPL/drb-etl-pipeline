@@ -31,7 +31,7 @@ Locally these services can be run in two modes:
 
 #### Running services on host machine
 
-All services share a single entry point in `dcdw/main.py` file. This script dynamically imports available processes from the `dcdw/processes` directory and executes the selected process. This script accepts the following arguments (these can also be displayed by running `python main.py --help`)
+All services share a single entry point in `main.py` file. This script dynamically imports available processes from the `processes` directory and executes the selected process. This script accepts the following arguments (these can also be displayed by running `python main.py --help`)
 
 - `--process` The name of the process to execute. This should be the name of the process class
 - `--environment` The environment in which to execute the process. This controls which set of environment variables are loaded from the `config` directory, and should be set to `local` for local development
@@ -63,7 +63,7 @@ Once configured the cluster can be initialized by running `kubectl apply -f mani
 
 ### Managing secrets
 
-To keep sensitive settings out of git, some secrets configuration must be done to run the cluster. To set up for running on your local machine, copy the `dcdw/config/example.yaml` file and provide the necessary configuration (ask a colleague if you need some of the keys required there). Then provide the name of this file as the `--environment` argument when you run scripts.
+To keep sensitive settings out of git, some secrets configuration must be done to run the cluster. To set up for running on your local machine, copy the `config/example.yaml` file and provide the necessary configuration (ask a colleague if you need some of the keys required there). Then provide the name of this file as the `--environment` argument when you run scripts.
 
 To set up a Kubernetes cluster with these secrets copy the `manifests/secrets-example.yaml` file and provide the necessary details. Then run `kubectl apply -f manifests/secrets-ENV.yaml` file for the proper environment, which ensures that containers in the cluster have access to the proper environment variables.
 
