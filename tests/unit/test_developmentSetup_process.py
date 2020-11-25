@@ -37,7 +37,7 @@ class TestDevelopmentSetupProcess:
     def hathiTSV(self):
         rows = []
         for i in range(1000):
-            rightsStmt = 'pd' if i % 3 == 0 else 'is'
+            rightsStmt = 'ic' if i % 3 == 0 else 'pd'
             rows.append([i, 'hathi', rightsStmt])
 
         return rows
@@ -134,8 +134,8 @@ class TestDevelopmentSetupProcess:
         ])
         mockTSV.write.assert_called_once
         mockCSVReader.assert_called_once
-        assert mockHathiMapping.call_count == 501
-        assert mockAddDCDW.call_count == 501
+        assert mockHathiMapping.call_count == 334
+        assert mockAddDCDW.call_count == 334
 
     def test_importFromHathiTrustDataFile_error(self, devInstance, mocker):
         mockRequest = mocker.patch.object(requests, 'get')

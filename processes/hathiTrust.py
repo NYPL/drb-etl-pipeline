@@ -38,8 +38,8 @@ class HathiTrustProcess(CoreProcess):
         except FileNotFoundError:
             raise IOError('Unable to open local CSV file')
 
-        with hathiFile:
-            hathiReader = csv.reader(hathiFile)
+        hathiReader = csv.reader(hathiFile)
+
         for row in hathiReader:
             if row[2] not in self.HATHI_RIGHTS_SKIPS and row[0] != 'htid':
                 self.parseHathiDataRow(row)
