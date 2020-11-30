@@ -5,7 +5,7 @@ from tests.helper import TestHelpers
 from processes import CatalogProcess
 
 
-class TestHathiTrustProcess:
+class TestOCLCCatalogProcess:
     @classmethod
     def setup_class(cls):
         TestHelpers.setEnvVars()
