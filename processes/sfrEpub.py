@@ -24,7 +24,7 @@ class EpubProcess(CoreProcess):
     def receiveAndProcessMessages(self):
         attempts = 1
         while True:
-            msgProps, msgParams, msgBody = self.getMessageFromQueue(os.environ[''])
+            msgProps, msgParams, msgBody = self.getMessageFromQueue(os.environ['EPUB_QUEUE'])
             if msgProps is None:
                 if attempts <= 3:
                     sleep(30 * attempts)
@@ -39,7 +39,7 @@ class EpubProcess(CoreProcess):
             self.acknowledgeMessageProcessed(msgProps.delivery_tag)
     
     def storeEpubFile(self, msg):
-        epubMeta = json.loads(msg)['epubURL']
+        epubMeta = json.loads(msg)['epubData']
         epubURL = epubMeta['epubURL']
         epubPath = epubMeta['bucketPath']
         epubB = self.getFileContents(epubURL)
