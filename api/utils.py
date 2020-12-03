@@ -10,7 +10,7 @@ class APIUtils():
     @staticmethod
     def extractParamPairs(paramPairs):
         return [
-            (p.split(':')) if len(p.split(':')) > 1 else (None, p)
+            tuple(p.split(':')) if len(p.split(':')) > 1 else (None, p)
             for p in paramPairs
         ]
 
@@ -36,6 +36,7 @@ class APIUtils():
     def formatWorkOutput(cls, works, identifiers=None, showAll=True):
         if isinstance(works, list):
             outWorks = []
+            editionIds = []
 
             if identifiers:
                 editionIds = list(cls.flatten([i[1] for i in identifiers]))
@@ -67,7 +68,7 @@ class APIUtils():
 
                 editionDict['items'].append(itemDict)
 
-            if showAll is True or showAll is False and len(editionDict['items']) > 0:
+            if showAll is True or (showAll is False and len(editionDict['items']) > 0):
                 workDict['editions'].append(editionDict)
 
         return workDict
