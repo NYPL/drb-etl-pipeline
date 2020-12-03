@@ -111,7 +111,7 @@ class ClassifyManager:
         classifyResp = requests.get(self.query)
         if classifyResp.status_code != 200:
             print('OCLC Classify Request failed')
-            raise
+            raise Exception
 
         self.rawXML = classifyResp.text
     
@@ -160,18 +160,20 @@ class ClassifyManager:
             for work in works:
                 oclcID = work.get('wi')
                 oclcTitle = work.get('title', None)
+
                 if self.checkTitle(oclcTitle) is False:
                     print('Found title mismatch with {}. Skipping'.format(
                         oclcTitle
                     ))
                     continue
-                    multiRec = ClassifyManager(
-                        iden=oclcID,
-                        idenType='oclc',
-                        title=oclcTitle,
-                        author=self.author
-                    )
-                    outRecords.append(multiRec.getClassifyResponse()[0])
+
+                multiRec = ClassifyManager(
+                    iden=oclcID,
+                    idenType='oclc',
+                    title=oclcTitle,
+                    author=self.author
+                )
+                outRecords.append(multiRec.getClassifyResponse()[0])
             
             return outRecords
     

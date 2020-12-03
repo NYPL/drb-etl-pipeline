@@ -160,7 +160,7 @@ class KMeansManager:
                 pubYears[dateType] = (int(startYear) + int(endYear)) / 2
             elif re.match(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', dateStr):
                 year, month, day = tuple(dateStr.split('-'))
-                pubYears[dateType] = year
+                pubYears[dateType] = int(year)
             else:
                 try:
                     dateInt = int(dateStr)
@@ -185,7 +185,7 @@ class KMeansManager:
     @classmethod
     def getEditionStatement(cls, hasVersion):
         if not hasVersion:
-            return None
+            return ''
         for version in hasVersion:
             print(version)
             statement, editionNo = tuple(version.split('|'))
