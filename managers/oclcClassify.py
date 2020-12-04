@@ -118,9 +118,9 @@ class ClassifyManager:
     def parseXMLResponse(self):
         try:
             parseXML = etree.fromstring(self.rawXML.encode('utf-8'))
-        except etree.XMLSyntaxError as err:
+        except Exception:
             print('Classify returned invalid XML')
-            raise
+            raise ClassifyError('Invalid XML received from Classify service')
 
         # Check for the type of response we recieved
         # 2: Single-Work Response
@@ -140,11 +140,11 @@ class ClassifyManager:
         if responseCode == 101:
             print('Invalid identifier received. Cleaning and retrying')
             oldID = self.identifier
-            cleanIdentifier = self.cleanIdentifier()
-            if oldID == self.identifier:
+            cleanIdentifier = ClassifyManager.cleanIdentifier(self.identifier)
+            if oldID == cleanIdentifier:
                 raise ClassifyError('Unable to query identifier, invalid')
             multiRec = ClassifyManager(
-                iden=self.identifier,
+                iden=cleanIdentifier,
                 idenType=self.identifierType,
                 title=self.title,
                 author=self.author
@@ -214,9 +214,9 @@ class ClassifyManager:
             [re.sub(r'[^\w]+', '', token.lower()) for token in wordTokens]
         ))
     
-    def cleanIdentifier(self):
-        self.identifier = re.sub(r'[\D]+', '', self.identifier)
-        print(self.identifier)
+    @staticmethod
+    def cleanIdentifier(identifier):
+        return re.sub(r'[\D]+', '', identifier)
     
     @staticmethod
     def getQueryableIdentifiers(identifiers):

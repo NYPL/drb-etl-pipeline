@@ -36,6 +36,3 @@ class RedisManager:
             presentTime.strftime('%Y-%m-%dT%H:%M:%S'),
             ex=expirationTime
         )
-
-        return False
-
