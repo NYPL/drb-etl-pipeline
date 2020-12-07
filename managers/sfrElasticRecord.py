@@ -85,10 +85,6 @@ class SFRElasticRecordManager:
         
         return False
 
-    def addInstances(self):
-        for edition in self.dbWork.edition:
-            yield self.createEdition(edition)
-
     def createEdition(self, edition):
         newEd = ESEdition(**{
             field: getattr(edition, field, None)
@@ -126,5 +122,5 @@ class SFRElasticRecordManager:
                 yield link.media_type
     
     def setSortTitle(self):
-        if self.dbWork.sort_title is None:
+        if self.work.sort_title is None:
             self.work.sort_title = self.dbWork.title.lower()
