@@ -40,7 +40,7 @@ class SFRRecordManager:
                 item.identifiers = self.dedupeIdentifiers(item.identifiers, existingIDs)
                 item.links = self.dedupeLinks(item.links)
 
-            self.work.identifiers = self.dedupeIdentifiers(self.work.identifiers, existingIDs)
+        self.work.identifiers = self.dedupeIdentifiers(self.work.identifiers, existingIDs)
 
         self.session.merge(self.work)
 
@@ -124,9 +124,9 @@ class SFRRecordManager:
         # is_part_of (Series and Volume)
         if rec.is_part_of:
             for partOf in rec.is_part_of:
-                if partOf[:-6] == 'series':
+                if partOf[-6:] == 'series':
                     workData['series_data'][partOf] += 1
-                elif partOf[:-6] == 'volume':
+                elif partOf[-6:] == 'volume':
                     editionData['volume_data'][partOf] += 1
         
         # Edition
@@ -203,9 +203,8 @@ class SFRRecordManager:
             itemPos = startPos + int(no)
             if editionData['items'][itemPos] is None:
                 editionData['items'][itemPos] = {
-                    'contributors': [],
                     'links': [],
-                    'identifiers': [],
+                    'identifiers': set(),
                     'contributors': set()
                 }
             editionData['items'][itemPos] = {
@@ -219,7 +218,7 @@ class SFRRecordManager:
 
             editionData['items'][itemPos]['links'].append('{}|{}|{}'.format(uri, linkType, flags))
 
-            editionData['items'][itemPos]['identifiers'].extend([
+            editionData['items'][itemPos]['identifiers'].update([
                 i for i in list(filter(lambda x: re.search(r'\|(?!isbn|issn|oclc|lccn|owi|ddc|lcc).*$', x), rec.identifiers))
             ])
 
@@ -355,7 +354,7 @@ class SFRRecordManager:
         return newItem
 
     @staticmethod
-    def setPipeDelimitedData(data, fields, dType={}, dParser=None):
+    def setPipeDelimitedData(data, fields, dType=None, dParser=None):
         return [
             SFRRecordManager.parseDelimitedEntry(d, fields, dType, dParser) for d in data
         ]
@@ -365,14 +364,14 @@ class SFRRecordManager:
         dataEntry = dict(zip(fields, dInst.split('|')))
         if dParser is not None:
             dataEntry = dParser(dataEntry)
-        if isinstance(dType, dict):
+        if dType is None:
             return dataEntry
 
         return dType(**dataEntry)
 
     @staticmethod
     def getLanguage(langData):
-        values = list(filter(lambda x: x != '', [v for k, v in langData.items()]))
+        values = list(filter(lambda x: x != '', [v for _, v in langData.items()]))
         for v in values:
             for attr in ['alpha_2', 'alpha_3', 'name']:
                 pyLang = pycountry.languages.get(**{attr: v})
@@ -388,8 +387,8 @@ class SFRRecordManager:
         for agent in agents:
             agentParts = agent.split('|')
             if len(agentParts) < len(fields):
-                agentParts.insert(1, None)
-                agentParts.insert(2, None)
+                agentParts.insert(1, '')
+                agentParts.insert(2, '')
             rec = dict(zip(fields, agentParts))
 
             if rec['name'] == '' and rec['viaf'] == '' and rec['lcnaf'] == '':
@@ -398,11 +397,11 @@ class SFRRecordManager:
             for oa in outAgents:
                 for checkField in ['name', 'viaf', 'lcnaf']:
                     if rec[checkField] and rec[checkField] != '' and rec[checkField] == oa[checkField]:
-                        if oa['viaf'] is None:
+                        if oa['viaf'] == '':
                             oa['viaf'] = rec['viaf']
 
-                        if oa['lcnaf'] is None:
-                            oa['lcnaf'] = rec['viaf']
+                        if oa['lcnaf'] == '':
+                            oa['lcnaf'] = rec['lcnaf']
 
                         if 'role' in rec.keys():
                             oa['roles'].add(rec['role'])
@@ -471,4 +470,4 @@ class SFRRecordManager:
 
         tokens = re.split(r'\s+', self.work.title)
 
-        self.work.sort_title = ' '.join(tokens[1:] if tokens[0].lower() in stops else tokens)
+        self.work.sort_title = ' '.join(tokens[1:] if tokens[0].lower() in stops else tokens).lower()
