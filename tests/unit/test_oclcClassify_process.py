@@ -80,7 +80,8 @@ class TestOCLCClassifyProcess:
 
         mockSession.query().filter.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
-        mockQuery.yield_per.return_value = [i for i in range(100)]
+        mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
+        mockQuery.yield_per.return_value = mockRecords
         testInstance.classifyRecords()
 
         mockSession.query.filter.assert_called_once
@@ -88,7 +89,7 @@ class TestOCLCClassifyProcess:
         mockDatetime.timedelta.assert_called_once
         mockQuery.filter.assert_called_once
         mockQuery.yield_per.assert_called_once_with(100)
-        mockFrbrize.assert_has_calls([mocker.call(i) for i in range(100)])
+        mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
 
     def test_classifyRecords_custom_range(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
@@ -99,7 +100,8 @@ class TestOCLCClassifyProcess:
 
         mockSession.query().filter.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
-        mockQuery.yield_per.return_value = [i for i in range(100)]
+        mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
+        mockQuery.yield_per.return_value = mockRecords
         testInstance.classifyRecords(startDateTime='testDate')
 
         mockSession.query.filter.assert_called_once
@@ -107,7 +109,7 @@ class TestOCLCClassifyProcess:
         mockDatetime.timedelta.assert_not_called
         mockQuery.filter.assert_called_once
         mockQuery.yield_per.assert_called_once_with(100)
-        mockFrbrize.assert_has_calls([mocker.call(i) for i in range(100)])
+        mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
 
     def test_classifyRecords_full(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
@@ -117,7 +119,8 @@ class TestOCLCClassifyProcess:
         mockDatetime = mocker.spy(datetime, 'datetime')
 
         mockSession.query().filter.return_value = mockQuery
-        mockQuery.yield_per.return_value = [i for i in range(100)]
+        mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
+        mockQuery.yield_per.return_value = mockRecords
         testInstance.classifyRecords(full=True)
 
         mockSession.query.filter.assert_called_once
@@ -125,7 +128,7 @@ class TestOCLCClassifyProcess:
         mockDatetime.timedelta.assert_not_called
         mockQuery.filter.assert_not_called
         mockQuery.yield_per.assert_called_once_with(100)
-        mockFrbrize.assert_has_calls([mocker.call(i) for i in range(100)])
+        mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
 
     def test_frbrizeRecord_success_valid_author(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyManager, 'getQueryableIdentifiers')
@@ -174,9 +177,6 @@ class TestOCLCClassifyProcess:
         mockRedisCheck.assert_called_once_with('classify', '1', 'test')
         mockClassifyRec.assert_not_called
         
-        assert testRecord.frbr_status == 'complete'
-        assert testInstance.records[0] == testRecord
-
     def test_classifyRecordByMetadata_success(self, testInstance, mocker):
         mockClassifier = mocker.patch('processes.oclcClassify.ClassifyManager')
         mockClassifierInstance = mocker.MagicMock()
@@ -208,13 +208,8 @@ class TestOCLCClassifyProcess:
 
         mockCreateDCDW = mocker.patch.object(ClassifyProcess, 'createClassifyDCDWRecord')
 
-        testInstance.classifyRecordByMetadata('1', 'test', 'testAuthor', 'testTitle')
-
-        mockClassifier.assert_called_once_with(
-            iden='1', idenType='test', author='testAuthor', title='testTitle'
-        )
-        mockClassifier.getClassifyResponse.assert_called_once
-        mockCreateDCDW.assert_not_called
+        with pytest.raises(ClassifyError):
+            testInstance.classifyRecordByMetadata('1', 'test', 'testAuthor', 'testTitle')
 
     def test_createClassifyDCDWRecord(self, testInstance, mocker):
         mockMappingInstance = mocker.MagicMock()

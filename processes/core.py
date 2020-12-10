@@ -25,6 +25,7 @@ class CoreProcess(DBManager, RabbitMQManager, RedisManager, StaticManager, Elast
         
         if len(self.records) >= 10000:
             self.saveRecords()
+            self.records = []
     
     def saveRecords(self):
         self.bulkSaveObjects(self.records)

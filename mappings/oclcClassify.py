@@ -42,3 +42,27 @@ class ClassifyMapping(XMLMapping):
         self.record.identifiers.append('{}|{}'.format(self.sourceID, self.sourceIDType))
 
         self.record.frbr_status = 'complete'
+
+        # Parse out true authors from contributors
+        # If these entries are contributors they will have these specific roles
+        # in bracketed notation e.g. "Name, Contributor [Role]"
+        self.record.contributors = []
+        trueAuthors = []
+
+        for author in self.record.authors:
+            name, viaf, lcnaf, primary = tuple(author.split('|'))
+            bracketedRoles = re.match(r'\[(.*)\]$', name)
+
+            if bracketedRoles:
+                roles = bracketedRoles.group(1).lower()
+
+                if 'author' not in roles:
+                    self.record.contributors.append('{}|{}|{}|{}'.format(
+                        name.replace(bracketedRoles.group(0), ''), viaf, lcnaf, roles
+                    ))
+                    continue
+            
+            # If entry has no contributor roles treat it as an author
+            trueAuthors.append(author)
+
+        self.record.authors = trueAuthors

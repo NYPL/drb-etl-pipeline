@@ -44,6 +44,8 @@ class ClassifyProcess(CoreProcess):
         
         for rec in baseQuery.yield_per(100):
             self.frbrizeRecord(rec)
+            rec.frbr_status = 'complete'
+            self.records.append(rec)
     
     def frbrizeRecord(self, record):
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
@@ -54,27 +56,23 @@ class ClassifyProcess(CoreProcess):
             except IndexError:
                 author = None
 
-            if self.checkSetRedis('classify', identifier, idenType) is True:
-                record.frbr_status = 'complete'
-                self.records.append(record)
-                continue
+            # Check if this identifier has been queried in the past 24 hours
+            # Skip if it has already been looked up
+            if self.checkSetRedis('classify', identifier, idenType): continue
 
-            self.classifyRecordByMetadata(
-                identifier, idenType, author, record.title
-            )
+            try:
+                self.classifyRecordByMetadata(
+                    identifier, idenType, author, record.title
+                )
+            except ClassifyError as err:
+                print(err.message)
 
     def classifyRecordByMetadata(self, identifier, idType, author, title):
         classifier = ClassifyManager(
             iden=identifier, idenType=idType, author=author, title=title
         )
 
-        try:
-            xmlRecords = classifier.getClassifyResponse()
-        except ClassifyError as err:
-            print(err.message)
-            return None
-        
-        for classifyXML in xmlRecords:
+        for classifyXML in classifier.getClassifyResponse():
             self.createClassifyDCDWRecord(classifyXML, identifier, idType)
     
     def createClassifyDCDWRecord(self, classifyXML, identifier, idType):
