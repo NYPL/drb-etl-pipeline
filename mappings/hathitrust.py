@@ -48,7 +48,7 @@ class HathiMapping(CSVMapping):
         except AttributeError:
             self.record.dates.pop(0)
             pubDateExtract = ''
-        publisher = pubDate.replace(pubDateExtract, '').strip('[], .;').split('|')[0]
+        publisher = pubDate.replace(pubDateExtract, '').split('|')[0].strip('[], .;')
         self.record.publisher = '{}||'.format(publisher)
 
         

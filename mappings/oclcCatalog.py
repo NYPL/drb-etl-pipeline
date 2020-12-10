@@ -135,7 +135,7 @@ class CatalogMapping(XMLMapping):
                 '{0}|{1}|{2}'),
 
             ],
-            'is_part_of': ([
+            'has_part': ([
                 '//oclc:datafield[@tag=\'856\']/oclc:subfield[@code=\'u\']/text()',
                 '//oclc:datafield[@tag=\'856\']/oclc:subfield[@code=\'z\']/text()'
             ], '1|{0}|oclc|unknown|{1}')

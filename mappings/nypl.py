@@ -68,10 +68,10 @@ class NYPLMapping(SQLMapping):
         }
     
     def applyMapping(self):
-        self.parseFixedFields()
+        self.parseVarFields()
         super().applyMapping()
     
-    def parseFixedFields(self):
+    def parseVarFields(self):
         self.source = dict(self.source)
         for value in self.source['var_fields']:
             marcField = {
@@ -98,6 +98,8 @@ class NYPLMapping(SQLMapping):
             elif '(OCoLC)' in iden:
                 oclcIden = iden.replace('(OCoLC)', '').replace('scn', 'oclc')
                 cleanIdentifiers.add(oclcIden)
+            else:
+                cleanIdentifiers.add(iden)
         self.record.identifiers = list(cleanIdentifiers)
         
 
@@ -106,7 +108,7 @@ class NYPLMapping(SQLMapping):
             subjComponents = subject.split('|')
             subjParts = list(filter(lambda x: x.strip() != '', subjComponents[0].split('--')))
             self.record.subjects[i] = '{}|{}|{}'.format(
-                ' -- '.join(subjParts), *subjComponents[1:]
+                '--'.join(subjParts), *subjComponents[1:]
             )
         
         # Parse contributors to set proper roles
