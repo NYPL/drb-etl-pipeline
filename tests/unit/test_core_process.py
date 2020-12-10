@@ -86,8 +86,7 @@ class TestCoreProcess:
 
         mockSession.assert_called_once
         mockSave.assert_called_once
-        assert len(coreInstance.records) == 10000
-        assert coreInstance.records[-1] == mockDocument
+        assert len(coreInstance.records) == 0
 
     def test_saveRecords(self, coreInstance, mocker):
         mockBulkSave = mocker.patch.object(CoreProcess, 'bulkSaveObjects')
