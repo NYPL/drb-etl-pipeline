@@ -1,14 +1,10 @@
-import csv
 from datetime import datetime, timedelta
-import gzip
 import os
 import requests
-import sys
 
 from .core import CoreProcess
 from managers.db import DBManager
 from mappings.nypl import NYPLMapping
-from model import Record
 
 
 class NYPLProcess(CoreProcess):
