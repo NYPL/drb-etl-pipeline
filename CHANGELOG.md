@@ -5,6 +5,8 @@
 - Initial Commit of ETL Pipeline
 
 ## 2020-12-10 -- v0.0.2
+### Added
+- Ingest process for NYPL research records
 ### Fixed
 - Classification Service update cycle
 - Removed bug affecting persistence of large batches of records
