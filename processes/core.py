@@ -1,9 +1,10 @@
-from managers import DBManager, RabbitMQManager, RedisManager, ElasticsearchManager, S3Manager
+from managers import DBManager, RabbitMQManager, RedisManager, ElasticsearchManager, S3Manager, NyplApiManager
 from model import Record
 from static.manager import StaticManager
 
 
-class CoreProcess(DBManager, RabbitMQManager, RedisManager, StaticManager, ElasticsearchManager, S3Manager):
+class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, StaticManager,
+                  ElasticsearchManager, S3Manager):
     def __init__(self, process, customFile, ingestPeriod):
         super(CoreProcess, self).__init__()
         self.process = process

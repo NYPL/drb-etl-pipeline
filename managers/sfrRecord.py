@@ -219,10 +219,20 @@ class SFRRecordManager:
             editionData['items'][itemPos]['links'].append('{}|{}|{}'.format(uri, linkType, flags))
 
             editionData['items'][itemPos]['identifiers'].update([
-                i for i in list(filter(lambda x: re.search(r'\|(?!isbn|issn|oclc|lccn|owi|ddc|lcc).*$', x), rec.identifiers))
+                i for i in list(filter(lambda x: re.search(r'\|(?!isbn|issn|oclc|lccn|owi|ddc|lcc|nypl).*$', x), rec.identifiers))
             ])
 
             editionData['items'][itemPos]['contributors'].update(itemContributors)
+
+            if len(rec.coverage) > 0:
+                for location in rec.coverage:
+                    locationCode, locationName, itemNo = tuple(rec.split('|'))
+                    if itemNo == no:
+                        editionData['items'][itemPos]['physicalLocation'] = {
+                            'code': locationCode,
+                            'name': locationName
+                        }
+                        break
         
     def saveWork(self, workData):
         # Set Titles
@@ -295,13 +305,13 @@ class SFRRecordManager:
         if len(edition['edition_data']):
             print(edition['edition_data'])
             editionStmt, editionNo = tuple(edition['edition_data'].most_common(1)[0][0].split('|'))
-            newWork.edition_statement = editionStmt
-            newWork.edition = editionNo
+            newEd.edition_statement = editionStmt
+            newEd.edition = editionNo
 
         # Set Volume Data
         if len(edition['volume_data']):
             volume, volumeNo, _ = tuple(edition['volume_data'].most_common(1)[0][0].split('|'))
-            newWork.volume = '{}, {}'.format(volume, volumeNo)
+            newEd.volume = '{}, {}'.format(volume, volumeNo)
         
         # Set Agents
         newEd.contributors = self.agentParser(edition['contributors'], ['name', 'viaf', 'lcnaf', 'role'])

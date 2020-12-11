@@ -49,8 +49,25 @@ class TestNYPLMapping:
         return mocker.MagicMock(
             identifiers=['1|nypl', ['2|test'], '3|scn(OCoLC)'],
             subjects=['top -- middle -- -- bottom|1|lcsh'],
-            contributors=['Contributor|1234|n9876|tst']
+            contributors=['Contributor|1234|n9876|tst'],
+            has_part=[],
+            coverage=[]
         )
+
+    @pytest.fixture
+    def testBibItems(self):
+        return [
+            {'id': '1', 'location': {'name': 'Test', 'code': 'tst'}},
+            {'id': '2', 'location': {'name': 'Other', 'code': 'otr'}},
+            {'id': '3', 'location': {'name': 'Error', 'code': 'err'}}
+        ]
+
+    @pytest.fixture
+    def testLocations(self):
+        return {
+            'tst': {'requestable': True},
+            'otr': {'requestable': False}
+        }
 
     def test_createMapping(self, testMapping):
         recordMapping = testMapping.createMapping()
@@ -71,8 +88,11 @@ class TestNYPLMapping:
         assert testMapping.source[856]['ind1'] == 'a'
         assert testMapping.source[856]['a'] == 'testLink'
 
-    def test_applyFormatting(self, testMapping, testRecord_standard):
+    def test_applyFormatting(self, testMapping, testRecord_standard, testBibItems, testLocations):
         testMapping.record = testRecord_standard
+        testMapping.locationCodes = testLocations
+        testMapping.bibItems = testBibItems
+        testMapping.source = {'id': '1'}
 
         testMapping.applyFormatting()
 
@@ -81,3 +101,8 @@ class TestNYPLMapping:
         assert set(testMapping.record.identifiers) == set(['1|nypl', '2|test', '3|oclc'])
         assert testMapping.record.subjects == ['top -- middle -- bottom|1|lcsh']
         assert testMapping.record.contributors == ['Contributor|1234|n9876|Tester']
+        assert testMapping.record.coverage == ['tst|Test|2']
+        assert testMapping.record.has_part == [
+            '1|https://www.nypl.org/research/collections/shared-collection-catalog/bib/b1|nypl|catalog|text/html',
+            '2|http://www.nypl.com/research/collections/shared-collection-catalog/hold/request/b1-i1|nypl|edd|text/html'
+        ]

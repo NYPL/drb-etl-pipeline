@@ -1,9 +1,13 @@
+import requests
+
 from .sql import SQLMapping
 
 class NYPLMapping(SQLMapping):
-    def __init__(self, source, statics):
+    def __init__(self, source, bibItems, statics, locationCodes):
         super().__init__(source, statics)
         self.mapping = self.createMapping()
+        self.locationCodes = locationCodes
+        self.bibItems = bibItems
     
     def createMapping(self):
         return {
@@ -64,9 +68,9 @@ class NYPLMapping(SQLMapping):
                 ('656', '{a}|{2}|'),
                 ('690', '{a} -- {b} -- {v} -- {x} -- {z}|lcsh|{0}'),
             ],
-            'has_part': ('856', '1|{u}|nypl|catalog|{z}')
+            'has_part': [('856', '1|{u}|nypl|catalog|{z}')],
         }
-    
+
     def applyMapping(self):
         self.parseVarFields()
         super().applyMapping()
@@ -89,6 +93,7 @@ class NYPLMapping(SQLMapping):
     def applyFormatting(self):
         self.record.source = 'nypl'
         self.record.source_id = self.record.identifiers[0]
+        self.record.coverage = []
 
         # Parse identifiers and de-duplicate
         cleanIdentifiers = set()
@@ -118,3 +123,28 @@ class NYPLMapping(SQLMapping):
             self.record.contributors[i] = '{}|{}|{}|{}'.format(
                 *contribComponents[:-1], lcRelation
             )
+
+        # Add catalog link derived from nypl identifier if 856 field is not present
+        if len(self.record.has_part) < 1:
+            self.record.has_part.append('1|{}|nypl|catalog|text/html'.format(
+                'https://www.nypl.org/research/collections/shared-collection-catalog/bib/b{}'.format(self.source['id'])
+            ))
+
+        # Add requestability status to each associated coverage location
+        for item in self.bibItems:
+            try:
+                locationMetadata = self.locationCodes[item['location']['code']]
+            except KeyError:
+               continue 
+
+            if locationMetadata['requestable']:
+                pos = len(self.record.has_part) + 1
+
+                self.record.coverage.append('{}|{}|{}'.format(
+                    item['location']['code'], item['location']['name'], pos
+                ))
+
+                self.record.has_part.append('{}|{}|nypl|edd|text/html'.format(
+                    pos,
+                    'http://www.nypl.com/research/collections/shared-collection-catalog/hold/request/b{}-i{}'.format(self.source['id'], item['id'])
+                ))

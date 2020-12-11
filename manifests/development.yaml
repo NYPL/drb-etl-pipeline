@@ -253,6 +253,25 @@ spec:
                     name: oclcSecrets
                 - secretRef:
                     name: awsSecrets
+            - name: nypl-reader
+              image: sfr/dcdw
+              args:
+                - --process
+                - NYPLProcess
+                - --ingestType
+                - daily
+                - --environment
+                - development
+              imagePullPolicy: Never
+              envFrom:
+                - secretRef:
+                    name: dbSecrets
+                - secretRef:
+                    name: oclcSecrets
+                - secretRef:
+                    name: awsSecrets
+                - secretRef:
+                    name: bibDBSecrets
           restartPolicy: OnFailure
 ---
 # Set up the FRBRization Process

@@ -2,6 +2,7 @@ from .db import DBManager
 from .kMeans import KMeansManager
 from .oclcCatalog import OCLCCatalogManager
 from .oclcClassify import ClassifyManager
+from .nyplApi import NyplApiManager
 from .rabbitmq import RabbitMQManager
 from .redis import RedisManager
 from .sfrRecord import SFRRecordManager

@@ -48,6 +48,7 @@ class Record(Base, Core):
     extent = Column(Unicode) # dc:extent, Non-Repeating
     abstract = Column(Unicode) # dc:abstract, Non-Repeating
     has_part = Column(ARRAY(Unicode, dimensions=1)) # dc:hasPart, Repeating, Format "itemNo|uri|source|type|flags"
+    coverage = Column(ARRAY(Unicode, dimensions=1)) # dc:coverage, non-Repeating, Format "locationCode|locationName|itemNo"
 
     # edition_id = Column(Integer, ForeignKey('editions.id'))
 
@@ -63,7 +64,7 @@ class Record(Base, Core):
             'title', 'alternative', 'medium', 'is_part_of', 'subjects', 'authors',
             'contributors', 'languages', 'dates', 'rights', 'identifiers',
             'date_submitted', 'requires', 'spatial', 'publisher', 'has_version',
-            'table_of_contents', 'extent', 'abstract', 'has_part'
+            'table_of_contents', 'extent', 'abstract', 'has_part', 'coverage'
         ]
     
     def __iter__(self):

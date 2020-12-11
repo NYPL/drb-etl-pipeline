@@ -29,3 +29,9 @@ HATHI_DATAFILES: https://www.hathitrust.org/filebrowser/download/244651
 # AWS_ACCESS and AWS_SECRET must be configured in secrets file
 AWS_REGION: 'us-east-1'
 EPUB_BUCKET: 'sfr_files'
+
+# NYPL BIB REPLICA DB CONNECTION
+# BIB_HOST, BIB_PORT, BIB_NAME, BIB_USER, BIB_PSWD must be configured in secrets file
+
+# NYPL Location Code Lookup
+NYPL_LOCATIONS_BY_CODE: https://nypl-core-objects-mapping-qa.s3.amazonaws.com/by_sierra_location.jso

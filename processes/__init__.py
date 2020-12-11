@@ -1,4 +1,5 @@
 from .hathiTrust import HathiTrustProcess
+from .nypl import NYPLProcess
 from .oclcCatalog import CatalogProcess
 from .oclcClassify import ClassifyProcess
 from .sfrCluster import ClusterProcess
