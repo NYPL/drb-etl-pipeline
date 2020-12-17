@@ -51,7 +51,7 @@ The currently available processes are:
 - `CatalogProcess` Retrieve all OCLC Catalog records for identifiers in the queue
 - `ClassifyProcess` Classify (FRBRize) records newly imported into the DCDW
 - `ClusterProcess` Group records that have been FRBRized into editions via a Machine Learning algorithm
-- `EpubProcess` Fetch ePub files associated with Item records and store them in AWS s3
+- `S3Process` Fetch files (e.g. ePubs, cover images, etc.) associated with Item and Edition records and store them in AWS s3
 
 #### Starting a local Kubernetes cluster
 
