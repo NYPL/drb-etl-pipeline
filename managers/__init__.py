@@ -1,4 +1,5 @@
 from .db import DBManager
+from .gutenberg import GutenbergManager
 from .kMeans import KMeansManager
 from .oclcCatalog import OCLCCatalogManager
 from .oclcClassify import ClassifyManager

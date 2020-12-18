@@ -32,7 +32,11 @@ class TestSFRRecordManager:
             table_of_contents='Test TOC',
             extent='Test Extent',
             requires=['true|government_doc', 'test|other'],
-            has_part=['1|url1|test|test|', '2|url2|test|test|testFlags', '2|url3|test|test|']
+            has_part=[
+                '|url1|test|test|{"cover": true}',
+                '1|url2|test|test|{"test": "flag"}',
+                '2|url3|test|test|{}'
+            ]
         )
 
     def test_initializer(self, testInstance, mocker):
@@ -214,15 +218,15 @@ class TestSFRRecordManager:
         mockItemBuild.assert_called_once_with(testEdition, testDCDWRecord, set(['Contrib 2|||provider']))
 
     def test_buildItems(self, testInstance, testDCDWRecord):
-        testEditionData = {'items': []}
+        testEditionData = {'items': [], 'links': []}
 
         testInstance.buildItems(testEditionData, testDCDWRecord, set(['Item Contrib 1']))
 
+        assert testEditionData['links'][0] == 'url1|test|{"cover": true}'
         assert len(testEditionData['items']) == 3
         assert testEditionData['items'][2] is None
-        assert testEditionData['items'][0]['links'][0] =='url1|test|'
-        assert testEditionData['items'][1]['links'][0] =='url2|test|testFlags'
-        assert testEditionData['items'][1]['links'][1] =='url3|test|'
+        assert testEditionData['items'][0]['links'][0] == 'url2|test|{"test": "flag"}'
+        assert testEditionData['items'][1]['links'][0] == 'url3|test|{}'
         assert testEditionData['items'][0]['content_type'] == 'ebook'
         assert testEditionData['items'][1]['source'] == 'test'
         assert testEditionData['items'][1]['contributors'] == set(['Item Contrib 1'])
