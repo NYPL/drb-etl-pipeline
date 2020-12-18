@@ -1,18 +1,18 @@
 # POSTGRES CONNECTION DETAILS
 # DB_USER, DB_PSWD, ADMIN_USER, ADMIN_PSWD and DB_NAME must be configured in secrets file 
-DB_HOST: '10.97.170.25'
-DB_PORT: '5432'
+# DB_HOST: '10.97.170.25
+# DB_PORT: '5432'
 
 # REDIS CONFIGURATION
-REDIS_HOST: '10.97.170.100'
-REDIS_PORT: '6379'
+# REDIS_HOST: '10.97.170.100'
+# REDIS_PORT: '6379'
 
 # ELASTICSEARCH CONFIGURATION
 # ES_INDEX, ES_HOST, ES_PORT, ES_TIMEOUT
 
 # RABBITMQ CONFIGURATION
-RABBIT_HOST: '10.97.170.200'
-RABBIT_PORT: '5672'
+# RABBIT_HOST: '10.97.170.200'
+# RABBIT_PORT: '5672'
 OCLC_QUEUE: oclc_catalog
 EPUB_QUEUE: epub_files
 
@@ -24,11 +24,19 @@ HATHI_DATAFILES: https://www.hathitrust.org/filebrowser/download/244651
 
 # AWS CONFIGURATION
 # AWS_ACCESS and AWS_SECRET must be configured in secrets file
-AWS_REGION: 'us-east-1'
+# AWS_REGION: 'us-east-1'
 EPUB_BUCKET: 'sfr_files'
 
 # NYPL BIB REPLICA DB CONNECTION
 # BIB_HOST, BIB_PORT, BIB_NAME, BIB_USER, BIB_PSWD must be configured in secrets file
 
 # NYPL Location Code Lookup
-NYPL_LOCATIONS_BY_CODE: https://nypl-core-objects-mapping-qa.s3.amazonaws.com/by_sierra_location.jso
+NYPL_LOCATIONS_BY_CODE: https://nypl-core-objects-mapping-qa.s3.amazonaws.com/by_sierra_location.json
+
+# NYPL API Credentials
+# API_CLIENT_ID, API_CLIENT_SECRET, API_CLIENT_TOKEN_URL must be configured in secrets file
+API_CLIENT_TOKEN_URL: https://isso.nypl.org/oauth/token
+
+# GITHUB API Credentials
+# GITHUB_API_KEY must be configured in secrets file
+GITHUB_API_ROOT: https://api.github.com/graphql
