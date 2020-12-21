@@ -19,13 +19,13 @@ class TestHelpers:
         'RABBIT_HOST': 'test_rbmq_host',
         'RABBIT_PORT': 'test_rbmq_port',
         'OCLC_QUEUE': 'test_oclc_queue',
-        'EPUB_QUEUE': 'test_epub_queue',
+        'FILE_QUEUE': 'test_file_queue',
         'HATHI_DATAFILES': 'test_hathi_url',
         'OCLC_API_KEY': 'test_oclc_key',
         'AWS_ACCESS': 'test_aws_key',
         'AWS_SECRET': 'test_aws_secret',
         'AWS_REGION': 'test_aws_region',
-        'EPUB_BUCKET': 'test_aws_bucket',
+        'FILE_BUCKET': 'test_aws_bucket',
         'BIB_HOST': 'test_bib_host',
         'BIB_PORT': 'test_bib_port',
         'BIB_NAME': 'test_bib_name',
@@ -34,7 +34,9 @@ class TestHelpers:
         'NYPL_LOCATIONS_BY_CODE': 'test_location_url',
         'API_CLIENT_ID': 'test_api_client',
         'API_CLIENT_SECRET': 'test_api_secret',
-        'API_CLIENT_TOKEN_URL': 'test_api_token_url'
+        'API_CLIENT_TOKEN_URL': 'test_api_token_url',
+        'GITHUB_API_KEY': 'test_github_key',
+        'GITHUB_API_ROOT': 'test_github_url'
     }
 
     @classmethod

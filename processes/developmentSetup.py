@@ -40,7 +40,7 @@ class DevelopmentSetupProcess(CoreProcess):
         # Create rabbit queues
         self.createRabbitConnection()
         self.createOrConnectQueue(os.environ['OCLC_QUEUE'])
-        self.createOrConnectQueue(os.environ['EPUB_QUEUE'])
+        self.createOrConnectQueue(os.environ['FILE_QUEUE'])
 
         # Populate with set of sample data from sources
         self.fetchHathiSampleData()

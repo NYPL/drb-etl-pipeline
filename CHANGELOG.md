@@ -11,3 +11,9 @@
 - Classification Service update cycle
 - Removed bug affecting persistence of large batches of records
 - Improved manner in which records are marked as "classified"
+
+## Unreleased -- v0.0.3
+### Added
+- Ingest process for Project Gutenberg records
+### Fixed
+- Made s3 ingest process more generic to handle cover images

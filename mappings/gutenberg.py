@@ -61,7 +61,7 @@ class GutenbergMapping(XMLMapping):
         # Parse subjects for authority data
         for i, subject in enumerate(self.record.subjects):
             subjComponents = subject.split('|')
-            authority = subjComponents[0].replace('http://purl.org/dc/terms/', '')
+            authority = subjComponents[0].replace('http://purl.org/dc/terms/', '').lower()
             self.record.subjects[i] = '{}|{}|{}'.format(
                 authority, *subjComponents[1:]
             )
@@ -73,6 +73,14 @@ class GutenbergMapping(XMLMapping):
             self.record.contributors[i] = '{}|{}|{}|{}'.format(
                 *contribComponents[:-1], lcRelation
             )
+
+        # Clean up author names if life dates are not present
+        for i, author in enumerate(self.record.authors):
+            name, *authorComponents = author.split('|')
+
+            if '(-)' not in name: continue
+
+            self.record.authors[i] = '|'.join([name.replace(' (-)', '')] + authorComponents)
 
         # Add Read Online links
         self.record.has_part = []

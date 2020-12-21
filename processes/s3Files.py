@@ -6,9 +6,9 @@ from time import sleep
 from .core import CoreProcess
 
 
-class EpubProcess(CoreProcess):
+class S3Process(CoreProcess):
     def __init__(self, process, customFile, ingestPeriod):
-        super(EpubProcess, self).__init__(process, customFile, ingestPeriod)
+        super(S3Process, self).__init__(process, customFile, ingestPeriod)
 
         # Create RabbitMQ Connection
         self.createRabbitConnection()
@@ -16,7 +16,7 @@ class EpubProcess(CoreProcess):
 
         # Create S3 Connection
         self.createS3Client()
-        self.bucket = os.environ['EPUB_BUCKET']
+        self.bucket = os.environ['FILE_BUCKET']
     
     def runProcess(self):
         self.receiveAndProcessMessages()
@@ -24,7 +24,7 @@ class EpubProcess(CoreProcess):
     def receiveAndProcessMessages(self):
         attempts = 1
         while True:
-            msgProps, msgParams, msgBody = self.getMessageFromQueue(os.environ['EPUB_QUEUE'])
+            msgProps, msgParams, msgBody = self.getMessageFromQueue(os.environ['FILE_QUEUE'])
             if msgProps is None:
                 if attempts <= 3:
                     sleep(30 * attempts)
@@ -35,16 +35,16 @@ class EpubProcess(CoreProcess):
             
             attempts = 1
 
-            self.storeEpubFile(msgBody)
+            self.storeFileInS3(msgBody)
             self.acknowledgeMessageProcessed(msgProps.delivery_tag)
     
-    def storeEpubFile(self, msg):
-        epubMeta = json.loads(msg)['epubData']
-        epubURL = epubMeta['epubURL']
-        epubPath = epubMeta['bucketPath']
-        epubB = self.getFileContents(epubURL)
+    def storeFileInS3(self, msg):
+        fileMeta = json.loads(msg)['fileData']
+        fileURL = fileMeta['fileURL']
+        filePath = fileMeta['bucketPath']
+        epubB = self.getFileContents(fileURL)
 
-        self.putObjectInBucket(epubB, epubPath, self.bucket)
+        self.putObjectInBucket(epubB, filePath, self.bucket)
     
     def getFileContents(self, epubURL):
         epubResp = requests.get(epubURL)

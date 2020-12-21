@@ -1,5 +1,6 @@
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, date
+import json
 from math import floor
 import pycountry
 import re
@@ -200,6 +201,13 @@ class SFRRecordManager:
 
         for item in rec.has_part:
             no, uri, source, linkType, flags = tuple(item.split('|'))
+            linkFlags = json.loads(flags)
+
+            if linkFlags.get('cover', False) is True:
+                editionData['links'].append('{}|{}|{}'.format(uri, linkType, flags))
+
+                continue
+
             itemPos = startPos + int(no)
             if editionData['items'][itemPos] is None:
                 editionData['items'][itemPos] = {
@@ -332,6 +340,11 @@ class SFRRecordManager:
 
         # Set Dates
         newEd.dates = SFRRecordManager.setPipeDelimitedData(edition['dates'], ['date', 'type'])
+
+        # Set Links
+        newEd.links = SFRRecordManager.setPipeDelimitedData(
+            edition['links'], ['url', 'media_type', 'flags'], Link
+        )
 
         # Add Items
         for item in edition['items']:
