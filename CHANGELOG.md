@@ -15,5 +15,6 @@
 ## Unreleased -- v0.0.3
 ### Added
 - Ingest process for Project Gutenberg records
+- YAML file for QA ECS environment
 ### Fixed
 - Made s3 ingest process more generic to handle cover images
