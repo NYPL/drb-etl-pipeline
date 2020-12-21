@@ -18,3 +18,11 @@
 - YAML file for QA ECS environment
 ### Fixed
 - Made s3 ingest process more generic to handle cover images
+
+## Unreleased -- v0.0.4
+### Added
+- Improved Clustering to use Edition data more accurately (e.g. only when present)
+### Fixed
+- Resolved bug with `has_part` strings from the `OCLCProcess`
+- Resolved several bugs with parsing and clustering of NYPL data
+- Removed index on the `Editions.dcdw_uuid` as is it is not used and was too large in some cases
