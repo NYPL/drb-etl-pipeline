@@ -42,45 +42,47 @@ class KMeansManager:
         self.df = None
         self.clusters = defaultdict(list)
     
-    def createPipeline(self):
+    def createPipeline(self, transformers):
+        pipelineComponents = {
+            'place': ('place', Pipeline([
+                ('selector', TextSelector(key='place')),
+                ('tfidf', TfidfVectorizer(
+                    preprocessor=KMeansManager.pubProcessor,
+                    stop_words='english',
+                    strip_accents='unicode',
+                    analyzer='char_wb',
+                    ngram_range=(2,4))
+                )
+            ])),
+            'publisher': ('publisher', Pipeline([
+                ('selector', TextSelector(key='publisher')),
+                ('tfidf', TfidfVectorizer(
+                    preprocessor=KMeansManager.pubProcessor,
+                    stop_words='english',
+                    strip_accents='unicode',
+                    analyzer='char_wb',
+                    ngram_range=(2,4))
+                )
+            ])),
+            'edition': ('edition', Pipeline([
+                ('selector', TextSelector(key='edition')),
+                ('tfidf', TfidfVectorizer(
+                    preprocessor=KMeansManager.pubProcessor,
+                    stop_words='english',
+                    strip_accents='unicode',
+                    analyzer='char_wb',
+                    ngram_range=(1,3))
+                )
+            ])),
+            'pubDate': ('date', Pipeline([
+                ('selector', NumberSelector(key='pubDate')),
+                ('scaler', MinMaxScaler())
+            ]))
+        }
+
         return Pipeline([
             ('union', FeatureUnion(
-                transformer_list=[
-                    ('place', Pipeline([
-                        ('selector', TextSelector(key='place')),
-                        ('tfidf', TfidfVectorizer(
-                            preprocessor=KMeansManager.pubProcessor,
-                            stop_words='english',
-                            strip_accents='unicode',
-                            analyzer='char_wb',
-                            ngram_range=(2,4))
-                        )
-                    ])),
-                    ('publisher', Pipeline([
-                        ('selector', TextSelector(key='publisher')),
-                        ('tfidf', TfidfVectorizer(
-                            preprocessor=KMeansManager.pubProcessor,
-                            stop_words='english',
-                            strip_accents='unicode',
-                            analyzer='char_wb',
-                            ngram_range=(2,4))
-                        )
-                    ])),
-                    ('edition', Pipeline([
-                        ('selector', TextSelector(key='edition')),
-                        ('tfidf', TfidfVectorizer(
-                            preprocessor=KMeansManager.pubProcessor,
-                            stop_words='english',
-                            strip_accents='unicode',
-                            analyzer='char_wb',
-                            ngram_range=(1,3))
-                        )
-                    ])),
-                    ('date', Pipeline([
-                        ('selector', NumberSelector(key='pubDate')),
-                        ('scaler', MinMaxScaler())
-                    ]))
-                ],
+                transformer_list=[pipelineComponents[t] for t in transformers],
                 transformer_weights={
                     'place': 0.5,
                     'publisher': 1.0,
@@ -108,9 +110,6 @@ class KMeansManager:
                 .replace('place of publication not identified', '')\
                 .replace('publisher not identified', '')
             cleanStr = re.sub(r'\s+', ' ', cleanStr)
-            print('Cleaned string {} to {} for processing'.format(
-                raw, cleanStr
-            ))
             return cleanStr
         print('Unable to clean NoneType, returning empty string')
         return ''
@@ -138,7 +137,6 @@ class KMeansManager:
     
     @staticmethod
     def emptyInstance(instance):
-        print(instance.spatial, instance.dates, instance.publisher)
         return bool(instance.spatial or\
             KMeansManager.getPubDateFloat(instance.dates) or\
             KMeansManager.getPublisher(instance.publisher))
@@ -149,14 +147,15 @@ class KMeansManager:
         if not dates:
             return 0
         for d in dates:
-            print(d)
             try:
                 date, dateType = tuple(d.split('|'))
             except ValueError:
                 return 0
-            dateStr = str(date).strip('];.,- ')
+            dateStr = str(date).strip('];:.,- ')
             if re.match(r'[0-9]{4}-[0-9]{4}', dateStr):
-                startYear, endYear = tuple(dateStr.split('-'))
+                rangeMatches = re.match(r'([0-9]{4})-([0-9]{4})', dateStr)
+                startYear = rangeMatches.group(1)
+                endYear = rangeMatches.group(2)
                 pubYears[dateType] = (int(startYear) + int(endYear)) / 2
             elif re.match(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', dateStr):
                 year, month, day = tuple(dateStr.split('-'))
@@ -187,9 +186,11 @@ class KMeansManager:
         if not hasVersion:
             return ''
         for version in hasVersion:
-            print(version)
-            statement, editionNo = tuple(version.split('|'))
-            return statement
+            try:
+                statement, _ = tuple(version.split('|'))
+                return statement
+            except ValueError:
+                pass
         
         return ''
     
@@ -202,6 +203,9 @@ class KMeansManager:
             step = int(np.log(self.maxK)**1.5 - 1) if np.log(self.maxK) > 1.6 else 1
             # First pass at finding best value for k, using the step value
             # derived above
+            print('Calculating number of clusters, max {}'.format(
+                self.maxK
+            ))
             self.getK(1, self.maxK, step)
             # Get narrower band of possible k values, based off the initial
             # step value
@@ -209,6 +213,7 @@ class KMeansManager:
             stopK = self.k + step if (self.k + step) <= self.maxK else self.maxK
             # Get the final k value by iterating through the much narrower
             # range returned above
+            print('Calculating best k between {} and {}'.format(startK, stopK))
             self.getK(startK, stopK, 1)
             print('Setting K to {}'.format(self.k))
         except ZeroDivisionError:
@@ -227,9 +232,6 @@ class KMeansManager:
                 continue
     
     def getK(self, start, stop, step):
-        print('Calculating number of clusters, max {}'.format(
-            self.maxK
-        ))
         warnings.filterwarnings('error', category=ConvergenceWarning)
         wcss = []
         for i in range(start, stop, step):
@@ -238,7 +240,7 @@ class KMeansManager:
             except ConvergenceWarning:
                 print('Exceeded number of distinct clusters, break')
                 break
-            except ValueError:
+            except ValueError as e:
                 self.k = 1
                 return None
         
@@ -261,7 +263,8 @@ class KMeansManager:
     def cluster(self, k, score=False):
         self.currentK = k
         print('Generating cluster for k={}'.format(k))
-        pipeline = self.createPipeline()
+        columnsWithData = self.getDataColumns()
+        pipeline = self.createPipeline(columnsWithData)
         if score is True:
             print('Returning score for n_clusters estimation')
             pipeline.fit(self.df)
@@ -269,6 +272,17 @@ class KMeansManager:
         else:
             print('Returning model prediction')
             return pipeline.fit_predict(self.df)
+
+    def getDataColumns(self):
+        dataColumns = []
+        for colName in self.df.columns:
+            if colName == 'uuid': continue
+
+            hasValue = self.df[colName] != ''
+            if len(list(filter(lambda x: x is True, list(hasValue.head())))) > 0:
+                dataColumns.append(colName)
+        
+        return dataColumns
     
     def parseEditions(self):
         eds = []

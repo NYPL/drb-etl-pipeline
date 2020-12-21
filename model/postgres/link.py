@@ -9,7 +9,7 @@ from .base import Base, Core
 class Link(Base, Core):
     __tablename__ = 'links'
     id = Column(Integer, primary_key=True)
-    url = Column(Unicode, nullable=False, unique=True, index=True)
+    url = Column(Unicode, nullable=False, index=True)
     media_type = Column(Unicode, nullable=False, index=True)
     content = Column(Unicode)
     md5 = Column(Unicode)

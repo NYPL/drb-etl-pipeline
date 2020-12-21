@@ -124,14 +124,14 @@ class TestSFRRecordManager:
             mocker.MagicMock(url='url2', id=None),
             mocker.MagicMock(url='url3', id=None)
         ]
-        testInstance.session.query().filter().one_or_none.side_effect = [
+        testInstance.session.query().filter().first.side_effect = [
             None, mocker.MagicMock(id='item1'), None
         ]
 
         testLinks = testInstance.dedupeLinks(mockLinks)
 
         assert len(testLinks) == 3
-        assert testInstance.session.query().filter().one_or_none.call_count == 3
+        assert testInstance.session.query().filter().first.call_count == 3
         assert set([l.id for l in testLinks]) == set(['item1', None])
 
     def test_buildEditionStructure(self, testInstance, mocker):

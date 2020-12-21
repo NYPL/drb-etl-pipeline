@@ -69,7 +69,7 @@ class SFRRecordManager:
         for link in links:
             matchedLink = self.session.query(Link)\
                 .filter(Link.url == link.url)\
-                .one_or_none()
+                .first()
             if matchedLink:
                 link.id = matchedLink.id
                 cleanLinks.add(link)
@@ -201,7 +201,12 @@ class SFRRecordManager:
 
         for item in rec.has_part:
             no, uri, source, linkType, flags = tuple(item.split('|'))
-            linkFlags = json.loads(flags)
+
+            try:
+                linkFlags = json.loads(flags)
+                linkFlags = linkFlags if isinstance(linkFlags, dict) else {}
+            except json.decoder.JSONDecodeError:
+                linkFlags = {}
 
             if linkFlags.get('cover', False) is True:
                 editionData['links'].append('{}|{}|{}'.format(uri, linkType, flags))
@@ -232,11 +237,11 @@ class SFRRecordManager:
 
             editionData['items'][itemPos]['contributors'].update(itemContributors)
 
-            if len(rec.coverage) > 0:
+            if rec.coverage and len(rec.coverage) > 0:
                 for location in rec.coverage:
-                    locationCode, locationName, itemNo = tuple(rec.split('|'))
+                    locationCode, locationName, itemNo = tuple(location.split('|'))
                     if itemNo == no:
-                        editionData['items'][itemPos]['physicalLocation'] = {
+                        editionData['items'][itemPos]['physical_location'] = {
                             'code': locationCode,
                             'name': locationName
                         }
@@ -288,7 +293,7 @@ class SFRRecordManager:
         self.setSortTitle()
 
     def saveEdition(self, edition):
-        newEd = Edition(items=[])
+        newEd = Edition(items=[], links=[])
 
         # Set Titles
         newEd.title = edition['title'].most_common(1)[0][0]
@@ -482,6 +487,7 @@ class SFRRecordManager:
             'measurements': set(),
             'languages': set(),
             'items': [],
+            'links': [],
             'dcdw_uuids': []
         }
     
