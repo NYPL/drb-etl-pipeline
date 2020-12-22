@@ -57,7 +57,7 @@ class ClusterProcess(CoreProcess):
         if len(matchedIDs) < 1:
             filterParams = Record.uuid == rec.uuid
         else:
-            filterParmas = Record.id.in_(matchedIDs)
+            filterParams = Record.id.in_(matchedIDs)
 
             clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
             dbWork = self.createWorkFromEditions(clusteredEditions, instances)
