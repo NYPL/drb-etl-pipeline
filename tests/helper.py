@@ -36,7 +36,8 @@ class TestHelpers:
         'API_CLIENT_SECRET': 'test_api_secret',
         'API_CLIENT_TOKEN_URL': 'test_api_token_url',
         'GITHUB_API_KEY': 'test_github_key',
-        'GITHUB_API_ROOT': 'test_github_url'
+        'GITHUB_API_ROOT': 'test_github_url',
+        'BARDO_CCE_API': 'test_cce_url'
     }
 
     @classmethod

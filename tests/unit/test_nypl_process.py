@@ -22,8 +22,35 @@ class TestNYPLProcess:
                 self.statics = {}
                 self.bibDBConnection = mocker.MagicMock()
                 self.locationCodes = {}
+                self.cceAPI = 'test_cce_url'
         
         return TestNYPLProcess('TestProcess', 'testFile', 'testDate')
+
+    @pytest.fixture
+    def testBib(self):
+        return {
+            'id': 1,
+            'nypl_source': 'test-nypl',
+            'publish_year': 2020,
+            'var_fields': []
+        }
+
+    @pytest.fixture
+    def testVarFields(self):
+        return [
+            {
+                'marcTag': '245'
+            },
+            {
+                'marcTag': '010',
+                'subfields': [
+                    {
+                        'tag': 'a',
+                        'content': '123456789'
+                    }
+                ]
+            }
+        ]
     
     def test_runProcess_daily(self, testInstance, mocker):
         mockImport = mocker.patch.object(NYPLProcess, 'importBibRecords')
@@ -74,17 +101,74 @@ class TestNYPLProcess:
         mockGet.assert_called_once_with('test_location_url')
         mockResp.json.assert_called_once
 
-    def test_isResearchBib_true(self, testInstance, mocker):
-        testInstance.queryApi = mocker.MagicMock()
-        testInstance.queryApi.return_value = {'isResearch': True}
+    def test_isPDResearchBib_post_1964(self, testInstance, testBib, mocker):
+        assert testInstance.isPDResearchBib(testBib) is False
 
-        assert testInstance.isResearchBib({'nypl_source': 'sierra-test', 'id': 1}) is True
+    def test_isPDResearchBib_no_year(self, testInstance, testBib, mocker):
+        testBib['publish_year'] = None
+        assert testInstance.isPDResearchBib(testBib) is False
 
-    def test_isResearchBib_false(self, testInstance, mocker):
+    def test_isPDResearchBib_1925_to_1964_pd_non_research(self, testInstance, testBib, mocker):
         testInstance.queryApi = mocker.MagicMock()
         testInstance.queryApi.return_value = {'isResearch': False}
 
-        assert testInstance.isResearchBib({'nypl_source': 'sierra-test', 'id': 1}) is False
+        testBib['publish_year'] = '1950'
+
+        mockGetCopyright = mocker.patch.object(NYPLProcess, 'getCopyrightStatus')
+        mockGetCopyright.return_value = True
+        assert testInstance.isPDResearchBib(testBib) is False
+
+    def test_isPDResearchBib_pre_1925_research(self, testInstance, testBib, mocker):
+        testInstance.queryApi = mocker.MagicMock()
+        testInstance.queryApi.return_value = {'isResearch': True}
+        mockGetCopyright = mocker.patch.object(NYPLProcess, 'getCopyrightStatus')
+
+        testBib['publish_year'] = '1900'
+
+        assert testInstance.isPDResearchBib(testBib) is True 
+        mockGetCopyright.assert_not_called
+
+    def test_getCopyrightStatus_no_lccn(self, testInstance, testVarFields):
+        del testVarFields[1]
+        assert testInstance.getCopyrightStatus(testVarFields) is False
+
+    def test_getCopyrightStatus_api_error(self, testInstance, testVarFields, mocker):
+        mockReq = mocker.patch.object(requests, 'get')
+        mockResp = mocker.MagicMock()
+        mockResp.status_code = 500
+        mockReq.return_value = mockResp
+
+        assert testInstance.getCopyrightStatus(testVarFields) is False
+
+    def test_getCopyrightStatus_no_registrations(self, testInstance, testVarFields, mocker):
+        mockReq = mocker.patch.object(requests, 'get')
+        mockResp = mocker.MagicMock()
+        mockResp.status_code = 200
+        mockResp.json.return_value = {'data': {'results': []}}
+        mockReq.return_value = mockResp
+
+        assert testInstance.getCopyrightStatus(testVarFields) is False
+        mockReq.assert_called_once_with('test_cce_url/lccn/123456789')
+
+    def test_getCopyrightStatus_has_renewals(self, testInstance, testVarFields, mocker):
+        mockReq = mocker.patch.object(requests, 'get')
+        mockResp = mocker.MagicMock()
+        mockResp.status_code = 200
+        mockResp.json.return_value = {'data': {'results': [{'renewals': ['ren1']}]}}
+        mockReq.return_value = mockResp
+
+        assert testInstance.getCopyrightStatus(testVarFields) is False
+        mockReq.assert_called_once_with('test_cce_url/lccn/123456789')
+
+    def test_getCopyrightStatus_not_renewed(self, testInstance, testVarFields, mocker):
+        mockReq = mocker.patch.object(requests, 'get')
+        mockResp = mocker.MagicMock()
+        mockResp.status_code = 200
+        mockResp.json.return_value = {'data': {'results': [{'renewals': []}]}}
+        mockReq.return_value = mockResp
+
+        assert testInstance.getCopyrightStatus(testVarFields) is True
+        mockReq.assert_called_once_with('test_cce_url/lccn/123456789')
 
     def test_fetchBibItems_success(self, testInstance, mocker):
         testInstance.queryApi = mocker.MagicMock()
@@ -105,13 +189,13 @@ class TestNYPLProcess:
     def test_parseNYPLDataRow_research(self, testInstance, mocker):
         processorMocks = mocker.patch.multiple(
             NYPLProcess,
-            isResearchBib=mocker.DEFAULT,
+            isPDResearchBib=mocker.DEFAULT,
             fetchBibItems=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
         mockMapping = mocker.patch('processes.nypl.NYPLMapping')
 
-        processorMocks['isResearchBib'].return_value = True
+        processorMocks['isPDResearchBib'].return_value = True
         processorMocks['fetchBibItems'].return_value = 'testBibItems'
 
         mockRecord = mocker.MagicMock()
@@ -119,7 +203,7 @@ class TestNYPLProcess:
 
         testInstance.parseNYPLDataRow({'id': 1})
 
-        processorMocks['isResearchBib'].assert_called_once_with({'id': 1})
+        processorMocks['isPDResearchBib'].assert_called_once_with({'id': 1})
         processorMocks['fetchBibItems'].assert_called_once_with({'id': 1})
         mockMapping.assert_called_once_with(
             {'id': 1}, 'testBibItems', {}, {}
@@ -131,17 +215,17 @@ class TestNYPLProcess:
     def test_parseNYPLDataRow_not_research(self, testInstance, mocker):
         processorMocks = mocker.patch.multiple(
             NYPLProcess,
-            isResearchBib=mocker.DEFAULT,
+            isPDResearchBib=mocker.DEFAULT,
             fetchBibItems=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
         mockMapping = mocker.patch('processes.nypl.NYPLMapping')
 
-        processorMocks['isResearchBib'].return_value = False
+        processorMocks['isPDResearchBib'].return_value = False
 
         testInstance.parseNYPLDataRow({'id': 1})
 
-        processorMocks['isResearchBib'].assert_called_once_with({'id': 1})
+        processorMocks['isPDResearchBib'].assert_called_once_with({'id': 1})
         processorMocks['fetchBibItems'].assert_not_called
         processorMocks['addDCDWToUpdateList'].assert_not_called
         mockMapping.assert_not_called
@@ -161,7 +245,7 @@ class TestNYPLProcess:
 
         mockDatetime.utcnow.assert_called_once
         mockConn.execute.assert_called_once_with(
-            'SELECT * FROM bib WHERE updated_date > \'1900-01-01T12:00:00-000000\''
+            'SELECT * FROM bib WHERE updated_date > \'1900-01-01T12:00:00\''
         )
         mockParse.assert_has_calls([mocker.call('bib1'), mocker.call('bib2'), mocker.call('bib3')])
 
