@@ -26,3 +26,6 @@
 - Resolved bug with `has_part` strings from the `OCLCProcess`
 - Resolved several bugs with parsing and clustering of NYPL data
 - Removed index on the `Editions.dcdw_uuid` as is it is not used and was too large in some cases
+- Resolved DCDW update bug in `ClusterProcess`
+- Resolved error in `S3Manager` pertaining to the s3 response object
+- Added additional edge case handling in the `SFRRecordManager
