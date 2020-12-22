@@ -35,8 +35,9 @@ class TestSFRRecordManager:
             has_part=[
                 '|url1|test|test|{"cover": true}',
                 '1|url2|test|test|{"test": "flag"}',
-                '2|url3|test|test|{}'
-            ]
+                '2|url3|test|test|'
+            ],
+            coverage=['tst|Test Location|1']
         )
 
     def test_initializer(self, testInstance, mocker):
@@ -226,12 +227,13 @@ class TestSFRRecordManager:
         assert len(testEditionData['items']) == 3
         assert testEditionData['items'][2] is None
         assert testEditionData['items'][0]['links'][0] == 'url2|test|{"test": "flag"}'
-        assert testEditionData['items'][1]['links'][0] == 'url3|test|{}'
+        assert testEditionData['items'][1]['links'][0] == 'url3|test|'
         assert testEditionData['items'][0]['content_type'] == 'ebook'
         assert testEditionData['items'][1]['source'] == 'test'
         assert testEditionData['items'][1]['contributors'] == set(['Item Contrib 1'])
         assert testEditionData['items'][0]['identifiers'] == set(['1|test'])
         assert testEditionData['items'][1]['identifiers'] == set(['1|test'])
+        assert testEditionData['items'][0]['physical_location'] == {'code': 'tst', 'name': 'Test Location'}
 
     def test_setPipeDelimitedData(self, mocker):
         mockParse = mocker.patch.object(SFRRecordManager, 'parseDelimitedEntry')

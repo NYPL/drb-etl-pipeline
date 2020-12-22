@@ -249,7 +249,11 @@ class SFRRecordManager:
         
     def saveWork(self, workData):
         # Set Titles
-        self.work.title = workData['title'].most_common(1)[0][0]
+        try:
+            self.work.title = workData['title'].most_common(1)[0][0]
+        except IndexError:
+            self.work.title = ''
+
         if len(workData['sub_title']):
             self.work.sub_title = workData['sub_title'].most_common(1)[0][0]
         self.work.alt_titles = [t[0] for t in workData['alt_titles'].most_common()]
@@ -277,7 +281,10 @@ class SFRRecordManager:
         )
 
         # Set Medium
-        self.work.medium = workData['medium'].most_common(1)[0][0]
+        try:
+            self.work.medium = workData['medium'].most_common(1)[0][0]
+        except IndexError:
+            pass
 
         # Set Series
         if workData['series_data']:
@@ -319,7 +326,10 @@ class SFRRecordManager:
             print(edition['edition_data'])
             editionStmt, editionNo = tuple(edition['edition_data'].most_common(1)[0][0].split('|'))
             newEd.edition_statement = editionStmt
-            newEd.edition = editionNo
+            try:
+                newEd.edition = int(editionNo)
+            except ValueError:
+                pass
 
         # Set Volume Data
         if len(edition['volume_data']):
