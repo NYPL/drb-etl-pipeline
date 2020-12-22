@@ -90,10 +90,7 @@ class KMeansManager:
                     'date': 2.0 
                 }
             )),
-            ('kmeans', KMeans(
-                n_clusters=self.currentK,
-                n_jobs=-1
-            ))
+            ('kmeans', KMeans(n_clusters=self.currentK))
         ])
     
     @classmethod
