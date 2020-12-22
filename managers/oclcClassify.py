@@ -26,7 +26,8 @@ class ClassifyManager:
     ]
 
     NAMESPACE = {
-        None: 'http://classify.oclc.org'
+        None: 'http://classify.oclc.org',
+        'oclc': 'http://classify.oclc.org'
     }
 
     ANTHOLOGY_TOKENS = [
@@ -152,7 +153,13 @@ class ClassifyManager:
             return multiRec.getClassifyResponse()
         elif responseCode == 2:
             print('Got Single Work, parsing work and edition data')
-            return [parseXML]
+
+            # Check for additional available editions and add if available
+            additionalIdentifiers = []
+            if self.additionalEditionsAvailable(parseXML):
+                self.fetchAdditionalIdentifiers(additionalIdentifiers)
+
+            return [(parseXML, additionalIdentifiers)]
         elif responseCode == 4:
             print('Got Multiwork response, iterate through works to get details')
             works = parseXML.findall('.//work', namespaces=self.NAMESPACE)
@@ -197,6 +204,28 @@ class ClassifyManager:
                 return False
         
         return True
+
+    def additionalEditionsAvailable(self, classifyXML):
+        return True if len(classifyXML.findall('.//oclc:edition', namespaces=self.NAMESPACE)) >= 500 else False
+
+    def fetchAdditionalIdentifiers(self, additionalIdentifiers):
+        xpathNamespace = dict(list(filter(lambda x: x[0] is not None, self.NAMESPACE.items())))
+
+        while True:
+            self.start = self.start + 500
+            print('Fetching editions {} to {}'.format(self.start, self.start + 500))
+
+            self.generateQueryURL()
+            self.execQuery()
+
+            nextPageXML = etree.fromstring(self.rawXML.encode('utf-8'))
+
+            oclcNos = nextPageXML.xpath('.//oclc:editions/oclc:edition/@oclc', namespaces=xpathNamespace)
+
+            if len(oclcNos) < 1:
+                break
+
+            additionalIdentifiers.extend(['{}|oclc'.format(oclc) for oclc in oclcNos])
 
     @staticmethod
     def getStrLang(string):

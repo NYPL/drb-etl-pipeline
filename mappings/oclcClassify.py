@@ -66,3 +66,6 @@ class ClassifyMapping(XMLMapping):
             trueAuthors.append(author)
 
         self.record.authors = trueAuthors
+
+    def extendIdentifiers(self, additionalIdentifiers):
+        self.record.identifiers.extend(additionalIdentifiers)
