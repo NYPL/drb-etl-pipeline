@@ -22,5 +22,6 @@
 ## Unreleased -- v0.0.4
 ### Added
 - NYPL filter to identify public domain works
+- Paging for OCLC Classify to fetch all associated editions
 ### Fixed
 - NYPL and HathiTrust date boundary calculation for daily runs
