@@ -24,16 +24,47 @@ class NYPLProcess(CoreProcess):
         self.bibDBConnection.generateEngine()
 
         self.locationCodes = self.loadLocationCodes()
+        self.cceAPI = os.environ['BARDO_CCE_API']
 
     def loadLocationCodes(self):
         return requests.get(os.environ['NYPL_LOCATIONS_BY_CODE']).json()
 
-    def isResearchBib(self, bib):
+    def isPDResearchBib(self, bib):
+        currentYear = datetime.today().year
+        try:
+            pubYear = int(bib['publish_year'])
+        except (KeyError, TypeError):
+            pubYear = currentYear
+
+        if pubYear > 1965:
+            return False
+        elif pubYear > currentYear - 95:
+            copyrightStatus = self.getCopyrightStatus(bib['var_fields'])
+            if copyrightStatus is False: return False
+
         bibStatus = self.queryApi('bibs/{}/{}/is-research'.format(
             bib['nypl_source'], bib['id']
         ))
 
         return True if bibStatus['isResearch'] is True else False
+
+    def getCopyrightStatus(self, varFields):
+        lccnData = list(filter(lambda x: x['marcTag'] == '010', varFields))
+        if not len(lccnData) == 1:
+            return False
+
+        lccnNo = lccnData[0]['subfields'][0]['content'].replace('sn', '').strip()
+
+        copyrightURL = '{}/lccn/{}'.format(self.cceAPI, lccnNo)
+        copyrightRegResponse = requests.get(copyrightURL)
+        if copyrightRegResponse.status_code != 200:
+            return False
+
+        copyrightRegData = copyrightRegResponse.json()
+        if len(copyrightRegData['data']['results']) > 0:
+            return False if len(copyrightRegData['data']['results'][0]['renewals']) > 0 else True
+        
+        return False
 
     def fetchBibItems(self, bib):
         return self.queryApi('bibs/{}/{}/items'.format(
@@ -52,7 +83,7 @@ class NYPLProcess(CoreProcess):
         self.commitChanges()
     
     def parseNYPLDataRow(self, dataRow):
-        if self.isResearchBib(dict(dataRow)):
+        if self.isPDResearchBib(dict(dataRow)):
             bibItems = self.fetchBibItems(dict(dataRow))
             nyplRec = NYPLMapping(dataRow, bibItems, self.statics, self.locationCodes)
             nyplRec.applyMapping()
@@ -67,7 +98,7 @@ class NYPLProcess(CoreProcess):
                 nyplBibQuery += "'{}'".format(startTimestamp)
             else:
                 startDateTime = datetime.utcnow() - timedelta(hours=24)
-                nyplBibQuery += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S-%f'))
+                nyplBibQuery += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
         
         with self.bibDBConnection.engine.connect() as conn:
             bibResults = conn.execute(nyplBibQuery)

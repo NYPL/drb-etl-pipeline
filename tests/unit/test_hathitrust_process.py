@@ -27,9 +27,9 @@ class TestHathiTrustProcess:
     @pytest.fixture
     def hathiFilesData(self):
         return [
-            {'created': '2020-01-01T00:00:00-0', 'url': 'hathiUrl1', 'full': False},
-            {'created': '2019-01-01T00:00:00-0', 'url': 'hathiUrl2', 'full': True},
-            {'created': '2018-01-01T00:00:00-0', 'url': 'hathiUrl3', 'full': False}
+            {'created': '2020-01-01T00:00:00-0000', 'url': 'hathiUrl1', 'full': False},
+            {'created': '2019-01-01T00:00:00-0000', 'url': 'hathiUrl2', 'full': True},
+            {'created': '2018-01-01T00:00:00-0000', 'url': 'hathiUrl3', 'full': False}
         ]
 
     @pytest.fixture

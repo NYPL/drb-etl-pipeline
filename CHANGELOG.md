@@ -22,6 +22,7 @@
 ## Unreleased -- v0.0.4
 ### Added
 - Improved Clustering to use Edition data more accurately (e.g. only when present)
+- NYPL filter to identify public domain works
 ### Fixed
 - Resolved bug with `has_part` strings from the `OCLCProcess`
 - Resolved several bugs with parsing and clustering of NYPL data
@@ -29,3 +30,4 @@
 - Resolved DCDW update bug in `ClusterProcess`
 - Resolved error in `S3Manager` pertaining to the s3 response object
 - Added additional edge case handling in the `SFRRecordManager
+- NYPL and HathiTrust date boundary calculation for daily runs
