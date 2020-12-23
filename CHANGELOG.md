@@ -31,3 +31,6 @@
 - Resolved error in `S3Manager` pertaining to the s3 response object
 - Added additional edge case handling in the `SFRRecordManager
 - NYPL and HathiTrust date boundary calculation for daily runs
+- Author merging in PostgreSQL
+- Make PostgreSQL ids available for Elasticserach
+- Add rights statements to items
