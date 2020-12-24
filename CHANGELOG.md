@@ -34,3 +34,5 @@
 - Author merging in PostgreSQL
 - Make PostgreSQL ids available for Elasticserach
 - Add rights statements to items
+- Add flush call to clustering process to ensure that record ids are present
+- Add jaro_winkler algorithm for fuzzy matching author names within work records
