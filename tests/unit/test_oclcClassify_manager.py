@@ -23,7 +23,7 @@ class TestClassifyManager:
     def testXMLResponse(self):
         def constructResponse(code, responseBlock):
             return etree.tostring(etree.XML('''<?xml version="1.0"?>
-                <classify xmlns="http://classify.oclc.org">
+                <classify xmlns="http://classify.oclc.org" xmlns:oclc="http://classify.oclc.org">
                     <response code="{}"/>
                     {}
                 </classify>
@@ -167,14 +167,31 @@ class TestClassifyManager:
         with pytest.raises(ClassifyError):
             testInstance.parseXMLResponse()
 
-    def test_parseXMLResponse_status_2(self, testInstance, testXMLResponse):
+    def test_parseXMLResponse_status_2(self, testInstance, testXMLResponse, mocker):
         testInstance.rawXML = testXMLResponse(2, '<data id="test"/>')
+        mockAvailableEditions = mocker.patch.object(ClassifyManager, 'additionalEditionsAvailable')
+        mockAvailableEditions.return_value = False
 
         testResponse = testInstance.parseXMLResponse()
+        testXML, testIdentifiers = testResponse[0]
 
-        assert testResponse[0].find('.//response', namespaces=ClassifyManager.NAMESPACE).get('code') == '2'
-        assert testResponse[0].find('.//data', namespaces=ClassifyManager.NAMESPACE).get('id') == 'test'
+        assert testXML.find('.//response', namespaces=ClassifyManager.NAMESPACE).get('code') == '2'
+        assert testXML.find('.//data', namespaces=ClassifyManager.NAMESPACE).get('id') == 'test'
+        assert testIdentifiers == []
 
+    def test_parseXMLResponse_status_2_additional_ids(self, testInstance, testXMLResponse, mocker):
+        testInstance.rawXML = testXMLResponse(2, '<data id="test"/>')
+        mockAvailableEditions = mocker.patch.object(ClassifyManager, 'additionalEditionsAvailable')
+        mockAvailableEditions.return_value = True
+        mockFetchEditionIds = mocker.patch.object(ClassifyManager, 'fetchAdditionalIdentifiers')
+
+        testResponse = testInstance.parseXMLResponse()
+        testXML, testIdentifiers = testResponse[0]
+
+        assert testXML.find('.//response', namespaces=ClassifyManager.NAMESPACE).get('code') == '2'
+        assert testXML.find('.//data', namespaces=ClassifyManager.NAMESPACE).get('id') == 'test'
+        assert testIdentifiers == []
+        mockFetchEditionIds.assert_called_once_with([])
 
     def test_parseXMLResponse_status_4(self, testInstance, testXMLResponse, mocker):
         workXML = '''
@@ -207,6 +224,36 @@ class TestClassifyManager:
 
         with pytest.raises(ClassifyError):
             testInstance.parseXMLResponse()
+
+    def test_addintionalEditionsAvailable_true(self, testInstance, testXMLResponse):
+        editionElements = ''.join('<oclc:edition>{}</oclc:edition>'.format(i) for i in range(501))
+        xmlDoc = testXMLResponse(2, editionElements) 
+
+        assert testInstance.additionalEditionsAvailable(etree.fromstring(xmlDoc.encode('utf-8'))) is True
+
+    def test_addintionalEditionsAvailable_false(self, testInstance, testXMLResponse):
+        editionElements = ''.join('<oclc:edition>{}</oclc:edition>'.format(i) for i in range(400))
+        xmlDoc = testXMLResponse(2, editionElements) 
+
+        assert testInstance.additionalEditionsAvailable(etree.fromstring(xmlDoc.encode('utf-8'))) is False
+
+    def test_fetchAdditionalIdentifiers(self, testInstance, testXMLResponse, mocker):
+        mockXML = mocker.MagicMock()
+        mockEtree = mocker.patch('managers.oclcClassify.etree')
+        mockEtree.fromstring.return_value = mockXML
+
+        mockXML.xpath.side_effect = [[i for i in range(25)], []]
+
+        mockGenerate = mocker.patch.object(ClassifyManager, 'generateQueryURL')
+        mockExecute = mocker.patch.object(ClassifyManager, 'execQuery')
+
+        testIdentifiers = []
+        testInstance.rawXML = '<data>test</data>'
+        testInstance.fetchAdditionalIdentifiers(testIdentifiers)
+
+        assert testIdentifiers == ['{}|oclc'.format(i) for i in range(25)]
+        mockGenerate.assert_has_calls([mocker.call(), mocker.call()])
+        mockExecute.assert_has_calls([mocker.call(), mocker.call()])
 
     def test_checkTitle_lang_match_same(self, testInstance, mocker):
         classifyMocks = mocker.patch.multiple(
