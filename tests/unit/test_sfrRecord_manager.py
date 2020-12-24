@@ -78,6 +78,7 @@ class TestSFRRecordManager:
             mocker.MagicMock(work_id=1, id='ed3', work='testWork')
         ]
         testInstance.session.query().filter().all.side_effect = [matchingEditions, None]
+        testInstance.session.merge.return_value = testInstance.work
 
         testInstance.mergeRecords()
 
@@ -328,6 +329,16 @@ class TestSFRRecordManager:
         assert testAgents[0]['name'] == 'Author'
         assert testAgents[0]['viaf'] == '1234'
         assert testAgents[0]['lcnaf'] == 'n9876'
+        assert set(testAgents[0]['roles']) == set(['author', 'illustrator'])
+
+    def test_agentParser_multiple_agents_jw_match(self, testInstance):
+        inputAgents = ['Author T. Tester|||author', 'Author Tester (1950-)|||illustrator', '|other']
+        testAgents = testInstance.agentParser(inputAgents, ['name', 'viaf', 'lcnaf', 'role'])
+
+        assert len(testAgents) == 1
+        assert testAgents[0]['name'] == 'Author T. Tester'
+        assert testAgents[0]['viaf'] == ''
+        assert testAgents[0]['lcnaf'] == ''
         assert set(testAgents[0]['roles']) == set(['author', 'illustrator'])
 
     def test_setSortTitle_w_stops(self, testInstance):
