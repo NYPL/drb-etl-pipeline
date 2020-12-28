@@ -135,10 +135,19 @@ class CatalogMapping(XMLMapping):
                 '{0}|{1}|{2}'),
 
             ],
+<<<<<<< HEAD
             'has_part': [(
                 '//oclc:datafield[@tag=\'856\']/oclc:subfield[@code=\'z\']/text()',
                 '1|{0}|oclc|text/html|{{"ebook": true, "download": false, "reader": false, "catalog": true}}'
             )]
+=======
+            'has_part': [
+                ([
+                    '//oclc:datafield[@tag=\'856\']/oclc:subfield[@code=\'u\']/text()',
+                    '//oclc:datafield[@tag=\'856\']/oclc:subfield[@code=\'z\']/text()'
+                ], '1|{0}|oclc|unknown|{1}')
+            ]
+>>>>>>> main
         }
 
     def applyFormatting(self):

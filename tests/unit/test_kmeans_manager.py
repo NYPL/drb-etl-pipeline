@@ -290,20 +290,24 @@ class TestKMeansModel(object):
             return mocker.MagicMock()
 
         mockCreate = mocker.patch.object(KMeansManager, 'createPipeline')
+        mockGetColumns = mocker.patch.object(KMeansManager, 'getDataColumns')
         mockCreate.return_value = mockPipeline
         mockPipeline.__getitem__ = fakeGet
 
         out = testModel.cluster(1, score=True)
         assert out == 1
+        mockGetColumns.assert_called_once()
         mockPipeline.fit.assert_called_once()
     
     def test_cluster_predict(self, mocker, testModel):
         mockPipeline = mocker.MagicMock()
         mockCreate = mocker.patch.object(KMeansManager, 'createPipeline')
+        mockGetColumns = mocker.patch.object(KMeansManager, 'getDataColumns')
         mockCreate.return_value = mockPipeline
 
         testModel.cluster(1)
         mockCreate.assert_called_once()
+        mockGetColumns.assert_called_once()
         mockPipeline.fit_predict.assert_called_once()
 
     def test_parseEditions(self, testModel):

@@ -23,7 +23,7 @@ class TestHathingMapping:
             identifiers=['1|hathi', '2|test'],
             dates=['Test Publisher [1900]|publication_date', '2000 [other]|copyright_date'],
             contributors=['contr|test'],
-            rights='testLic|testReas||summary',
+            rights='hathitrust|testLic|testReas||summary',
             spatial='tst  '
         )
 

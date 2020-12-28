@@ -11,9 +11,9 @@ class S3Manager:
     def createS3Client(self):
         self.s3Client = boto3.client(
             's3',
-            aws_access_key=os.environ['AWS_ACCESS'],
+            aws_access_key_id=os.environ['AWS_ACCESS'],
             aws_secret_access_key=os.environ['AWS_SECRET'],
-            region=os.environ['AWS_REGION']
+            region_name=os.environ['AWS_REGION']
         )
     
     def createS3Bucket(self, bucketName, bucketPermissions):
@@ -30,8 +30,13 @@ class S3Manager:
     def putObjectInBucket(self, obj, objKey, bucket, bucketPermissions='public-read'):
         objMD5 = S3Manager.getmd5HashOfObject(obj)
 
-        existingObject = self.getObjectFromBucket(objKey, bucket, md5Hash=objMD5)
-        if not existingObject or existingObject.statusCode != 304:
+        existingObject = None
+        try:
+            existingObject = self.getObjectFromBucket(objKey, bucket, md5Hash=objMD5)
+        except S3Error:
+            print('{} does not yet exist'.format(objKey))
+
+        if not existingObject or existingObject['ResponseMetadata']['HTTPStatusCode'] != 304:
             try:
                 return self.s3Client.put_object(
                     ACL=bucketPermissions,
@@ -40,7 +45,6 @@ class S3Manager:
                     Key=objKey
                 )
             except ClientError as e:
-                print(e)
                 raise S3Error('UNable to store file in s3')
         
         return None
@@ -53,7 +57,6 @@ class S3Manager:
                 IfNoneMatch=md5Hash
             )
         except ClientError as e:
-            print(e)
             raise S3Error('Unable to get object from s3')
 
     @staticmethod

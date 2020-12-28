@@ -153,8 +153,9 @@ class TestSFRClusterProcess:
             ['ed1', 'ed2'], ['inst1', 'inst2', 'inst3']
         )
         mockIndexInES.assert_called_once_with('testDBWork')
-        mockSession.query.filter.update.assert_called_once
-        mockCommit.assert_called_once
+        mockSession.flush.assert_called_once()
+        mockSession.query.assert_called_once()
+        mockCommit.assert_called_once()
 
     def test_clusterRecord_wo_matching_records(self, testInstance, testRecord, mocker):
         mockFindMatching = mocker.patch.object(ClusterProcess, 'findAllMatchingRecords')
@@ -172,8 +173,9 @@ class TestSFRClusterProcess:
         mockClusterMatched.assert_not_called
         mockCreateFromEds.assert_not_called
         mockIndexInES.assert_not_called
-        mockSession.query.filter.update.assert_called_once
-        mockCommit.assert_called_once
+        mockSession.flush.assert_not_called()
+        mockSession.query.assert_called_once()
+        mockCommit.assert_called_once()
 
     def test_clusterMatchedRecords(self, testInstance, mocker):
         mockMLModel = mocker.MagicMock()

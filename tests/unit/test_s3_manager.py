@@ -25,7 +25,7 @@ class TestS3Manager:
 
         assert testInstance.s3Client == 'testClient'
         mockBoto.client.assert_called_once_with(
-            's3', aws_access_key='access', aws_secret_access_key='secret', region='region'
+            's3', aws_access_key_id='access', aws_secret_access_key='secret', region_name='region'
         )
 
     def test_createS3Bucket_success(self, testInstance):
@@ -83,10 +83,8 @@ class TestS3Manager:
     def test_putObjectInBucket_existing_unmodified(self, testInstance, mocker):
         mockHash = mocker.patch.object(S3Manager, 'getmd5HashOfObject')
         mockHash.return_value = 'testMd5Hash'
-        mockExisting = mocker.MagicMock()
-        mockExisting.statusCode = 304
         mockGet = mocker.patch.object(S3Manager, 'getObjectFromBucket')
-        mockGet.return_value = mockExisting
+        mockGet.return_value = {'ResponseMetadata': {'HTTPStatusCode': 304}}
 
         testResponse = testInstance.putObjectInBucket('testObj', 'testKey', 'testBucket')
 

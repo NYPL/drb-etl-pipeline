@@ -37,7 +37,7 @@ class Record(Base, Core):
     contributors = Column(ARRAY(Unicode, dimensions=1)) # dc:contributor, Repeating, Format "string|viaf|lcnaf|role"
     languages = Column(ARRAY(Unicode, dimensions=1)) # dc:language, Repeating, Format "string|iso_2|iso_3"
     dates = Column(ARRAY(Unicode, dimensions=1)) # dc:date, Repeating, Format "string|type"
-    rights = Column(Unicode) # dc:rights, Non-Repeating, Format "license|reason|statement|date"
+    rights = Column(Unicode) # dc:rights, Non-Repeating, Format "source|license|reason|statement|date"
     identifiers = Column(ARRAY(Unicode, dimensions=1)) # dc:identifier, Format "string|authority"
     date_submitted = Column(DateTime) # dc:dateSubmitted, Non-Repeating
     requires = Column(ARRAY(Unicode, dimensions=1)) # dc:requires, Repeating, Format "value|type"

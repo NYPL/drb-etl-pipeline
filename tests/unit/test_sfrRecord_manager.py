@@ -35,8 +35,9 @@ class TestSFRRecordManager:
             has_part=[
                 '|url1|test|test|{"cover": true}',
                 '1|url2|test|test|{"test": "flag"}',
-                '2|url3|test|test|{}'
-            ]
+                '2|url3|test|test|'
+            ],
+            coverage=['tst|Test Location|1']
         )
 
     def test_initializer(self, testInstance, mocker):
@@ -77,6 +78,7 @@ class TestSFRRecordManager:
             mocker.MagicMock(work_id=1, id='ed3', work='testWork')
         ]
         testInstance.session.query().filter().all.side_effect = [matchingEditions, None]
+        testInstance.session.merge.return_value = testInstance.work
 
         testInstance.mergeRecords()
 
@@ -124,14 +126,14 @@ class TestSFRRecordManager:
             mocker.MagicMock(url='url2', id=None),
             mocker.MagicMock(url='url3', id=None)
         ]
-        testInstance.session.query().filter().one_or_none.side_effect = [
+        testInstance.session.query().filter().first.side_effect = [
             None, mocker.MagicMock(id='item1'), None
         ]
 
         testLinks = testInstance.dedupeLinks(mockLinks)
 
         assert len(testLinks) == 3
-        assert testInstance.session.query().filter().one_or_none.call_count == 3
+        assert testInstance.session.query().filter().first.call_count == 3
         assert set([l.id for l in testLinks]) == set(['item1', None])
 
     def test_buildEditionStructure(self, testInstance, mocker):
@@ -226,12 +228,13 @@ class TestSFRRecordManager:
         assert len(testEditionData['items']) == 3
         assert testEditionData['items'][2] is None
         assert testEditionData['items'][0]['links'][0] == 'url2|test|{"test": "flag"}'
-        assert testEditionData['items'][1]['links'][0] == 'url3|test|{}'
+        assert testEditionData['items'][1]['links'][0] == 'url3|test|'
         assert testEditionData['items'][0]['content_type'] == 'ebook'
         assert testEditionData['items'][1]['source'] == 'test'
         assert testEditionData['items'][1]['contributors'] == set(['Item Contrib 1'])
         assert testEditionData['items'][0]['identifiers'] == set(['1|test'])
         assert testEditionData['items'][1]['identifiers'] == set(['1|test'])
+        assert testEditionData['items'][0]['physical_location'] == {'code': 'tst', 'name': 'Test Location'}
 
     def test_setPipeDelimitedData(self, mocker):
         mockParse = mocker.patch.object(SFRRecordManager, 'parseDelimitedEntry')
@@ -326,6 +329,16 @@ class TestSFRRecordManager:
         assert testAgents[0]['name'] == 'Author'
         assert testAgents[0]['viaf'] == '1234'
         assert testAgents[0]['lcnaf'] == 'n9876'
+        assert set(testAgents[0]['roles']) == set(['author', 'illustrator'])
+
+    def test_agentParser_multiple_agents_jw_match(self, testInstance):
+        inputAgents = ['Author T. Tester|||author', 'Author Tester (1950-)|||illustrator', '|other']
+        testAgents = testInstance.agentParser(inputAgents, ['name', 'viaf', 'lcnaf', 'role'])
+
+        assert len(testAgents) == 1
+        assert testAgents[0]['name'] == 'Author T. Tester'
+        assert testAgents[0]['viaf'] == ''
+        assert testAgents[0]['lcnaf'] == ''
         assert set(testAgents[0]['roles']) == set(['author', 'illustrator'])
 
     def test_setSortTitle_w_stops(self, testInstance):
