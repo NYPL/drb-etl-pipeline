@@ -23,6 +23,7 @@
 ### Added
 - Improved Clustering to use Edition data more accurately (e.g. only when present)
 - NYPL filter to identify public domain works
+- Paging for OCLC Classify to fetch all associated editions
 ### Fixed
 - Resolved bug with `has_part` strings from the `OCLCProcess`
 - Resolved several bugs with parsing and clustering of NYPL data

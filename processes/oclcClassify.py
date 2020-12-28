@@ -72,10 +72,11 @@ class ClassifyProcess(CoreProcess):
             iden=identifier, idenType=idType, author=author, title=title
         )
 
-        for classifyXML in classifier.getClassifyResponse():
-            self.createClassifyDCDWRecord(classifyXML, identifier, idType)
+        for classifyResult in classifier.getClassifyResponse():
+            self.createClassifyDCDWRecord(classifyResult, identifier, idType)
     
-    def createClassifyDCDWRecord(self, classifyXML, identifier, idType):
+    def createClassifyDCDWRecord(self, classifyResult, identifier, idType):
+        classifyXML, additionalOCLCs = classifyResult
         classifyRec = ClassifyMapping(
             classifyXML,
             {'oclc': 'http://classify.oclc.org'},
@@ -83,6 +84,8 @@ class ClassifyProcess(CoreProcess):
             (identifier, idType)
         )
         classifyRec.applyMapping()
+
+        classifyRec.extendIdentifiers(additionalOCLCs)
 
         self.addDCDWToUpdateList(classifyRec)
 

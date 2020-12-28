@@ -51,14 +51,14 @@ class ClassifyMapping(XMLMapping):
 
         for author in self.record.authors:
             name, viaf, lcnaf, primary = tuple(author.split('|'))
-            bracketedRoles = re.match(r'\[(.*)\]$', name)
+            bracketedRoles = re.search(r'\[(.*)\]$', name)
 
             if bracketedRoles:
                 roles = bracketedRoles.group(1).lower()
 
                 if 'author' not in roles:
                     self.record.contributors.append('{}|{}|{}|{}'.format(
-                        name.replace(bracketedRoles.group(0), ''), viaf, lcnaf, roles
+                        name.replace(bracketedRoles.group(0), '').strip(), viaf, lcnaf, roles
                     ))
                     continue
             
@@ -66,3 +66,6 @@ class ClassifyMapping(XMLMapping):
             trueAuthors.append(author)
 
         self.record.authors = trueAuthors
+
+    def extendIdentifiers(self, additionalIdentifiers):
+        self.record.identifiers.extend(additionalIdentifiers)
