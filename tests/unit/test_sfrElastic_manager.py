@@ -137,11 +137,17 @@ class TestSFRElasticRecordManager:
         assert testAgent['sort_name'] == 'test agent'
         assert testAgent['roles'] == ['Role 1', 'Role 2']
 
-    def test_addAgent_without_roles(self):
+    def test_addAgent_without_roles_default(self):
         testAgent = SFRElasticRecordManager.addAgent({'name': 'Test Agent'})
 
         assert testAgent['sort_name'] == 'test agent'
         assert testAgent['roles'] == ['author']
+
+    def test_addAgent_without_roles_custom(self):
+        testAgent = SFRElasticRecordManager.addAgent({'name': 'Test Agent'}, defaultRole='tester')
+
+        assert testAgent['sort_name'] == 'test agent'
+        assert testAgent['roles'] == ['tester']
 
     def test_addGovDocStatus_measurement_present_true(self, mocker):
         govMeasure = mocker.MagicMock()

@@ -49,7 +49,7 @@ class SFRElasticRecordManager:
         self.work.subjects = [ESSubject(**s) for s in self.dbWork.subjects]
 
         self.work.agents = [
-            ESAgent(**SFRElasticRecordManager.addAgent(a))
+            ESAgent(**SFRElasticRecordManager.addAgent(a, defaultRole='author'))
             for a in [*self.dbWork.authors, *self.dbWork.contributors]
         ]
 
@@ -69,9 +69,9 @@ class SFRElasticRecordManager:
         self.work.editions = [self.createEdition(e) for e in self.dbWork.editions]
 
     @staticmethod
-    def addAgent(agent):
+    def addAgent(agent, defaultRole='author'):
         agent['sort_name'] = agent['name'].lower()
-        agent['roles'] = agent.get('roles', ['author'])
+        agent['roles'] = agent.get('roles', [defaultRole])
         return agent
     
     @staticmethod
@@ -98,7 +98,7 @@ class SFRElasticRecordManager:
         newEd.identifiers = [ESIdentifier(**dict(i)) for i in edition.identifiers]
 
         newEd.agents = [
-            ESAgent(**SFRElasticRecordManager.addAgent(a))
+            ESAgent(**SFRElasticRecordManager.addAgent(a, defaultRole='publisher'))
             for a in [*edition.publishers, *edition.contributors]
         ]
 
