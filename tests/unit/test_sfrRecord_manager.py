@@ -190,6 +190,8 @@ class TestSFRRecordManager:
 
     def test_parseInstance(self, testInstance, testDCDWRecord, mocker):
         mockItemBuild = mocker.patch.object(SFRRecordManager, 'buildItems')
+        mockNormalizeDates = mocker.patch.object(SFRRecordManager, 'normalizeDates')
+        mockNormalizeDates.return_value = ['Date 1', 'Date 2']
         testWork = SFRRecordManager.createEmptyWorkRecord()
         testEdition = SFRRecordManager.createEmptyEditionRecord()
 
@@ -218,6 +220,7 @@ class TestSFRRecordManager:
         assert testEdition['measurements'] == set(['test|other'])
         assert testEdition['dcdw_uuids'] == ['testUUID']
         mockItemBuild.assert_called_once_with(testEdition, testDCDWRecord, set(['Contrib 2|||provider']))
+        mockNormalizeDates.assert_called_once_with(['Date 1', 'Date 2'])
 
     def test_buildItems(self, testInstance, testDCDWRecord):
         testEditionData = {'items': [], 'links': []}
@@ -356,3 +359,8 @@ class TestSFRRecordManager:
         testInstance.setSortTitle()
 
         assert testInstance.work.sort_title == 'kplagh: batleth handbook'
+
+    def test_normalizeDates(self, testInstance):
+        testDates = testInstance.normalizeDates(['1999.', '2000', 'sometime 1900-12 [pub]'])
+
+        assert sorted(testDates) == sorted(['1999', '2000', '1900-12'])
