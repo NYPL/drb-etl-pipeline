@@ -1,25 +1,6 @@
 # CHANGELOG
 
-## 2020-11-20 -- v0.0.1
-### Added
-- Initial Commit of ETL Pipeline
-
-## 2020-12-10 -- v0.0.2
-### Added
-- Ingest process for NYPL research records
-### Fixed
-- Classification Service update cycle
-- Removed bug affecting persistence of large batches of records
-- Improved manner in which records are marked as "classified"
-
-## 2020-12-21 -- v0.0.3
-### Added
-- Ingest process for Project Gutenberg records
-- YAML file for QA ECS environment
-### Fixed
-- Made s3 ingest process more generic to handle cover images
-
-## Unreleased -- v0.0.4
+## 2020-12-28 -- v0.0.4
 ### Added
 - Improved Clustering to use Edition data more accurately (e.g. only when present)
 - NYPL filter to identify public domain works
@@ -37,3 +18,23 @@
 - Add rights statements to items
 - Add flush call to clustering process to ensure that record ids are present
 - Add jaro_winkler algorithm for fuzzy matching author names within work records
+
+## 2020-12-21 -- v0.0.3
+### Added
+- Ingest process for Project Gutenberg records
+- YAML file for QA ECS environment
+### Fixed
+- Made s3 ingest process more generic to handle cover images
+
+## 2020-12-10 -- v0.0.2
+### Added
+- Ingest process for NYPL research records
+### Fixed
+- Classification Service update cycle
+- Removed bug affecting persistence of large batches of records
+- Improved manner in which records are marked as "classified"
+
+## 2020-11-20 -- v0.0.1
+### Added
+- Initial Commit of ETL Pipeline
+
