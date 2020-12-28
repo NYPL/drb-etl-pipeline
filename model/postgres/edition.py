@@ -39,7 +39,7 @@ class Edition(Base, Core):
     dates = Column(JSONB)
     measurements = Column(JSONB)
     languages = Column(JSONB)
-    dcdw_uuids = Column(ARRAY(UUID, dimensions=1), index=True)
+    dcdw_uuids = Column(ARRAY(UUID, dimensions=1))
 
     work_id = Column(Integer, ForeignKey('works.id'))
     items = relationship('Item', backref='edition', cascade='all, delete-orphan')

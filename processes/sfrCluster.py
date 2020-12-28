@@ -45,7 +45,7 @@ class ClusterProcess(CoreProcess):
 
             if rec is None:
                 break
-            
+
             self.clusterRecord(rec)
 
         self.closeConnection()
@@ -57,10 +57,11 @@ class ClusterProcess(CoreProcess):
         if len(matchedIDs) < 1:
             filterParams = Record.uuid == rec.uuid
         else:
-            filterParmas = Record.id.in_(matchedIDs)
+            filterParams = Record.id.in_(matchedIDs)
 
             clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
             dbWork = self.createWorkFromEditions(clusteredEditions, instances)
+            self.session.flush()
 
             self.indexWorkInElasticSearch(dbWork)
 
@@ -72,7 +73,7 @@ class ClusterProcess(CoreProcess):
             )
 
         self.commitChanges()
-        
+
     def clusterMatchedRecords(self, recIDs):
         records = self.session.query(Record).filter(Record.id.in_(recIDs)).all()
 

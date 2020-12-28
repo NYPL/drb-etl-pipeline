@@ -20,7 +20,7 @@ class HathiMapping(CSVMapping):
                 ('{}|issn', 9),
                 ('{}|isbn', 10)
             ],
-            'rights': ('{}|{}||{}', 2, 13, 14),
+            'rights': ('hathitrust|{}|{}||{}', 2, 13, 14),
             'is_part_of': [('{}|volume', 4)],
             'title': ('{}', 11),
             'dates': [('{}|publication_date', 12), ('{}|copyright_date', 16)],
@@ -60,11 +60,12 @@ class HathiMapping(CSVMapping):
 
         # Parse rights codes
         rightsElements = self.record.rights.split('|')
+        rightsMetadata = self.staticValues['hathitrust']['rightsValues'].get(rightsElements[1], {'license': 'und', 'statement': 'und'}) 
         self.record.rights = '{}|{}|{}|{}'.format(
-            self.staticValues['hathitrust']['rightsValues'].get(rightsElements[0], 'und')['license'],
-            self.staticValues['hathitrust']['rightsReasons'].get(rightsElements[1], rightsElements[1]),
-            self.staticValues['hathitrust']['rightsValues'].get(rightsElements[0], 'und')['statement'],
-            rightsElements[3]
+            rightsMetadata['license'],
+            self.staticValues['hathitrust']['rightsReasons'].get(rightsElements[2], rightsElements[2]),
+            rightsMetadata['statement'],
+            rightsElements[4]
         )
 
         # Add Read Online links

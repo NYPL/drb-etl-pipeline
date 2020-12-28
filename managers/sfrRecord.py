@@ -1,12 +1,12 @@
-from collections import Counter, defaultdict
-from datetime import datetime, timedelta, date
+from collections import Counter
+from datetime import date
 import json
-from math import floor
+from Levenshtein import jaro_winkler
 import pycountry
 import re
 from uuid import uuid4
 
-from model import Base, Record, Work, Edition, Item, Identifier, Link, Rights
+from model import Work, Edition, Item, Identifier, Link, Rights
 
 
 class SFRRecordManager:
@@ -32,6 +32,8 @@ class SFRRecordManager:
                 self.work.id = useEdition.work_id
                 edition.id = useEdition.id
                 for otherEd in matchedEditions[1:]:
+                    for otherItem in otherEd.items:
+                        self.session.delete(otherItem)
                     self.session.delete(otherEd.work)
                     self.session.delete(otherEd)
                 
@@ -43,7 +45,7 @@ class SFRRecordManager:
 
         self.work.identifiers = self.dedupeIdentifiers(self.work.identifiers, existingIDs)
 
-        self.session.merge(self.work)
+        self.work = self.session.merge(self.work)
 
     def dedupeIdentifiers(self, identifiers, existingIDs):
         cleanIdentifiers = set()
@@ -69,7 +71,7 @@ class SFRRecordManager:
         for link in links:
             matchedLink = self.session.query(Link)\
                 .filter(Link.url == link.url)\
-                .one_or_none()
+                .first()
             if matchedLink:
                 link.id = matchedLink.id
                 cleanLinks.add(link)
@@ -201,7 +203,12 @@ class SFRRecordManager:
 
         for item in rec.has_part:
             no, uri, source, linkType, flags = tuple(item.split('|'))
-            linkFlags = json.loads(flags)
+
+            try:
+                linkFlags = json.loads(flags)
+                linkFlags = linkFlags if isinstance(linkFlags, dict) else {}
+            except json.decoder.JSONDecodeError:
+                linkFlags = {}
 
             if linkFlags.get('cover', False) is True:
                 editionData['links'].append('{}|{}|{}'.format(uri, linkType, flags))
@@ -221,6 +228,7 @@ class SFRRecordManager:
                     'source': source,
                     'content_type': 'ebook',
                     'modified': rec.date_submitted,
+                    'rights': rec.rights
                 }
             }
 
@@ -232,11 +240,11 @@ class SFRRecordManager:
 
             editionData['items'][itemPos]['contributors'].update(itemContributors)
 
-            if len(rec.coverage) > 0:
+            if rec.coverage and len(rec.coverage) > 0:
                 for location in rec.coverage:
-                    locationCode, locationName, itemNo = tuple(rec.split('|'))
+                    locationCode, locationName, itemNo = tuple(location.split('|'))
                     if itemNo == no:
-                        editionData['items'][itemPos]['physicalLocation'] = {
+                        editionData['items'][itemPos]['physical_location'] = {
                             'code': locationCode,
                             'name': locationName
                         }
@@ -244,7 +252,11 @@ class SFRRecordManager:
         
     def saveWork(self, workData):
         # Set Titles
-        self.work.title = workData['title'].most_common(1)[0][0]
+        try:
+            self.work.title = workData['title'].most_common(1)[0][0]
+        except IndexError:
+            self.work.title = ''
+
         if len(workData['sub_title']):
             self.work.sub_title = workData['sub_title'].most_common(1)[0][0]
         self.work.alt_titles = [t[0] for t in workData['alt_titles'].most_common()]
@@ -272,7 +284,10 @@ class SFRRecordManager:
         )
 
         # Set Medium
-        self.work.medium = workData['medium'].most_common(1)[0][0]
+        try:
+            self.work.medium = workData['medium'].most_common(1)[0][0]
+        except IndexError:
+            pass
 
         # Set Series
         if workData['series_data']:
@@ -288,7 +303,7 @@ class SFRRecordManager:
         self.setSortTitle()
 
     def saveEdition(self, edition):
-        newEd = Edition(items=[])
+        newEd = Edition(items=[], links=[])
 
         # Set Titles
         newEd.title = edition['title'].most_common(1)[0][0]
@@ -297,11 +312,10 @@ class SFRRecordManager:
         newEd.alt_titles = [t[0] for t in edition['alt_titles'].most_common()]
 
         # Set Publication Data
-        try:
-            pubYear = floor(edition['publication_date'])
-            newEd.publication_date = date(year=pubYear, month=1, day=1)
-        except (ValueError, TypeError) as err:
-            pass
+        pubYearGroup = re.search(r'([0-9]{4})', str(edition['publication_date']))
+        if pubYearGroup:
+            newEd.publication_date = date(year=int(pubYearGroup.group(1)), month=1, day=1)
+
         newEd.publication_place = edition['publication_place'].most_common(1)[0][0]
 
         # Set Abstract Data
@@ -314,7 +328,10 @@ class SFRRecordManager:
             print(edition['edition_data'])
             editionStmt, editionNo = tuple(edition['edition_data'].most_common(1)[0][0].split('|'))
             newEd.edition_statement = editionStmt
-            newEd.edition = editionNo
+            try:
+                newEd.edition = int(editionNo)
+            except ValueError:
+                pass
 
         # Set Volume Data
         if len(edition['volume_data']):
@@ -359,6 +376,7 @@ class SFRRecordManager:
     def saveItem(self, item):
         links = item.pop('links', [])
         identifiers = item.pop('identifiers', [])
+        rights = item.pop('rights', None)
         newItem = Item(**item)
 
         # Set Links
@@ -371,6 +389,11 @@ class SFRRecordManager:
             identifiers, ['identifier', 'authority'], Identifier
         )
 
+        # Set Rights
+        newItem.rights = SFRRecordManager.setPipeDelimitedData(
+            [rights], ['source', 'license', 'rights_reason', 'rights_statement', 'rights_date'], Rights
+        )
+
         # Set Contributors
         newItem.contributors = self.agentParser(item['contributors'], ['name', 'viaf', 'lcnaf', 'role'])
 
@@ -379,7 +402,8 @@ class SFRRecordManager:
     @staticmethod
     def setPipeDelimitedData(data, fields, dType=None, dParser=None):
         return [
-            SFRRecordManager.parseDelimitedEntry(d, fields, dType, dParser) for d in data
+            SFRRecordManager.parseDelimitedEntry(d, fields, dType, dParser)
+            for d in list(filter(None, data))
         ]
 
     @staticmethod
@@ -417,22 +441,21 @@ class SFRRecordManager:
             if rec['name'] == '' and rec['viaf'] == '' and rec['lcnaf'] == '':
                 continue
             
+            existingMatch = False
             for oa in outAgents:
-                for checkField in ['name', 'viaf', 'lcnaf']:
+                for checkField in ['viaf', 'lcnaf']:
                     if rec[checkField] and rec[checkField] != '' and rec[checkField] == oa[checkField]:
-                        if oa['viaf'] == '':
-                            oa['viaf'] = rec['viaf']
-
-                        if oa['lcnaf'] == '':
-                            oa['lcnaf'] = rec['lcnaf']
-
-                        if 'role' in rec.keys():
-                            oa['roles'].add(rec['role'])
+                        existingMatch = True
+                        SFRRecordManager.mergeAgents(oa, rec)
                         break
-                else:
-                    continue
-                break
-            else:
+
+                if existingMatch is False:
+                    if jaro_winkler(oa['name'], rec['name']) > 0.9:
+                        SFRRecordManager.mergeAgents(oa, rec)
+                        existingMatch = True
+                        break
+
+            if existingMatch is False:
                 if 'role' in rec.keys():
                     rec['roles'] = set([rec['role']])
                     del rec['role']
@@ -443,6 +466,17 @@ class SFRRecordManager:
                 ag['roles'] = list(ag['roles'])
 
         return outAgents
+
+    @staticmethod
+    def mergeAgents(existing, new):
+        if new['viaf'] != '':
+            existing['viaf'] = new['viaf']
+
+        if new['lcnaf'] != '':
+            existing['lcnaf'] = new['lcnaf']
+
+        if 'role' in new.keys():
+            existing['roles'].add(new['role'])
 
     @staticmethod
     def createEmptyWorkRecord():
@@ -482,6 +516,7 @@ class SFRRecordManager:
             'measurements': set(),
             'languages': set(),
             'items': [],
+            'links': [],
             'dcdw_uuids': []
         }
     
