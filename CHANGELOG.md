@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Unreleased -- v0.0.5
+### Fixed
+- Add ability to define default role for agents in ElasticSearch manager
+- Clean up dates as they are processed to remove duplicate values
+- Fix regression in API with ElasticSearch aggregation
+
 ## 2020-12-28 -- v0.0.4
 ### Added
 - Improved Clustering to use Edition data more accurately (e.g. only when present)

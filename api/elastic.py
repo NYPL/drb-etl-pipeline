@@ -143,7 +143,7 @@ class ElasticClient():
 
         dateFilter, dateAggregation = (None, None)
         formatFilter, formatAggregation = (None, None)
-        displayFilter, displayAggregation = (Q('exists', field='editions.formats'),A('filters', **{'exists': {'field': 'editions.formats'}}))
+        displayFilter, displayAggregation = (Q('exists', field='editions.formats'),A('filter', **{'exists': {'field': 'editions.formats'}}))
 
         if len(dateFilters) > 0:
             dateRange = ElasticClient.generateDateRange(dateFilters)

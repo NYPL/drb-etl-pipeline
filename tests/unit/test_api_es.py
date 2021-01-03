@@ -386,7 +386,7 @@ class TestElasticClient:
         filtersAndAggs = ElasticClient.addFilterClausesAndAggregations(mockSearch, [])
 
         mockQuery.assert_called_once_with('exists', field='editions.formats')
-        mockAgg.assert_called_once_with('filters', exists={'field': 'editions.formats'})
+        mockAgg.assert_called_once_with('filter', exists={'field': 'editions.formats'})
 
         mockApply.assert_called_once_with(mockSearch, [], ['formatFilter'])
         mockApplyAggs.assert_called_once_with(mockSearch, ['formatAggregation'])
@@ -412,7 +412,7 @@ class TestElasticClient:
             mocker.call('range', **{'editions.publication_date': 'testRange'})
         ])
         mockAgg.assert_has_calls([
-            mocker.call('filters', exists={'field': 'editions.formats'}),
+            mocker.call('filter', exists={'field': 'editions.formats'}),
             mocker.call('filter', range={'editions.publication_date': 'testRange'})
         ])
 
@@ -438,7 +438,7 @@ class TestElasticClient:
             mocker.call('terms', instances__formats=['test1', 'test2'])
         ])
         mockAgg.assert_has_calls([
-            mocker.call('filters', exists={'field': 'editions.formats'}),
+            mocker.call('filter', exists={'field': 'editions.formats'}),
             mocker.call('filter', terms={'editions.formats': ['test1', 'test2']})
         ])
 
@@ -463,7 +463,7 @@ class TestElasticClient:
             mocker.call('exists', field='editions.formats'),
         ])
         mockAgg.assert_has_calls([
-            mocker.call('filters', exists={'field': 'editions.formats'}),
+            mocker.call('filter', exists={'field': 'editions.formats'}),
         ])
 
         mockApply.assert_called_once_with(mockSearch, [('language', 'Test1')], ['displayFilter'])
@@ -485,7 +485,7 @@ class TestElasticClient:
             mocker.call('exists', field='editions.formats'),
         ])
         mockAgg.assert_has_calls([
-            mocker.call('filters', exists={'field': 'editions.formats'}),
+            mocker.call('filter', exists={'field': 'editions.formats'}),
         ])
 
         mockApply.assert_called_once_with(mockSearch, [], [])

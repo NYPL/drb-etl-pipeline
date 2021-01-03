@@ -169,7 +169,7 @@ class SFRRecordManager:
             workData['subjects'].update(rec.subjects)
         
         # Dates
-        editionData['dates'].update(rec.dates)
+        editionData['dates'].update(self.normalizeDates(rec.dates))
 
         # Languages
         workData['languages'].update(rec.languages)
@@ -466,6 +466,14 @@ class SFRRecordManager:
                 ag['roles'] = list(ag['roles'])
 
         return outAgents
+
+    def normalizeDates(self, dates):
+        outDates = set()
+        for date in dates:
+            cleanDate = re.search(r'\d+.*\d+', date).group()
+            outDates.add(cleanDate)
+
+        return list(outDates)
 
     @staticmethod
     def mergeAgents(existing, new):
