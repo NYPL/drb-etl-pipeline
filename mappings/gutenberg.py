@@ -85,11 +85,20 @@ class GutenbergMapping(XMLMapping):
         # Add Read Online links
         self.record.has_part = []
         for i, extension in enumerate(['.images', '.noimages']):
-            epubLink = '{}|{}|{}|{}|{}'.format(
+            epubDownloadLink = '{}|{}|{}|{}|{}'.format(
                 i + 1,
                 'https://gutenberg.org/ebooks/{}.epub{}'.format(gutenbergID, extension),
                 'gutenberg',
                 'application/epub+zip',
-                json.dumps({'reader': True, 'download': True, 'catalog': False})
+                json.dumps({'reader': False, 'download': True, 'catalog': False})
             )
-            self.record.has_part.append(epubLink)
+
+            epubReadLink = '{}|{}|{}|{}|{}'.format(
+                i + 1,
+                'https://gutenberg.org/ebooks/{}.epub{}'.format(gutenbergID, extension),
+                'gutenberg',
+                'application/epub',
+                json.dumps({'reader': True, 'download': False, 'catalog': False})
+            )
+
+            self.record.has_part.extend([epubDownloadLink, epubReadLink])

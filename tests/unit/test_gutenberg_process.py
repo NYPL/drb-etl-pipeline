@@ -158,8 +158,9 @@ class TestGutenbergProcess:
     def test_storeEpubsInS3(self, testInstance, mocker):
         mockRecord = mocker.MagicMock()
         mockRecord.record.has_part = [
-            '1|gutenberg.org/ebook/1.epub.images|gutenberg|application/epub|{}',
-            '2|gutenberg.org/ebook/2.epub.noimages|gutenberg|application/epub|{}',
+            '1|gutenberg.org/ebook/1.epub.images|gutenberg|application/epub+zip|{"download": true}',
+            '1|gutenberg.org/ebook/1.epub.images|gutenberg|application/epub|{"download": false}',
+            '2|gutenberg.org/ebook/2.epub.noimages|gutenberg|application/epub+zip|{"download": true}',
         ]
 
         mockSendToQueue = mocker.patch.object(GutenbergProcess, 'sendFileToProcessingQueue')
@@ -171,8 +172,9 @@ class TestGutenbergProcess:
             mocker.call('gutenberg.org/ebook/2.epub.noimages', 'epubs/gutenberg/2_noimages.epub')
         ])
         assert mockRecord.record.has_part == [
-            '1|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/1_images.epub|gutenberg|application/epub|{}',
-            '2|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/2_noimages.epub|gutenberg|application/epub|{}',
+            '1|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/1_images.epub|gutenberg|application/epub+zip|{"download": true}',
+            '1|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/1_images/oebps/content.opf|gutenberg|application/epub|{"download": false}',
+            '2|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/2_noimages.epub|gutenberg|application/epub+zip|{"download": true}',
         ]
 
     def test_addCoverAndStoreInS3(self, testInstance, testMetadataYAML, mocker):

@@ -1,4 +1,5 @@
 from datetime import datetime
+from lxml import etree
 import pytest
 import requests
 
@@ -127,7 +128,17 @@ class TestGutenbergManager:
             ==\
             "{organization(login:\"GITenberg\"){repositories(orderBy:{direction:DESC,field:PUSHED_AT},first:100,after:\"initialCursor\"){pageInfo{endCursor,hasNextPage}nodes{id,name,pushedAt}}}}".replace(' ', '')
 
-    def test_fetchMetadataFilesForBatch(self, testInstance, testGraphQLFileResponse, mocker):
+    def test_fetchMetadataFilesForBatch(self, testInstance, mocker):
+        mockFetchFiles = mocker.patch.object(GutenbergManager, 'fetchFilesForRecord')
+
+        testInstance.repos = [{'name': 'test_1'}, {'name': 'test_2'}, {'name': 'other'}]
+        testInstance.fetchMetadataFilesForBatch()
+
+        mockFetchFiles.assert_has_calls([
+            mocker.call('1', {'name': 'test_1'}), mocker.call('2', {'name': 'test_2'})
+        ])
+
+    def test_fetchFilesForRecord(self, testInstance, testGraphQLFileResponse, mocker):
         managerMocks = mocker.patch.multiple(
             GutenbergManager,
             queryGraphQL=mocker.DEFAULT,
@@ -135,19 +146,30 @@ class TestGutenbergManager:
             parseYAML=mocker.DEFAULT
         )
         managerMocks['queryGraphQL'].return_value = testGraphQLFileResponse
-        managerMocks['parseRDF'].side_effect = ['rdf1Text', 'rdf2Text']
-        managerMocks['parseYAML'].side_effect = ['yaml1Text', 'yaml2Text']
+        managerMocks['parseRDF'].return_value = 'rdfText'
+        managerMocks['parseYAML'].return_value = 'yamlText'
 
-        testInstance.repos = [{'name': 'test_1'}, {'name': 'test_2'}, {'name': 'other'}]
-        testInstance.fetchMetadataFilesForBatch()
+        testInstance.fetchFilesForRecord(1, {'name': 'test'})
 
-        assert testInstance.dataFiles == [('rdf1Text', 'yaml1Text'), ('rdf2Text', 'yaml2Text')]
+        assert testInstance.dataFiles == [('rdfText', 'yamlText')]
         assert  managerMocks['queryGraphQL'].mock_calls[0].args[0].replace(' ', '')\
             ==\
-            "{repository(owner:\"GITenberg\",name:\"test_1\"){rdf:object(expression:\"master:pg1.rdf\"){id,...onBlob{text}}yaml:object(expression:\"master:metadata.yaml\"){id,...onBlob{text}}}}".replace(' ', '')
-        assert  managerMocks['queryGraphQL'].mock_calls[1].args[0].replace(' ', '')\
-            ==\
-            "{repository(owner:\"GITenberg\",name:\"test_2\"){rdf:object(expression:\"master:pg2.rdf\"){id,...onBlob{text}}yaml:object(expression:\"master:metadata.yaml\"){id,...onBlob{text}}}}".replace(' ', '')
+            "{repository(owner:\"GITenberg\",name:\"test\"){rdf:object(expression:\"master:pg1.rdf\"){id,...onBlob{text}}yaml:object(expression:\"master:metadata.yaml\"){id,...onBlob{text}}}}".replace(' ', '')
+
+    def test_fetchFilesForRecord_xmlError(self, testInstance, testGraphQLFileResponse, mocker):
+        managerMocks = mocker.patch.multiple(
+            GutenbergManager,
+            queryGraphQL=mocker.DEFAULT,
+            parseRDF=mocker.DEFAULT,
+            parseYAML=mocker.DEFAULT
+        )
+        managerMocks['queryGraphQL'].return_value = testGraphQLFileResponse
+        managerMocks['parseRDF'].side_effect = etree.XMLSyntaxError
+        managerMocks['parseYAML'].return_value = 'yamlText'
+
+        testInstance.fetchFilesForRecord(1, {'name': 'test'})
+
+        assert testInstance.dataFiles == []
 
     def test_parseRDF(self, testInstance):
         testXML = testInstance.parseRDF('<test attr="hello">world</test>')
@@ -169,12 +191,12 @@ class TestGutenbergManager:
 
     def test_resetBatch(self, testInstance):
         testInstance.repos = [1, 2, 3]
-        testInstance.rdfFiles = [1, 2, 3]
+        testInstance.dataFiles = [1, 2, 3]
 
         testInstance.resetBatch()
 
         assert testInstance.repos == []
-        assert testInstance.rdfFiles == []
+        assert testInstance.dataFiles == []
 
     def test_queryGraphQL_success(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()

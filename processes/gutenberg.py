@@ -95,20 +95,25 @@ class GutenbergProcess(CoreProcess):
 
     def storeEpubsInS3(self, gutenbergRec):
         for i, epubItem in enumerate(gutenbergRec.record.has_part):
-            pos, gutenbergURL, source, mediaType, flags = epubItem.split('|')
+            pos, gutenbergURL, source, mediaType, flagStr = epubItem.split('|')
 
             epubIDParts = re.search(r'\/([0-9]+).epub.([a-z]+)$', gutenbergURL)
             gutenbergID = epubIDParts.group(1)
             gutenbergType = epubIDParts.group(2)
 
-            bucketLocation = 'epubs/{}/{}_{}.epub'.format(source, gutenbergID, gutenbergType)
+            flags = json.loads(flagStr)
 
-            s3URL = 'https://{}.s3.amazonaws.com/{}'.format(
-                self.s3Bucket, bucketLocation
-            )
-            gutenbergRec.record.has_part[i] = '|'.join([pos, s3URL, source, mediaType, flags])
+            if flags['download'] is True:
+                bucketLocation = 'epubs/{}/{}_{}.epub'.format(source, gutenbergID, gutenbergType)
+            else:
+                bucketLocation = 'epubs/{}/{}_{}/oebps/content.opf'.format(source, gutenbergID, gutenbergType)
 
-            self.sendFileToProcessingQueue(gutenbergURL, bucketLocation)
+            s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
+
+            gutenbergRec.record.has_part[i] = '|'.join([pos, s3URL, source, mediaType, flagStr])
+
+            if flags['download'] is True:
+                self.sendFileToProcessingQueue(gutenbergURL, bucketLocation)
 
     def addCoverAndStoreInS3(self, gutenbergRec, yamlData):
         for coverData in yamlData['covers']:
