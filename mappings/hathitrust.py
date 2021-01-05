@@ -41,6 +41,7 @@ class HathiMapping(CSVMapping):
         self.record.source_id = self.record.identifiers[0]
 
         # Parse publisher from publication date
+        self.record.dates = self.record.dates or ['']
         pubDate = self.record.dates[0]
         try:
             pubDateExtract = re.search(r'[0-9]{4}', pubDate).group(0)
@@ -53,13 +54,14 @@ class HathiMapping(CSVMapping):
 
         
         # Parse contributers into full names
+        self.record.contributors = self.record.contributors or []
         for i, contributor in enumerate(self.record.contributors):
             contribElements = contributor.lower().split('|')
             fullContribName = self.staticValues['hathitrust']['sourceCodes'].get(contribElements[0], contribElements[0])
             self.record.contributors[i] = contributor.replace(contribElements[0], fullContribName)
 
         # Parse rights codes
-        rightsElements = self.record.rights.split('|')
+        rightsElements = self.record.rights.split('|') if self.record.rights else [''] * 5
         rightsMetadata = self.staticValues['hathitrust']['rightsValues'].get(rightsElements[1], {'license': 'und', 'statement': 'und'}) 
         self.record.rights = '{}|{}|{}|{}'.format(
             rightsMetadata['license'],
@@ -86,4 +88,5 @@ class HathiMapping(CSVMapping):
         self.record.has_part = [readOnlineLink, downloadLink]
 
         # Parse spatial (pub place) codes
+        self.record.spatial = self.record.spatial or ''
         self.record.spatial = self.staticValues['marc']['countryCodes'].get(self.record.spatial.strip(), 'xx')

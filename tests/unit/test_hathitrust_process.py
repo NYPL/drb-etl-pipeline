@@ -34,12 +34,14 @@ class TestHathiTrustProcess:
 
     @pytest.fixture
     def hathiTSV(self):
-        rows = []
-        for i in range(1000):
-            rightsStmt = 'ic' if i % 3 == 0 else 'pd'
-            rows.append([i, 'hathi', rightsStmt])
-
-        return rows
+        def tsvIter():
+            for i in range(1000):
+                rightsStmt = 'ic' if i % 3 == 0 else 'pd'
+                yield [i, 'hathi', rightsStmt]
+            
+            raise csv.Error
+        
+        return tsvIter()
 
     def test_runProcess_daily(self, testInstance, mocker):
         mockImport = mocker.patch.object(HathiTrustProcess, 'importRemoteRecords')
@@ -92,21 +94,20 @@ class TestHathiTrustProcess:
         
         mockImport.assert_called_once_with(fullDump=True)
 
-    def test_importFromSpecificFile_success(self, testInstance, mocker, hathiTSV):
+    def test_importFromSpecificFile_success(self, testInstance, mocker):
         mockOpen = mocker.patch('processes.hathiTrust.open')
         mockOpen.return_value = 'csvFile'
 
         mockCSVReader = mocker.patch.object(csv, 'reader')
-        mockCSVReader.return_value = hathiTSV
+        mockCSVReader.return_value = 'testCSV'
 
-        mockParser = mocker.patch.object(HathiTrustProcess, 'parseHathiDataRow')
+        mockReader = mocker.patch.object(HathiTrustProcess, 'readHathiFile')
 
         testInstance.importFromSpecificFile('testFile')
 
         mockOpen.assert_called_once_with('testFile', newline='')
-        mockCSVReader.assert_called_once_with('csvFile')
-
-        assert mockParser.call_count == 666
+        mockCSVReader.assert_called_once_with('csvFile', delimiter='\t')
+        mockReader.assert_called_once_with('testCSV')
 
     def test_importFromSpecificFile_error(self, testInstance, mocker):
         mockOpen = mocker.patch('processes.hathiTrust.open')
@@ -125,7 +126,7 @@ class TestHathiTrustProcess:
         mockHathiMapping.applyMapping.assert_called_once
         mockAddDCDW.assert_called_once
 
-    def test_importFromHathiTrustDataFile_standard(self, testInstance, hathiFilesData, hathiTSV, mocker):
+    def test_importFromHathiTrustDataFile_standard(self, testInstance, hathiFilesData, mocker):
         mockRequest = mocker.patch.object(requests, 'get')
         mockListResponse = mocker.MagicMock()
         mockTSVResponse = mocker.MagicMock()
@@ -137,12 +138,11 @@ class TestHathiTrustProcess:
         mockTSV = mocker.MagicMock()
         mockOpen.return_value.__enter__.return_value = mockTSV
 
-        mockGzip = mocker.patch.object(gzip, 'open')
+        mocker.patch.object(gzip, 'open')
         mockCSVReader = mocker.patch.object(csv, 'reader')
-        mockCSVReader.return_value = hathiTSV
+        mockCSVReader.return_value = 'testCSV'
 
-        mockHathiMapping = mocker.patch('processes.hathiTrust.HathiMapping')
-        mockAddDCDW = mocker.patch.object(HathiTrustProcess, 'addDCDWToUpdateList')
+        mockReadFile = mocker.patch.object(HathiTrustProcess, 'readHathiFile')
 
         testInstance.importFromHathiTrustDataFile()
 
@@ -151,8 +151,7 @@ class TestHathiTrustProcess:
         ])
         mockTSV.write.assert_called_once
         mockCSVReader.assert_called_once
-        assert mockHathiMapping.call_count == 666
-        assert mockAddDCDW.call_count == 666
+        mockReadFile.assert_called_once_with('testCSV')
 
     def test_importFromHathiTrustDataFile_error(self, testInstance, mocker):
         mockRequest = mocker.patch.object(requests, 'get')
@@ -162,3 +161,10 @@ class TestHathiTrustProcess:
         with pytest.raises(IOError):
             testInstance.importFromHathiTrustDataFile()
             mockRequest.assert_called_once
+
+    def test_readHathiFile(self, testInstance, hathiTSV, mocker):
+        mockParseRow = mocker.patch.object(HathiTrustProcess, 'parseHathiDataRow')
+
+        testInstance.readHathiFile(hathiTSV)
+
+        assert mockParseRow.call_count == 666
