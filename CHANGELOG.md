@@ -3,6 +3,7 @@
 ## Unreleased -- v0.0.5
 ### Added
 - `limit` and `offset` as optional arguments to the main process
+- "Exploded" versions of ePub files in S3
 ### Fixed
 - Add ability to define default role for agents in ElasticSearch manager
 - Clean up dates as they are processed to remove duplicate values
