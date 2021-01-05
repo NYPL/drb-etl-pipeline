@@ -1,7 +1,9 @@
 import boto3
 from botocore.exceptions import ClientError
 import hashlib
+from io import BytesIO
 import os
+from zipfile import ZipFile
 
 
 class S3Manager:
@@ -29,15 +31,20 @@ class S3Manager:
     
     def putObjectInBucket(self, obj, objKey, bucket, bucketPermissions='public-read'):
         objMD5 = S3Manager.getmd5HashOfObject(obj)
+        objExtension = objKey[-4:].lower()
 
         existingObject = None
         try:
-            existingObject = self.getObjectFromBucket(objKey, bucket, md5Hash=objMD5)
+            if objExtension == 'epub':
+                existingObject = self.getObjectFromBucket(objKey, bucket, md5Hash=objMD5)
         except S3Error:
             print('{} does not yet exist'.format(objKey))
 
         if not existingObject or existingObject['ResponseMetadata']['HTTPStatusCode'] != 304:
             try:
+                if objExtension == 'epub':
+                    self.putExplodedEpubComponentsInBucket(obj, objKey, bucket)
+
                 return self.s3Client.put_object(
                     ACL=bucketPermissions,
                     Body=obj,
@@ -45,9 +52,18 @@ class S3Manager:
                     Key=objKey
                 )
             except ClientError as e:
-                raise S3Error('UNable to store file in s3')
-        
+                raise S3Error('Unable to store file in s3')
+
         return None
+
+    def putExplodedEpubComponentsInBucket(self, obj, objKey, bucket):
+        keyRoot = objKey.split('.')[0] 
+
+        with ZipFile(BytesIO(obj), 'r') as epubZip:
+            for component in epubZip.namelist():
+                componentObj = epubZip.open(component).read()
+                componentKey = '{}/{}'.format(keyRoot, component).lower()
+                self.putObjectInBucket(componentObj, componentKey, bucket)
 
     def getObjectFromBucket(self, objKey, bucket, md5Hash=None):
         try:
