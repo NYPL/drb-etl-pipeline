@@ -20,6 +20,8 @@ class TestGutenbergProcess:
         class TestGutenbergProcess(GutenbergProcess):
             def __init__(self, process, customFile, ingestPeriod):
                 self.statics = {}
+                self.ingestOffset = 0
+                self.ingestLimit = 5000
                 self.s3Bucket = os.environ['FILE_BUCKET']
                 self.fileQueue = os.environ['FILE_QUEUE']
         

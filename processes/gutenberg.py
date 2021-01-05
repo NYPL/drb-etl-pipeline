@@ -19,8 +19,11 @@ class GutenbergProcess(CoreProcess):
         'pgterms': 'http://www.gutenberg.org/2009/pgterms/'
     }
 
-    def __init__(self, process, customFile, ingestPeriod):
-        super(GutenbergProcess, self).__init__(process, customFile, ingestPeriod)
+    def __init__(self, *args):
+        super(GutenbergProcess, self).__init__(*args[:3])
+
+        self.ingestOffset = int(args[4]) or 0
+        self.ingestLimit = (int(args[3]) + self.ingestOffset) or 5000
 
         # Connect to database
         self.generateEngine()
@@ -57,17 +60,23 @@ class GutenbergProcess(CoreProcess):
             orderDirection = 'ASC'
             orderField = 'CREATED_AT'
 
-        manager = GutenbergManager(orderDirection, orderField, startTimestamp, 100)
+        pageSize = 100
+        currentPosition = 0
+        manager = GutenbergManager(orderDirection, orderField, startTimestamp, pageSize)
 
         while True:
             continuation = manager.fetchGithubRepoBatch()
+
+            currentPosition += pageSize
+            if currentPosition <= self.ingestOffset: continue
+
             manager.fetchMetadataFilesForBatch()
 
             self.processGutenbergBatch(manager.dataFiles)
 
             manager.resetBatch()
 
-            if not continuation: break
+            if not continuation or currentPosition >= self.ingestLimit: break
 
     def processGutenbergBatch(self, dataFiles):
         for (gutenbergRDF, gutenbergYAML) in dataFiles:

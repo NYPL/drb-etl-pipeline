@@ -3,8 +3,8 @@ from api.app import FlaskAPI
 
 
 class APIProcess(CoreProcess):
-    def __init__(self, process, customFile, ingestPeriod):
-        super(APIProcess, self).__init__(process, customFile, ingestPeriod)
+    def __init__(self, *args):
+        super(APIProcess, self).__init__(*args[:3])
 
         self.createElasticConnection()
         self.generateEngine()
