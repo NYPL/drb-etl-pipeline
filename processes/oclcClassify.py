@@ -12,6 +12,8 @@ class ClassifyProcess(CoreProcess):
     def __init__(self, *args):
         super(ClassifyProcess, self).__init__(*args[:3])
 
+        self.ingestLimit = args[3] or None
+
         # PostgreSQL Connection
         self.generateEngine()
         self.createSession()
@@ -41,6 +43,9 @@ class ClassifyProcess(CoreProcess):
             if not startDateTime:
                 startDateTime = datetime.utcnow() - timedelta(hours=24)
             baseQuery = baseQuery.filter(Record.date_modified > startDateTime)
+
+        if self.ingestLimit:
+            baseQuery = baseQuery.limit(self.ingestLimit)
         
         for rec in baseQuery.yield_per(100):
             self.frbrizeRecord(rec)
