@@ -9,8 +9,8 @@ from model import Record
 
 
 class ClassifyProcess(CoreProcess):
-    def __init__(self, process, customFile, ingestPeriod):
-        super(ClassifyProcess, self).__init__(process, customFile, ingestPeriod)
+    def __init__(self, *args):
+        super(ClassifyProcess, self).__init__(*args[:3])
 
         # PostgreSQL Connection
         self.generateEngine()

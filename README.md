@@ -38,6 +38,8 @@ All services share a single entry point in `main.py` file. This script dynamical
 - `--ingestType` Applicable for processes that fetch records from external sources. Generally three settings are available (see individual processes for their own settings): `daily`, `complete` and `custom`
 - `--inputFile` Used with the `custom` ingest setting provides a local file of records to import
 - `--startDate` Also used with the `custom` ingest setting, sets a start point for a period to query or ingest records
+- `--limit` Limits the total number of rows imported in a single process
+- `--offset` Skips the first `n` rows of an import process
 
 To set up a local environment there is a special process (which is also run when creating a local Kubernetes cluster) to initialize a database and search cluster. To set this up run `python main.py --process DevelopmentSetupProcess` which will run a short import process and populate the database with some sample data.
 

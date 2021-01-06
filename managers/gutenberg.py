@@ -64,22 +64,27 @@ class GutenbergManager:
             if not idMatch: continue
 
             workID = idMatch.group(1)
+            self.fetchFilesForRecord(workID, repo)
 
-            rdfQuery = """\
-                {{\
-                    repository(owner:"GITenberg", name:"{name}"){{\
-                        rdf: object(expression:"{master}"){{id, ... on Blob {{text}}}}\
-                        yaml: object(expression:"master:metadata.yaml"){{id, ... on Blob {{text}}}}\
-                    }}\
+    def fetchFilesForRecord(self, workID, repo):
+        rdfQuery = """\
+            {{\
+                repository(owner:"GITenberg", name:"{name}"){{\
+                    rdf: object(expression:"{master}"){{id, ... on Blob {{text}}}}\
+                    yaml: object(expression:"master:metadata.yaml"){{id, ... on Blob {{text}}}}\
                 }}\
-            """.format(name=repo['name'], master='master:pg{}.rdf'.format(workID))
+            }}\
+        """.format(name=repo['name'], master='master:pg{}.rdf'.format(workID))
 
-            rdfResponse = self.queryGraphQL(rdfQuery)
+        rdfResponse = self.queryGraphQL(rdfQuery)
 
+        try:
             self.dataFiles.append((
                 self.parseRDF(rdfResponse['data']['repository']['rdf']['text']),
                 self.parseYAML(rdfResponse['data']['repository']['yaml']['text'])
             ))
+        except (TypeError, etree.XMLSyntaxError):
+            print('Unable to load metadata files for {}'.format(workID))
 
     def parseRDF(self, rdfText):
         return etree.fromstring(rdfText.encode('utf-8'))
@@ -89,7 +94,7 @@ class GutenbergManager:
 
     def resetBatch(self):
         self.repos = []
-        self.rdfFiles = []
+        self.dataFiles = []
 
     def queryGraphQL(self, query):
         try:

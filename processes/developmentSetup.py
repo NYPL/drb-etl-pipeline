@@ -15,7 +15,7 @@ from .sfrCluster import ClusterProcess
 
 
 class DevelopmentSetupProcess(CoreProcess):
-    def __init__(self, process, customFile, ingestPeriod):
+    def __init__(self, *args):
         self.adminDBConnection = DBManager(
             user=os.environ['ADMIN_USER'],
             pswd=os.environ['ADMIN_PSWD'],
@@ -25,7 +25,7 @@ class DevelopmentSetupProcess(CoreProcess):
         )
         self.initializeDB()
 
-        super(DevelopmentSetupProcess, self).__init__(process, customFile, ingestPeriod)
+        super(DevelopmentSetupProcess, self).__init__(*args[:3])
 
     def runProcess(self):
         # Setup database if necessary
