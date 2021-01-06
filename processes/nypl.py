@@ -10,6 +10,10 @@ from mappings.nypl import NYPLMapping
 class NYPLProcess(CoreProcess):
     def __init__(self, *args):
         super(NYPLProcess, self).__init__(*args[:3])
+
+        self.ingestLimit = args[3] or None
+        self.ingestOffset = args[4] or None
+
         self.generateEngine()
         self.createSession()
         self.generateAccessToken()
@@ -99,6 +103,12 @@ class NYPLProcess(CoreProcess):
             else:
                 startDateTime = datetime.utcnow() - timedelta(hours=24)
                 nyplBibQuery += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
+
+        if self.ingestOffset:
+            nyplBibQuery += ' OFFSET {}'.format(self.ingestOffset)
+
+        if self.ingestLimit:
+            nyplBibQuery += ' LIMIT {}'.format(self.ingestLimit)
         
         with self.bibDBConnection.engine.connect() as conn:
             bibResults = conn.execute(nyplBibQuery)

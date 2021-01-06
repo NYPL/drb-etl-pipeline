@@ -23,6 +23,8 @@ class TestNYPLProcess:
                 self.bibDBConnection = mocker.MagicMock()
                 self.locationCodes = {}
                 self.cceAPI = 'test_cce_url'
+                self.ingestOffset = None
+                self.ingestLimit = None
         
         return TestNYPLProcess('TestProcess', 'testFile', 'testDate')
 
@@ -270,7 +272,6 @@ class TestNYPLProcess:
 
     def test_importBibRecords_full(self, testInstance, mocker):
         mockDatetime = mocker.patch('processes.nypl.datetime')
-        mockDatetime.utcnow.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
@@ -284,5 +285,24 @@ class TestNYPLProcess:
         mockDatetime.utcnow.assert_not_called
         mockConn.execute.assert_called_once_with(
             'SELECT * FROM bib'
+        )
+        mockParse.assert_has_calls([mocker.call('bib1'), mocker.call('bib2'), mocker.call('bib3')])
+
+    def test_importBibRecords_full_batch(self, testInstance, mocker):
+        mockDatetime = mocker.patch('processes.nypl.datetime')
+
+        mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
+
+        mockConn = mocker.MagicMock(name='Mock Connection')
+        mockConn.execute.return_value = ['bib1', 'bib2', 'bib3']
+
+        testInstance.ingestOffset = '1000'
+        testInstance.ingestLimit = '1000'
+        testInstance.bibDBConnection.engine.connect.return_value.__enter__.return_value = mockConn
+        testInstance.importBibRecords(fullOrPartial=True)
+
+        mockDatetime.utcnow.assert_not_called
+        mockConn.execute.assert_called_once_with(
+            'SELECT * FROM bib OFFSET 1000 LIMIT 1000'
         )
         mockParse.assert_has_calls([mocker.call('bib1'), mocker.call('bib2'), mocker.call('bib3')])
