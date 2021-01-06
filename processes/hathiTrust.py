@@ -38,11 +38,8 @@ class HathiTrustProcess(CoreProcess):
         except FileNotFoundError:
             raise IOError('Unable to open local CSV file')
 
-        hathiReader = csv.reader(hathiFile)
-
-        for row in hathiReader:
-            if row[2] not in self.HATHI_RIGHTS_SKIPS and row[0] != 'htid':
-                self.parseHathiDataRow(row)
+        hathiReader = csv.reader(hathiFile, delimiter='\t')
+        self.readHathiFile(hathiReader)
 
     def parseHathiDataRow(self, dataRow):
         hathiRec = HathiMapping(dataRow, self.statics)
@@ -73,6 +70,16 @@ class HathiTrustProcess(CoreProcess):
 
         with gzip.open('/tmp/tmp_hathi.txt.gz', 'rt') as unzipTSV:
             hathiTSV = csv.reader(unzipTSV, delimiter='\t')
-            for row in hathiTSV:
-                if row[2] not in self.HATHI_RIGHTS_SKIPS:
-                    self.parseHathiDataRow(row)
+            self.readHathiFile(hathiTSV)
+
+    def readHathiFile(self, hathiTSV):
+        while True:
+            try:
+                row = next(hathiTSV)
+            except csv.Error:
+                continue
+            except StopIteration:
+                break
+
+            if row is not None and row[2] not in self.HATHI_RIGHTS_SKIPS:
+                self.parseHathiDataRow(row)

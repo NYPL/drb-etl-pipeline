@@ -8,6 +8,7 @@
 - Add ability to define default role for agents in ElasticSearch manager
 - Clean up dates as they are processed to remove duplicate values
 - Fix regression in API with ElasticSearch aggregation
+- Improved error handling in HathiTrust processor
 
 ## 2020-12-28 -- v0.0.4
 ### Added
