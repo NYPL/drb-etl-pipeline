@@ -22,6 +22,7 @@ class TestOCLCClassifyProcess:
         class TestClassifyProcess(ClassifyProcess):
             def __init__(self, process, customFile, ingestPeriod):
                 self.records = []
+                self.ingestLimit = None
         
         return TestClassifyProcess('TestProcess', 'testFile', 'testDate')
 
@@ -129,6 +130,26 @@ class TestOCLCClassifyProcess:
         mockQuery.filter.assert_not_called
         mockQuery.yield_per.assert_called_once_with(100)
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
+
+    def test_classifyRecords_full_batch(self, testInstance, mocker):
+        mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
+        mockSession = mocker.MagicMock()
+        mockQuery = mocker.MagicMock()
+        testInstance.session = mockSession
+        mockDatetime = mocker.spy(datetime, 'datetime')
+
+        mockSession.query().filter.return_value = mockQuery
+        mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
+        mockQuery.yield_per.return_value = mockRecords
+
+        testInstance.ingestLimit = 100
+        testInstance.classifyRecords(full=True)
+
+        mockSession.query.filter.assert_called_once
+        mockSession.query.limit.assert_called_once
+        mockDatetime.utcnow.assert_not_called
+        mockDatetime.timedelta.assert_not_called
+        mockQuery.filter.assert_not_called
 
     def test_frbrizeRecord_success_valid_author(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyManager, 'getQueryableIdentifiers')
