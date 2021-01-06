@@ -7,8 +7,8 @@ from .core import CoreProcess
 
 
 class S3Process(CoreProcess):
-    def __init__(self, process, customFile, ingestPeriod):
-        super(S3Process, self).__init__(process, customFile, ingestPeriod)
+    def __init__(self, *args):
+        super(S3Process, self).__init__(*args[:3])
 
         # Create RabbitMQ Connection
         self.createRabbitConnection()

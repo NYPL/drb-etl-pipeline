@@ -10,8 +10,8 @@ from model import Record
 
 
 class CatalogProcess(CoreProcess):
-    def __init__(self, process, customFile, ingestPeriod):
-        super(CatalogProcess, self).__init__(process, customFile, ingestPeriod)
+    def __init__(self, *args):
+        super(CatalogProcess, self).__init__(*args[:3])
 
         # PostgreSQL Connection
         self.generateEngine()

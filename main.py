@@ -9,11 +9,13 @@ def main(args):
     procType = args.ingestType
     customFile = args.inputFile
     startDate = args.startDate
+    limit = args.limit
+    offset = args.offset
 
     availableProcesses = registerProcesses()
 
     procClass = availableProcesses[process]
-    processInstance = procClass(procType, customFile, startDate)
+    processInstance = procClass(procType, customFile, startDate, limit, offset)
     processInstance.runProcess()
 
 
@@ -35,6 +37,10 @@ def createArgParser():
                         help='Name of file to ingest. Ignored if -i custom is not set')
     parser.add_argument('-s', '--startDate',
                         help='Start point for coverage period to query/process')
+    parser.add_argument('-l', '--limit',
+                        help='Set overall limit for number of records imported in this process')
+    parser.add_argument('-o', '--offset',
+                        help='Set start offset for current processed (for batched import process)')
     
     return parser
 

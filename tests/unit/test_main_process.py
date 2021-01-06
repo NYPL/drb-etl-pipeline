@@ -17,6 +17,8 @@ class TestMainProcess:
         mockArgs.ingestType = 'test'
         mockArgs.inputFile = 'testFile'
         mockArgs.startDate = 'testDate'
+        mockArgs.limit = 'testLimit'
+        mockArgs.offset = 'testOffset'
 
         return mockArgs
 
@@ -36,7 +38,7 @@ class TestMainProcess:
 
         main(processArgs)
 
-        mockProcess.assert_called_with('test', 'testFile', 'testDate')
+        mockProcess.assert_called_with('test', 'testFile', 'testDate', 'testLimit', 'testOffset')
         mockInstance.runProcess.assert_called_once
 
     def test_registerProcesses(self, mocker):
@@ -56,7 +58,9 @@ class TestMainProcess:
             '-e', 'test',
             '-i', 'testIngest',
             '-f', 'testFile',
-            '-s', 'testDate'     
+            '-s', 'testDate',
+            '-l', 'testLimit',
+            '-o', 'testOffset'
         ]
 
         argParser = createArgParser()
@@ -67,6 +71,8 @@ class TestMainProcess:
         assert testArgs.ingestType == 'testIngest'
         assert testArgs.inputFile == 'testFile'
         assert testArgs.startDate == 'testDate'
+        assert testArgs.limit == 'testLimit'
+        assert testArgs.offset == 'testOffset'
 
     def test_argParser_allArgs_longform(self, mocker):
         sys.argv = [
@@ -75,7 +81,9 @@ class TestMainProcess:
             '--environment', 'test',
             '--ingestType', 'testIngest',
             '--inputFile', 'testFile',
-            '--startDate', 'testDate'     
+            '--startDate', 'testDate',
+            '--limit', 'testLimit',
+            '--offset', 'testOffset'
         ]
 
         argParser = createArgParser()
@@ -86,6 +94,8 @@ class TestMainProcess:
         assert testArgs.ingestType == 'testIngest'
         assert testArgs.inputFile == 'testFile'
         assert testArgs.startDate == 'testDate'
+        assert testArgs.limit == 'testLimit'
+        assert testArgs.offset == 'testOffset'
 
     def test_argParser_missingReqArg(self, mocker):
         sys.argv = [

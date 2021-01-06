@@ -8,8 +8,8 @@ from mappings.nypl import NYPLMapping
 
 
 class NYPLProcess(CoreProcess):
-    def __init__(self, process, customFile, ingestPeriod):
-        super(NYPLProcess, self).__init__(process, customFile, ingestPeriod)
+    def __init__(self, *args):
+        super(NYPLProcess, self).__init__(*args[:3])
         self.generateEngine()
         self.createSession()
         self.generateAccessToken()
