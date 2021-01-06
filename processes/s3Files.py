@@ -40,7 +40,6 @@ class S3Process(CoreProcess):
 
         attempts = 1
         while True:
-            print(rabbitManager)
             msgProps, _, msgBody = rabbitManager.getMessageFromQueue(fileQueue)
             if msgProps is None:
                 if attempts <= 3:
@@ -57,9 +56,9 @@ class S3Process(CoreProcess):
             filePath = fileMeta['bucketPath']
 
             try:
+                rabbitManager.acknowledgeMessageProcessed(msgProps.delivery_tag)
                 epubB = S3Process.getFileContents(fileURL)
                 storageManager.putObjectInBucket(epubB, filePath, bucket)
-                rabbitManager.acknowledgeMessageProcessed(msgProps.delivery_tag)
                 print('Sending Tag {} for {}'.format(fileURL, msgProps.delivery_tag))
             except Exception as e:
                 print(e)
@@ -72,7 +71,6 @@ class S3Process(CoreProcess):
         if epubResp.status_code == 200:
             content = bytes()
             for byteChunk in epubResp.iter_content(1024):
-                print(byteChunk)
                 if time() - start > timeout:
                     raise TimeoutError('Unable to process {} in time'.format(epubURL))
                 content += byteChunk
