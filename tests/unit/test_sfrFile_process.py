@@ -45,53 +45,63 @@ class TestS3Process:
         mockCommit.assert_called_once
 
     def test_receiveAndProcessMessages(self, testInstance, mocker):
+        mockProc = mocker.MagicMock()
+        mockProcess = mocker.patch('processes.s3Files.Process')
+        mockProcess.return_value = mockProc
+
+        testInstance.receiveAndProcessMessages()
+
+        assert mockProcess.call_count == 4
+        assert mockProc.start.call_count == 4
+        assert mockProc.join.call_count == 4
+
+    def test_storeFilesInS3(self, testFile, mocker):
         mockSleep = mocker.patch('processes.s3Files.sleep')
-        mockQueueGet = mocker.patch.object(S3Process, 'getMessageFromQueue')
+
+        mockS3 = mocker.MagicMock()
+        mockS3Manager = mocker.patch('processes.s3Files.S3Manager')
+        mockS3Manager.return_value = mockS3
+
+        mockRabbit = mocker.MagicMock()
+        mockRabbitManager = mocker.patch('processes.s3Files.RabbitMQManager')
+        mockRabbitManager.return_value = mockRabbit
+
         mockProps = mocker.MagicMock()
         mockProps.delivery_tag = 'rabbitMQTag'
-        mockQueueGet.side_effect = [
-            (mockProps, {}, 'epub_record'),
+        mockRabbit.getMessageFromQueue.side_effect = [
+            (mockProps, {}, testFile),
             (None, None, None),
             (None, None, None),
             (None, None, None),
             (None, None, None)
         ]
-        mockStore = mocker.patch.object(S3Process, 'storeFileInS3')
-        mockAcknowledge = mocker.patch.object(S3Process, 'acknowledgeMessageProcessed')
 
-        testInstance.receiveAndProcessMessages()
+        mockGet = mocker.patch.object(S3Process, 'getFileContents')
+        mockGet.return_value = 'testFileBytes'
 
-        assert mockQueueGet.call_count == 5
-        mockQueueGet.assert_called_with('test_file_queue')
+        S3Process.storeFilesInS3()
+
+        assert mockRabbit.getMessageFromQueue.call_count == 5
+        mockRabbit.getMessageFromQueue.assert_called_with('test_file_queue')
 
         mockSleep.assert_has_calls([
             mocker.call(30), mocker.call(60), mocker.call(90)
         ])
 
-        mockStore.assert_called_once_with('epub_record')
-        mockAcknowledge.assert_called_once_with('rabbitMQTag')
-
-    def test_storeFileInS3(self, testInstance, testFile, mocker):
-        mockGetContents = mocker.patch.object(S3Process, 'getFileContents')
-        mockGetContents.return_value = 'epubBinary'
-        mockPutInS3 = mocker.patch.object(S3Process, 'putObjectInBucket')
-
-        testInstance.storeFileInS3(testFile)
-
-        mockGetContents.assert_called_once_with('testSourceURL')
-        mockPutInS3.assert_called_once_with('epubBinary', 'testBucketPath', 'testBucket')
+        mockS3.putObjectInBucket.assert_called_once_with('testFileBytes', 'testBucketPath', 'test_aws_bucket')
+        mockRabbit.acknowledgeMessageProcessed.assert_called_once_with('rabbitMQTag')
 
     def test_getFileContents_success(self, testInstance, mocker):
         mockGet = mocker.patch.object(requests, 'get')
         mockResp = mocker.MagicMock()
         mockResp.status_code = 200
-        mockResp.content = 'epubBinary'
+        mockResp.iter_content.return_value = [b'e', b'p', b'u', b'b']
         mockGet.return_value = mockResp
 
         testEpubFile = testInstance.getFileContents('testURL')
 
-        assert testEpubFile == 'epubBinary'
-        mockGet.assert_called_once_with('testURL')
+        assert testEpubFile == b'epub'
+        mockGet.assert_called_once_with('testURL', stream=True, timeout=120)
         
     def test_getFileContents_error(self, testInstance, mocker):
         mockGet = mocker.patch.object(requests, 'get')
@@ -100,5 +110,4 @@ class TestS3Process:
         mockGet.return_value = mockResp
 
         with pytest.raises(Exception):
-            testEpubFile = testInstance.getFileContents('testURL')
-            mockGet.assert_called_once_with('testURL')
+            testInstance.getFileContents('testURL')

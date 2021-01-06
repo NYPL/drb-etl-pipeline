@@ -2,6 +2,7 @@
 
 ## Unreleased -- v0.0.5
 ### Added
+- Added multiprocessing to S3FileProcess
 - `limit` and `offset` as optional arguments to the main process
 - "Exploded" versions of ePub files in S3
 ### Fixed
