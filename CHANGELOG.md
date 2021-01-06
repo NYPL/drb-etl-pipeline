@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased -- v0.0.5
+## 2021-01-06 -- v0.0.5
 ### Added
 - Added multiprocessing to S3FileProcess
 - `limit` and `offset` as optional arguments to the main process
