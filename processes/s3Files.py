@@ -1,8 +1,8 @@
 import json
-from multiprocessing import Process, Queue
+from multiprocessing import Process
 import os
 import requests
-from time import sleep, time
+from time import sleep
 
 from .core import CoreProcess
 from managers import S3Manager, RabbitMQManager
@@ -65,14 +65,11 @@ class S3Process(CoreProcess):
 
     @staticmethod
     def getFileContents(epubURL):
-        start = time()
         timeout = 120 
         epubResp = requests.get(epubURL, stream=True, timeout=timeout)
         if epubResp.status_code == 200:
             content = bytes()
             for byteChunk in epubResp.iter_content(1024):
-                if time() - start > timeout:
-                    raise TimeoutError('Unable to process {} in time'.format(epubURL))
                 content += byteChunk
 
             return content
