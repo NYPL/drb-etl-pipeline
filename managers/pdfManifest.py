@@ -6,9 +6,10 @@ import re
 class PDFManifest:
     def __init__(self, source):
         self.metadata = {'@type': 'https://schema.org/Book'}
-        self.links = [
-            {'rel': 'alternate', 'href': source, 'type': 'text/html'}
-        ]
+        self.links = {
+            'self': {},
+            'alternate': [{'href': source, 'type': 'text/html'}]
+        }
         self.components = []
         self.tableOfContents = []
 

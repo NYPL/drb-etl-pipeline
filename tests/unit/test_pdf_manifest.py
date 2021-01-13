@@ -19,7 +19,10 @@ class TestPDFManifest:
 
     def test_initializer(self, testManifest):
         assert testManifest.metadata == {'@type': 'https://schema.org/Book'}
-        assert testManifest.links == [{'rel': 'alternate', 'href': 'testSource', 'type': 'text/html'}]
+        assert testManifest.links == {
+            'self': {},
+            'alternate': [{'href': 'testSource', 'type': 'text/html'}]
+        }
         assert testManifest.components == []
         assert testManifest.tableOfContents == []
         assert testManifest.openSection is None
@@ -114,7 +117,7 @@ class TestPDFManifest:
             'context': 'https://test_aws_bucket-s3.amazonaws.com/manifests/context.jsonld',
             'media_type': 'application/pdf+json',
             'metadata': {'@type': 'https://schema.org/Book'},
-            'links': [{'rel': 'alternate', 'href': 'testSource', 'type': 'text/html'}],
+            'links': {'self': {}, 'alternate': [{'href': 'testSource', 'type': 'text/html'}]},
             'components': [],
             'table_of_contents': []
         }

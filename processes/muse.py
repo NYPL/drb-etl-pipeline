@@ -118,9 +118,7 @@ class MUSEProcess(CoreProcess):
         bucketLocation = 'manifests/muse/{}.json'.format(museID)
         s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
 
-        pdfManifest.links.append({
-            'rel': 'self', 'href': s3URL, 'type': 'application/pdf+json'
-        })
+        pdfManifest.links['self'] = {'href': s3URL, 'type': 'application/pdf+json'}
 
         self.putObjectInBucket(pdfManifest.toJson().encode('utf-8'), bucketLocation, self.s3Bucket)
 

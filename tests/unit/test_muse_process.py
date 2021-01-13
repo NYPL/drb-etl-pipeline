@@ -199,13 +199,11 @@ class TestMUSEProcess:
         mockPut = mocker.patch.object(MUSEProcess, 'putObjectInBucket')
 
         mockManifest = mocker.MagicMock()
-        mockManifest.links = []
+        mockManifest.links = {'self': {}}
         mockManifest.toJson.return_value = 'testJSON'
 
         testURL = testProcess.createManifestInS3(mockManifest, 1)
 
         assert testURL == 'https://test_aws_bucket.s3.amazonaws.com/manifests/muse/1.json'
-        assert mockManifest.links[0] == {
-            'rel': 'self', 'href': testURL, 'type': 'application/pdf+json'
-        }
+        assert mockManifest.links['self'] == {'href': testURL, 'type': 'application/pdf+json'}
         mockPut.assert_called_once_with(b'testJSON', 'manifests/muse/1.json', 'test_aws_bucket')
