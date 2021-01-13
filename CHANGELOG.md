@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased -- v0.1.0
+### Added
+- Mapping for parsing `MARC` records
+- Manager for generating PDF manifest files (in JSON-LD)
+- Process for ingesting records from Project MUSE
+
 ## 2021-01-06 -- v0.0.5
 ### Added
 - Added multiprocessing to S3FileProcess
