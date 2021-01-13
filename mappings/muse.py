@@ -95,7 +95,7 @@ class MUSEMapping(MARCMapping):
         return '|'.join([cleanSubject] + subjectMeta)
 
     def extractLanguage(self, language):
-        _, _, marcData = language.split('|')
+        _, _, marcData, *_ = language.split('|')
         return '||{}'.format(marcData[35:38])
 
     def addHasPartLink(self, url, mediaType, flags):
