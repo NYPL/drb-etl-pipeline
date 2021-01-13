@@ -22,7 +22,7 @@ class TestRabbitMQManager:
         testInstance.createRabbitConnection()
 
         assert testInstance.rabbitConn == 'testConnection'
-        mockParams.assert_called_once_with(host='host', port='port')
+        mockParams.assert_called_once_with(host='host', port='port', heartbeat=600)
         mockConn.assert_called_once_with('testParams')
 
     def test_closeRabbitConnection(self, testInstance, mocker):

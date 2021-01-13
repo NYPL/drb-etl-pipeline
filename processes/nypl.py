@@ -50,10 +50,10 @@ class NYPLProcess(CoreProcess):
             bib['nypl_source'], bib['id']
         ))
 
-        return True if bibStatus['isResearch'] is True else False
+        return True if bibStatus.get('isResearch', False) is True else False
 
     def getCopyrightStatus(self, varFields):
-        lccnData = list(filter(lambda x: x['marcTag'] == '010', varFields))
+        lccnData = list(filter(lambda x: x.get('marcTag', None) == '010', varFields))
         if not len(lccnData) == 1:
             return False
 
