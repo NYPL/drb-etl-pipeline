@@ -32,6 +32,7 @@ class MUSEMapping(MARCMapping):
             'dates': [
                 ('264', '{c}|publication_date')
             ],
+            'languages': [('008', '||{0}')],
             'extent': ('300', '{a}{b}{c}'),
             'table_of_contents': ('505', '{a}'),
             'abstract': [
@@ -67,6 +68,9 @@ class MUSEMapping(MARCMapping):
         # Take first title as they are in order of preference
         self.record.title = self.record.title[0]
 
+        # Extract language code from 008 fixed data field
+        self.record.languages = [self.extractLanguage(l) for l in self.record.languages]
+
         # Clean up subjects to remove spots for missing subheadings
         self.record.subjects = [
             self.cleanUpSubjectHead(s)
@@ -89,6 +93,10 @@ class MUSEMapping(MARCMapping):
         cleanSubject = ' -- '.join([p for p in outParts])
 
         return '|'.join([cleanSubject] + subjectMeta)
+
+    def extractLanguage(self, language):
+        _, _, marcData = language.split('|')
+        return '||{}'.format(marcData[35:38])
 
     def addHasPartLink(self, url, mediaType, flags):
         lastItemNo = int(self.record.has_part[0][0])
