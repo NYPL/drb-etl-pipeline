@@ -7,3 +7,4 @@ from .sfrCluster import ClusterProcess
 from .developmentSetup import DevelopmentSetupProcess
 from .s3Files import S3Process
 from .api import APIProcess
+from .muse import MUSEProcess
