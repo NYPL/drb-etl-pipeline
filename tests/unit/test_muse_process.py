@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from processes import MUSEProcess
+from processes.muse import MUSEProcess, MUSEError
 from tests.helper import TestHelpers
 
 
@@ -25,6 +25,10 @@ class TestMUSEProcess:
     @pytest.fixture
     def testMUSEPage(self):
         return open('./tests/fixtures/muse_book_42.html', 'r').read()
+
+    @pytest.fixture
+    def testMUSEPageUnreleased(self):
+        return open('./tests/fixtures/muse_book_63320.html', 'r').read()
 
     def test_runProcess_daily(self, testProcess, mocker):
         mockImport = mocker.patch.object(MUSEProcess, 'importMARCRecords')
@@ -71,6 +75,7 @@ class TestMUSEProcess:
         mockReader.return_value = ['rec1', 'rec2', 'rec3']
 
         mockParser = mocker.patch.object(MUSEProcess, 'parseMuseRecord')
+        mockParser.side_effect = [None, MUSEError('test'), None]
 
         testProcess.importMARCRecords()
 
@@ -169,6 +174,20 @@ class TestMUSEProcess:
         ])
 
         mockManifest.closeSection.assert_has_calls([mocker.call(), mocker.call()])
+
+    def test_constructPDFManifest_muse_error(self, testProcess, testMUSEPageUnreleased, mocker):
+        mockLoad = mocker.patch.object(MUSEProcess, 'loadMusePage')
+        mockLoad.return_value = testMUSEPageUnreleased
+
+        mockManifest = mocker.MagicMock()
+        mockManifestConstructor = mocker.patch('processes.muse.PDFManifest')
+        mockManifestConstructor.return_value = mockManifest
+
+        mockRecord = mocker.MagicMock()
+        mockRecord.source_id = 1
+
+        with pytest.raises(MUSEError):
+            testProcess.constructPDFManifest('testLink', mockRecord)
 
     def test_constructPDFManifest_error(self, testProcess, mocker):
         mockLoad = mocker.patch.object(MUSEProcess, 'loadMusePage')

@@ -55,7 +55,11 @@ class MUSEProcess(CoreProcess):
         marcReader = MARCReader(museFile)
 
         for record in marcReader:
-            self.parseMuseRecord(record)
+            try:
+                self.parseMuseRecord(record)
+            except MUSEError as e:
+                print('ERROR', e)
+                pass
 
     def downloadMARCRecords(self):
         marcURL = os.environ['MUSE_MARC_URL']
@@ -83,6 +87,9 @@ class MUSEProcess(CoreProcess):
         museSoup = BeautifulSoup(museHTML, features='lxml')
 
         chapterTable = museSoup.find(id='available_items_list_wrap')
+
+        if not chapterTable: raise MUSEError('Book {} unavailable'.format(museRecord.source_id))
+
         for card in chapterTable.find_all(class_='card_text'):
             titleItem = card.find('li', class_='title')
             pageItem = card.find('li', class_='pg')
@@ -123,3 +130,8 @@ class MUSEProcess(CoreProcess):
         self.putObjectInBucket(pdfManifest.toJson().encode('utf-8'), bucketLocation, self.s3Bucket)
 
         return s3URL
+
+
+class MUSEError(Exception):
+    def __init__(self, message):
+        self.message = message
