@@ -70,5 +70,4 @@ class MARCMapping(Core):
 
         # Remove spaces at ends of strings, including extraneous punctuation
         # The negative lookbehind preserves punctuation with initialisms
-        print(outNoDupeSpaces)
         return re.sub(r'((?<![A-Z]{1}))[ .,;:]+(\||$)', r'\1\2', outNoDupeSpaces)
