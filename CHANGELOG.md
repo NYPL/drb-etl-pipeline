@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## unreleased -- v0.0.6
+### Fixed
+- Fix timeout issues with RabbitMQ during long running processes
+- Handle odd record formatting in NYPL MARC records
+
 ## 2021-01-06 -- v0.0.5
 ### Added
 - Added multiprocessing to S3FileProcess

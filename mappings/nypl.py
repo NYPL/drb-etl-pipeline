@@ -79,16 +79,16 @@ class NYPLMapping(SQLMapping):
         self.source = dict(self.source)
         for value in self.source['var_fields']:
             marcField = {
-                'ind1': value['ind1'],
-                'ind2': value['ind2'],
-                'content': value['content']
+                'ind1': value.get('ind1', None),
+                'ind2': value.get('ind2', None),
+                'content': value.get('content', None)
             }
             try:
                 for sub in value['subfields']:
-                    marcField[sub['tag']] = sub['content']
-            except TypeError:
+                    marcField[sub['tag']] = sub.get('content', None)
+            except (KeyError, TypeError):
                 continue
-            self.source[value['marcTag']] = marcField
+            self.source[value.get('marcTag', 'XXX')] = marcField
     
     def applyFormatting(self):
         self.record.source = 'nypl'

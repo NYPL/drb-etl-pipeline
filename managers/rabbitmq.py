@@ -1,5 +1,6 @@
 import json
 from pika import BlockingConnection, ConnectionParameters
+from pika.exceptions import ConnectionWrongStateError, StreamLostError
 import os
 
 class RabbitMQManager:
@@ -11,7 +12,8 @@ class RabbitMQManager:
     def createRabbitConnection(self):
         params = ConnectionParameters(
             host=self.rabbitHost,
-            port=self.rabbitPort
+            port=self.rabbitPort,
+            heartbeat=600
         )
         self.rabbitConn = BlockingConnection(params)
     
@@ -28,9 +30,18 @@ class RabbitMQManager:
     def sendMessageToQueue(self, queueName, message):
         if isinstance(message, dict):
             message = json.dumps(message)
-        self.channel.basic_publish(
-            exchange='', routing_key=queueName, body=message
-        )
+        
+        try:
+            self.channel.basic_publish(
+                exchange='', routing_key=queueName, body=message
+            )
+        except (ConnectionWrongStateError, StreamLostError):
+            print('Stale connection. Trying to reconnect')
+            # Connection timed out. Reconnect and try again
+            self.createRabbitConnection()
+            self.createOrConnectQueue(queueName)
+            self.sendMessageToQueue(queueName, message)
+
     
     def getMessageFromQueue(self, queueName):
         return self.channel.basic_get(queueName)
