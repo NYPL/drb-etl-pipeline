@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.1.0
+## 2021-01-14 -- v0.1.0
 ### Added
 - Mapping for parsing `MARC` records
 - Manager for generating PDF manifest files (in JSON-LD)
