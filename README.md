@@ -56,6 +56,7 @@ The currently available processes are:
 - `S3Process` Fetch files (e.g. ePubs, cover images, etc.) associated with Item and Edition records and store them in AWS s3
 - `NYPLProcess` Fetch files from the NYPL catalog (specifically Bib records) and import them
 - `GutenbergProcess` Fetch updated files from Project Gutenberg and import them
+- `MUSEProcess` Fetch open access books from Project MUSE and import them
 
 #### Starting a local Kubernetes cluster
 

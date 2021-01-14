@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## unreleased -- v0.0.6
+## unreleased -- v0.1.0
+### Added
+- Mapping for parsing `MARC` records
+- Manager for generating PDF manifest files (in JSON-LD)
+- Process for ingesting records from Project MUSE
 ### Fixed
 - Fix timeout issues with RabbitMQ during long running processes
 - Handle odd record formatting in NYPL MARC records
