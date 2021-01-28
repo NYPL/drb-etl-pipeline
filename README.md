@@ -40,6 +40,7 @@ All services share a single entry point in `main.py` file. This script dynamical
 - `--startDate` Also used with the `custom` ingest setting, sets a start point for a period to query or ingest records
 - `--limit` Limits the total number of rows imported in a single process
 - `--offset` Skips the first `n` rows of an import process
+- `--singleRecord` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
 
 To set up a local environment there is a special process (which is also run when creating a local Kubernetes cluster) to initialize a database and search cluster. To set this up run `python main.py --process DevelopmentSetupProcess` which will run a short import process and populate the database with some sample data.
 
@@ -57,6 +58,7 @@ The currently available processes are:
 - `NYPLProcess` Fetch files from the NYPL catalog (specifically Bib records) and import them
 - `GutenbergProcess` Fetch updated files from Project Gutenberg and import them
 - `MUSEProcess` Fetch open access books from Project MUSE and import them
+- `DOABProcess` Fetch open access books from the Directory of Open Access Books
 
 #### Starting a local Kubernetes cluster
 

@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## Unreleased -- v0.2.0
+### Added
+- Process for ingesting records from the Directory of Open Access Books (DOAB)
+- Option for importing single records from ingest sources
+### Fixed
+- Added custom error handling at the mapping level for malformed source records
+
+
 ## 2021-01-14 -- v0.1.0
 ### Added
 - Mapping for parsing `MARC` records
