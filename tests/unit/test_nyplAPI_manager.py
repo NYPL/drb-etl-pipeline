@@ -1,3 +1,4 @@
+from oauthlib.oauth2 import TokenExpiredError
 import pytest
 
 from managers import NyplApiManager
@@ -43,26 +44,65 @@ class TestNYPLApiManager:
             client_secret='test_api_secret'
         )
 
-    def test_tokenSaver(self, testInstance):
-        testInstance.tokenSaver({})
+    def test_createClient(self, testInstance, mocker):
+        mockOauthSession = mocker.patch('managers.nyplApi.OAuth2Session')
+        mockOauthSession.return_value = 'testClient'
+        
+        testInstance.createClient()
 
-        assert testInstance.token == {'expires_in': 900}
+        assert testInstance.client == 'testClient'
+        mockOauthSession.assert_called_once_with('test_api_client', token=None)
 
     def test_queryApi(self, testInstance, mocker):
-        mockOauthSession = mocker.patch('managers.nyplApi.OAuth2Session')
-        mockClient = mocker.MagicMock()
+        mockClientCreate = mocker.patch.object(NyplApiManager, 'createClient')
+
         mockResp = mocker.MagicMock()
         mockResp.json.return_value = 'testAPIResponse'
-        mockClient.get.return_value = mockResp
-        mockOauthSession.return_value = mockClient
+
+        testInstance.client = mocker.MagicMock()
+        testInstance.client.get.return_value = mockResp
 
         testResponse = testInstance.queryApi('test/path/request')
 
         assert testResponse == 'testAPIResponse'
-        mockOauthSession.assert_called_once_with('test_api_client',
-            token=None, auto_refresh_url='test_api_token_url',
-            auto_refresh_kwargs={'client_id': 'test_api_client', 'client_secret': 'test_api_secret'},
-            token_updater=testInstance.tokenSaver
+        testInstance.client.get.assert_called_once_with(
+            'https://platform.nypl.org/api/v0.1/test/path/request', timeout=15
         )
-        mockClient.get.assert_called_once_with('https://platform.nypl.org/api/v0.1/test/path/request')
+        mockClientCreate.assert_not_called
+
+    def test_queyApi_tokenExpired(self, testInstance, mocker):
+        mockRepeatClient = mocker.MagicMock()
+        def resetClient():
+            mockResp = mocker.MagicMock()
+            mockResp.json.return_value = 'testAPIResponse'
+
+            mockRepeatClient.get.return_value = mockResp
+            testInstance.client = mockRepeatClient
+
+        mockClientCreate = mocker.patch.object(NyplApiManager, 'createClient')
+        mockClientCreate.side_effect = resetClient
+
+        mockErrorClient = mocker.MagicMock()
+        mockErrorClient.get.side_effect = TokenExpiredError
+        testInstance.client = mockErrorClient
+
+        mockTokenGenerate = mocker.patch.object(NyplApiManager, 'generateAccessToken')
+
+        testResponse = testInstance.queryApi('test/path/request')
+
+        assert testResponse == 'testAPIResponse'
+        mockErrorClient.get.assert_called_once_with(
+            'https://platform.nypl.org/api/v0.1/test/path/request', timeout=15
+        )
+        mockRepeatClient.get.assert_called_once_with(
+            'https://platform.nypl.org/api/v0.1/test/path/request', timeout=15
+        )
+        mockTokenGenerate.assert_called_once
+        mockClientCreate.assert_called_once
+
+    def test_queyApi_timeout(self, testInstance, mocker):
+        testInstance.client = mocker.MagicMock()
+        testInstance.client.get.side_effect = TimeoutError
+        
+        assert testInstance.queryApi('test/path/request') == {}
         
