@@ -101,7 +101,7 @@ class TestS3Process:
         testEpubFile = testInstance.getFileContents('testURL')
 
         assert testEpubFile == b'epub'
-        mockGet.assert_called_once_with('testURL', stream=True, timeout=120)
+        mockGet.assert_called_once_with('testURL', stream=True, timeout=15)
         
     def test_getFileContents_error(self, testInstance, mocker):
         mockGet = mocker.patch.object(requests, 'get')

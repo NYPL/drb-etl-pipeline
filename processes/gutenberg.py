@@ -89,7 +89,11 @@ class GutenbergProcess(CoreProcess):
             gutenbergRec.applyMapping()
 
             self.storeEpubsInS3(gutenbergRec)
-            self.addCoverAndStoreInS3(gutenbergRec, gutenbergYAML)
+
+            try:
+                self.addCoverAndStoreInS3(gutenbergRec, gutenbergYAML)
+            except AttributeError:
+                print('Unable to store cover for {}'.format(gutenbergRec.source_id))
             
             self.addDCDWToUpdateList(gutenbergRec)
 
@@ -106,7 +110,8 @@ class GutenbergProcess(CoreProcess):
             if flags['download'] is True:
                 bucketLocation = 'epubs/{}/{}_{}.epub'.format(source, gutenbergID, gutenbergType)
             else:
-                bucketLocation = 'epubs/{}/{}_{}/oebps/content.opf'.format(source, gutenbergID, gutenbergType)
+                bucketLocation = 'epubs/{}/{}_{}/meta-inf/content.xml'.format(source, gutenbergID, gutenbergType)
+                mediaType = 'application/epub+xml'
 
             s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
 
@@ -122,7 +127,7 @@ class GutenbergProcess(CoreProcess):
             mimeType, _ = mimetypes.guess_type(coverData['image_path'])
             gutenbergID = yamlData['identifiers']['gutenberg']
 
-            fileExt = re.search(r'(\.[a-z0-9]+)$', coverData['image_path']).group(1)
+            fileExt = re.search(r'(\.[a-zA-Z0-9]+)$', coverData['image_path']).group(1)
             bucketLocation = 'covers/gutenberg/{}{}'.format(gutenbergID, fileExt)
 
             s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)

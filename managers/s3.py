@@ -1,3 +1,4 @@
+import base64
 import boto3
 from botocore.exceptions import ClientError
 import hashlib
@@ -40,21 +41,26 @@ class S3Manager:
         except S3Error:
             print('{} does not yet exist'.format(objKey))
 
-        if not existingObject or existingObject['ResponseMetadata']['HTTPStatusCode'] != 304:
-            try:
-                if objExtension == 'epub':
-                    self.putExplodedEpubComponentsInBucket(obj, objKey, bucket)
+        if existingObject and\
+            (existingObject['ResponseMetadata']['HTTPStatusCode'] == 304\
+            or existingObject['Metadata'].get('md5checksum', None) == objMD5):
+                print('Skipping existing, unmodified file {}'.format(objKey))
+                return None
 
-                return self.s3Client.put_object(
-                    ACL=bucketPermissions,
-                    Body=obj,
-                    Bucket=bucket,
-                    Key=objKey
-                )
-            except ClientError as e:
-                raise S3Error('Unable to store file in s3')
+        try:
+            if objExtension == 'epub':
+                self.putExplodedEpubComponentsInBucket(obj, objKey, bucket)
 
-        return None
+            return self.s3Client.put_object(
+                ACL=bucketPermissions,
+                Body=obj,
+                Bucket=bucket,
+                Key=objKey,
+                ContentMD5=objMD5,
+                Metadata={'md5Checksum': objMD5}
+            )
+        except ClientError as e:
+            raise S3Error('Unable to store file in s3')
 
     def putExplodedEpubComponentsInBucket(self, obj, objKey, bucket):
         keyRoot = objKey.split('.')[0] 
@@ -79,7 +85,7 @@ class S3Manager:
     def getmd5HashOfObject(obj):
         m = hashlib.md5()
         m.update(obj)
-        return m.hexdigest()
+        return base64.b64encode(m.digest()).decode('utf-8')
 
 
 class S3Error(Exception):

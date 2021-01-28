@@ -97,7 +97,7 @@ class GutenbergMapping(XMLMapping):
                 i + 1,
                 'https://gutenberg.org/ebooks/{}.epub{}'.format(gutenbergID, extension),
                 'gutenberg',
-                'application/epub',
+                'application/epub+zip',
                 json.dumps({'reader': True, 'download': False, 'catalog': False})
             )
 

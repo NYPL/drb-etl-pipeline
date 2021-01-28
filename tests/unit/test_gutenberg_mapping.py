@@ -57,7 +57,7 @@ class TestGutenbergMapping:
         assert testMapping.record.authors == ['Author1 (1950-2020)|||true', 'Author2|||false']
         assert testMapping.record.has_part == [
             '1|https://gutenberg.org/ebooks/1.epub.images|gutenberg|application/epub+zip|{"reader": false, "download": true, "catalog": false}',
-            '1|https://gutenberg.org/ebooks/1.epub.images|gutenberg|application/epub|{"reader": true, "download": false, "catalog": false}',
+            '1|https://gutenberg.org/ebooks/1.epub.images|gutenberg|application/epub+zip|{"reader": true, "download": false, "catalog": false}',
             '2|https://gutenberg.org/ebooks/1.epub.noimages|gutenberg|application/epub+zip|{"reader": false, "download": true, "catalog": false}',
-            '2|https://gutenberg.org/ebooks/1.epub.noimages|gutenberg|application/epub|{"reader": true, "download": false, "catalog": false}'
+            '2|https://gutenberg.org/ebooks/1.epub.noimages|gutenberg|application/epub+zip|{"reader": true, "download": false, "catalog": false}'
         ]
