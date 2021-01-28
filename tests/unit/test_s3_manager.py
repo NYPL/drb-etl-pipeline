@@ -62,7 +62,8 @@ class TestS3Manager:
         managerMocks['getObjectFromBucket'].assert_called_once_with('testKey.epub', 'testBucket', md5Hash='testMd5Hash')
         managerMocks['putExplodedEpubComponentsInBucket'].assert_called_once_with('testObj', 'testKey.epub', 'testBucket') 
         testInstance.s3Client.put_object.assert_called_once_with(
-            ACL='public-read', Body='testObj', Bucket='testBucket', Key='testKey.epub'
+            ACL='public-read', Body='testObj', Bucket='testBucket', Key='testKey.epub',
+            ContentMD5='testMd5Hash', Metadata={'md5Checksum': 'testMd5Hash'}
         )
 
     def test_putObjectInBucket_existing_outdated(self, testInstance, mocker):
@@ -87,7 +88,8 @@ class TestS3Manager:
         managerMocks['getObjectFromBucket'].assert_called_once_with('testKey.epub', 'testBucket', md5Hash='testMd5Hash')
         managerMocks['putExplodedEpubComponentsInBucket'].assert_called_once_with('testObj', 'testKey.epub', 'testBucket') 
         testInstance.s3Client.put_object.assert_called_once_with(
-            ACL='public-read', Body='testObj', Bucket='testBucket', Key='testKey.epub'
+            ACL='public-read', Body='testObj', Bucket='testBucket', Key='testKey.epub',
+            ContentMD5='testMd5Hash', Metadata={'md5Checksum': 'testMd5Hash'}
         )
 
     def test_putObjectInBucket_existing_unmodified(self, testInstance, mocker):
