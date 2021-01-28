@@ -60,16 +60,17 @@ class S3Process(CoreProcess):
                 storageManager.putObjectInBucket(epubB, filePath, bucket)
                 rabbitManager.acknowledgeMessageProcessed(msgProps.delivery_tag)
                 print('Sending Tag {} for {}'.format(fileURL, msgProps.delivery_tag))
+                del epubB
             except Exception as e:
                 print(e)
 
     @staticmethod
     def getFileContents(epubURL):
-        timeout = 120 
+        timeout = 15
         epubResp = requests.get(epubURL, stream=True, timeout=timeout)
         if epubResp.status_code == 200:
             content = bytes()
-            for byteChunk in epubResp.iter_content(1024):
+            for byteChunk in epubResp.iter_content(1024 * 250):
                 content += byteChunk
 
             return content

@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased -- v0.2.0
+### Added
+- md5 check for records stored in AWS s3
+### Fixed
+- File chunk size for file streaming to AWS s3
+
 ## 2021-01-14 -- v0.1.0
 ### Added
 - Mapping for parsing `MARC` records
