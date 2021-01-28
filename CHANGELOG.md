@@ -1,5 +1,9 @@
 # CHANGELOG
 
+### unreleased -- v0.2.0
+### Fixed
+- Token expiration bug in NYPL API manager
+
 ## 2021-01-14 -- v0.1.0
 ### Added
 - Mapping for parsing `MARC` records
