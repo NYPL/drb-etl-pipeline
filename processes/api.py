@@ -4,7 +4,7 @@ from api.app import FlaskAPI
 
 class APIProcess(CoreProcess):
     def __init__(self, *args):
-        super(APIProcess, self).__init__(*args[:3])
+        super(APIProcess, self).__init__(*args[:4])
 
         self.createElasticConnection()
         self.generateEngine()

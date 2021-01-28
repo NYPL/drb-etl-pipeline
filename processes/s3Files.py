@@ -10,7 +10,7 @@ from managers import S3Manager, RabbitMQManager
 
 class S3Process(CoreProcess):
     def __init__(self, *args):
-        super(S3Process, self).__init__(*args[:3])
+        super(S3Process, self).__init__(*args[:4])
 
     def runProcess(self):
         self.receiveAndProcessMessages()

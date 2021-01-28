@@ -9,7 +9,7 @@ from model import Record
 
 class ClusterProcess(CoreProcess):
     def __init__(self, *args):
-        super(ClusterProcess, self).__init__(*args[:3])
+        super(ClusterProcess, self).__init__(*args[:4])
 
         # PostgreSQL Connection
         self.generateEngine()

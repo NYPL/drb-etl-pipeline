@@ -10,7 +10,7 @@ from model import Record
 
 class ClassifyProcess(CoreProcess):
     def __init__(self, *args):
-        super(ClassifyProcess, self).__init__(*args[:3])
+        super(ClassifyProcess, self).__init__(*args[:4])
 
         self.ingestLimit = args[3] or None
 

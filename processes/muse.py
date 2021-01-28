@@ -15,7 +15,7 @@ class MUSEProcess(CoreProcess):
     MUSE_ROOT_URL = 'https://muse.jhu.edu'
 
     def __init__(self, *args):
-        super(MUSEProcess, self).__init__(*args[:3])
+        super(MUSEProcess, self).__init__(*args[:4])
 
         self.generateEngine()
         self.createSession()

@@ -21,7 +21,7 @@ class TestAPIProcess:
         mockFlask = mocker.patch('processes.api.FlaskAPI')
         mockFlask.return_value = mockAPI
 
-        return APIProcess('TestProcess', 'testFile', 'testDate')
+        return APIProcess('TestProcess', 'testFile', 'testDate', 'testRecord')
     
     def test_api_runProcess(self, apiInstance, mocker):
         apiInstance.runProcess()

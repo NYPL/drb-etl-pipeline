@@ -25,7 +25,7 @@ class DevelopmentSetupProcess(CoreProcess):
         )
         self.initializeDB()
 
-        super(DevelopmentSetupProcess, self).__init__(*args[:3])
+        super(DevelopmentSetupProcess, self).__init__(*args[:4])
 
     def runProcess(self):
         # Setup database if necessary
