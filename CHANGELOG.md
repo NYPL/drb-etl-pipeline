@@ -6,6 +6,7 @@
 ### Fixed
 - File chunk size for file streaming to AWS s3
 - Token expiration bug in NYPL API manager
+- Added `application/epub+xml` media type for ePub XML files to Gutenberg process
 
 ## 2021-01-14 -- v0.1.0
 ### Added
