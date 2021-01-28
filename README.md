@@ -82,15 +82,15 @@ This application can be deployed to any kubernetes cluster with the provided `pr
 
 - Improve this README
 - Add following data ingest processes:
-  - NYPL Catalog
-  - Project Gutenberg
-  - DOAB
-  - Project MUSE
+  - ~~NYPL Catalog~~
+  - ~~Project Gutenberg~~
+  - ~~DOAB~~
+  - ~~Project MUSE~~
   - MET Exhibition Catalogs
 - Add centralized logging process
 - Add commenting/documentation strings
 - Generate C4 diagrams for application
-- Integrate ePub processor into standard processing flow
+- ~~Integrate ePub processor into standard processing flow~~
 - Add cover fetching process
 - Create test suite, including:
   - Unit tests for all components

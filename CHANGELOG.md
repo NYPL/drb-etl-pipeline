@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## unreleased -- v0.2.1
+### Fixed
+- Update README with progress
+- Refactored environment variable configuration to be more understandable
+
 ## 2021-01-28 -- v0.2.0
 ### Added
 - Process for ingesting records from the Directory of Open Access Books (DOAB)

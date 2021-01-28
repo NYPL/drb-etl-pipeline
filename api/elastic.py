@@ -19,7 +19,7 @@ class ElasticClient():
         self.client = esClient
     
     def createSearch(self):
-        return Search(using=self.client, index=os.environ['ES_INDEX'])
+        return Search(using=self.client, index=os.environ['ELASTICSEARCH_INDEX'])
 
     def searchQuery(self, searchParams, sortParams, filterParams, page=0, perPage=10):
         startPos, endPos = ElasticClient.getFromSize(page, perPage)
