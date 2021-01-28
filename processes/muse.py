@@ -39,8 +39,8 @@ class MUSEProcess(CoreProcess):
         museRec.applyMapping()
 
         # Use the available source link to create a PDF manifest file and store in S3
-        _, museLink, *_ = list(museRec.record.has_part[0].split('|'))
-        pdfManifest = self.constructPDFManifest(museLink, museRec.record)
+        _, museLink, _, museType, _ = list(museRec.record.has_part[0].split('|'))
+        pdfManifest = self.constructPDFManifest(museLink, museType, museRec.record)
 
         s3URL = self.createManifestInS3(pdfManifest, museRec.record.source_id)
         museRec.addHasPartLink(
@@ -75,13 +75,13 @@ class MUSEProcess(CoreProcess):
 
         raise Exception('Unable to load Project MUSE MARC file')
 
-    def constructPDFManifest(self, museLink, museRecord):
+    def constructPDFManifest(self, museLink, museType, museRecord):
         try:
             museHTML = self.loadMusePage(museLink)
         except Exception as e:
             return None
 
-        pdfManifest = PDFManifest(museLink)
+        pdfManifest = PDFManifest(museLink, museType)
         pdfManifest.addMetadata(museRecord)
 
         museSoup = BeautifulSoup(museHTML, features='lxml')

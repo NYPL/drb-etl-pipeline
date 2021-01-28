@@ -1,3 +1,4 @@
+from .doab import DOABProcess
 from .gutenberg import GutenbergProcess
 from .hathiTrust import HathiTrustProcess
 from .nypl import NYPLProcess

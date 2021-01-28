@@ -38,6 +38,14 @@ class Core(AbstractMapping):
         existing.frbr_status = 'to_do'
         existing.cluster_status = False
 
+    def raiseMappingError(self, message):
+        raise MappingError(message)
+
+
+class MappingError(Exception):
+    def __init__(self, message):
+        self.message = message
+
 
 class CustomFormatter(Formatter):
     def __init__(self):

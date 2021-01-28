@@ -9,13 +9,14 @@ def main(args):
     procType = args.ingestType
     customFile = args.inputFile
     startDate = args.startDate
+    singleRecord = args.singleRecord
     limit = args.limit
     offset = args.offset
 
     availableProcesses = registerProcesses()
 
     procClass = availableProcesses[process]
-    processInstance = procClass(procType, customFile, startDate, limit, offset)
+    processInstance = procClass(procType, customFile, startDate, singleRecord, limit, offset)
     processInstance.runProcess()
 
 
@@ -41,6 +42,8 @@ def createArgParser():
                         help='Set overall limit for number of records imported in this process')
     parser.add_argument('-o', '--offset',
                         help='Set start offset for current processed (for batched import process)')
+    parser.add_argument('-r', '--singleRecord',
+                        help='Single record ID for ingesting an individual record (only applicable for DOAB)')
     
     return parser
 

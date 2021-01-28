@@ -15,13 +15,13 @@ class TestPDFManifest:
 
     @pytest.fixture
     def testManifest(self):
-        return PDFManifest('testSource')
+        return PDFManifest('testSource', 'testMediaType')
 
     def test_initializer(self, testManifest):
         assert testManifest.metadata == {'@type': 'https://schema.org/Book'}
         assert testManifest.links == {
             'self': {},
-            'alternate': [{'href': 'testSource', 'type': 'text/html'}]
+            'alternate': [{'href': 'testSource', 'type': 'testMediaType'}]
         }
         assert testManifest.components == []
         assert testManifest.tableOfContents == []
@@ -117,7 +117,7 @@ class TestPDFManifest:
             'context': 'https://test_aws_bucket-s3.amazonaws.com/manifests/context.jsonld',
             'media_type': 'application/pdf+json',
             'metadata': {'@type': 'https://schema.org/Book'},
-            'links': {'self': {}, 'alternate': [{'href': 'testSource', 'type': 'text/html'}]},
+            'links': {'self': {}, 'alternate': [{'href': 'testSource', 'type': 'testMediaType'}]},
             'components': [],
             'table_of_contents': []
         }

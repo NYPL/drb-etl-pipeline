@@ -42,9 +42,14 @@ class MARCMapping(Core):
             if fieldInstance.is_control_field():
                 outData.append(getattr(fieldInstance, 'data'))
             else:
-                subfields = {}
+                subfields = {'ind1': fieldInstance.indicators[0], 'ind2': fieldInstance.indicators[1]}
                 for i in range(0, len(fieldInstance.subfields), 2):
-                    subfields[fieldInstance.subfields[i]] = fieldInstance.subfields[i + 1]
+                    try:
+                        subfieldKey = 's{}'.format(int(fieldInstance.subfields[i]))
+                    except ValueError:
+                        subfieldKey = fieldInstance.subfields[i]
+
+                    subfields[subfieldKey] = fieldInstance.subfields[i + 1]
 
                 outData.append(subfields)                
         

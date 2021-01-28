@@ -15,13 +15,14 @@ class TestCoreProcess:
 
     @pytest.fixture
     def coreInstance(self):
-        return CoreProcess('TestProcess', 'testFile', 'testDate')
+        return CoreProcess('TestProcess', 'testFile', 'testDate', 'testRecord')
 
     def test_coreProcess_initial_values(self, coreInstance):
         # Core properties set by this class
         assert coreInstance.process == 'TestProcess'
         assert coreInstance.customFile == 'testFile'
         assert coreInstance.ingestPeriod == 'testDate'
+        assert coreInstance.singleRecord == 'testRecord'
         assert len(coreInstance.records) == 0
 
         # Properties set by the DBManager
