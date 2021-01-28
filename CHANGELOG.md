@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.2.0
+### Fixed
+- Added `application/epub+xml` media type for ePub XML files to Gutenberg process
+
 ## 2021-01-14 -- v0.1.0
 ### Added
 - Mapping for parsing `MARC` records
