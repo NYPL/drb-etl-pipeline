@@ -11,7 +11,7 @@ from model import Record
 
 class CatalogProcess(CoreProcess):
     def __init__(self, *args):
-        super(CatalogProcess, self).__init__(*args[:3])
+        super(CatalogProcess, self).__init__(*args[:4])
 
         # PostgreSQL Connection
         self.generateEngine()

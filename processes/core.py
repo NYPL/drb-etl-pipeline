@@ -5,11 +5,12 @@ from static.manager import StaticManager
 
 class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, StaticManager,
                   ElasticsearchManager, S3Manager):
-    def __init__(self, process, customFile, ingestPeriod):
+    def __init__(self, process, customFile, ingestPeriod, singleRecord):
         super(CoreProcess, self).__init__()
         self.process = process
         self.customFile = customFile
         self.ingestPeriod = ingestPeriod
+        self.singleRecord = singleRecord
 
         self.records = []
     

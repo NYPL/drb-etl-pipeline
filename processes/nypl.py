@@ -9,10 +9,10 @@ from mappings.nypl import NYPLMapping
 
 class NYPLProcess(CoreProcess):
     def __init__(self, *args):
-        super(NYPLProcess, self).__init__(*args[:3])
+        super(NYPLProcess, self).__init__(*args[:4])
 
-        self.ingestLimit = args[3] or None
-        self.ingestOffset = args[4] or None
+        self.ingestLimit = args[4] or None
+        self.ingestOffset = args[5] or None
 
         self.generateEngine()
         self.createSession()
@@ -113,4 +113,6 @@ class NYPLProcess(CoreProcess):
         with self.bibDBConnection.engine.connect() as conn:
             bibResults = conn.execute(nyplBibQuery)
             for bib in bibResults:
+                if bib['var_fields'] is None: continue
+
                 self.parseNYPLDataRow(bib)

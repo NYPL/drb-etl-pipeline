@@ -81,7 +81,10 @@ class TestMARCMapping:
         mockControlField.is_control_field.assert_called_once
 
     def test_getMARCData_standardField(self, testMapper, mocker):
-        mockField = mocker.MagicMock(subfields=['a', 'aValue', 'b', 'bValue', 'c', 'cValue'])
+        mockField = mocker.MagicMock(
+            subfields=['a', 'aValue', 'b', 'bValue', 'c', 'cValue'],
+            indicators=['ind1Value', 'ind2Value']
+        )
         mockField.is_control_field.return_value = False
 
         testMapper.source = mocker.MagicMock()
@@ -89,7 +92,7 @@ class TestMARCMapping:
 
         testData = testMapper.getMARCData('000')
 
-        assert testData == [{'a': 'aValue', 'b': 'bValue', 'c': 'cValue'}]
+        assert testData == [{'ind1': 'ind1Value', 'ind2': 'ind2Value', 'a': 'aValue', 'b': 'bValue', 'c': 'cValue'}]
         mockField.is_control_field.assert_called_once
 
     def test_setFieldValues(self, testMapper, mocker):

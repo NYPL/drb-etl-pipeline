@@ -17,6 +17,7 @@ class TestMainProcess:
         mockArgs.ingestType = 'test'
         mockArgs.inputFile = 'testFile'
         mockArgs.startDate = 'testDate'
+        mockArgs.singleRecord = 'testRecord'
         mockArgs.limit = 'testLimit'
         mockArgs.offset = 'testOffset'
 
@@ -38,7 +39,7 @@ class TestMainProcess:
 
         main(processArgs)
 
-        mockProcess.assert_called_with('test', 'testFile', 'testDate', 'testLimit', 'testOffset')
+        mockProcess.assert_called_with('test', 'testFile', 'testDate', 'testRecord', 'testLimit', 'testOffset')
         mockInstance.runProcess.assert_called_once
 
     def test_registerProcesses(self, mocker):

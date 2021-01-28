@@ -1,9 +1,12 @@
 # CHANGELOG
 
-## unreleased -- v0.2.0
+## 2021-01-28 -- v0.2.0
 ### Added
+- Process for ingesting records from the Directory of Open Access Books (DOAB)
+- Option for importing single records from ingest sources
 - md5 check for records stored in AWS s3
 ### Fixed
+- Added custom error handling at the mapping level for malformed source records
 - File chunk size for file streaming to AWS s3
 - Token expiration bug in NYPL API manager
 - Added `application/epub+xml` media type for ePub XML files to Gutenberg process

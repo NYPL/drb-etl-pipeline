@@ -1,4 +1,5 @@
 from .db import DBManager
+from .doabParser import DOABLinkManager
 from .gutenberg import GutenbergManager
 from .kMeans import KMeansManager
 from .oclcCatalog import OCLCCatalogManager

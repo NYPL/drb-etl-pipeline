@@ -239,7 +239,11 @@ class TestNYPLProcess:
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
-        mockConn.execute.return_value = ['bib1', 'bib2', 'bib3']
+        mockConn.execute.return_value = [
+            {'var_fields': 'bib1'},
+            {'var_fields': None},
+            {'var_fields': 'bib3'}
+        ]
 
         testInstance.bibDBConnection.engine.connect.return_value.__enter__.return_value = mockConn
 
@@ -249,7 +253,7 @@ class TestNYPLProcess:
         mockConn.execute.assert_called_once_with(
             'SELECT * FROM bib WHERE updated_date > \'1900-01-01T12:00:00\''
         )
-        mockParse.assert_has_calls([mocker.call('bib1'), mocker.call('bib2'), mocker.call('bib3')])
+        mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_importBibRecords_not_full_custom_timestamp(self, testInstance, mocker):
         mockDatetime = mocker.patch('processes.nypl.datetime')
@@ -258,7 +262,11 @@ class TestNYPLProcess:
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
-        mockConn.execute.return_value = ['bib1', 'bib2', 'bib3']
+        mockConn.execute.return_value = [
+            {'var_fields': 'bib1'},
+            {'var_fields': None},
+            {'var_fields': 'bib3'}
+        ]
 
         testInstance.bibDBConnection.engine.connect.return_value.__enter__.return_value = mockConn
 
@@ -268,7 +276,7 @@ class TestNYPLProcess:
         mockConn.execute.assert_called_once_with(
             'SELECT * FROM bib WHERE updated_date > \'customTimestamp\''
         )
-        mockParse.assert_has_calls([mocker.call('bib1'), mocker.call('bib2'), mocker.call('bib3')])
+        mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_importBibRecords_full(self, testInstance, mocker):
         mockDatetime = mocker.patch('processes.nypl.datetime')
@@ -276,7 +284,11 @@ class TestNYPLProcess:
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
-        mockConn.execute.return_value = ['bib1', 'bib2', 'bib3']
+        mockConn.execute.return_value = [
+            {'var_fields': 'bib1'},
+            {'var_fields': None},
+            {'var_fields': 'bib3'}
+        ]
 
         testInstance.bibDBConnection.engine.connect.return_value.__enter__.return_value = mockConn
 
@@ -286,7 +298,7 @@ class TestNYPLProcess:
         mockConn.execute.assert_called_once_with(
             'SELECT * FROM bib'
         )
-        mockParse.assert_has_calls([mocker.call('bib1'), mocker.call('bib2'), mocker.call('bib3')])
+        mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_importBibRecords_full_batch(self, testInstance, mocker):
         mockDatetime = mocker.patch('processes.nypl.datetime')
@@ -294,7 +306,11 @@ class TestNYPLProcess:
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
-        mockConn.execute.return_value = ['bib1', 'bib2', 'bib3']
+        mockConn.execute.return_value = [
+            {'var_fields': 'bib1'},
+            {'var_fields': 'bib2'},
+            {'var_fields': None}
+        ]
 
         testInstance.ingestOffset = '1000'
         testInstance.ingestLimit = '1000'
@@ -305,4 +321,4 @@ class TestNYPLProcess:
         mockConn.execute.assert_called_once_with(
             'SELECT * FROM bib OFFSET 1000 LIMIT 1000'
         )
-        mockParse.assert_has_calls([mocker.call('bib1'), mocker.call('bib2'), mocker.call('bib3')])
+        mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib2'})])

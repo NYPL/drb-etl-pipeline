@@ -127,7 +127,7 @@ class TestMUSEProcess:
 
         mockMapper.assert_called_once_with('testMARC')
         mockMapping.applyMapping.assert_called_once
-        processMocks['constructPDFManifest'].assert_called_once_with('testURL', mockRecord)
+        processMocks['constructPDFManifest'].assert_called_once_with('testURL', 'type', mockRecord)
         processMocks['createManifestInS3'].assert_called_once_with('testManifest', 'muse1')
         mockMapping.addHasPartLink.assert_called_once_with(
             'testS3URL', 'application/pdf+json', '{"reader": true, "download": false, "catalog": false}'
@@ -142,12 +142,12 @@ class TestMUSEProcess:
         mockManifestConstructor = mocker.patch('processes.muse.PDFManifest')
         mockManifestConstructor.return_value = mockManifest
 
-        testManifest = testProcess.constructPDFManifest('testLink', 'testRecord')
+        testManifest = testProcess.constructPDFManifest('testLink', 'testType', 'testRecord')
 
         assert testManifest == mockManifest
 
         mockLoad.assert_called_once_with('testLink')
-        mockManifestConstructor.assert_called_once_with('testLink')
+        mockManifestConstructor.assert_called_once_with('testLink', 'testType')
         mockManifest.addMetadata.assert_called_once_with('testRecord')
 
         mockManifest.addSection.assert_has_calls([
@@ -187,13 +187,13 @@ class TestMUSEProcess:
         mockRecord.source_id = 1
 
         with pytest.raises(MUSEError):
-            testProcess.constructPDFManifest('testLink', mockRecord)
+            testProcess.constructPDFManifest('testLink', 'testType', mockRecord)
 
     def test_constructPDFManifest_error(self, testProcess, mocker):
         mockLoad = mocker.patch.object(MUSEProcess, 'loadMusePage')
         mockLoad.side_effect = Exception
 
-        assert testProcess.constructPDFManifest('testLink', 'testRecord') == None
+        assert testProcess.constructPDFManifest('testLink', 'testType', 'testRecord') == None
 
     def test_loadMusePage_success(self, testProcess, mocker):
         mockGet = mocker.patch.object(requests, 'get')
