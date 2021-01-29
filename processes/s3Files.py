@@ -56,6 +56,7 @@ class S3Process(CoreProcess):
             filePath = fileMeta['bucketPath']
 
             try:
+                print(fileURL)
                 epubB = S3Process.getFileContents(fileURL)
                 storageManager.putObjectInBucket(epubB, filePath, bucket)
                 rabbitManager.acknowledgeMessageProcessed(msgProps.delivery_tag)
@@ -67,7 +68,13 @@ class S3Process(CoreProcess):
     @staticmethod
     def getFileContents(epubURL):
         timeout = 15
-        epubResp = requests.get(epubURL, stream=True, timeout=timeout)
+        epubResp = requests.get(
+            epubURL,
+            stream=True,
+            timeout=timeout,
+            headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'}
+        )
+
         if epubResp.status_code == 200:
             content = bytes()
             for byteChunk in epubResp.iter_content(1024 * 250):
