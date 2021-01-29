@@ -8,11 +8,11 @@ from model import Base
 class DBManager:
     def __init__(self, user=None, pswd=None, host=None, port=None, db=None):
         super(DBManager, self).__init__()
-        self.user = user or DBManager.decryptEnvVar('DB_USER')
-        self.pswd = pswd or DBManager.decryptEnvVar('DB_PSWD')
-        self.host = host or DBManager.decryptEnvVar('DB_HOST')
-        self.port = port or DBManager.decryptEnvVar('DB_PORT')
-        self.db = db or DBManager.decryptEnvVar('DB_NAME')
+        self.user = user or DBManager.decryptEnvVar('POSTGRES_USER')
+        self.pswd = pswd or DBManager.decryptEnvVar('POSTGRES_PSWD')
+        self.host = host or DBManager.decryptEnvVar('POSTGRES_HOST')
+        self.port = port or DBManager.decryptEnvVar('POSTGRES_PORT')
+        self.db = db or DBManager.decryptEnvVar('POSTGRES_NAME')
 
         self.engine = None
         self.session = None

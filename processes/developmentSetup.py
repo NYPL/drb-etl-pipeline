@@ -61,12 +61,12 @@ class DevelopmentSetupProcess(CoreProcess):
         self.adminDBConnection.generateEngine()
         with self.adminDBConnection.engine.connect() as conn:
             conn.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            conn.execute('CREATE DATABASE {}'.format(os.environ['DB_NAME']))
+            conn.execute('CREATE DATABASE {}'.format(os.environ['POSTGRES_NAME']))
             conn.execute('CREATE USER {} WITH PASSWORD \'{}\''.format(
-                os.environ['DB_USER'], os.environ['DB_PSWD']
+                os.environ['POSTGRES_USER'], os.environ['POSTGRES_PSWD']
             ))
             conn.execute('GRANT ALL PRIVILEGES ON DATABASE {} TO {}'.format(
-                os.environ['DB_NAME'], os.environ['DB_USER'])
+                os.environ['POSTGRES_NAME'], os.environ['POSTGRES_USER'])
             )
 
         self.adminDBConnection.engine.dispose()

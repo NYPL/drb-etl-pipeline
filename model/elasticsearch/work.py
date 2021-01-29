@@ -38,4 +38,4 @@ class Work(BaseDoc):
         return '<ESWork(title={}, uuid={})>'.format(self.title, self.uuid)
 
     class Index:
-        name = os.environ.get('ES_INDEX', None)
+        name = os.environ.get('ELASTICSEARCH_INDEX', None)

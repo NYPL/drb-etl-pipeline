@@ -9,10 +9,10 @@ class TestElasticsearchManager:
     @pytest.fixture
     def testInstance(self, mocker):
         mocker.patch.dict('os.environ', {
-            'ES_INDEX': 'testES',
-            'ES_HOST': 'host',
-            'ES_PORT': 'port',
-            'ES_TIMEOUT': '1000'
+            'ELASTICSEARCH_INDEX': 'testES',
+            'ELASTICSEARCH_HOST': 'host',
+            'ELASTICSEARCH_PORT': 'port',
+            'ELASTICSEARCH_TIMEOUT': '1000'
         })
 
         return ElasticsearchManager()

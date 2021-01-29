@@ -14,13 +14,13 @@ from model import ESWork
 
 class ElasticsearchManager:
     def __init__(self):
-        self.index = os.environ['ES_INDEX']
+        self.index = os.environ['ELASTICSEARCH_INDEX']
         self.client = None
 
     def createElasticConnection(self):
-        host = os.environ['ES_HOST']
-        port = os.environ['ES_PORT']
-        timeout = int(os.environ['ES_TIMEOUT'])
+        host = os.environ['ELASTICSEARCH_HOST']
+        port = os.environ['ELASTICSEARCH_PORT']
+        timeout = int(os.environ['ELASTICSEARCH_TIMEOUT'])
         try:
             self.client = Elasticsearch(
                 hosts=[{'host': host, 'port': port}],

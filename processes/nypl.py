@@ -19,11 +19,11 @@ class NYPLProcess(CoreProcess):
         self.generateAccessToken()
 
         self.bibDBConnection = DBManager(
-            user=os.environ['BIB_USER'],
-            pswd=os.environ['BIB_PSWD'],
-            host=os.environ['BIB_HOST'],
-            port=os.environ['BIB_PORT'],
-            db=os.environ['BIB_NAME']
+            user=os.environ['NYPL_BIB_USER'],
+            pswd=os.environ['NYPL_BIB_PSWD'],
+            host=os.environ['NYPL_BIB_HOST'],
+            port=os.environ['NYPL_BIB_PORT'],
+            db=os.environ['NYPL_BIB_NAME']
         )
         self.bibDBConnection.generateEngine()
 

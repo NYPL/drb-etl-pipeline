@@ -8,9 +8,9 @@ class NyplApiManager:
     def __init__(self, clientID=None, clientSecret=None):
         super(NyplApiManager, self).__init__()
         self.client = None
-        self.clientID = clientID or os.environ['API_CLIENT_ID']
-        self.clientSecret = clientSecret or os.environ['API_CLIENT_SECRET']
-        self.tokenURL = os.environ['API_CLIENT_TOKEN_URL']
+        self.clientID = clientID or os.environ['NYPL_API_CLIENT_ID']
+        self.clientSecret = clientSecret or os.environ['NYPL_API_CLIENT_SECRET']
+        self.tokenURL = os.environ['NYPL_API_CLIENT_TOKEN_URL']
         self.apiRoot = 'https://platform.nypl.org/api/v0.1'
         self.token = None
 

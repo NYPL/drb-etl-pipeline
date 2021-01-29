@@ -1,18 +1,21 @@
 # POSTGRES CONNECTION DETAILS
-# DB_USER, DB_PSWD, ADMIN_USER, ADMIN_PSWD and DB_NAME must be configured in secrets file 
-# DB_HOST: '10.97.170.25
-# DB_PORT: '5432'
+# POSTGRES_USER, POSTGRES_PSWD, POSTGRES_ADMIN_USER and POSTGRES_ADMIN_PSWD must be configured in secrets file 
+# POSTGRES_HOST: '' 
+# POSTGRES_NAME: ''
+# POSTGRES_PORT: ''
 
 # REDIS CONFIGURATION
-# REDIS_HOST: '10.97.170.100'
-# REDIS_PORT: '6379'
+REDIS_HOST: 'shared-qa.frh6pg.0001.use1.cache.amazonaws.com'
+REDIS_PORT: '6379'
 
 # ELASTICSEARCH CONFIGURATION
-# ES_INDEX, ES_HOST, ES_PORT, ES_TIMEOUT
+# ELASTICSEARCH_INDEX, ELASTICSEARCH_HOST must be configured in secrets file
+ELASTICSEARCH_PORT: '80'
+ELASTICSEARCH_TIMEOUT: '30'
 
 # RABBITMQ CONFIGURATION
-# RABBIT_HOST: '10.97.170.200'
-# RABBIT_PORT: '5672'
+# RABBIT_HOST: ''
+# RABBIT_PORT: ''
 OCLC_QUEUE: oclc_catalog
 EPUB_QUEUE: epub_files
 
@@ -24,18 +27,21 @@ HATHI_DATAFILES: https://www.hathitrust.org/filebrowser/download/244651
 
 # AWS CONFIGURATION
 # AWS_ACCESS and AWS_SECRET must be configured in secrets file
-# AWS_REGION: 'us-east-1'
+AWS_REGION: 'us-east-1'
 EPUB_BUCKET: 'sfr_files'
 
 # NYPL BIB REPLICA DB CONNECTION
-# BIB_HOST, BIB_PORT, BIB_NAME, BIB_USER, BIB_PSWD must be configured in secrets file
+# NYPL_BIB_USER, NYPL_BIB_PSWD must be configured in secrets file
+NYPL_BIB_HOST: 'bib-service-production-rep.cvy7z512hcjg.us-east-1.rds.amazonaws.com'
+NYPL_BIB_NAME: 'bib_service_production'
+NYPL_BIB_PORT: '5432'
 
 # NYPL Location Code Lookup
 NYPL_LOCATIONS_BY_CODE: https://nypl-core-objects-mapping-qa.s3.amazonaws.com/by_sierra_location.json
 
 # NYPL API Credentials
-# API_CLIENT_ID, API_CLIENT_SECRET, API_CLIENT_TOKEN_URL must be configured in secrets file
-API_CLIENT_TOKEN_URL: https://isso.nypl.org/oauth/token
+# API_CLIENT_ID and API_CLIENT_SECRET must be configured in secrets file
+NYPL_API_CLIENT_TOKEN_URL: https://isso.nypl.org/oauth/token
 
 # GITHUB API Credentials
 # GITHUB_API_KEY must be configured in secrets file
@@ -46,3 +52,6 @@ BARDO_CCE_API: http://sfr-bardo-copyright-development.us-east-1.elasticbeanstalk
 
 # Project MUSE MARC endpoint
 MUSE_MARC_URL: https://about.muse.jhu.edu/lib/metadata?format=marc&content=book&include=oa&filename=open_access_books&no_auth=1
+
+# DOAB OAI-PMH endpoint
+DOAB_OAI_URL: http://www.doabooks.org/oai?
