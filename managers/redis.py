@@ -8,6 +8,7 @@ class RedisManager:
         super(RedisManager, self).__init__()
         self.redisHost = host or os.environ['REDIS_HOST']
         self.redisPort = port or os.environ['REDIS_PORT']
+        self.environment = os.environ['ENVIRONMENT']
     
     def createRedisClient(self):
         self.redisClient = Redis(
@@ -32,7 +33,7 @@ class RedisManager:
     
     def setRedis(self, service, identifier, idenType, presentTime, expirationTime=60*60*24*7):
         self.redisClient.set(
-            '{}/{}/{}'.format(service, identifier, idenType),
+            '{}/{}/{}/{}'.format(self.environment, service, identifier, idenType),
             presentTime.strftime('%Y-%m-%dT%H:%M:%S'),
             ex=expirationTime
         )
