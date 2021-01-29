@@ -1,5 +1,6 @@
 import re
 import requests
+from requests.exceptions import ReadTimeout
 
 from managers.parsers.abstractParser import AbstractParser
 
@@ -34,13 +35,12 @@ class FrontierParser(AbstractParser):
     def generateEpubLinks(self, s3Root):
         ePubSourceURI = 'https://www.frontiersin.org/research-topics/{}/epub'.format(self.uriIdentifier)
 
-        ePubHeadResp = requests.head(ePubSourceURI, timeout=3)
-        
-        if ePubHeadResp.status_code != 200:
-            return [None]
+        frontierStatus, frontierHeaders = FrontierParser.checkAvailability(ePubSourceURI)
+
+        if frontierStatus != 200: return [None]
 
         try:
-            contentHeader = ePubHeadResp.headers['content-disposition']
+            contentHeader = frontierHeaders.get('content-disposition', '')
             filename = re.search(r'filename=(.+)\.EPUB$', contentHeader).group(1)
         except (AttributeError, KeyError):
             return [None]
@@ -72,3 +72,11 @@ class FrontierParser(AbstractParser):
 
     def generateS3Root(self):
         return super().generateS3Root()
+
+    @staticmethod
+    def checkAvailability(uri):
+        try:
+            headResp = requests.head(uri, timeout=10, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'})
+            return (headResp.status_code, headResp.headers)
+        except ReadTimeout:
+            return (0, None)
