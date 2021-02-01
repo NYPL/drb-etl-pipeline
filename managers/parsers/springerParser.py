@@ -98,7 +98,7 @@ class SpringerParser(AbstractParser):
             self.code.replace('.', '-'), self.uriIdentifier
         )
         ePubDownloadURI = '{}{}'.format(s3Root, ePubDownloadPath)
-        ePubReadPath = 'epubs/springer/{}_{}/meta-inf/container.xml'.format(
+        ePubReadPath = 'epubs/springer/{}_{}/META-INF/container.xml'.format(
             self.code.replace('.', '-'), self.uriIdentifier
         )
         ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
