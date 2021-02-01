@@ -67,7 +67,7 @@ class TestSearchBlueprint:
             'query': ['q1', 'q2'], 'sort': ['s1'], 'size': [5]
         }
         mockUtils['extractParamPairs'].side_effect = [
-            'testQueryTerms', 'testSortTerms', 'testFilterTerms'
+            ['testQueryTerms'], ['testSortTerms'], ['testFilterTerms'], ['testShowAll']
         ]
         mockUtils['formatAggregationResult'].return_value = 'testFacets'
         mockUtils['formatPagingOptions'].return_value = 'testPaging'
@@ -97,7 +97,8 @@ class TestSearchBlueprint:
                 mocker.call(['q1', 'q2']), mocker.call(['s1']), mocker.call([])
             ])
             mockES.searchQuery.assert_called_once_with(
-                'testQueryTerms', 'testSortTerms', 'testFilterTerms', page=0, perPage=5
+                ['testQueryTerms'], ['testSortTerms'], ['testFilterTerms', 'testShowAll'],
+                page=0, perPage=5
             )
             mockDB.fetchSearchedWorks.assert_called_once_with([
                 ('uuid1', ['ed1', 'ed2']), ('uuid2', ['ed3']),

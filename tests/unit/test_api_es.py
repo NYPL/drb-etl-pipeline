@@ -479,7 +479,7 @@ class TestElasticClient:
         mockApply.return_value = mockSearch
         mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
 
-        filtersAndAggs = ElasticClient.addFilterClausesAndAggregations(mockSearch, [('show_all', 'true')])
+        filtersAndAggs = ElasticClient.addFilterClausesAndAggregations(mockSearch, [('showAll', 'true')])
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),

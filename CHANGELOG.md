@@ -8,6 +8,8 @@
 - Refactored environment variable configuration to be more understandable
 - Fixed bug that could cause collisions in redis cache
 - DOAB ePub file ingest error handling and checking
+- Fixed handling of `showAll` and standardized for all endpoints
+- Removed any snake_case parameters from API
 
 ## 2021-01-28 -- v0.2.0
 ### Added

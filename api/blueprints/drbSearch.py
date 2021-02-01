@@ -15,7 +15,9 @@ def standardQuery():
     searchParams = APIUtils.normalizeQueryParams(request.args)
     queryTerms = APIUtils.extractParamPairs(searchParams.get('query', []))
     sortTerms = APIUtils.extractParamPairs(searchParams.get('sort', []))
+
     filterTerms = APIUtils.extractParamPairs(searchParams.get('filter', []))
+    filterTerms.extend(APIUtils.extractParamPairs('showAll', []))
 
     searchPage = searchParams.get('page', [0])[0]
     searchSize = searchParams.get('size', [10])[0]
