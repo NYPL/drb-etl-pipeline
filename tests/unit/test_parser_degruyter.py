@@ -139,5 +139,5 @@ class TestDeGruyterParser:
 
         assert DeGruyterParser.makeHeadQuery('testURI') == (200, 'testHeaders')
         mockHead.assert_called_once_with(
-            'testURI', timeout=5, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'}
+            'testURI', timeout=15, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'}
         )

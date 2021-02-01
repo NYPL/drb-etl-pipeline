@@ -70,7 +70,7 @@ class DOABLinkManager:
     @staticmethod
     def findFinalURI(uri, mediaType):
         try:
-            uriHeader = requests.head(uri, allow_redirects=False, verify=False, timeout=5)
+            uriHeader = requests.head(uri, allow_redirects=False, verify=False, timeout=15)
             headers = uriHeader.headers
         except(MissingSchema, ConnectionError, InvalidURL, ReadTimeout):
             raise LinkError('Invalid has_part URI')

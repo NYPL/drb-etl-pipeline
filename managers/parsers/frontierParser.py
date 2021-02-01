@@ -76,7 +76,12 @@ class FrontierParser(AbstractParser):
     @staticmethod
     def checkAvailability(uri):
         try:
-            headResp = requests.head(uri, timeout=10, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'})
+            headResp = requests.head(
+                uri,
+                timeout=FrontierParser.TIMEOUT,
+                headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'}
+            )
+
             return (headResp.status_code, headResp.headers)
         except ReadTimeout:
             return (0, None)

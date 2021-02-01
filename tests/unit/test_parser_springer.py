@@ -53,7 +53,7 @@ class TestSpringerParser:
 
         assert testParser.validateAltLinkFormats() is True
         assert testParser.uri == 'http://finalURI'
-        mockHead.assert_called_once_with('http://link.springer.com/book/10.007/1', timeout=5)
+        mockHead.assert_called_once_with('http://link.springer.com/book/10.007/1', timeout=15)
         parserMocks['findOALink'].assert_not_called()
         parserMocks['validateURI'].assert_called_once()
 
@@ -69,7 +69,7 @@ class TestSpringerParser:
         mockHead.return_value = mockResp
 
         assert testParser.validateAltLinkFormats() is False
-        mockHead.assert_called_once_with('http://link.springer.com/book/10.007/1', timeout=5)
+        mockHead.assert_called_once_with('http://link.springer.com/book/10.007/1', timeout=15)
         parserMocks['findOALink'].assert_not_called()
         parserMocks['validateURI'].assert_not_called()
 

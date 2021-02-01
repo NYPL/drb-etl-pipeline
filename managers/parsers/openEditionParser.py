@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import re
 import requests
+from requests.exceptions import ReadTimeout
 
 from managers.parsers.abstractParser import AbstractParser
 from managers.pdfManifest import PDFManifest
@@ -77,7 +78,10 @@ class OpenEditionParser(AbstractParser):
         ]
 
     def loadEbookLinks(self):
-        oeResp = requests.get(self.uri, timeout=10)
+        try:
+            oeResp = requests.get(self.uri, timeout=self.TIMEOUT)
+        except ReadTimeout:
+            return []
         
         if oeResp.status_code != 200: return []
 

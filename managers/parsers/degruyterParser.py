@@ -83,6 +83,9 @@ class DeGruyterParser(AbstractParser):
 
     @staticmethod
     def makeHeadQuery(uri):
-        headResp = requests.head(uri, timeout=5, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'})
+        headResp = requests.head(
+            uri, timeout=DeGruyterParser.TIMEOUT,
+            headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'}
+        )
 
         return (headResp.status_code, headResp.headers)
