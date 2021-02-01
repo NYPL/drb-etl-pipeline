@@ -1,5 +1,6 @@
 import pytest
 import requests
+from requests.exceptions import ReadTimeout
 
 from managers.parsers import FrontierParser
 
@@ -44,9 +45,8 @@ class TestFrontierParser:
         parserMocks['generateEpubLinks'].assert_called_once_with('testRoot/')
 
     def test_generateEpubLinks_success(self, testParser, mocker):
-        mockResp = mocker.MagicMock(status_code=200, headers={'content-disposition': 'filename=title.EPUB'})
-        mockHead = mocker.patch.object(requests, 'head')
-        mockHead.return_value = mockResp
+        mockCheck = mocker.patch.object(FrontierParser, 'checkAvailability')
+        mockCheck.return_value = (200, {'content-disposition': 'filename=title.EPUB'})
 
         testParser.uriIdentifier = 1
         testLinks = testParser.generateEpubLinks('testRoot/')
@@ -55,12 +55,11 @@ class TestFrontierParser:
             ('testRoot/epubs/frontier/1_title/meta-inf/container.xml', {'reader': True}, 'application/epub+xml', None, None),
             ('testRoot/epubs/frontier/1_title.epub', {'download': True}, 'application/epub+zip', None, ('epubs/frontier/1_title.epub', 'https://www.frontiersin.org/research-topics/1/epub'))
         ]
-        mockHead.assert_called_once_with('https://www.frontiersin.org/research-topics/1/epub', timeout=3)
+        mockCheck.assert_called_once_with('https://www.frontiersin.org/research-topics/1/epub')
 
     def test_generateEpubLinks_request_error(self, testParser, mocker):
-        mockResp = mocker.MagicMock(status_code=500, headers={})
-        mockHead = mocker.patch.object(requests, 'head')
-        mockHead.return_value = mockResp
+        mockCheck = mocker.patch.object(FrontierParser, 'checkAvailability')
+        mockCheck.return_value = (500, {})
 
         testParser.uriIdentifier = 1
         testLinks = testParser.generateEpubLinks('testRoot/')
@@ -102,3 +101,16 @@ class TestFrontierParser:
 
         assert testParser.generateS3Root() == 'testRoot'
         mockAbstractGenerate.assert_called_once()
+
+    def test_checkAvailability(self, mocker):
+        mockResp = mocker.MagicMock(status_code=200, headers='testHeaders')
+        mockHead = mocker.patch.object(requests, 'head')
+        mockHead.return_value = mockResp
+
+        assert FrontierParser.checkAvailability('testURL') == (200, 'testHeaders')
+
+    def test_checkAvailability_timeout(self, mocker):
+        mockHead = mocker.patch.object(requests, 'head')
+        mockHead.side_effect = ReadTimeout
+
+        assert FrontierParser.checkAvailability('testURL') == (0, None)

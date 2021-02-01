@@ -62,19 +62,37 @@ class SpringerParser(AbstractParser):
     def createLinks(self):
         s3Root = self.generateS3Root()
 
+        pdfLinks = self.createPDFLinks(s3Root)
+
+        ePubLinks = self.createEPubLinks(s3Root)
+
+        return [*pdfLinks, *ePubLinks]
+
+    def createPDFLinks(self, s3Root):
         pdfSourceURI = 'https://link.springer.com/content/pdf/{}/{}.pdf'.format(self.code, self.uriIdentifier)
+
+        if SpringerParser.checkAvailability(pdfSourceURI) is False: return []
+
         manifestPath = 'manifests/springer/{}_{}.json'.format(
             self.code.replace('.', '-'), self.uriIdentifier
         )
         manifestURI = '{}{}'.format(s3Root, manifestPath)
         manifestJSON = self.generateManifest(pdfSourceURI, manifestURI)
 
+        return [
+            (manifestURI, {'reader': True}, 'application/pdf+json', (manifestPath, manifestJSON), None),
+            (pdfSourceURI, {'download': True}, 'application/pdf', None, None)
+        ]
+
+    def createEPubLinks(self, s3Root):
         ePubSourceURI = 'https://link.springer.com/download/epub/{}/{}.epub'.format(self.code, self.uriIdentifier)
+
+        if SpringerParser.checkAvailability(ePubSourceURI) is False: return []
+
         ePubDownloadPath = 'epubs/springer/{}_{}.epub'.format(
             self.code.replace('.', '-'), self.uriIdentifier
         )
         ePubDownloadURI = '{}{}'.format(s3Root, ePubDownloadPath)
-
         ePubReadPath = 'epubs/springer/{}_{}/meta-inf/container.xml'.format(
             self.code.replace('.', '-'), self.uriIdentifier
         )
@@ -82,9 +100,7 @@ class SpringerParser(AbstractParser):
 
         return [
             (ePubReadURI, {'reader': True}, 'application/epub+zip', None, None),
-            (ePubDownloadURI, {'download': True}, 'application/epub+xml', None, (ePubDownloadPath, ePubSourceURI)),
-            (manifestURI, {'reader': True}, 'application/pdf+json', (manifestPath, manifestJSON), None),
-            (pdfSourceURI, {'download': True}, 'application/pdf', None, None),
+            (ePubDownloadURI, {'download': True}, 'application/epub+xml', None, (ePubDownloadPath, ePubSourceURI))
         ]
 
     def generateManifest(self, sourceURI, manifestURI):
@@ -92,4 +108,10 @@ class SpringerParser(AbstractParser):
 
     def generateS3Root(self):
         return super().generateS3Root()
+
+    @staticmethod
+    def checkAvailability(uri):
+        headResp = requests.head(uri, timeout=5, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'})
+
+        return headResp.status_code == 200
         

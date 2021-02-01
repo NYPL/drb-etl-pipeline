@@ -102,23 +102,64 @@ class TestSpringerParser:
     def test_createLinks(self, testParser, mocker):
         parserMocks = mocker.patch.multiple(SpringerParser,
             generateS3Root=mocker.DEFAULT,
-            generateManifest=mocker.DEFAULT
+            createPDFLinks=mocker.DEFAULT,
+            createEPubLinks=mocker.DEFAULT
         )
         parserMocks['generateS3Root'].return_value = 'testRoot/'
+        parserMocks['createPDFLinks'].return_value = ['pdf1', 'pdf2']
+        parserMocks['createEPubLinks'].return_value = ['epub1', 'epub2']
+
+        testLinks = testParser.createLinks()
+
+        assert testLinks == ['pdf1', 'pdf2', 'epub1', 'epub2']
+        parserMocks['generateS3Root'].assert_called_once()
+        parserMocks['createPDFLinks'].assert_called_once_with('testRoot/')
+        parserMocks['createEPubLinks'].assert_called_once_with('testRoot/')
+
+    def test_createPDFLinks(self, testParser, mocker):
+        parserMocks = mocker.patch.multiple(SpringerParser,
+            generateManifest=mocker.DEFAULT,
+            checkAvailability=mocker.DEFAULT
+        )
         parserMocks['generateManifest'].return_value = 'testManifestJSON'
+        parserMocks['checkAvailability'].return_value = True
 
         testParser.code = '10.007'
         testParser.uriIdentifier = '1'
-        testLinks = testParser.createLinks()
+        testLinks = testParser.createPDFLinks('testRoot/')
+
+        assert testLinks == [
+            ('testRoot/manifests/springer/10-007_1.json', {'reader': True}, 'application/pdf+json', ('manifests/springer/10-007_1.json', 'testManifestJSON'), None),
+            ('https://link.springer.com/content/pdf/10.007/1.pdf', {'download': True}, 'application/pdf', None, None)
+        ]
+        parserMocks['generateManifest'].assert_called_once_with('https://link.springer.com/content/pdf/10.007/1.pdf', 'testRoot/manifests/springer/10-007_1.json')
+        parserMocks['checkAvailability'].assert_called_once_with('https://link.springer.com/content/pdf/10.007/1.pdf')
+
+    def test_createPDFLinks_missing(self, testParser, mocker):
+        mockCheck = mocker.patch.object(SpringerParser, 'checkAvailability')
+        mockCheck.return_value = False
+
+        assert testParser.createPDFLinks('testRoot/') == []
+
+    def test_createEPubLinks(self, testParser, mocker):
+        mockCheck = mocker.patch.object(SpringerParser, 'checkAvailability')
+        mockCheck.return_value = True
+
+        testParser.code = '10.007'
+        testParser.uriIdentifier = '1'
+        testLinks = testParser.createEPubLinks('testRoot/')
 
         assert testLinks == [
             ('testRoot/epubs/springer/10-007_1/meta-inf/container.xml', {'reader': True}, 'application/epub+zip', None, None),
             ('testRoot/epubs/springer/10-007_1.epub', {'download': True}, 'application/epub+xml', None, ('epubs/springer/10-007_1.epub', 'https://link.springer.com/download/epub/10.007/1.epub')),
-            ('testRoot/manifests/springer/10-007_1.json', {'reader': True}, 'application/pdf+json', ('manifests/springer/10-007_1.json', 'testManifestJSON'), None),
-            ('https://link.springer.com/content/pdf/10.007/1.pdf', {'download': True}, 'application/pdf', None, None)
         ]
-        parserMocks['generateS3Root'].assert_called_once()
-        parserMocks['generateManifest'].assert_called_once_with('https://link.springer.com/content/pdf/10.007/1.pdf', 'testRoot/manifests/springer/10-007_1.json')
+        mockCheck.assert_called_once_with('https://link.springer.com/download/epub/10.007/1.epub')
+
+    def test_createEPubLinks_missing(self, testParser, mocker):
+        mockCheck = mocker.patch.object(SpringerParser, 'checkAvailability')
+        mockCheck.return_value = False
+
+        assert testParser.createEPubLinks('testRoot/') == []
 
     def test_generateManifest(self, testParser, mocker):
         mockAbstractManifest = mocker.patch('managers.parsers.abstractParser.AbstractParser.generateManifest')
@@ -133,3 +174,10 @@ class TestSpringerParser:
 
         assert testParser.generateS3Root() == 'testRoot'
         mockAbstractGenerate.assert_called_once()
+
+    def test_checkAvailability(self, mocker):
+        mockResp = mocker.MagicMock(status_code=200)
+        mockHead = mocker.patch.object(requests, 'head')
+        mockHead.return_value = mockResp
+
+        assert SpringerParser.checkAvailability('testURL') == True
