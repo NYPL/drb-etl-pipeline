@@ -28,8 +28,8 @@ class APIUtils():
     @staticmethod
     def formatPagingOptions(hits):
         return {
-            'prev_page_sort': list(hits[0].meta.sort),
-            'next_page_sort': list(hits[-1].meta.sort)
+            'prevPageSort': list(hits[0].meta.sort),
+            'nextPageSort': list(hits[-1].meta.sort)
         }
 
     @classmethod

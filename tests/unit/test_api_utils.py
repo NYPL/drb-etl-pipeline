@@ -80,7 +80,7 @@ class TestAPIUtils:
     def test_formatPagingOptions(self, testHitObject):
         testPagingOptions = APIUtils.formatPagingOptions(testHitObject)
 
-        assert testPagingOptions == {'prev_page_sort': ['firstSort'], 'next_page_sort': ['lastSort']}
+        assert testPagingOptions == {'prevPageSort': ['firstSort'], 'nextPageSort': ['lastSort']}
 
     def test_formatWorkOutput_single_work(self, mocker):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
