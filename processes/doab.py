@@ -89,9 +89,7 @@ class DOABProcess(CoreProcess):
 
             resumptionToken = self.getResumptionToken(oaiFile)
 
-            print(recordsProcessed, self.ingestOffset, self.ingestLimit)
             if recordsProcessed < self.ingestOffset:
-                print('SKIPPING BATCH')
                 recordsProcessed += 100
                 continue
             
@@ -108,7 +106,6 @@ class DOABProcess(CoreProcess):
             recordsProcessed += 100
 
             if not resumptionToken or recordsProcessed >= self.ingestLimit:
-                print('BREAKING')
                 break
 
     def getResumptionToken(self, oaiFile):
@@ -133,7 +130,6 @@ class DOABProcess(CoreProcess):
 
         doabURL = '{}{}'.format(doabURL, urlParams)
             
-        print(doabURL, resumptionToken)
         doabResponse = requests.get(doabURL, stream=True, timeout=30, verify=False)
 
         if doabResponse.status_code == 200:
