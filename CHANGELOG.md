@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.2.1
+## 2021-02-01 -- v0.2.1
 ### Added
 - Endpoint at `/` to verify API status
 ### Fixed
