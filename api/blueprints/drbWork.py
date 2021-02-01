@@ -11,7 +11,7 @@ def workFetch(uuid):
     dbClient = DBClient(current_app.config['DB_CLIENT'])
 
     searchParams = APIUtils.normalizeQueryParams(request.args)
-    showAll = False if searchParams.get('showAll', ['true'])[0].lower() == 'false' else True
+    showAll = searchParams.get('showAll', ['true'])[0].lower() != 'false'
 
     work = dbClient.fetchSingleWork(uuid)
 

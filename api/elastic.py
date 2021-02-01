@@ -139,7 +139,7 @@ class ElasticClient():
         dateFilters = list(filter(lambda x: 'year' in x[0].lower(), filterParams))
         languageFilters = list(filter(lambda x: x[0] == 'language', filterParams))
         formatFilters = list(filter(lambda x: x[0] == 'format', filterParams))
-        displayFilters = list(filter(lambda x: x[0] == 'show_all', filterParams))
+        displayFilters = list(filter(lambda x: x[0] == 'showAll', filterParams))
 
         dateFilter, dateAggregation = (None, None)
         formatFilter, formatAggregation = (None, None)
@@ -155,7 +155,7 @@ class ElasticClient():
             formatFilter = Q('terms', instances__formats=formats)
             formatAggregation = A('filter', **{'terms': {'editions.formats': formats}})
 
-        if len(displayFilters) > 0:
+        if len(displayFilters) > 0 and displayFilters[0][1] == 'true':
             displayFilter = None
             displayAggregation = None
         
