@@ -7,7 +7,9 @@ from managers import RedisManager
 class TestRedisManager:
     @pytest.fixture
     def testInstance(self, mocker):
-        mocker.patch.dict('os.environ', {'REDIS_HOST': 'host', 'REDIS_PORT': 'port'})
+        mocker.patch.dict('os.environ', {
+            'REDIS_HOST': 'host', 'REDIS_PORT': 'port', 'ENVIRONMENT': 'testEnv'
+        })
         return RedisManager()
 
     def test_initializer(self, testInstance):
@@ -61,5 +63,5 @@ class TestRedisManager:
         testInstance.setRedis('test', 1, 'test', datetime(1900, 1, 1))
 
         testInstance.redisClient.set.assert_called_once_with(
-            'test/1/test', '1900-01-01T00:00:00', ex=604800
+            'testEnv/test/1/test', '1900-01-01T00:00:00', ex=604800
         )

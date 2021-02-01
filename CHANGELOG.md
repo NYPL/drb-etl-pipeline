@@ -1,9 +1,12 @@
 # CHANGELOG
 
 ## unreleased -- v0.2.1
+### Added
+- Endpoint at `/` to verify API status
 ### Fixed
 - Update README with progress
 - Refactored environment variable configuration to be more understandable
+- Fixed bug that could cause collisions in redis cache
 - DOAB ePub file ingest error handling and checking
 
 ## 2021-01-28 -- v0.2.0

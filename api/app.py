@@ -5,7 +5,7 @@ import os
 from waitress import serve
 
 from model import Work
-from .blueprints import search, work
+from .blueprints import search, work, info
 
 
 class FlaskAPI:
@@ -15,6 +15,7 @@ class FlaskAPI:
         self.app.config['ES_CLIENT'] = client
         self.app.config['DB_CLIENT'] = dbEngine
 
+        self.app.register_blueprint(info)
         self.app.register_blueprint(search)
         self.app.register_blueprint(work)
 
