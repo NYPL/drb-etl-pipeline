@@ -73,7 +73,7 @@ class DOABLinkManager:
         try:
             uriHeader = requests.head(uri, allow_redirects=False, verify=False, timeout=15)
             headers = dict((key.lower(), value) for key, value in uriHeader.headers.items())
-        except(MissingSchema, ConnectionError, InvalidURL, ReadTimeout) as e:
+        except(MissingSchema, ConnectionError, InvalidURL, ReadTimeout, UnicodeDecodeError):
             raise LinkError('Invalid has_part URI')
 
         try:
