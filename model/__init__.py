@@ -5,6 +5,7 @@ from .postgres.edition import Edition
 from .postgres.item import Item
 from .postgres.identifier import Identifier
 from .postgres.link import Link
+from .postgres.olCover import OpenLibraryCover
 from .postgres.rights import Rights
 
 from .elasticsearch.agent import Agent as ESAgent

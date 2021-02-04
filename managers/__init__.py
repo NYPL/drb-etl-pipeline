@@ -1,3 +1,4 @@
+from .coverManager import CoverManager
 from .db import DBManager
 from .doabParser import DOABLinkManager
 from .gutenberg import GutenbergManager

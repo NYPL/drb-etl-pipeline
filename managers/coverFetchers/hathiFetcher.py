@@ -1,0 +1,106 @@
+import os
+import requests
+from requests.exceptions import ReadTimeout
+from requests_oauthlib import OAuth1
+
+from managers.coverFetchers.abstractFetcher import AbstractFetcher
+
+
+class HathiFetcher(AbstractFetcher):
+    ORDER = 1
+    SOURCE = 'hathi'
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        self.apiRoot = os.environ['HATHI_API_ROOT']
+        self.apiKey = os.environ['HATHI_API_KEY']
+        self.apiSecret = os.environ['HATHI_API_SECRET']
+
+        self.uri = None
+        self.mediaType = None
+
+    def hasCover(self):
+        for value, source in self.identifiers:
+            if source != 'hathi': continue
+
+            try:
+                self.fetchVolumeCover(value)
+
+                self.coverID = value
+
+                return True
+            except HathiCoverError:
+                pass
+
+        return False
+
+    def fetchVolumeCover(self, htid):
+        print('Fetching hathi cover for {}'.format(htid))
+
+        metsURL = '{}/structure/{}?format=json&v=2'.format(self.apiRoot, htid)
+
+        metsResponse = self.makeHathiReq(metsURL)
+
+        if not metsResponse:
+            raise HathiCoverError('Invalid htid {}'.format(htid))
+
+        metsJSON = metsResponse.json()
+
+        rankedMETSPages = sorted([
+            HathiPage(page)
+            for page in metsJSON['METS:structMap']['METS:div']['METS:div'][:25]
+        ], key=lambda x: x.pageScore, reverse=True)
+
+        self.setCoverPageURL(htid, rankedMETSPages[0].pageNumber)
+
+    def setCoverPageURL(self, htid, pageNumber):
+        self.uri = '{}/volume/pageimage/{}/{}?format=jpeg&v=2'.format(
+            self.apiRoot, htid, pageNumber
+        )
+        self.mediaType = 'image/jpeg'
+
+    def downloadCoverFile(self):
+        hathiCoverResponse = self.makeHathiReq(self.uri)
+
+        if hathiCoverResponse:
+            return hathiCoverResponse.content
+
+    def generateAuth(self):
+        return OAuth1(self.apiKey, client_secret=self.apiSecret, signature_type='query')
+
+    def makeHathiReq(self, url):
+        try:
+            hathiResp = requests.get(url, auth=self.generateAuth(), timeout=5)
+
+            if hathiResp.status_code == 200:
+                return hathiResp
+        except ReadTimeout:
+            pass
+
+        return None
+
+
+class HathiPage:
+    PAGE_FEATURES = set(['FRONT_COVER', 'TITLE', 'IMAGE_ON_PAGE', 'TABLE_OF_CONTENTS'])
+
+    def __init__(self, pageData):
+        self.pageData = pageData
+
+        self.pageNumber = self.getPageNumber()
+        self.pageFlags = self.getPageFlags()
+        self.pageScore = self.getPageScore()
+
+    def getPageNumber(self):
+        return self.pageData.get('ORDER', 0)
+
+    def getPageFlags(self):
+        return set(self.pageData.get('LABEL', '').split(', '))
+
+    def getPageScore(self):
+        return len(list(self.pageFlags & self.PAGE_FEATURES))
+
+
+class HathiCoverError(Exception):
+    def __init__(self, message):
+        self.message = message
