@@ -38,6 +38,6 @@ class Link(Base, Core):
     @staticmethod
     def httpRegexSub(url):
         if isinstance(url, str):
-            return re.sub(r'^http(?:s)?:\/\/', '', url.lower())
+            return re.sub(r'^http(?:s)?:\/\/', '', url)
 
         return url

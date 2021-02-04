@@ -5,6 +5,8 @@ import re
 from managers.pdfManifest import PDFManifest
 
 class AbstractParser(ABC):
+    TIMEOUT = 15
+
     @abstractmethod
     def __init__(self, uri, mediaType, record):
         self.uri = uri

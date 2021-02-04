@@ -52,7 +52,7 @@ class TestFrontierParser:
         testLinks = testParser.generateEpubLinks('testRoot/')
 
         assert testLinks == [
-            ('testRoot/epubs/frontier/1_title/meta-inf/container.xml', {'reader': True}, 'application/epub+xml', None, None),
+            ('testRoot/epubs/frontier/1_title/META-INF/container.xml', {'reader': True}, 'application/epub+xml', None, None),
             ('testRoot/epubs/frontier/1_title.epub', {'download': True}, 'application/epub+zip', None, ('epubs/frontier/1_title.epub', 'https://www.frontiersin.org/research-topics/1/epub'))
         ]
         mockCheck.assert_called_once_with('https://www.frontiersin.org/research-topics/1/epub')

@@ -20,43 +20,37 @@ class DeGruyterParser(AbstractParser):
     def createLinks(self):
         s3Root = self.generateS3Root()
 
-        isbnMatch = re.search(r'(978[0-9]+)', self.uri)
+        titleMatch = re.search(r'\/title\/([0-9]+)(?:$|\?)', self.uri)
+        isbnMatch = re.search(r'\/(document\/doi\/10\.[0-9]+\/([0-9]+))\/html', self.uri)
 
-        if isbnMatch is not None:
-            degISBN = isbnMatch.group(1)
-            isbnPath = '/'.join([degISBN] * 3)
-            self.uri = 'https://www.degruyter.com/view/books/{}.xml'.format(isbnPath)
+        if titleMatch:
+            self.uriIdentifier = titleMatch.group(1)
+            ePubSourceURI = 'https://www.degruyter.com/downloadepub/title/{}'.format(self.uriIdentifier)
+            pdfSourceURI = 'https://www.degruyter.com/downloadpdf/title/{}'.format(self.uriIdentifier)
+        elif isbnMatch:
+            rootPath = isbnMatch.group(1)
+            self.uriIdentifier = isbnMatch.group(2)
+            ePubSourceURI = 'https://www.degruyter.com/{}/epub'.format(rootPath)
+            pdfSourceURI = 'https://www.degruyter.com/{}/pdf'.format(rootPath)
 
-            uriStatus, uriHeaders = DeGruyterParser.makeHeadQuery(self.uri)
-
-            if uriStatus == 301:
-                self.uri = uriHeaders['Location']
-
-        idMatch = re.search(r'\/title\/([0-9]+)(?:$|\?)', self.uri)
-
-        if idMatch:
-            self.uriIdentifier = idMatch.group(1)
-
-            pdfLink = self.generatePDFLinks(s3Root)
-
-            ePubLinks = self.generateEpubLinks(s3Root)
+        if titleMatch or isbnMatch:
+            pdfLink = self.generatePDFLinks(s3Root, pdfSourceURI)
+            ePubLinks = self.generateEpubLinks(s3Root, ePubSourceURI)
 
             return list(filter(None, [*pdfLink, *ePubLinks]))
 
         return super().createLinks()
         
-    def generateEpubLinks(self, s3Root):
-        ePubSourceURI = 'https://www.degruyter.com/downloadepub/title/{}'.format(self.uriIdentifier)
-
+    def generateEpubLinks(self, s3Root, ePubSourceURI):
         ePubHeadStatus, _ = DeGruyterParser.makeHeadQuery(ePubSourceURI)
-        
+
         if ePubHeadStatus != 200:
             return [None]
 
         ePubDownloadPath = 'epubs/degruyter/{}.epub'.format(self.uriIdentifier)
         ePubDownloadURI = '{}{}'.format(s3Root, ePubDownloadPath)
 
-        ePubReadPath = 'epubs/degruyter/{}/meta-inf/container.xml'.format(self.uriIdentifier)
+        ePubReadPath = 'epubs/degruyter/{}/META-INF/container.xml'.format(self.uriIdentifier)
         ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
 
         return [
@@ -64,8 +58,7 @@ class DeGruyterParser(AbstractParser):
             (ePubDownloadURI, {'download': True}, 'application/epub+zip', None, (ePubDownloadPath, ePubSourceURI)),
         ]
 
-    def generatePDFLinks(self, s3Root):
-        pdfSourceURI = 'https://www.degruyter.com/downloadpdf/title/{}'.format(self.uriIdentifier)
+    def generatePDFLinks(self, s3Root, pdfSourceURI):
         manifestPath = 'manifests/degruyter/{}.json'.format(self.uriIdentifier)
         manifestURI = '{}{}'.format(s3Root, manifestPath)
         manifestJSON = self.generateManifest(pdfSourceURI, manifestURI)
@@ -83,6 +76,9 @@ class DeGruyterParser(AbstractParser):
 
     @staticmethod
     def makeHeadQuery(uri):
-        headResp = requests.head(uri, timeout=5, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'})
+        headResp = requests.head(
+            uri, timeout=DeGruyterParser.TIMEOUT,
+            headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'}
+        )
 
         return (headResp.status_code, headResp.headers)

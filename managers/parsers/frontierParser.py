@@ -48,7 +48,7 @@ class FrontierParser(AbstractParser):
         ePubDownloadPath = 'epubs/frontier/{}_{}.epub'.format(self.uriIdentifier, filename)
         ePubDownloadURI = '{}{}'.format(s3Root, ePubDownloadPath)
 
-        ePubReadPath = 'epubs/frontier/{}_{}/meta-inf/container.xml'.format(self.uriIdentifier, filename)
+        ePubReadPath = 'epubs/frontier/{}_{}/META-INF/container.xml'.format(self.uriIdentifier, filename)
         ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
 
         return [
@@ -76,7 +76,12 @@ class FrontierParser(AbstractParser):
     @staticmethod
     def checkAvailability(uri):
         try:
-            headResp = requests.head(uri, timeout=10, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'})
+            headResp = requests.head(
+                uri,
+                timeout=FrontierParser.TIMEOUT,
+                headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'}
+            )
+
             return (headResp.status_code, headResp.headers)
         except ReadTimeout:
             return (0, None)

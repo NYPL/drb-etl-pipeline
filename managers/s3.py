@@ -68,7 +68,7 @@ class S3Manager:
         with ZipFile(BytesIO(obj), 'r') as epubZip:
             for component in epubZip.namelist():
                 componentObj = epubZip.open(component).read()
-                componentKey = '{}/{}'.format(keyRoot, component).lower()
+                componentKey = '{}/{}'.format(keyRoot, component)
                 self.putObjectInBucket(componentObj, componentKey, bucket)
 
     def getObjectFromBucket(self, objKey, bucket, md5Hash=None):
