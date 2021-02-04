@@ -292,6 +292,13 @@ class TestSFRRecordManager:
         assert testLanguage['iso_3'] == 'zho'
         assert testLanguage['language'] == 'Chinese'
 
+    def test_parseLinkFlags(self):
+        assert (
+            SFRRecordManager.parseLinkFlags({'flags': '{"testing": true}', 'key': 'value'})\
+                ==\
+            {'flags': {'testing': True}, 'key': 'value'}
+        )
+
     def test_getLanguage_all_values_match_missing_iso_2(self):
         testLanguage = SFRRecordManager.getLanguage({'language': 'Klingon'})
 
