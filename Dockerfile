@@ -4,5 +4,6 @@ WORKDIR /src
 
 RUN pip install -r requirements.txt
 
-ENTRYPOINT [ "python",  "/src/main.py" ]
+EXPOSE 80
 
+ENTRYPOINT [ "python",  "/src/main.py" ]
