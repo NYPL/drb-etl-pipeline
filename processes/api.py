@@ -1,5 +1,8 @@
 from .core import CoreProcess
 from api.app import FlaskAPI
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class APIProcess(CoreProcess):
@@ -11,4 +14,6 @@ class APIProcess(CoreProcess):
         self.api = FlaskAPI(self.client, self.engine)
 
     def runProcess(self):
+        logger.info('Starting API...')
+
         self.api.run()

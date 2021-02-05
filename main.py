@@ -1,10 +1,15 @@
 import argparse
 import inspect
 import os
-import sys
 import yaml
 
+from logger import createLog
+
+
 def main(args):
+    logger = createLog(__name__)
+
+    environment = args.environment
     process = args.process
     procType = args.ingestType
     customFile = args.inputFile
@@ -12,6 +17,11 @@ def main(args):
     singleRecord = args.singleRecord
     limit = args.limit
     offset = args.offset
+
+    logger.info('Staring Process {} in {}'.format(process, environment))
+    logger.debug('Process Args Type: {}, Limit: {}, Offset: {}, Date: {}, File: {}, Record: {}'.format(
+        procType, limit, offset, startDate, customFile, singleRecord
+    ))
 
     availableProcesses = registerProcesses()
 
