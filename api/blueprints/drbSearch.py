@@ -4,6 +4,9 @@ from flask import (
 from ..elastic import ElasticClient
 from ..db import DBClient
 from ..utils import APIUtils
+from logger import createLog
+
+logger = createLog(__name__)
 
 search = Blueprint('search', __name__, url_prefix='/search')
 
@@ -17,10 +20,12 @@ def standardQuery():
     sortTerms = APIUtils.extractParamPairs(searchParams.get('sort', []))
 
     filterTerms = APIUtils.extractParamPairs(searchParams.get('filter', []))
-    filterTerms.extend(APIUtils.extractParamPairs('showAll', []))
+    filterTerms.extend(APIUtils.extractParamPairs(searchParams.get('showAll', [])))
 
     searchPage = searchParams.get('page', [0])[0]
     searchSize = searchParams.get('size', [10])[0]
+
+    logger.info('Executing Query {} with filters {}'.format(searchParams, filterTerms))
 
     searchResult = esClient.searchQuery(queryTerms, sortTerms, filterTerms, page=searchPage, perPage=searchSize)
 
@@ -39,5 +44,7 @@ def standardQuery():
         'paging': paging,
         'facets': facets
     }
+
+    logger.debug('Search Query 200 on /search')
 
     return APIUtils.formatResponseObject(200, 'searchResponse', dataBlock)
