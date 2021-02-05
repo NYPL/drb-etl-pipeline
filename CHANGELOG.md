@@ -7,6 +7,7 @@
 - Fix paths to ePub files in s3 (allow for uppercase characters)
 - Add handling for DOI paths in DeGruyter DOAB records
 - Updated API to serve app on port 80 to work with ECS environment
+- Improve logging to reflect debug/info/warning statements in ECS console
 
 ## 2021-02-01 -- v0.2.1
 ### Added
