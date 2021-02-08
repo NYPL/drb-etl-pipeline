@@ -9,7 +9,7 @@ from managers.coverFetchers.abstractFetcher import AbstractFetcher
 class ContentCafeFetcher(AbstractFetcher):
     ORDER = 4
     SOURCE = 'contentcafe'
-    NO_COVER_HASH = 'd41d8cd98f00b204e9800998ecf8427e'
+    NO_COVER_HASH = '7ba0a6a15b5c1d346719a6d079e850a3'
     CONTENT_CAFE_URL = 'http://contentcafe2.btol.com/ContentCafe/Jacket.aspx?userID={}&password={}&type=L&Value={}'
 
     def __init__(self, *args):
@@ -38,17 +38,20 @@ class ContentCafeFetcher(AbstractFetcher):
         jacketURL = self.CONTENT_CAFE_URL.format(self.apiUser, self.apiPswd, isbn)
 
         try:
-            ccResponse = requests.get(jacketURL, timeout=5)
+            ccResponse = requests.get(jacketURL, timeout=5, stream=True)
         except ReadTimeout:
             return False
 
         if ccResponse.status_code == 200:
-            self.content = ccResponse.content
-
-            if self.isNoCoverImage(ccResponse.raw.read(1024)) is False:
+            imageStartChunk = ccResponse.raw.read(1024)
+            if self.isNoCoverImage(imageStartChunk) is False:
+                self.content = imageStartChunk + ccResponse.raw.data
                 return True
 
+        return False
+
     def isNoCoverImage(self, rawBytes):
+        print(hashlib.md5(rawBytes).hexdigest())
         return hashlib.md5(rawBytes).hexdigest() == self.NO_COVER_HASH
 
     def downloadCoverFile(self):
