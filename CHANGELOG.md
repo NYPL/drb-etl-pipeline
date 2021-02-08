@@ -8,6 +8,7 @@
 - Add handling for DOI paths in DeGruyter DOAB records
 - Updated API to serve app on port 80 to work with ECS environment
 - Improve logging to reflect debug/info/warning statements in ECS console
+- Update ElasticSearch manager to avoid bug in urllib3 with AWS VPC URL
 
 ## 2021-02-01 -- v0.2.1
 ### Added
