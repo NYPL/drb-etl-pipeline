@@ -35,7 +35,7 @@ class TestElasticsearchManager:
         assert mockConnection.connections._conns['default'] == mockClient
 
         mockES.assert_called_once_with(
-            hosts=[{'host': 'host', 'port': 'port'}], timeout=1000
+            hosts=['host:port'], timeout=1000
         )
 
     def test_createElasticConnection_error(self, testInstance, mocker):

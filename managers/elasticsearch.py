@@ -14,17 +14,17 @@ from model import ESWork
 
 class ElasticsearchManager:
     def __init__(self):
-        self.index = os.environ['ELASTICSEARCH_INDEX']
+        self.index = os.environ.get('ELASTICSEARCH_INDEX', None)
         self.client = None
 
     def createElasticConnection(self):
-        host = os.environ['ELASTICSEARCH_HOST']
-        port = os.environ['ELASTICSEARCH_PORT']
-        timeout = int(os.environ['ELASTICSEARCH_TIMEOUT'])
+        host = os.environ.get('ELASTICSEARCH_HOST', None)
+        port = os.environ.get('ELASTICSEARCH_PORT', None)
+        timeout = int(os.environ.get('ELASTICSEARCH_TIMEOUT', 5))
         try:
             self.client = Elasticsearch(
-                hosts=[{'host': host, 'port': port}],
-                timeout=timeout
+               hosts=['{}:{}'.format(host, port)],
+               timeout = timeout
             )
         except ConnectionError as err:
             raise err
