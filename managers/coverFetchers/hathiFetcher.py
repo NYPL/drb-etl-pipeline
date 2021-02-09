@@ -1,6 +1,6 @@
 import os
 import requests
-from requests.exceptions import ReadTimeout
+from requests.exceptions import ReadTimeout, HTTPError
 from requests_oauthlib import OAuth1
 
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
@@ -72,13 +72,11 @@ class HathiFetcher(AbstractFetcher):
     def makeHathiReq(self, url):
         try:
             hathiResp = requests.get(url, auth=self.generateAuth(), timeout=5)
+            hathiResp.raise_for_status()
 
-            if hathiResp.status_code == 200:
-                return hathiResp
-        except ReadTimeout:
+            return hathiResp
+        except (ReadTimeout, HTTPError):
             pass
-
-        return None
 
 
 class HathiPage:

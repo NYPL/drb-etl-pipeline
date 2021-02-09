@@ -1,6 +1,6 @@
 import os
 import requests
-from requests.exceptions import ReadTimeout
+from requests.exceptions import ReadTimeout, HTTPError
 
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
 from model import OpenLibraryCover
@@ -66,10 +66,10 @@ class GoogleBooksFetcher(AbstractFetcher):
     def downloadCoverFile(self):
         try:
             googleResponse = requests.get(self.uri, timeout=5)
+            googleResponse.raise_for_status()
 
-            if googleResponse.status_code == 200:
-                return googleResponse.content
-        except ReadTimeout:
+            return googleResponse.content
+        except (ReadTimeout, HTTPError):
             pass
 
 
@@ -77,8 +77,8 @@ class GoogleBooksFetcher(AbstractFetcher):
     def getAPIResponse(reqURI):
         try:
             apiResponse = requests.get(reqURI, timeout=5)
+            apiResponse.raise_for_status()
 
-            if apiResponse.status_code == 200:
-                return apiResponse.json()
-        except ReadTimeout:
+            return apiResponse.json()
+        except (ReadTimeout, HTTPError):
             pass

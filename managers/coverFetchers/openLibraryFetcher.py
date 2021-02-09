@@ -1,5 +1,5 @@
 import requests
-from requests.exceptions import ReadTimeout
+from requests.exceptions import ReadTimeout, HTTPError
 
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
 from model import OpenLibraryCover
@@ -50,8 +50,8 @@ class OpenLibraryFetcher(AbstractFetcher):
     def downloadCoverFile(self):
         try:
             olResponse = requests.get(self.uri, timeout=5)
+            olResponse.raise_for_status()
 
-            if olResponse.status_code == 200:
-                return olResponse.content
-        except ReadTimeout:
+            return olResponse.content
+        except (ReadTimeout, HTTPError):
             pass
