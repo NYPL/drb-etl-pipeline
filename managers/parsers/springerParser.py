@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import re
 import requests
+from requests.exceptions import ReadTimeout
 
 from managers.parsers.abstractParser import AbstractParser
 
@@ -40,24 +41,28 @@ class SpringerParser(AbstractParser):
         if redirectMatch:
             self.uri = redirectMatch.group(1)
 
-            redirectHeader = requests.head(self.uri, timeout=5)
             try:
+                redirectHeader = requests.head(self.uri, timeout=self.TIMEOUT)
+
                 self.uri = redirectHeader.headers['Location']
                 return self.validateURI()
-            except KeyError:
+            except (KeyError, ReadTimeout):
                 pass
         
         return False
 
     def findOALink(self):
-        storeResp = requests.get(self.uri, timeout=5)
+        try:
+            storeResp = requests.get(self.uri, timeout=self.TIMEOUT)
 
-        if storeResp.status_code == 200:
-            storePage = BeautifulSoup(storeResp.text, 'html.parser')
+            if storeResp.status_code == 200:
+                storePage = BeautifulSoup(storeResp.text, 'html.parser')
 
-            accessLink = storePage.find(class_='openaccess')
+                accessLink = storePage.find(class_='openaccess')
 
-            if accessLink: self.uri = accessLink.get('href')
+                if accessLink: self.uri = accessLink.get('href')
+        except ReadTimeout:
+            pass
 
     def createLinks(self):
         s3Root = self.generateS3Root()
@@ -93,7 +98,7 @@ class SpringerParser(AbstractParser):
             self.code.replace('.', '-'), self.uriIdentifier
         )
         ePubDownloadURI = '{}{}'.format(s3Root, ePubDownloadPath)
-        ePubReadPath = 'epubs/springer/{}_{}/meta-inf/container.xml'.format(
+        ePubReadPath = 'epubs/springer/{}_{}/META-INF/container.xml'.format(
             self.code.replace('.', '-'), self.uriIdentifier
         )
         ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
@@ -111,7 +116,14 @@ class SpringerParser(AbstractParser):
 
     @staticmethod
     def checkAvailability(uri):
-        headResp = requests.head(uri, timeout=5, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'})
+        try:
+            headResp = requests.head(
+                uri,
+                timeout=SpringerParser.TIMEOUT,
+                headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)'}
+            )
+        except ReadTimeout:
+            return False
 
         return headResp.status_code == 200
         

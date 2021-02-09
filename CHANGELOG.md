@@ -3,6 +3,15 @@
 ## unreleased -- v0.2.2
 ### Added
 - Cover fetcher process from HathiTrust, OpenLibrary, Google Books and Conent Cafe
+### Fixed
+- Standardized timeout values and handling of related errors in DOAB
+- Better handle HTTP redirect `Location` values
+- Fix paths to ePub files in s3 (allow for uppercase characters)
+- Add handling for DOI paths in DeGruyter DOAB records
+- Updated API to serve app on port 80 to work with ECS environment
+- Improve logging to reflect debug/info/warning statements in ECS console
+- Update ElasticSearch manager to avoid bug in urllib3 with AWS VPC URL
+- Update OCLCCatalog link parsing process to exclude invalid links
 
 ## 2021-02-01 -- v0.2.1
 ### Added

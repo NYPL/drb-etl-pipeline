@@ -110,7 +110,7 @@ class GutenbergProcess(CoreProcess):
             if flags['download'] is True:
                 bucketLocation = 'epubs/{}/{}_{}.epub'.format(source, gutenbergID, gutenbergType)
             else:
-                bucketLocation = 'epubs/{}/{}_{}/meta-inf/content.xml'.format(source, gutenbergID, gutenbergType)
+                bucketLocation = 'epubs/{}/{}_{}/META-INF/content.xml'.format(source, gutenbergID, gutenbergType)
                 mediaType = 'application/epub+xml'
 
             s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)

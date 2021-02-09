@@ -1,9 +1,21 @@
 import json
 import re
+import requests
+from requests.exceptions import ReadTimeout, HTTPError
 
 from mappings.xml import XMLMapping
+from logger import createLog
+
+logger = createLog(__name__)
+
 
 class CatalogMapping(XMLMapping):
+    EBOOK_REGEX = {
+        'gutenberg': r'gutenberg.org\/ebooks\/([0-9]+)',
+        'internetarchive': r'archive.org\/details\/([a-z0-9]+)$',
+        'hathitrust': r'catalog.hathitrust.org\/api\/volumes\/([a-z]{3,6}\/[a-zA-Z0-9]+)\.html'
+    }
+    
     def __init__(self, source, namespace, statics):
         super(CatalogMapping, self).__init__(source, namespace, statics)
         self.mapping = self.createMapping()
@@ -136,8 +148,11 @@ class CatalogMapping(XMLMapping):
 
             ],
             'has_part': [(
-                '//oclc:datafield[@tag=\'856\']/oclc:subfield[@code=\'z\']/text()',
-                '1|{0}|oclc|text/html|{{"ebook": true, "download": false, "reader": false, "catalog": true}}'
+                [
+                    '//oclc:datafield[@tag=\'856\']/oclc:subfield[@code=\'u\']/text()',
+                    '//oclc:datafield[@tag=\'856\']/@ind1'
+                ],
+                '1|{0}|oclc|text/html|{{"ebook": true, "download": false, "reader": false, "catalog": true, "marcInd1": "{1}"}}'
             )]
         }
 
@@ -146,6 +161,57 @@ class CatalogMapping(XMLMapping):
         self.record.source_id = self.record.identifiers[0]
         self.record.frbr_status = 'complete'
 
+        logger.info('Formatting OCLC Catalog record {}'.format(self.record.source_id))
+
         # Parse language field
+        logger.debug('Parsing ISO lang code from 008 fixed field')
         _, _, lang_3, *_ = tuple(self.record.languages[0].split('|'))
         self.record.languages = [('||{}'.format(lang_3[35:38]))]
+
+        # Parse has_part fields
+        logger.debug('Parsing has_part links for valid/resolvable URLs')
+        self.record.has_part = list(filter(None, [
+            self.parseLink(p) for p in self.record.has_part
+        ]))
+
+    def parseLink(self, part):
+        partNo, partLink, partSource, partFormat, partFlags = part.split('|')
+
+        partDict = json.loads(partFlags)
+
+        if partDict['marcInd1'] != '4' or partLink == '': return None
+
+        for source, sourceRegex in self.EBOOK_REGEX.items():
+            sourceMatch = re.search(sourceRegex, partLink)
+
+            if sourceMatch:
+                sourceID = sourceMatch.group(1)
+
+                if source == 'internetarchive':
+                    if self.checkIAReadability(partLink) is False:
+                        return None
+
+                    # TODO
+                    # 1) Parse HathiTrust Links
+                    # 2) Parse Project Gutenberg Links
+
+                self.record.identifiers.append('{}|{}'.format(sourceID, source))
+
+                del partDict['marcInd1']
+                return '|'.join([partNo, partLink, partSource, partFormat, json.dumps(partDict)])
+
+    def checkIAReadability(self, iaURL):
+        metadataURL = iaURL.replace('details', 'metadata')
+
+        try:
+            metadataResp = requests.get(metadataURL, timeout=5)
+            metadataResp.raise_for_status()
+        except (ReadTimeout, HTTPError) as e:
+            logger.debug('Unable to read InternetArchive link')
+            logger.error(e)
+            return False
+
+        iaData = metadataResp.json()
+        iaAccessStatus = iaData['metadata'].get('access-restricted-item', 'true')
+
+        return iaAccessStatus == 'false'

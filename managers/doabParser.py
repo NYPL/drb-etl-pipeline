@@ -1,6 +1,7 @@
 import inspect
 import json
 import requests
+import re
 from requests.exceptions import ConnectionError, InvalidURL, MissingSchema, ReadTimeout 
 
 import managers.parsers as parsers
@@ -70,20 +71,25 @@ class DOABLinkManager:
     @staticmethod
     def findFinalURI(uri, mediaType):
         try:
-            uriHeader = requests.head(uri, allow_redirects=False, verify=False, timeout=5)
-            headers = uriHeader.headers
-        except(MissingSchema, ConnectionError, InvalidURL, ReadTimeout):
+            uriHeader = requests.head(uri, allow_redirects=False, verify=False, timeout=15)
+            headers = dict((key.lower(), value) for key, value in uriHeader.headers.items())
+        except(MissingSchema, ConnectionError, InvalidURL, ReadTimeout, UnicodeDecodeError):
             raise LinkError('Invalid has_part URI')
 
         try:
-            contentHeader = headers['Content-Type']
+            contentHeader = headers['content-type']
             mediaType = list(contentHeader.split(';'))[0].strip()
         except KeyError:
-            pass
+            contentHeader = None
 
         if uriHeader.status_code in [301, 302, 307, 308]\
-            and headers.get('Content-Type', None) not in ['application/pdf', 'application/epub+zip']:
-            redirectURI = headers['Location']
+            and contentHeader not in ['application/pdf', 'application/epub+zip']:
+            redirectURI = headers['location']
+
+            if redirectURI[0] == '/':
+                uriRoot = re.split(r'(?<![\/:])\/{1}', uri)[0]
+                redirectURI = '{}{}'.format(uriRoot, redirectURI)
+
             return DOABLinkManager.findFinalURI(redirectURI, mediaType)
         
         return (uri, mediaType)

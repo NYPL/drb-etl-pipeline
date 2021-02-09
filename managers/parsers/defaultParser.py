@@ -33,7 +33,7 @@ class DefaultParser(AbstractParser):
             ePubDownloadPath = 'epubs/{}/{}.epub'.format(self.source, self.identifier)
             ePubDownloadURI = '{}{}'.format(s3Root, ePubDownloadPath)
 
-            ePubReadPath = 'epubs/{}/{}/meta-inf/container.xml'.format(self.source, self.identifier)
+            ePubReadPath = 'epubs/{}/{}/META-INF/container.xml'.format(self.source, self.identifier)
             ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
 
             return [
