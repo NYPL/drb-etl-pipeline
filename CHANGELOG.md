@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.2.2
+## 2021-02-09 -- v0.2.2
 ### Added
 - Cover fetcher process from HathiTrust, OpenLibrary, Google Books and Conent Cafe
 ### Fixed
