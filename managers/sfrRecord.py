@@ -360,7 +360,7 @@ class SFRRecordManager:
 
         # Set Links
         newEd.links = SFRRecordManager.setPipeDelimitedData(
-            edition['links'], ['url', 'media_type', 'flags'], Link
+            edition['links'], ['url', 'media_type', 'flags'], Link, dparser=SFRRecordManager.parseLinkFlags
         )
 
         # Add Items
@@ -372,7 +372,6 @@ class SFRRecordManager:
         
         return newEd
 
-
     def saveItem(self, item):
         links = item.pop('links', [])
         identifiers = item.pop('identifiers', [])
@@ -381,7 +380,7 @@ class SFRRecordManager:
 
         # Set Links
         newItem.links = SFRRecordManager.setPipeDelimitedData(
-            links, ['url', 'media_type', 'flags'], Link
+            links, ['url', 'media_type', 'flags'], Link, dparser=SFRRecordManager.parseLinkFlags
         )
         
         # Set Identifiers
@@ -428,6 +427,12 @@ class SFRRecordManager:
                     except AttributeError:
                         iso2 = None
                     return {'language': pyLang.name, 'iso_2': iso2, 'iso_3': pyLang.alpha_3}
+
+    @staticmethod
+    def parseLinkFlags(linkData):
+        linkData['flags'] = json.loads(linkData['flags'])
+
+        return linkData
 
     def agentParser(self, agents, fields):
         outAgents = []

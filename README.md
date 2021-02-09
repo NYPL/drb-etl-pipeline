@@ -59,6 +59,7 @@ The currently available processes are:
 - `GutenbergProcess` Fetch updated files from Project Gutenberg and import them
 - `MUSEProcess` Fetch open access books from Project MUSE and import them
 - `DOABProcess` Fetch open access books from the Directory of Open Access Books
+- `CoverProcess` Fetch covers for edition records
 
 #### Starting a local Kubernetes cluster
 
@@ -91,7 +92,7 @@ This application can be deployed to any kubernetes cluster with the provided `pr
 - Add commenting/documentation strings
 - Generate C4 diagrams for application
 - ~~Integrate ePub processor into standard processing flow~~
-- Add cover fetching process
+- ~~Add cover fetching process~~
 - Create test suite, including:
   - Unit tests for all components
   - Functional tests for each process

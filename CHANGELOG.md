@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## unreleased -- v0.2.2
+### Added
+- Cover fetcher process from HathiTrust, OpenLibrary, Google Books and Conent Cafe
 ### Fixed
 - Standardized timeout values and handling of related errors in DOAB
 - Better handle HTTP redirect `Location` values
