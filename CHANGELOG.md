@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.2.3
+### Fixed
+- Update RabbitMQ client to work with credentials, virtual hosts and non-default exchanges
+
 ## 2021-02-09 -- v0.2.2
 ### Added
 - Cover fetcher process from HathiTrust, OpenLibrary, Google Books and Conent Cafe

@@ -12,7 +12,7 @@ class ClassifyProcess(CoreProcess):
     def __init__(self, *args):
         super(ClassifyProcess, self).__init__(*args[:4])
 
-        self.ingestLimit = args[3] or None
+        self.ingestLimit = args[4] or None
 
         # PostgreSQL Connection
         self.generateEngine()
@@ -22,8 +22,10 @@ class ClassifyProcess(CoreProcess):
         self.createRedisClient()
 
         # RabbitMQ Connection
+        self.rabbitQueue = os.environ['OCLC_QUEUE']
+        self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']
         self.createRabbitConnection()
-        self.createOrConnectQueue(os.environ['OCLC_QUEUE'])
+        self.createOrConnectQueue(self.rabbitQueue, self.rabbitRoute)
 
     def runProcess(self):
         if self.process == 'daily':
@@ -103,4 +105,4 @@ class ClassifyProcess(CoreProcess):
                 self.sendCatalogLookupMessage(oclcNo)
     
     def sendCatalogLookupMessage(self, oclcNo):
-        self.sendMessageToQueue(os.environ['OCLC_QUEUE'], {'oclcNo': oclcNo})
+        self.sendMessageToQueue(self.rabbitQueue, self.rabbitRoute, {'oclcNo': oclcNo})

@@ -1,5 +1,5 @@
 import datetime
-from lxml import etree
+import os
 import pytest
 
 from tests.helper import TestHelpers
@@ -20,9 +20,11 @@ class TestOCLCClassifyProcess:
     @pytest.fixture
     def testInstance(self, mocker):
         class TestClassifyProcess(ClassifyProcess):
-            def __init__(self, process, customFile, ingestPeriod):
+            def __init__(self, *args):
                 self.records = []
                 self.ingestLimit = None
+                self.rabbitQueue = os.environ['OCLC_QUEUE']
+                self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']
         
         return TestClassifyProcess('TestProcess', 'testFile', 'testDate')
 
@@ -276,4 +278,6 @@ class TestOCLCClassifyProcess:
 
         testInstance.sendCatalogLookupMessage('1')
 
-        mockSendMessage.assert_called_once_with('test_oclc_queue', {'oclcNo': '1'})
+        mockSendMessage.assert_called_once_with(
+            'test_oclc_queue', 'test_oclc_key', {'oclcNo': '1'}
+        )
