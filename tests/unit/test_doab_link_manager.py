@@ -33,7 +33,7 @@ class TestDOABLinkManager:
             mockInstance = mocker.MagicMock()
             mockInstance.validateURI.return_value = True if i == 1 else False
 
-            mockParser = mocker.MagicMock()
+            mockParser = mocker.MagicMock(__name__='parser{}'.format(i))
             mockParser.return_value = mockInstance
 
             parserInstances.append(mockInstance)
