@@ -28,8 +28,9 @@ class DOABProcess(CoreProcess):
 
         # Connect to epub processing queue
         self.fileQueue = os.environ['FILE_QUEUE']
+        self.fileRoute = os.environ['FILE_ROUTING_KEY']
         self.createRabbitConnection()
-        self.createOrConnectQueue(self.fileQueue)
+        self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
     def runProcess(self):
         if self.process == 'daily':
@@ -151,7 +152,7 @@ class DOABProcess(CoreProcess):
                 'bucketPath': s3Location
             }
         }
-        self.sendMessageToQueue(self.fileQueue, s3Message)
+        self.sendMessageToQueue(self.fileQueue, self.fileRoute, s3Message)
 
 
 class DOABError(Exception):

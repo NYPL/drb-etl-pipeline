@@ -24,6 +24,7 @@ class TestGutenbergProcess:
                 self.ingestLimit = 5000
                 self.s3Bucket = os.environ['FILE_BUCKET']
                 self.fileQueue = os.environ['FILE_QUEUE']
+                self.fileRoute = os.environ['FILE_ROUTING_KEY']
         
         return TestGutenbergProcess('TestProcess', 'testFile', 'testDate')
 
@@ -197,7 +198,9 @@ class TestGutenbergProcess:
 
         testInstance.sendFileToProcessingQueue('testURL', 'testLocation')
 
-        mockMessageSend.assert_called_once_with('test_file_queue', {
-            'fileData': {'fileURL': 'testURL', 'bucketPath': 'testLocation'}
-        })
+        mockMessageSend.assert_called_once_with(
+            'test_file_queue', 
+            'test_file_key',
+            {'fileData': {'fileURL': 'testURL', 'bucketPath': 'testLocation'}}
+        )
         

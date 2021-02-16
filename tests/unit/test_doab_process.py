@@ -23,6 +23,7 @@ class TestDOABProcess:
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
                 self.fileQueue = 'test_file_queue'
+                self.fileRoute = 'test_file_key'
                 self.statics = {}
 
                 self.ingestOffset = 0
@@ -299,5 +300,6 @@ class TestDOABProcess:
 
         mockSend.assert_called_once_with(
             'test_file_queue',
+            'test_file_key',
             {'fileData': {'fileURL': 'testURI', 'bucketPath': 'testLocation'}}
         )
