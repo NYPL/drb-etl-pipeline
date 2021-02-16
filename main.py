@@ -5,10 +5,10 @@ import yaml
 
 from logger import createLog
 
+logger = createLog(__name__)
+
 
 def main(args):
-    logger = createLog(__name__)
-
     environment = args.environment
     process = args.process
     procType = args.ingestType
@@ -82,11 +82,11 @@ def loadEnvFile(runType, fileString=None):
             try:
                 envDict = yaml.full_load(envStream)
             except yaml.YAMLError as err:
-                print('{} Invalid! Please review'.format(openFile))
+                logger.error('{} Invalid! Please review'.format(openFile))
                 raise err
 
     except FileNotFoundError as err:
-        print('Missing config YAML file! Check directory')
+        logger.error('Missing config YAML file! Check directory')
         raise err
 
     if envDict:

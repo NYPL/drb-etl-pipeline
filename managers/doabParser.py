@@ -5,6 +5,9 @@ import re
 from requests.exceptions import ConnectionError, InvalidURL, MissingSchema, ReadTimeout 
 
 import managers.parsers as parsers
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class DOABLinkManager:
@@ -29,9 +32,11 @@ class DOABLinkManager:
         rootURI, rootMediaType = self.findFinalURI(uri, mediaType)
 
         for parserClass in self.parsers:
+            logger.debug('Trying to parse with {}'.format(parserClass.__name__))
             parser = parserClass(rootURI, rootMediaType, self.record)
 
             if parser.validateURI() is True:
+                logger.info('Link is valid with parser {}'.format(parserClass.__name__))
                 return parser
 
     def parseLinks(self):
@@ -42,7 +47,7 @@ class DOABLinkManager:
             try:
                 parser = self.selectParser(partURI, partType)
             except LinkError:
-                print('Unable to parse {}'.format(partURI))
+                logger.warning('Unable to parse {}'.format(partURI))
                 continue
 
             if parser.uri in self.linksProcessed:
@@ -74,6 +79,7 @@ class DOABLinkManager:
             uriHeader = requests.head(uri, allow_redirects=False, verify=False, timeout=15)
             headers = dict((key.lower(), value) for key, value in uriHeader.headers.items())
         except(MissingSchema, ConnectionError, InvalidURL, ReadTimeout, UnicodeDecodeError):
+            logger.error('Invalid link {} in dcdw record'.format(uri))
             raise LinkError('Invalid has_part URI')
 
         try:

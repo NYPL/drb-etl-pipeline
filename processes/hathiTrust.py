@@ -3,12 +3,12 @@ from datetime import datetime
 import gzip
 import os
 import requests
-import sys
 
 from .core import CoreProcess
 from mappings.hathitrust import HathiMapping
-from model import Record
+from logger import createLog
 
+logger = createLog(__name__)
 
 class HathiTrustProcess(CoreProcess):
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
@@ -30,9 +30,13 @@ class HathiTrustProcess(CoreProcess):
         self.commitChanges()
     
     def importRemoteRecords(self, fullOrPartial=False):
+        logger.info('Running standard {} Hathi ingest'.format(
+            'complete' if fullOrPartial else 'daily'
+        ))
         self.importFromHathiTrustDataFile(fullDump=fullOrPartial)
 
     def importFromSpecificFile(self, filePath):
+        logger.info('Running custom local ingest from {}'.format(filePath))
         try:
             hathiFile = open(filePath, newline='')
         except FileNotFoundError:
@@ -49,6 +53,7 @@ class HathiTrustProcess(CoreProcess):
     def importFromHathiTrustDataFile(self, fullDump=False):
         fileList = requests.get(os.environ['HATHI_DATAFILES'])
         if fileList.status_code != 200:
+            logger.error('Unable to load Hathi datafile with status'.format(fileList.status_code))
             raise IOError('Unable to load data files')
 
         fileJSON = fileList.json()
@@ -63,11 +68,14 @@ class HathiTrustProcess(CoreProcess):
 
         for hathiFile in fileJSON:
             if hathiFile['full'] == fullDump:
+                logger.debug('Loading datafile {}'.format(hathiFile['filename']))
+
                 with open('/tmp/tmp_hathi.txt.gz', 'wb') as hathiTSV:
                     hathiReq = requests.get(hathiFile['url'])
                     hathiTSV.write(hathiReq.content)
                 break
 
+        logger.debug('Writing Hathi TSV to /tmp/tmp_hathi.txt.gz')
         with gzip.open('/tmp/tmp_hathi.txt.gz', 'rt') as unzipTSV:
             hathiTSV = csv.reader(unzipTSV, delimiter='\t')
             self.readHathiFile(hathiTSV)
@@ -77,8 +85,10 @@ class HathiTrustProcess(CoreProcess):
             try:
                 row = next(hathiTSV)
             except csv.Error:
+                logger.warning('Unable to read TSV row')
                 continue
             except StopIteration:
+                logger.debug('Reached end of TSV file, breaking')
                 break
 
             if row is not None and row[2] not in self.HATHI_RIGHTS_SKIPS:

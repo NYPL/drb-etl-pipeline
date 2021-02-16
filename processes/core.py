@@ -1,6 +1,9 @@
 from managers import DBManager, RabbitMQManager, RedisManager, ElasticsearchManager, S3Manager, NyplApiManager
 from model import Record
 from static.manager import StaticManager
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, StaticManager,
@@ -18,14 +21,15 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
         existing = self.session.query(Record)\
             .filter(Record.source_id == rec.record.source_id).first()
         if existing:
-            print('EXISTING', existing)
+            logger.info('EXISTING {}'.format(existing))
             rec.updateExisting(existing)
             self.records.append(existing)
         else:
-            print('NEW', rec.record)
+            logger.info('NEW {}'.format(rec.record))
             self.records.append(rec.record)
         
         if len(self.records) >= 10000:
+            logger.info('Saving batch of {} records'.format(len(self.records)))
             self.saveRecords()
             self.records = []
     
