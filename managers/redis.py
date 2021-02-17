@@ -6,9 +6,9 @@ from redis import Redis
 class RedisManager:
     def __init__(self, host=None, port=None):
         super(RedisManager, self).__init__()
-        self.redisHost = host or os.environ['REDIS_HOST']
-        self.redisPort = port or os.environ['REDIS_PORT']
-        self.environment = os.environ['ENVIRONMENT']
+        self.redisHost = host or os.environ.get('REDIS_HOST', None)
+        self.redisPort = port or os.environ.get('REDIS_PORT', None)
+        self.environment = os.environ.get('ENVIRONMENT', 'test')
     
     def createRedisClient(self):
         self.redisClient = Redis(
