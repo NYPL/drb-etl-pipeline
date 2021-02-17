@@ -7,13 +7,13 @@ import os
 class RabbitMQManager:
     def __init__(self, host=None, port=None, virtual_host=None, exchange=None, user=None, pswd=None):
         super(RabbitMQManager, self).__init__()
-        self.rabbitHost = host or os.environ['RABBIT_HOST']
-        self.rabbitPort = port or os.environ['RABBIT_PORT']
-        self.rabbitVirtualHost = virtual_host or os.environ['RABBIT_VIRTUAL_HOST']
-        self.rabbitExchange = exchange or os.environ['RABBIT_EXCHANGE']
+        self.rabbitHost = host or os.environ.get('RABBIT_HOST', None)
+        self.rabbitPort = port or os.environ.get('RABBIT_PORT', None)
+        self.rabbitVirtualHost = virtual_host or os.environ.get('RABBIT_VIRTUAL_HOST', None)
+        self.rabbitExchange = exchange or os.environ.get('RABBIT_EXCHANGE', None)
 
-        self.rabbitUser = user or os.environ['RABBIT_USER']
-        self.rabbitPswd = pswd or os.environ['RABBIT_PSWD']
+        self.rabbitUser = user or os.environ.get('RABBIT_USER', None)
+        self.rabbitPswd = pswd or os.environ.get('RABBIT_PSWD', None)
     
     def createRabbitConnection(self):
         paramDict = {
