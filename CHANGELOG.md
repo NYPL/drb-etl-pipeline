@@ -3,6 +3,7 @@
 ## unreleased -- v0.2.3
 ### Fixed
 - Update RabbitMQ client to work with credentials, virtual hosts and non-default exchanges
+- Update environment variable loading in some managers to handle irrelevant env vars
 
 ## 2021-02-09 -- v0.2.2
 ### Added
