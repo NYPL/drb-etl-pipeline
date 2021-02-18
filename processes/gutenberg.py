@@ -22,8 +22,8 @@ class GutenbergProcess(CoreProcess):
     def __init__(self, *args):
         super(GutenbergProcess, self).__init__(*args[:4])
 
-        self.ingestOffset = int(args[5]) or 0
-        self.ingestLimit = (int(args[4]) + self.ingestOffset) or 5000
+        self.ingestOffset = int(args[5] or 0)
+        self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
 
         # Connect to database
         self.generateEngine()
