@@ -130,6 +130,8 @@ class TestDBManager:
         testInstance.session.bulk_save_objects.assert_called_once_with(
             [1, 2, 3], update_changed_only=True
         )
+        testInstance.session.commit.assert_called_once()
+        testInstance.session.flush.assert_called_once()
 
     def test_bulkSaveObjects_onlyChanged_false(self, testInstance, mocker):
         testInstance.session = mocker.MagicMock()
