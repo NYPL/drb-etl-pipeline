@@ -1,14 +1,19 @@
 from bs4 import BeautifulSoup
+import csv
 from datetime import datetime, timedelta
-from io import BytesIO
+from io import BytesIO, StringIO
 import json
 import os
 from pymarc import MARCReader
 import requests
+from requests.exceptions import ReadTimeout, HTTPError
 
 from .core import CoreProcess
 from mappings.muse import MUSEMapping
 from managers import PDFManifest
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class MUSEProcess(CoreProcess):
@@ -27,7 +32,7 @@ class MUSEProcess(CoreProcess):
         if self.process == 'daily':
             self.importMARCRecords()
         elif self.process == 'complete':
-            self.importMARCRecords(fullOrPartial=True)
+            self.importMARCRecords(full=True)
         elif self.process == 'custom':
             self.importMARCRecords(startTimestamp=self.ingestPeriod)
 
@@ -49,31 +54,73 @@ class MUSEProcess(CoreProcess):
         )
         self.addDCDWToUpdateList(museRec)
     
-    def importMARCRecords(self, fullOrPartial=False, startTimestamp=None):
+    def importMARCRecords(self, full=False, startTimestamp=None):
+        self.downloadRecordUpdates()
+
         museFile = self.downloadMARCRecords()
+
+        startDateTime = None
+        if full is False:
+            if not startTimestamp:
+                startDateTime = datetime.utcnow() - timedelta(hours=24)
+            else:
+                startDateTime = datetime.strptime(startTimestamp, '%Y-%m-%d')
 
         marcReader = MARCReader(museFile)
 
         for record in marcReader:
+            if startDateTime and self.recordToBeUpdated(record, startDateTime) is False:
+                continue
+
             try:
                 self.parseMuseRecord(record)
             except MUSEError as e:
-                print('ERROR', e)
-                pass
+                logger.warning('Unable to parse MUSE record')
+                logger.debug(e)
 
     def downloadMARCRecords(self):
         marcURL = os.environ['MUSE_MARC_URL']
 
-        museResponse = requests.get(marcURL, stream=True, timeout=30)
+        try:
+            museResponse = requests.get(marcURL, stream=True, timeout=30)
+            museResponse.raise_for_status()
+        except(ReadTimeout, HTTPError) as e:
+            logger.error('Unable to load MUSE MARC records')
+            logger.debug(e)
+            raise Exception('Unable to load Project MUSE MARC file')
 
-        if museResponse.status_code == 200:
-            content = bytes()
-            for chunk in museResponse.iter_content(1024):
-                content += chunk
+        content = bytes()
+        for chunk in museResponse.iter_content(1024 * 250):
+            content += chunk
 
-            return BytesIO(content)
+        return BytesIO(content)
 
-        raise Exception('Unable to load Project MUSE MARC file')
+    def downloadRecordUpdates(self):
+        marcCSVURL = os.environ['MUSE_CSV_URL']
+
+        try:
+            csvResponse = requests.get(marcCSVURL, stream=True, timeout=30)
+            csvResponse.raise_for_status()
+        except(ReadTimeout, HTTPError) as e:
+            logger.error('Unable to load MUSE CSV records')
+            logger.debug(e)
+            raise Exception('Unable to load Project MUSE CSV file')
+
+        csvReader = csv.reader(StringIO(csvResponse.text), dialect='excel')
+
+        for _ in range(4): next(csvReader, None) # Skip 4 header rows
+
+        self.updateDates = {}
+        for row in csvReader:
+            try:
+                self.updateDates[row[7]] = datetime.strptime(row[10], '%Y-%m-%d')
+            except (IndexError, ValueError):
+                logger.warning('Unable to parse MUSE')
+                logger.debug(row)
+
+    def recordToBeUpdated(self, record, startDate):
+        recordURL = record.get_fields('856')[0]['u']
+        return self.updateDates.get(recordURL[:-1], datetime(1970, 1, 1)) >= startDate
 
     def constructPDFManifest(self, museLink, museType, museRecord):
         try:
