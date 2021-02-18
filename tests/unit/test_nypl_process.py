@@ -239,7 +239,7 @@ class TestNYPLProcess:
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
-        mockConn.execute.return_value = [
+        mockConn.execution_options().execute.return_value = [
             {'var_fields': 'bib1'},
             {'var_fields': None},
             {'var_fields': 'bib3'}
@@ -250,7 +250,7 @@ class TestNYPLProcess:
         testInstance.importBibRecords()
 
         mockDatetime.utcnow.assert_called_once
-        mockConn.execute.assert_called_once_with(
+        mockConn.execution_options().execute.assert_called_once_with(
             'SELECT * FROM bib WHERE updated_date > \'1900-01-01T12:00:00\''
         )
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
@@ -262,7 +262,7 @@ class TestNYPLProcess:
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
-        mockConn.execute.return_value = [
+        mockConn.execution_options().execute.return_value = [
             {'var_fields': 'bib1'},
             {'var_fields': None},
             {'var_fields': 'bib3'}
@@ -273,7 +273,7 @@ class TestNYPLProcess:
         testInstance.importBibRecords(startTimestamp='customTimestamp')
 
         mockDatetime.utcnow.assert_not_called
-        mockConn.execute.assert_called_once_with(
+        mockConn.execution_options().execute.assert_called_once_with(
             'SELECT * FROM bib WHERE updated_date > \'customTimestamp\''
         )
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
@@ -284,7 +284,7 @@ class TestNYPLProcess:
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
-        mockConn.execute.return_value = [
+        mockConn.execution_options().execute.return_value = [
             {'var_fields': 'bib1'},
             {'var_fields': None},
             {'var_fields': 'bib3'}
@@ -295,7 +295,7 @@ class TestNYPLProcess:
         testInstance.importBibRecords(fullOrPartial=True)
 
         mockDatetime.utcnow.assert_not_called
-        mockConn.execute.assert_called_once_with(
+        mockConn.execution_options().execute.assert_called_once_with(
             'SELECT * FROM bib'
         )
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
@@ -306,7 +306,7 @@ class TestNYPLProcess:
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
-        mockConn.execute.return_value = [
+        mockConn.execution_options().execute.return_value = [
             {'var_fields': 'bib1'},
             {'var_fields': 'bib2'},
             {'var_fields': None}
@@ -318,7 +318,7 @@ class TestNYPLProcess:
         testInstance.importBibRecords(fullOrPartial=True)
 
         mockDatetime.utcnow.assert_not_called
-        mockConn.execute.assert_called_once_with(
+        mockConn.execution_options().execute.assert_called_once_with(
             'SELECT * FROM bib OFFSET 1000 LIMIT 1000'
         )
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib2'})])
