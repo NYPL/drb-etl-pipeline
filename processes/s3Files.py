@@ -32,9 +32,10 @@ class S3Process(CoreProcess):
         storageManager.createS3Client()
 
         fileQueue = os.environ['FILE_QUEUE']
+        fileRoute = os.environ['FILE_ROUTING_KEY']
         rabbitManager = RabbitMQManager()
         rabbitManager.createRabbitConnection()
-        rabbitManager.createOrConnectQueue(fileQueue)
+        rabbitManager.createOrConnectQueue(fileQueue, fileRoute)
 
         bucket = os.environ['FILE_BUCKET']
 
