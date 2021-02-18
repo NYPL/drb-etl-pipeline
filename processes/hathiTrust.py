@@ -1,13 +1,16 @@
 import csv
 from datetime import datetime
+from io import BytesIO
 import gzip
 import os
 import requests
-import sys
+from requests.exceptions import ReadTimeout, HTTPError
 
 from .core import CoreProcess
 from mappings.hathitrust import HathiMapping
-from model import Record
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class HathiTrustProcess(CoreProcess):
@@ -47,8 +50,10 @@ class HathiTrustProcess(CoreProcess):
         self.addDCDWToUpdateList(hathiRec)
     
     def importFromHathiTrustDataFile(self, fullDump=False):
-        fileList = requests.get(os.environ['HATHI_DATAFILES'])
-        if fileList.status_code != 200:
+        try:
+            fileList = requests.get(os.environ['HATHI_DATAFILES'], timeout=15)
+            fileList.raise_for_status()
+        except (ReadTimeout, HTTPError):
             raise IOError('Unable to load data files')
 
         fileJSON = fileList.json()
@@ -63,22 +68,32 @@ class HathiTrustProcess(CoreProcess):
 
         for hathiFile in fileJSON:
             if hathiFile['full'] == fullDump:
-                with open('/tmp/tmp_hathi.txt.gz', 'wb') as hathiTSV:
-                    hathiReq = requests.get(hathiFile['url'])
-                    hathiTSV.write(hathiReq.content)
+                self.importFromHathiFile(hathiFile['url'])
                 break
 
-        with gzip.open('/tmp/tmp_hathi.txt.gz', 'rt') as unzipTSV:
-            hathiTSV = csv.reader(unzipTSV, delimiter='\t')
+    def importFromHathiFile(self, hathiURL):
+        try:
+            hathiResp = requests.get(hathiURL, stream=True, timeout=30)
+            hathiResp.raise_for_status()
+        except (ReadTimeout, HTTPError) as e:
+            logger.error('Unable to read hathifile url {}'.format(hathiURL))
+            logger.debug(e)
+            return None
+
+        with gzip.open(BytesIO(hathiResp.content), mode='rt') as hathiGzip:
+            hathiTSV = csv.reader(hathiGzip, delimiter='\t')
             self.readHathiFile(hathiTSV)
 
     def readHathiFile(self, hathiTSV):
         while True:
             try:
                 row = next(hathiTSV)
-            except csv.Error:
+            except csv.Error as e:
+                logger.warning('Unable to read TSV row')
+                logger.debug(e)
                 continue
             except StopIteration:
+                logger.info('Reached end of TSV file')
                 break
 
             if row is not None and row[2] not in self.HATHI_RIGHTS_SKIPS:
