@@ -186,7 +186,8 @@ class TestMUSEProcess:
 
     def test_downloadRecordUpdates_success(self, testProcess, testBookCSV, mocker):
         mockGet = mocker.patch.object(requests, 'get')
-        mockResp = mocker.MagicMock(text='testCSV')
+        mockResp = mocker.MagicMock()
+        mockResp.iter_lines.return_value = 'testFile'
         mockGet.return_value = mockResp
 
         mockCSV = mocker.patch.object(csv, 'reader')
@@ -196,7 +197,8 @@ class TestMUSEProcess:
 
         assert testProcess.updateDates == {'row1': datetime(2020, 1, 1), 'row3': datetime(2020, 1, 1)}
         mockGet.assert_called_once_with('test_muse_csv', stream=True, timeout=30)
-        mockCSV.assert_called_once()
+        mockResp.iter_lines.assert_called_once_with(decode_unicode=True)
+        mockCSV.assert_called_once_with('testFile', skipinitialspace=True)
 
     def test_downloadRecordUpdates_failure(self, testProcess, mocker):
         mockGet = mocker.patch.object(requests, 'get')

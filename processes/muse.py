@@ -106,7 +106,10 @@ class MUSEProcess(CoreProcess):
             logger.debug(e)
             raise Exception('Unable to load Project MUSE CSV file')
 
-        csvReader = csv.reader(StringIO(csvResponse.text), dialect='excel')
+        csvReader = csv.reader(
+            csvResponse.iter_lines(decode_unicode=True),
+            skipinitialspace=True,
+        )
 
         for _ in range(4): next(csvReader, None) # Skip 4 header rows
 
