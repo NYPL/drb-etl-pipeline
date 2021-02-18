@@ -4,6 +4,7 @@
 ### Fixed
 - Update RabbitMQ client to work with credentials, virtual hosts and non-default exchanges
 - Update environment variable loading in some managers to handle irrelevant env vars
+- Update Gutenberg process to allow invocation without offset and limit settings
 - Resolve memory consumption issues in the NYPL, HathiTrust, DOAB and MUSE processes
 
 ## 2021-02-09 -- v0.2.2
