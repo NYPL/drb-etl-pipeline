@@ -25,7 +25,7 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
             print('NEW', rec.record)
             self.records.append(rec.record)
         
-        if len(self.records) >= 2500:
+        if len(self.records) >= 1000:
             self.saveRecords()
             self.records = []
     
