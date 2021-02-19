@@ -360,7 +360,7 @@ class SFRRecordManager:
 
         # Set Links
         newEd.links = SFRRecordManager.setPipeDelimitedData(
-            edition['links'], ['url', 'media_type', 'flags'], Link, dparser=SFRRecordManager.parseLinkFlags
+            edition['links'], ['url', 'media_type', 'flags'], Link, dParser=SFRRecordManager.parseLinkFlags
         )
 
         # Add Items
@@ -380,7 +380,7 @@ class SFRRecordManager:
 
         # Set Links
         newItem.links = SFRRecordManager.setPipeDelimitedData(
-            links, ['url', 'media_type', 'flags'], Link, dparser=SFRRecordManager.parseLinkFlags
+            links, ['url', 'media_type', 'flags'], Link, dParser=SFRRecordManager.parseLinkFlags
         )
         
         # Set Identifiers
@@ -390,7 +390,7 @@ class SFRRecordManager:
 
         # Set Rights
         newItem.rights = SFRRecordManager.setPipeDelimitedData(
-            [rights], ['source', 'license', 'rights_reason', 'rights_statement', 'rights_date'], Rights
+            [rights], ['source', 'license', 'rights_reason', 'rights_statement'], Rights
         )
 
         # Set Contributors
@@ -430,7 +430,10 @@ class SFRRecordManager:
 
     @staticmethod
     def parseLinkFlags(linkData):
-        linkData['flags'] = json.loads(linkData['flags'])
+        try:
+            linkData['flags'] = json.loads(linkData['flags'])
+        except json.decoder.JSONDecodeError:
+            linkData['flags'] = {}
 
         return linkData
 
@@ -475,8 +478,11 @@ class SFRRecordManager:
     def normalizeDates(self, dates):
         outDates = set()
         for date in dates:
-            cleanDate = re.search(r'\d+.*\d+', date).group()
-            outDates.add(cleanDate)
+            try:
+                cleanDate = re.search(r'\d+.*\d+', date).group()
+                outDates.add(cleanDate)
+            except AttributeError:
+                pass
 
         return list(outDates)
 
