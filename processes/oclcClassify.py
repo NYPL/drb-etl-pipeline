@@ -12,7 +12,7 @@ class ClassifyProcess(CoreProcess):
     def __init__(self, *args):
         super(ClassifyProcess, self).__init__(*args[:4])
 
-        self.ingestLimit = args[4] or None
+        self.ingestLimit = int(args[4]) if args[4] else None
 
         # PostgreSQL Connection
         self.generateEngine()
@@ -46,13 +46,35 @@ class ClassifyProcess(CoreProcess):
                 startDateTime = datetime.utcnow() - timedelta(hours=24)
             baseQuery = baseQuery.filter(Record.date_modified > startDateTime)
 
-        if self.ingestLimit:
-            baseQuery = baseQuery.limit(self.ingestLimit)
-        
-        for rec in baseQuery.yield_per(100):
+        windowSize = 100 if (self.ingestLimit and self.ingestLimit > 100) else self.ingestLimit
+        for rec in self.windowedQuery(baseQuery, windowSize=windowSize):
             self.frbrizeRecord(rec)
             rec.frbr_status = 'complete'
             self.records.append(rec)
+
+    def windowedQuery(self, query, windowSize=100):
+        singleEntity = query.is_single_entity
+        query = query.add_column(Record.id).order_by(Record.id)
+
+        lastID = None
+        totalFetched = 0
+
+        while True:
+            subQuery = query
+
+            if lastID is not None:
+                subQuery = subQuery.filter(Record.id > lastID)
+
+            queryChunk = subQuery.limit(windowSize).all()
+            totalFetched += windowSize
+
+            if not queryChunk or (self.ingestLimit and totalFetched > self.ingestLimit):
+                break
+
+            lastID = queryChunk[-1][-1]
+
+            for row in queryChunk:
+                yield row[0] if singleEntity else row[0:-1]
     
     def frbrizeRecord(self, record):
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
