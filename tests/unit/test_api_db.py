@@ -21,7 +21,7 @@ class TestDBClient:
         mockMaker.return_value = mockCreator
         mockSession = mocker.MagicMock()
         mockCreator.return_value = mockSession
-        mockSession.query().join().outerjoin().filter().all.return_value = ['work1', 'work3']
+        mockSession.query().join().join().filter().all.return_value = ['work1', 'work3']
 
         mockFlatten = mocker.patch.object(APIUtils, 'flatten')
         mockFlatten.return_value = [1, 2, 3]
@@ -41,7 +41,7 @@ class TestDBClient:
         mockMaker.return_value = mockCreator
         mockSession = mocker.MagicMock()
         mockCreator.return_value = mockSession
-        mockSession.query().join().outerjoin().filter().first.return_value = 'testWork'
+        mockSession.query().join().join().filter().first.return_value = 'testWork'
 
         workResult = testInstance.fetchSingleWork('uuid')
 

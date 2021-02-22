@@ -21,8 +21,6 @@ class CoverProcess(CoreProcess):
     def runProcess(self):
         coverQuery = self.generateQuery()
 
-        print(coverQuery)
-
         self.fetchEditionCovers(coverQuery)
 
         self.saveRecords()
@@ -31,7 +29,7 @@ class CoverProcess(CoreProcess):
     def generateQuery(self):
         baseQuery = self.session.query(Edition)
 
-        subQuery = self.session.query(Edition.id)\
+        subQuery = self.session.query('edition_id')\
             .select_from(EDITION_LINKS).join(Link)\
             .filter(Link.flags['cover'] == 'true')
 
@@ -43,7 +41,6 @@ class CoverProcess(CoreProcess):
             else:
                 startDate = datetime.utcnow() - timedelta(hours=24)
 
-            print(startDate)
             filters.append(Edition.date_modified >= startDate)
 
         return baseQuery.filter(*filters)
@@ -61,7 +58,7 @@ class CoverProcess(CoreProcess):
             manager.fetchCoverFile()
             manager.resizeCoverFile()
 
-            return manager
+            return manager if manager.coverContent else None
 
     def storeFoundCover(self, manager, edition):
         coverPath = 'covers/{}/{}.{}'.format(

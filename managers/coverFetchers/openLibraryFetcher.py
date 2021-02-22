@@ -35,7 +35,7 @@ class OpenLibraryFetcher(AbstractFetcher):
         coverRow = self.session.query(OpenLibraryCover)\
             .filter(OpenLibraryCover.name == source)\
             .filter(OpenLibraryCover.value == value)\
-            .one_or_none()
+            .first()
 
         if coverRow:
             self.setCoverPageURL(coverRow.cover_id)
