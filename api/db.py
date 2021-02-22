@@ -14,15 +14,17 @@ class DBClient():
 
         session = sessionmaker(bind=self.engine)()
 
-        return session.query(Work)\
+        query = session.query(Work)\
             .join(Edition)\
-            .outerjoin(Item, ITEM_LINKS, Link)\
-            .filter(Work.uuid.in_(uuids), Edition.id.in_(editionIds)).all()
+            .join(Item, ITEM_LINKS, Link)\
+            .filter(Edition.id.in_(editionIds))
+
+        return query.all()
 
     def fetchSingleWork(self, uuid):
         session = sessionmaker(bind=self.engine)()
 
         return session.query(Work)\
             .join(Edition)\
-            .outerjoin(Item, ITEM_LINKS, Link)\
+            .join(Item, ITEM_LINKS, Link)\
             .filter(Work.uuid == uuid).first()
