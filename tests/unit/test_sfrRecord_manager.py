@@ -368,6 +368,6 @@ class TestSFRRecordManager:
         assert testInstance.work.sort_title == 'kplagh: batleth handbook'
 
     def test_normalizeDates(self, testInstance):
-        testDates = testInstance.normalizeDates(['1999.', '2000', 'sometime 1900-12 [pub]'])
+        testDates = testInstance.normalizeDates(['1999.|test', '2000|other', 'sometime 1900-12 [pub]|other'])
 
-        assert sorted(testDates) == sorted(['1999', '2000', '1900-12'])
+        assert sorted(testDates) == sorted(['1999|test', '2000|other', '1900-12|other'])

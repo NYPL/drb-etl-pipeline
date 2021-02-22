@@ -478,9 +478,10 @@ class SFRRecordManager:
     def normalizeDates(self, dates):
         outDates = set()
         for date in dates:
+            dateValue, dateType = tuple(date.split('|'))
             try:
-                cleanDate = re.search(r'\d+.*\d+', date).group()
-                outDates.add(cleanDate)
+                cleanDate = re.search(r'\d+.*\d+', dateValue).group()
+                outDates.add('{}|{}'.format(cleanDate, dateType))
             except AttributeError:
                 pass
 
