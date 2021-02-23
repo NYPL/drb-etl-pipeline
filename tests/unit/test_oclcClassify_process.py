@@ -22,7 +22,7 @@ class TestOCLCClassifyProcess:
     def testInstance(self, mocker):
         class TestClassifyProcess(ClassifyProcess):
             def __init__(self, *args):
-                self.records = []
+                self.records = set()
                 self.ingestLimit = None
                 self.rabbitQueue = os.environ['OCLC_QUEUE']
                 self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']

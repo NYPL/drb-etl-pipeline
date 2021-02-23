@@ -56,7 +56,7 @@ class TestCoreProcess:
 
         mockSession.assert_called_once
         mockRecord.updateExisting.assert_called_with('existing_record')
-        assert coreInstance.records[0] == 'existing_record'
+        assert list(coreInstance.records)[0] == 'existing_record'
 
     def test_addDCDWToUpdateList_new(self, coreInstance, mocker):
         mockSession = mocker.MagicMock()
@@ -69,10 +69,10 @@ class TestCoreProcess:
         coreInstance.addDCDWToUpdateList(mockRecord)
 
         mockSession.assert_called_once
-        assert coreInstance.records[0] == mockDocument
+        assert list(coreInstance.records)[0] == mockDocument
 
     def test_addDCDWToUpdateList_new_save_records(self, coreInstance, mocker):
-        coreInstance.records = ['record{}'.format(i) for i in range(999)]
+        coreInstance.records = set(['record{}'.format(i) for i in range(999)])
 
         mockSession = mocker.MagicMock()
         mockSession.query().filter().first.return_value = None

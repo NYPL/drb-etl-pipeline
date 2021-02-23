@@ -12,7 +12,7 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
         self.ingestPeriod = ingestPeriod
         self.singleRecord = singleRecord
 
-        self.records = []
+        self.records = set()
     
     def addDCDWToUpdateList(self, rec):
         existing = self.session.query(Record)\
@@ -20,14 +20,20 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
         if existing:
             print('EXISTING', existing)
             rec.updateExisting(existing)
-            self.records.append(existing)
+
+            try:
+                self.records.remove(existing)
+            except KeyError:
+                print('Record not in current set')
+
+            self.records.add(existing)
         else:
             print('NEW', rec.record)
-            self.records.append(rec.record)
+            self.records.add(rec.record)
         
-        if len(self.records) >= 1000:
+        if len(self.records) >= 500:
             self.saveRecords()
-            self.records = []
+            self.records = set()
     
     def saveRecords(self):
         self.bulkSaveObjects(self.records)

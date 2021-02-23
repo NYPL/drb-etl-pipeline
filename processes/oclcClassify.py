@@ -50,7 +50,8 @@ class ClassifyProcess(CoreProcess):
         for rec in self.windowedQuery(baseQuery, windowSize=windowSize):
             self.frbrizeRecord(rec)
             rec.frbr_status = 'complete'
-            self.records.append(rec)
+            rec.cluster_status = False
+            self.records.add(rec)
 
     def windowedQuery(self, query, windowSize=100):
         singleEntity = query.is_single_entity
