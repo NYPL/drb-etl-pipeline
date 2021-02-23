@@ -5,18 +5,18 @@ from sqlalchemy.orm import relationship
 from .base import Base, Core
 
 ITEM_IDENTIFIERS = Table('item_identifiers', Base.metadata,
-    Column('item_id', Integer, ForeignKey('items.id')),
-    Column('identifier_id', Integer, ForeignKey('identifiers.id'))
+    Column('item_id', Integer, ForeignKey('items.id'), ondelete='CASCADE'),
+    Column('identifier_id', Integer, ForeignKey('identifiers.id'), ondelete='CASCADE')
 )
 
 ITEM_LINKS = Table('item_links', Base.metadata,
-    Column('item_id', Integer, ForeignKey('items.id')),
-    Column('link_id', Integer, ForeignKey('links.id'))
+    Column('item_id', Integer, ForeignKey('items.id'), ondelete='CASCADE'),
+    Column('link_id', Integer, ForeignKey('links.id'), ondelete='CASCADE')
 )
 
 ITEM_RIGHTS = Table('item_rights', Base.metadata,
-    Column('item_id', Integer, ForeignKey('items.id')),
-    Column('rights_id', Integer, ForeignKey('rights.id'))
+    Column('item_id', Integer, ForeignKey('items.id'), ondelete='CASCADE'),
+    Column('rights_id', Integer, ForeignKey('rights.id'), ondelete='CASCADE')
 )
 
 class Item(Base, Core):
@@ -31,11 +31,11 @@ class Item(Base, Core):
     measurements = Column(JSONB)
     physical_location = Column(JSONB)
 
-    edition_id = Column(Integer, ForeignKey('editions.id'))
+    edition_id = Column(Integer, ForeignKey('editions.id'), index=True)
 
-    identifiers = relationship('Identifier', secondary=ITEM_IDENTIFIERS, backref='items')
-    links = relationship('Link', secondary=ITEM_LINKS, backref='items')
-    rights = relationship('Rights', secondary=ITEM_RIGHTS, backref='items')
+    identifiers = relationship('Identifier', secondary=ITEM_IDENTIFIERS, backref='items', cascade='all, delete')
+    links = relationship('Link', secondary=ITEM_LINKS, backref='items', cascade='all, delete')
+    rights = relationship('Rights', secondary=ITEM_RIGHTS, backref='items', cascade='all, delete')
 
     def __repr__(self):
         return '<Item(source={}, content_type={})>'.format(

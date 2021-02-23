@@ -5,18 +5,18 @@ from sqlalchemy.orm import relationship
 from .base import Base, Core
 
 EDITION_IDENTIFIERS = Table('edition_identifiers', Base.metadata,
-    Column('edition_id', Integer, ForeignKey('editions.id')),
-    Column('identifier_id', Integer, ForeignKey('identifiers.id'))
+    Column('edition_id', Integer, ForeignKey('editions.id', ondelete='CASCADE')),
+    Column('identifier_id', Integer, ForeignKey('identifiers.id', ondelete='CASCADE'))
 )
 
 EDITION_LINKS = Table('edition_links', Base.metadata,
-    Column('edition_id', Integer, ForeignKey('editions.id')),
-    Column('link_id', Integer, ForeignKey('links.id'))
+    Column('edition_id', Integer, ForeignKey('editions.id', ondelete='CASCADE')),
+    Column('link_id', Integer, ForeignKey('links.id', ondelete='CASCADE'))
 )
 
 EDITION_RIGHTS = Table('edition_rights', Base.metadata,
-    Column('edition_id', Integer, ForeignKey('editions.id')),
-    Column('rights_id', Integer, ForeignKey('rights.id'))
+    Column('edition_id', Integer, ForeignKey('editions.id', ondelete='CASCADE')),
+    Column('rights_id', Integer, ForeignKey('rights.id', ondelete='CASCADE'))
 )
 
 class Edition(Base, Core):
@@ -44,9 +44,9 @@ class Edition(Base, Core):
     work_id = Column(Integer, ForeignKey('works.id'))
     items = relationship('Item', backref='edition', cascade='all, delete-orphan')
 
-    identifiers = relationship('Identifier', secondary=EDITION_IDENTIFIERS, backref='editions')
-    links = relationship('Link', secondary=EDITION_LINKS, backref='editions')
-    rights = relationship('Rights', secondary=EDITION_RIGHTS, backref='editions')
+    identifiers = relationship('Identifier', secondary=EDITION_IDENTIFIERS, backref='editions', cascade='all, delete')
+    links = relationship('Link', secondary=EDITION_LINKS, backref='editions', cascade='all, delete')
+    rights = relationship('Rights', secondary=EDITION_RIGHTS, backref='editions', cascade='all, delete')
 
     def __repr__(self):
         return '<Edition(place={}, date={}, publisher={})>'.format(
