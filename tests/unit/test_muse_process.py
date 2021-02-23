@@ -1,5 +1,8 @@
+import csv
+from datetime import datetime
 import pytest
 import requests
+from requests.exceptions import HTTPError
 
 from processes.muse import MUSEProcess, MUSEError
 from tests.helper import TestHelpers
@@ -30,6 +33,18 @@ class TestMUSEProcess:
     def testMUSEPageUnreleased(self):
         return open('./tests/fixtures/muse_book_63320.html', 'r').read()
 
+    @pytest.fixture
+    def testBookCSV(self):
+        return [
+            ['Header 1'],
+            ['Header 2'],
+            ['Header 3'],
+            ['Header 4'],
+            [0, 1, 2, 3, 4, 5, 6, 'row1', 8, 9, '2020-01-01'],
+            [0, 1, 2, 3, 4, 5, 6, 'row2', 8, 9],
+            [0, 1, 2, 3, 4, 5, 6, 'row3', 8, 9, '2020-01-01'],
+        ]
+
     def test_runProcess_daily(self, testProcess, mocker):
         mockImport = mocker.patch.object(MUSEProcess, 'importMARCRecords')
         mockSave = mocker.patch.object(MUSEProcess, 'saveRecords')
@@ -50,7 +65,7 @@ class TestMUSEProcess:
         testProcess.process = 'complete'
         testProcess.runProcess()
 
-        mockImport.assert_called_once_with(fullOrPartial=True)
+        mockImport.assert_called_once_with(full=True)
         mockSave.assert_called_once
         mockCommit.assert_called_once
 
@@ -67,26 +82,91 @@ class TestMUSEProcess:
         mockSave.assert_called_once
         mockCommit.assert_called_once
 
-    def test_importMARCRecords(self, testProcess, mocker):
-        mockDownload = mocker.patch.object(MUSEProcess, 'downloadMARCRecords')
-        mockDownload.return_value = 'mockFile'
+    def test_importMARCRecords_daily(self, testProcess, mocker):
+        processMocks = mocker.patch.multiple(MUSEProcess,
+            downloadRecordUpdates=mocker.DEFAULT,
+            downloadMARCRecords=mocker.DEFAULT,
+            recordToBeUpdated=mocker.DEFAULT,
+            parseMuseRecord=mocker.DEFAULT,
+        )
+        processMocks['recordToBeUpdated'].side_effect = [True, False, True, True]
+        processMocks['downloadMARCRecords'].return_value = 'mockFile'
+        processMocks['parseMuseRecord'].side_effect = [None, MUSEError('test'), None]
+
+        mockDatetime = mocker.patch('processes.muse.datetime')
+        mockDatetime.utcnow.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
         mockReader = mocker.patch('processes.muse.MARCReader')
-        mockReader.return_value = ['rec1', 'rec2', 'rec3']
-
-        mockParser = mocker.patch.object(MUSEProcess, 'parseMuseRecord')
-        mockParser.side_effect = [None, MUSEError('test'), None]
+        mockReader.return_value = ['rec1', 'rec2', 'rec3', 'rec4']
 
         testProcess.importMARCRecords()
 
-        mockDownload.assert_called_once
+        processMocks['downloadRecordUpdates'].assert_called_once()
+        processMocks['downloadMARCRecords'].assert_called_once()
         mockReader.assert_called_once_with('mockFile')
-        mockParser.assert_has_calls([mocker.call('rec1'), mocker.call('rec2'), mocker.call('rec3')])
+        testDate = datetime(1900, 1, 1, 12, 0, 0)
+        processMocks['recordToBeUpdated'].assert_has_calls([
+            mocker.call('rec1', testDate), mocker.call('rec2', testDate),
+            mocker.call('rec3', testDate), mocker.call('rec4', testDate), 
+        ])
+        processMocks['parseMuseRecord'].assert_has_calls([
+            mocker.call('rec1'), mocker.call('rec3'), mocker.call('rec4')
+        ])
+
+    def test_importMARCRecords_custom(self, testProcess, mocker):
+        processMocks = mocker.patch.multiple(MUSEProcess,
+            downloadRecordUpdates=mocker.DEFAULT,
+            downloadMARCRecords=mocker.DEFAULT,
+            recordToBeUpdated=mocker.DEFAULT,
+            parseMuseRecord=mocker.DEFAULT,
+        )
+        processMocks['recordToBeUpdated'].side_effect = [True, False, True, True]
+        processMocks['downloadMARCRecords'].return_value = 'mockFile'
+        processMocks['parseMuseRecord'].side_effect = [None, MUSEError('test'), None]
+
+        mockReader = mocker.patch('processes.muse.MARCReader')
+        mockReader.return_value = ['rec1', 'rec2', 'rec3', 'rec4']
+
+        testProcess.importMARCRecords(startTimestamp='2020-01-01')
+
+        processMocks['downloadRecordUpdates'].assert_called_once()
+        processMocks['downloadMARCRecords'].assert_called_once()
+        mockReader.assert_called_once_with('mockFile')
+        testDate = datetime(2020, 1, 1)
+        processMocks['recordToBeUpdated'].assert_has_calls([
+            mocker.call('rec1', testDate), mocker.call('rec2', testDate),
+            mocker.call('rec3', testDate), mocker.call('rec4', testDate), 
+        ])
+        processMocks['parseMuseRecord'].assert_has_calls([
+            mocker.call('rec1'), mocker.call('rec3'), mocker.call('rec4')
+        ])
+
+    def test_importMARCRecords_full(self, testProcess, mocker):
+        processMocks = mocker.patch.multiple(MUSEProcess,
+            downloadRecordUpdates=mocker.DEFAULT,
+            downloadMARCRecords=mocker.DEFAULT,
+            recordToBeUpdated=mocker.DEFAULT,
+            parseMuseRecord=mocker.DEFAULT,
+        )
+        processMocks['downloadMARCRecords'].return_value = 'mockFile'
+        processMocks['parseMuseRecord'].side_effect = [None, MUSEError('test'), None, None]
+
+        mockReader = mocker.patch('processes.muse.MARCReader')
+        mockReader.return_value = ['rec1', 'rec2', 'rec3', 'rec4']
+
+        testProcess.importMARCRecords(full=True)
+
+        processMocks['downloadRecordUpdates'].assert_called_once()
+        processMocks['downloadMARCRecords'].assert_called_once()
+        mockReader.assert_called_once_with('mockFile')
+        processMocks['recordToBeUpdated'].assert_not_called()
+        processMocks['parseMuseRecord'].assert_has_calls([
+            mocker.call('rec1'), mocker.call('rec2'), mocker.call('rec3'), mocker.call('rec4')
+        ])
 
     def test_downloadMARCRecords_success(self, testProcess, mocker):
         mockGet = mocker.patch.object(requests, 'get')
         mockResp = mocker.MagicMock()
-        mockResp.status_code = 200
         mockResp.iter_content.return_value = [b'm', b'a', b'r', b'c']
         mockGet.return_value = mockResp
 
@@ -98,11 +178,52 @@ class TestMUSEProcess:
     def test_downloadMARCRecords_failure(self, testProcess, mocker):
         mockGet = mocker.patch.object(requests, 'get')
         mockResp = mocker.MagicMock()
-        mockResp.status_code = 500
+        mockResp.raise_for_status.side_effect = HTTPError
         mockGet.return_value = mockResp
 
         with pytest.raises(Exception):
             testProcess.downloadMARCRecords()
+
+    def test_downloadRecordUpdates_success(self, testProcess, testBookCSV, mocker):
+        mockGet = mocker.patch.object(requests, 'get')
+        mockResp = mocker.MagicMock()
+        mockResp.iter_lines.return_value = 'testFile'
+        mockGet.return_value = mockResp
+
+        mockCSV = mocker.patch.object(csv, 'reader')
+        mockCSV.return_value = iter(testBookCSV)
+
+        testProcess.downloadRecordUpdates()
+
+        assert testProcess.updateDates == {'row1': datetime(2020, 1, 1), 'row3': datetime(2020, 1, 1)}
+        mockGet.assert_called_once_with('test_muse_csv', stream=True, timeout=30)
+        mockResp.iter_lines.assert_called_once_with(decode_unicode=True)
+        mockCSV.assert_called_once_with('testFile', skipinitialspace=True)
+
+    def test_downloadRecordUpdates_failure(self, testProcess, mocker):
+        mockGet = mocker.patch.object(requests, 'get')
+        mockResp = mocker.MagicMock()
+        mockResp.raise_for_status.side_effect = HTTPError
+        mockGet.return_value = mockResp
+
+        with pytest.raises(Exception):
+            testProcess.downloadRecordUpdates()
+
+    def test_recordToBeUpdated_true(self, testProcess, mocker):
+        mockRecord = mocker.MagicMock()
+        mockRecord.get_fields.return_value = [{'u': 'testURL/'}]
+
+        testProcess.updateDates = {'testURL': datetime(2020, 1, 1)}
+
+        assert testProcess.recordToBeUpdated(mockRecord, datetime(1900, 1, 1)) == True
+
+    def test_recordToBeUpdated_false(self, testProcess, mocker):
+        mockRecord = mocker.MagicMock()
+        mockRecord.get_fields.return_value = [{'u': 'testURL/'}]
+
+        testProcess.updateDates = {'testURL': datetime(1900, 1, 1)}
+
+        assert testProcess.recordToBeUpdated(mockRecord, datetime(2020, 1, 1)) == False
 
     def test_parseMuseRecord(self, testProcess, mocker):
         mockRecord = mocker.MagicMock()

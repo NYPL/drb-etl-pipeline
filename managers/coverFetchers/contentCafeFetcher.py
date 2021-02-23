@@ -51,7 +51,6 @@ class ContentCafeFetcher(AbstractFetcher):
         return False
 
     def isNoCoverImage(self, rawBytes):
-        print(hashlib.md5(rawBytes).hexdigest())
         return hashlib.md5(rawBytes).hexdigest() == self.NO_COVER_HASH
 
     def downloadCoverFile(self):

@@ -247,15 +247,14 @@ class KMeansManager:
         distances = []
         denominator = sqrt((y2 - y1)**2 + (x2 - x1)**2)
         for i in range(len(wcss)):
-            x0 = i + 1
+            x0 = i + 2
             y0 = wcss[i][0]
 
             numerator = abs((y2 - y1)*x0 - (x2 - x1)*y0 + x2*y1 - y2*x1)
-            distances.append(numerator/denominator)
+            distances.append((numerator/denominator, wcss[i][1]))
         
-        finalStart = 1 if start < 2 else start + 1 
-        self.k = distances.index(max(distances)) + finalStart
-        return None
+        distances.sort(key=lambda x: x[0], reverse=True)
+        self.k = distances[0][1]
     
     def cluster(self, k, score=False):
         self.currentK = k

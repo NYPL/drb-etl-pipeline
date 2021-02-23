@@ -1,6 +1,4 @@
-from flask import (
-    Blueprint, request, session, url_for, redirect, current_app, jsonify
-)
+from flask import Blueprint, request, current_app
 from ..elastic import ElasticClient
 from ..db import DBClient
 from ..utils import APIUtils
@@ -25,7 +23,7 @@ def standardQuery():
     searchPage = searchParams.get('page', [0])[0]
     searchSize = searchParams.get('size', [10])[0]
 
-    logger.info('Executing Query {} with filters {}'.format(searchParams, filterTerms))
+    logger.info('Executing ES Query {} with filters {}'.format(searchParams, filterTerms))
 
     searchResult = esClient.searchQuery(queryTerms, sortTerms, filterTerms, page=searchPage, perPage=searchSize)
 
@@ -33,6 +31,8 @@ def standardQuery():
         (r.uuid, [e.edition_id for e in r.meta.inner_hits.editions.hits])
         for r in searchResult.hits
     ]
+
+    logger.info('Executing DB Query for {} editions'.format(len(resultIds)))
 
     works = dbClient.fetchSearchedWorks(resultIds)
     facets = APIUtils.formatAggregationResult(searchResult.aggregations.to_dict())

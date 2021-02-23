@@ -45,6 +45,7 @@ class TestHelpers:
         'GITHUB_API_ROOT': 'test_github_url',
         'BARDO_CCE_API': 'test_cce_url',
         'MUSE_MARC_URL': 'test_muse_url',
+        'MUSE_CSV_URL': 'test_muse_csv',
         'DOAB_OAI_URL': 'test_doab_url'
     }
 

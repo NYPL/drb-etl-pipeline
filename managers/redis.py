@@ -2,6 +2,10 @@ from datetime import datetime, timedelta
 import os
 from redis import Redis
 
+from logger import createLog
+
+logger = createLog(__name__)
+
 
 class RedisManager:
     def __init__(self, host=None, port=None):
@@ -9,6 +13,9 @@ class RedisManager:
         self.redisHost = host or os.environ.get('REDIS_HOST', None)
         self.redisPort = port or os.environ.get('REDIS_PORT', None)
         self.environment = os.environ.get('ENVIRONMENT', 'test')
+
+        self.presentTime = datetime.utcnow()
+        self.oneDayAgo = self.presentTime - timedelta(days=1)
     
     def createRedisClient(self):
         self.redisClient = Redis(
@@ -18,22 +25,19 @@ class RedisManager:
         )
     
     def checkSetRedis(self, service, identifier, idenType):
-        queryTime = self.redisClient.get('{}/{}/{}'.format(service, identifier, idenType))
+        queryTime = self.redisClient.get('{}/{}/{}/{}'.format(self.environment, service, identifier, idenType))
 
-        presentTime = datetime.utcnow()
-        oneDayAgo = presentTime - timedelta(days=1)
-
-        if queryTime is not None and datetime.strptime(queryTime.decode('utf-8'), '%Y-%m-%dT%H:%M:%S') >= oneDayAgo:
-            print('Identifier Recently queried')
+        if queryTime is not None and datetime.strptime(queryTime.decode('utf-8'), '%Y-%m-%dT%H:%M:%S') >= self.oneDayAgo:
+            logger.debug('Identifier {} recently queried'.format(identifier))    
             return True
         
-        self.setRedis(service, identifier, idenType, presentTime)
+        self.setRedis(service, identifier, idenType)
         return False
         
     
-    def setRedis(self, service, identifier, idenType, presentTime, expirationTime=60*60*24*7):
+    def setRedis(self, service, identifier, idenType, expirationTime=60*60*24*7):
         self.redisClient.set(
             '{}/{}/{}/{}'.format(self.environment, service, identifier, idenType),
-            presentTime.strftime('%Y-%m-%dT%H:%M:%S'),
+            self.presentTime.strftime('%Y-%m-%dT%H:%M:%S'),
             ex=expirationTime
         )

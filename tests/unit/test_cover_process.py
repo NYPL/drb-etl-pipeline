@@ -46,7 +46,7 @@ class TestCoverProcess:
         assert testQuery == 'testQuery'
         assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_('subQuery'))
         testProcess.session.query.assert_has_calls([
-            mocker.call(Edition), mocker.call(Edition.id)
+            mocker.call(Edition), mocker.call('edition_id')
         ])
         mockSubQuery.select_from().join().filter.call_args[0][0].compare(Link.flags['cover'] == 'true')
 

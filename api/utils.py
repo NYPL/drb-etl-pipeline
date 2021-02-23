@@ -27,6 +27,8 @@ class APIUtils():
 
     @staticmethod
     def formatPagingOptions(hits):
+        if len(hits) == 0: return {}
+
         return {
             'prevPageSort': list(hits[0].meta.sort),
             'nextPageSort': list(hits[-1].meta.sort)

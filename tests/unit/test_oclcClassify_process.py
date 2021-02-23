@@ -6,6 +6,7 @@ from tests.helper import TestHelpers
 from processes import ClassifyProcess
 from managers import ClassifyManager
 from managers.oclcClassify import ClassifyError
+from model import Record
 
 
 class TestOCLCClassifyProcess:
@@ -79,19 +80,16 @@ class TestOCLCClassifyProcess:
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
-        mockDatetime = mocker.spy(datetime, 'datetime')
 
         mockSession.query().filter.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
         mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
-        mockQuery.yield_per.return_value = mockRecords
+        mockWindowed = mocker.patch.object(ClassifyProcess, 'windowedQuery')
+        mockWindowed.return_value = mockRecords
+
         testInstance.classifyRecords()
 
-        mockSession.query.filter.assert_called_once
-        mockDatetime.utcnow.assert_called_once
-        mockDatetime.timedelta.assert_called_once
-        mockQuery.filter.assert_called_once
-        mockQuery.yield_per.assert_called_once_with(100)
+        mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
 
     def test_classifyRecords_custom_range(self, testInstance, mocker):
@@ -104,14 +102,14 @@ class TestOCLCClassifyProcess:
         mockSession.query().filter.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
         mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
-        mockQuery.yield_per.return_value = mockRecords
+        mockWindowed = mocker.patch.object(ClassifyProcess, 'windowedQuery')
+        mockWindowed.return_value = mockRecords
+
         testInstance.classifyRecords(startDateTime='testDate')
 
-        mockSession.query.filter.assert_called_once
-        mockDatetime.utcnow.assert_not_called
-        mockDatetime.timedelta.assert_not_called
-        mockQuery.filter.assert_called_once
-        mockQuery.yield_per.assert_called_once_with(100)
+        mockDatetime.utcnow.assert_not_called()
+        mockDatetime.timedelta.assert_not_called()
+        mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
 
     def test_classifyRecords_full(self, testInstance, mocker):
@@ -123,14 +121,14 @@ class TestOCLCClassifyProcess:
 
         mockSession.query().filter.return_value = mockQuery
         mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
-        mockQuery.yield_per.return_value = mockRecords
+        mockWindowed = mocker.patch.object(ClassifyProcess, 'windowedQuery')
+        mockWindowed.return_value = mockRecords
+
         testInstance.classifyRecords(full=True)
 
-        mockSession.query.filter.assert_called_once
-        mockDatetime.utcnow.assert_not_called
-        mockDatetime.timedelta.assert_not_called
-        mockQuery.filter.assert_not_called
-        mockQuery.yield_per.assert_called_once_with(100)
+        mockDatetime.utcnow.assert_not_called()
+        mockDatetime.timedelta.assert_not_called()
+        mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
 
     def test_classifyRecords_full_batch(self, testInstance, mocker):
@@ -152,6 +150,22 @@ class TestOCLCClassifyProcess:
         mockDatetime.utcnow.assert_not_called
         mockDatetime.timedelta.assert_not_called
         mockQuery.filter.assert_not_called
+
+    def test_windowedQuery_single(self, testInstance, mocker):
+        mockQuery = mocker.MagicMock(is_single_entity=True)
+        mockQuery.add_column().order_by.return_value = mockQuery
+        mockQuery.filter.return_value = mockQuery
+        mockQuery.limit().all.side_effect = [[('rec1',), ('rec2',), ('rec3',)], None]
+
+        assert list(testInstance.windowedQuery(mockQuery)) == ['rec1', 'rec2', 'rec3']
+
+    def test_windowedQuery_tuple(self, testInstance, mocker):
+        mockQuery = mocker.MagicMock(is_single_entity=False)
+        mockQuery.add_column().order_by.return_value = mockQuery
+        mockQuery.filter.return_value = mockQuery
+        mockQuery.limit().all.side_effect = [[('rec1', 1), ('rec2', 2), ('rec3', 3)], None]
+
+        assert list(testInstance.windowedQuery(mockQuery)) == [('rec1',), ('rec2',), ('rec3',)]
 
     def test_frbrizeRecord_success_valid_author(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyManager, 'getQueryableIdentifiers')

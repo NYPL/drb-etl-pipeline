@@ -111,7 +111,7 @@ class NYPLProcess(CoreProcess):
             nyplBibQuery += ' LIMIT {}'.format(self.ingestLimit)
         
         with self.bibDBConnection.engine.connect() as conn:
-            bibResults = conn.execute(nyplBibQuery)
+            bibResults = conn.execution_options(stream_results=True).execute(nyplBibQuery)
             for bib in bibResults:
                 if bib['var_fields'] is None: continue
 

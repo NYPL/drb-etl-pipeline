@@ -34,7 +34,7 @@ class TestRedisManager:
         mockSet = mocker.patch.object(RedisManager, 'setRedis')
 
         assert testInstance.checkSetRedis('test', 1, 'test') is True
-        testInstance.redisClient.get.assert_called_once_with('test/1/test')
+        testInstance.redisClient.get.assert_called_once_with('testEnv/test/1/test')
         mockSet.assert_not_called
 
     def test_checkSetRedis_key_found_old(self, testInstance, mocker):
@@ -44,7 +44,7 @@ class TestRedisManager:
         mockSet = mocker.patch.object(RedisManager, 'setRedis')
 
         assert testInstance.checkSetRedis('test', 1, 'test') is False
-        testInstance.redisClient.get.assert_called_once_with('test/1/test')
+        testInstance.redisClient.get.assert_called_once_with('testEnv/test/1/test')
         mockSet.assert_called_once
 
     def test_checkSetRedis_key_not_found(self, testInstance, mocker):
@@ -54,14 +54,14 @@ class TestRedisManager:
         mockSet = mocker.patch.object(RedisManager, 'setRedis')
 
         assert testInstance.checkSetRedis('test', 1, 'test') is False
-        testInstance.redisClient.get.assert_called_once_with('test/1/test')
+        testInstance.redisClient.get.assert_called_once_with('testEnv/test/1/test')
         mockSet.assert_called_once
 
     def test_setRedis(self, testInstance, mocker):
         testInstance.redisClient = mocker.MagicMock()
 
-        testInstance.setRedis('test', 1, 'test', datetime(1900, 1, 1))
+        testInstance.setRedis('test', 1, 'test', )
 
         testInstance.redisClient.set.assert_called_once_with(
-            'testEnv/test/1/test', '1900-01-01T00:00:00', ex=604800
+            'testEnv/test/1/test', testInstance.presentTime.strftime('%Y-%m-%dT%H:%M:%S'), ex=604800
         )

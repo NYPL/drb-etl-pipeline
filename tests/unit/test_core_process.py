@@ -72,7 +72,7 @@ class TestCoreProcess:
         assert coreInstance.records[0] == mockDocument
 
     def test_addDCDWToUpdateList_new_save_records(self, coreInstance, mocker):
-        coreInstance.records = ['record{}'.format(i) for i in range(9999)]
+        coreInstance.records = ['record{}'.format(i) for i in range(999)]
 
         mockSession = mocker.MagicMock()
         mockSession.query().filter().first.return_value = None

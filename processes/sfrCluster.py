@@ -100,10 +100,10 @@ class ClusterProcess(CoreProcess):
         return recordManager.work
     
     def queryIdens(self, idens, matchedIDs):
-        checkIdens = list(filter(None, [
+        checkIdens = list(set(filter(None, [
             i if self.checkSetRedis('cluster', i, 'all') is False else None
             for i in idens
-        ]))
+        ])))
 
         if len(checkIdens) < 1:
             return matchedIDs

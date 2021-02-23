@@ -34,7 +34,7 @@ class TestOpenLibraryFetcher:
         mockSetCover = mocker.patch.object(OpenLibraryFetcher, 'setCoverPageURL')
 
         mockRow = mocker.MagicMock(cover_id=1)
-        testFetcher.session.query().filter().filter().one_or_none.return_value = mockRow
+        testFetcher.session.query().filter().filter().first.return_value = mockRow
 
         assert testFetcher.fetchVolumeCover(1, 'test') == True
         mockSetCover.assert_called_once_with(1)
@@ -45,7 +45,7 @@ class TestOpenLibraryFetcher:
     def test_fetchVolumeCover_failure(self, testFetcher, mocker):
         mockSetCover = mocker.patch.object(OpenLibraryFetcher, 'setCoverPageURL')
 
-        testFetcher.session.query().filter().filter().one_or_none.return_value = None
+        testFetcher.session.query().filter().filter().first.return_value = None
 
         assert testFetcher.fetchVolumeCover(1, 'test') == False
         mockSetCover.assert_not_called()

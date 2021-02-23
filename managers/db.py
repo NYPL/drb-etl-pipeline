@@ -56,6 +56,8 @@ class DBManager:
     
     def bulkSaveObjects(self, objects, onlyChanged=True):
         self.session.bulk_save_objects(objects, update_changed_only=onlyChanged)
+        self.session.commit()
+        self.session.flush()
 
     @staticmethod
     def decryptEnvVar(envVar):
