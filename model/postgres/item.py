@@ -5,18 +5,18 @@ from sqlalchemy.orm import relationship
 from .base import Base, Core
 
 ITEM_IDENTIFIERS = Table('item_identifiers', Base.metadata,
-    Column('item_id', Integer, ForeignKey('items.id'), ondelete='CASCADE'),
-    Column('identifier_id', Integer, ForeignKey('identifiers.id'), ondelete='CASCADE')
+    Column('item_id', Integer, ForeignKey('items.id', ondelete='CASCADE')),
+    Column('identifier_id', Integer, ForeignKey('identifiers.id', ondelete='CASCADE'))
 )
 
 ITEM_LINKS = Table('item_links', Base.metadata,
-    Column('item_id', Integer, ForeignKey('items.id'), ondelete='CASCADE'),
-    Column('link_id', Integer, ForeignKey('links.id'), ondelete='CASCADE')
+    Column('item_id', Integer, ForeignKey('items.id', ondelete='CASCADE')),
+    Column('link_id', Integer, ForeignKey('links.id', ondelete='CASCADE'))
 )
 
 ITEM_RIGHTS = Table('item_rights', Base.metadata,
-    Column('item_id', Integer, ForeignKey('items.id'), ondelete='CASCADE'),
-    Column('rights_id', Integer, ForeignKey('rights.id'), ondelete='CASCADE')
+    Column('item_id', Integer, ForeignKey('items.id', ondelete='CASCADE')),
+    Column('rights_id', Integer, ForeignKey('rights.id', ondelete='CASCADE'))
 )
 
 class Item(Base, Core):
