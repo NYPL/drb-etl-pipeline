@@ -150,10 +150,10 @@ class TestCoverProcess:
         mockManager = mocker.MagicMock(fetcher=mockFetcher, coverFormat='tst', coverContent='testBytes')
         mockEdition = mocker.MagicMock(links=[])
 
-        testProcess.records = []
+        testProcess.records = set()
         testProcess.storeFoundCover(mockManager, mockEdition)
 
-        assert testProcess.records[0] == mockEdition
+        assert list(testProcess.records)[0] == mockEdition
         assert mockEdition.links[0].url == 'test_aws_bucket.s3.amazonaws.com/covers/test/1.tst'
         assert mockEdition.links[0].media_type == 'image/tst'
         assert mockEdition.links[0].flags == {'cover': True}

@@ -76,4 +76,4 @@ class CoverProcess(CoreProcess):
         )
 
         edition.links.append(coverLink)
-        self.records.append(edition)
+        self.records.add(edition)
