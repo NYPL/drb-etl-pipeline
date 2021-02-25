@@ -151,22 +151,6 @@ class TestOCLCClassifyProcess:
         mockDatetime.timedelta.assert_not_called
         mockQuery.filter.assert_not_called
 
-    def test_windowedQuery_single(self, testInstance, mocker):
-        mockQuery = mocker.MagicMock(is_single_entity=True)
-        mockQuery.add_column().order_by.return_value = mockQuery
-        mockQuery.filter.return_value = mockQuery
-        mockQuery.limit().all.side_effect = [[('rec1',), ('rec2',), ('rec3',)], None]
-
-        assert list(testInstance.windowedQuery(mockQuery)) == ['rec1', 'rec2', 'rec3']
-
-    def test_windowedQuery_tuple(self, testInstance, mocker):
-        mockQuery = mocker.MagicMock(is_single_entity=False)
-        mockQuery.add_column().order_by.return_value = mockQuery
-        mockQuery.filter.return_value = mockQuery
-        mockQuery.limit().all.side_effect = [[('rec1', 1), ('rec2', 2), ('rec3', 3)], None]
-
-        assert list(testInstance.windowedQuery(mockQuery)) == [('rec1',), ('rec2',), ('rec3',)]
-
     def test_frbrizeRecord_success_valid_author(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyManager, 'getQueryableIdentifiers')
         mockIdentifiers.return_value = ['1|test']

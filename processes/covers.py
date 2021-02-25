@@ -10,13 +10,15 @@ from model.postgres.edition import EDITION_LINKS
 
 class CoverProcess(CoreProcess):
     def __init__(self, *args):
-        super(CoverProcess, self).__init__(*args[:4])
+        super(CoverProcess, self).__init__(*args[:4], batchSize=25)
 
         self.generateEngine()
         self.createSession()
 
         self.createS3Client()
         self.fileBucket = os.environ['FILE_BUCKET']
+
+        self.ingestLimit = None
 
     def runProcess(self):
         coverQuery = self.generateQuery()
@@ -30,7 +32,9 @@ class CoverProcess(CoreProcess):
         baseQuery = self.session.query(Edition)
 
         subQuery = self.session.query('edition_id')\
-            .select_from(EDITION_LINKS).join(Link)\
+            .select_from(EDITION_LINKS)\
+            .join(Link)\
+            .distinct('edition_id')\
             .filter(Link.flags['cover'] == 'true')
 
         filters = [~Edition.id.in_(subQuery)]
@@ -46,7 +50,7 @@ class CoverProcess(CoreProcess):
         return baseQuery.filter(*filters)
 
     def fetchEditionCovers(self, coverQuery):
-        for edition in coverQuery.all():
+        for edition in self.windowedQuery(Edition, coverQuery, windowSize=self.batchSize):
             coverManager = self.searchForCover(edition)
 
             if coverManager: self.storeFoundCover(coverManager, edition)
@@ -77,3 +81,9 @@ class CoverProcess(CoreProcess):
 
         edition.links.append(coverLink)
         self.records.add(edition)
+        print(self.records)
+
+        if len(self.records) >= self.batchSize:
+            self.bulkSaveObjects(self.records)
+            self.records = set()
+            print(self.records)

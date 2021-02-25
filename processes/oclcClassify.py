@@ -47,36 +47,12 @@ class ClassifyProcess(CoreProcess):
             baseQuery = baseQuery.filter(Record.date_modified > startDateTime)
 
         windowSize = 100 if (self.ingestLimit and self.ingestLimit > 100) else self.ingestLimit
-        for rec in self.windowedQuery(baseQuery, windowSize=windowSize):
+        for rec in self.windowedQuery(Record, baseQuery, windowSize=windowSize):
             self.frbrizeRecord(rec)
             rec.frbr_status = 'complete'
             rec.cluster_status = False
             self.records.add(rec)
 
-    def windowedQuery(self, query, windowSize=100):
-        singleEntity = query.is_single_entity
-        query = query.add_column(Record.id).order_by(Record.id)
-
-        lastID = None
-        totalFetched = 0
-
-        while True:
-            subQuery = query
-
-            if lastID is not None:
-                subQuery = subQuery.filter(Record.id > lastID)
-
-            queryChunk = subQuery.limit(windowSize).all()
-            totalFetched += windowSize
-
-            if not queryChunk or (self.ingestLimit and totalFetched > self.ingestLimit):
-                break
-
-            lastID = queryChunk[-1][-1]
-
-            for row in queryChunk:
-                yield row[0] if singleEntity else row[0:-1]
-    
     def frbrizeRecord(self, record):
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
             identifier, idenType = tuple(iden.split('|'))
