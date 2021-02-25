@@ -10,7 +10,7 @@ from model import Record
 
 class ClassifyProcess(CoreProcess):
     def __init__(self, *args):
-        super(ClassifyProcess, self).__init__(*args[:4])
+        super(ClassifyProcess, self).__init__(*args[:4], batchSize=50)
 
         self.ingestLimit = int(args[4]) if args[4] else None
 
@@ -39,7 +39,9 @@ class ClassifyProcess(CoreProcess):
         self.commitChanges()
     
     def classifyRecords(self, full=False, startDateTime=None):
-        baseQuery = self.session.query(Record).filter(Record.frbr_status == 'to_do')
+        baseQuery = self.session.query(Record)\
+            .filter(Record.source != 'oclcClassify')\
+            .filter(Record.frbr_status == 'to_do')
 
         if full is False:
             if not startDateTime:
@@ -49,9 +51,10 @@ class ClassifyProcess(CoreProcess):
         windowSize = 100 if (self.ingestLimit and self.ingestLimit > 100) else self.ingestLimit
         for rec in self.windowedQuery(Record, baseQuery, windowSize=windowSize):
             self.frbrizeRecord(rec)
-            rec.frbr_status = 'complete'
-            rec.cluster_status = False
-            self.records.add(rec)
+
+            self.session.query(Record)\
+                .filter(Record.id == rec.id)\
+                .update({'cluster_status': False, 'frbr_status': 'complete'}, synchronize_session='fetch')
 
     def frbrizeRecord(self, record):
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
