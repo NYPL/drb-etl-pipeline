@@ -81,7 +81,6 @@ class CoverProcess(CoreProcess):
 
         edition.links.append(coverLink)
         self.records.add(edition)
-        print(self.records)
 
         if len(self.records) >= self.batchSize:
             self.bulkSaveObjects(self.records)
