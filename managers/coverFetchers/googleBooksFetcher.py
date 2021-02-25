@@ -49,7 +49,7 @@ class GoogleBooksFetcher(AbstractFetcher):
 
         try:
             coverLinks = volumeResp['volumeInfo']['imageLinks']
-        except (KeyError, AttributeError):
+        except (KeyError, AttributeError, TypeError):
             return False
 
         for imageSize in self.IMAGE_SIZES:
