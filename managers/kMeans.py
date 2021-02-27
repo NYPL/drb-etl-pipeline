@@ -74,7 +74,7 @@ class KMeansManager:
                     ngram_range=(1,3))
                 )
             ])),
-            'pubDate': ('date', Pipeline([
+            'pubDate': ('pubDate', Pipeline([
                 ('selector', NumberSelector(key='pubDate')),
                 ('scaler', MinMaxScaler())
             ]))
@@ -84,7 +84,7 @@ class KMeansManager:
             'place': 0.5,
             'publisher': 1.0,
             'edition': 0.75,
-            'date': 2.0 
+            'pubDate': 2.0 
         }
 
         return Pipeline([
