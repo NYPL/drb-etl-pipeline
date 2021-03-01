@@ -28,3 +28,11 @@ class DBClient():
             .join(Edition)\
             .join(Item, ITEM_LINKS, Link)\
             .filter(Work.uuid == uuid).first()
+
+    def fetchSingleEdition(self, editionID, showAll=False):
+        session = sessionmaker(bind=self.engine)()
+
+        return session.query(Edition)\
+            .outerjoin(Item, ITEM_LINKS, Link)\
+            .filter(Edition.id == editionID).first()
+
