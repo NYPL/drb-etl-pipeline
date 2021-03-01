@@ -21,13 +21,13 @@ class ElasticClient():
     def createSearch(self):
         return Search(using=self.client, index=os.environ['ELASTICSEARCH_INDEX'])
 
-    def searchQuery(self, searchParams, sortParams, filterParams, page=0, perPage=10):
+    def searchQuery(self, params, page=0, perPage=10):
         startPos, endPos = ElasticClient.getFromSize(page, perPage)
         search = self.createSearch()
         search.source(['uuid', 'editions'])
 
         searchClauses = []
-        for field, query in searchParams:
+        for field, query in params['query']:
             if field is None or field == 'keyword':
                 searchClauses.append(Q('bool',
                     should=[
@@ -49,9 +49,9 @@ class ElasticClient():
 
         coreSearch = search.query(Q('bool', must=searchClauses))[startPos:endPos]
 
-        coreSearch = ElasticClient.addFilterClausesAndAggregations(coreSearch, filterParams)
+        coreSearch = ElasticClient.addFilterClausesAndAggregations(coreSearch, params['filter'])
 
-        coreSearch = ElasticClient.addSortClause(coreSearch, sortParams)
+        coreSearch = ElasticClient.addSortClause(coreSearch, params['sort'])
 
         return coreSearch.execute()
 
@@ -193,6 +193,8 @@ class ElasticClient():
             query = query.query('bool', must=filters)
         elif len(appliedFilters) > 0:
             query = query.query('nested', path='editions', inner_hits={'size': 100}, query=Q('bool', must=appliedFilters))
+        else:
+            query = query.query('nested', path='editions', inner_hits={'size': 100}, query=Q('match_all'))
 
         return query
 

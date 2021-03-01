@@ -8,10 +8,10 @@ class APIUtils():
         return {k: v for k, v in paramDict.items()}
 
     @staticmethod
-    def extractParamPairs(paramPairs):
+    def extractParamPairs(param, pairs):
         return [
-            tuple(p.split(':')) if len(p.split(':')) > 1 else (None, p)
-            for p in paramPairs
+            tuple(p.split(':')) if len(p.split(':')) > 1 else (param, p)
+            for p in pairs.get(param, [])
         ]
 
     @classmethod
