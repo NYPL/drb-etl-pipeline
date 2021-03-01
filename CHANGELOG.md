@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased -- v0.2.4
+### Fixed
+- Race conditions in OCLC Classify fetching process
+- Missing CASCADE constraints on several database tables
+- Missing indexes on several database tables
+
 ## 2021-02-23 -- v0.2.3
 ### Fixed
 - Update RabbitMQ client to work with credentials, virtual hosts and non-default exchanges

@@ -1,28 +1,17 @@
-from datetime import datetime
-from sqlalchemy import (
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    String,
-    Unicode,
-    Table,
-    Boolean,
-    Index
-)
-from sqlalchemy.dialects.postgresql import JSONB, ARRAY, UUID, ENUM
+from sqlalchemy import Column, ForeignKey, Integer, Unicode, Table
+from sqlalchemy.dialects.postgresql import JSONB, ARRAY, UUID
 from sqlalchemy.orm import relationship
 
 from .base import Base, Core
 
 WORK_IDENTIFIERS = Table('work_identifiers', Base.metadata,
-    Column('work_id', Integer, ForeignKey('works.id')),
-    Column('identifier_id', Integer, ForeignKey('identifiers.id'))
+    Column('work_id', Integer, ForeignKey('works.id', ondelete='CASCADE')),
+    Column('identifier_id', Integer, ForeignKey('identifiers.id', ondelete='CASCADE'))
 )
 
 WORK_RIGHTS = Table('work_rights', Base.metadata,
-    Column('work_id', Integer, ForeignKey('works.id')),
-    Column('rights_id', Integer, ForeignKey('rights.id'))
+    Column('work_id', Integer, ForeignKey('works.id', ondelete='CASCADE')),
+    Column('rights_id', Integer, ForeignKey('rights.id', ondelete='CASCADE'))
 )
 
 class Work(Base, Core):

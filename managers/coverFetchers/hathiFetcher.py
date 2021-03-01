@@ -4,6 +4,9 @@ from requests.exceptions import ReadTimeout, HTTPError
 from requests_oauthlib import OAuth1
 
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class HathiFetcher(AbstractFetcher):
@@ -30,7 +33,9 @@ class HathiFetcher(AbstractFetcher):
                 self.coverID = value
 
                 return True
-            except HathiCoverError:
+            except HathiCoverError as e:
+                logger.error('Unable to parse HathiTrust volume for cover')
+                logger.debug(e.message)
                 pass
 
         return False
@@ -47,10 +52,15 @@ class HathiFetcher(AbstractFetcher):
 
         metsJSON = metsResponse.json()
 
-        rankedMETSPages = sorted([
-            HathiPage(page)
-            for page in metsJSON['METS:structMap']['METS:div']['METS:div'][:25]
-        ], key=lambda x: x.pageScore, reverse=True)
+        try:
+            pageList = metsJSON['METS:structMap']['METS:div']['METS:div'][:25]
+        except TypeError:
+            logger.debug(metsJSON['METS:structMap']['METS:div']['METS:div'])
+            raise HathiCoverError('Unexpected METS format in hathi rec {}'.format(htid))
+
+        rankedMETSPages = sorted(
+            [HathiPage(page) for page in pageList], key=lambda x: x.pageScore, reverse=True
+        )
 
         self.setCoverPageURL(htid, rankedMETSPages[0].pageNumber)
 

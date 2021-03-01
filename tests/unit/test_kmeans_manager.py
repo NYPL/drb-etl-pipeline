@@ -11,6 +11,7 @@ class TestKMeansModel(object):
         testModel = KMeansManager([])
         testModel.instances = testInstances
         testModel.clusters = testClusters
+        testModel.currentK = 1
         return testModel
     
     @pytest.fixture
@@ -106,6 +107,24 @@ class TestKMeansModel(object):
         assert len(testModel.instances) == 3
         assert testModel.df == None
         assert isinstance(testModel.clusters, dict)
+
+    def test_createPipeline(self, testModel, mocker):
+        mockPipeline = mocker.patch('managers.kMeans.Pipeline')
+        mockPipeline.side_effect = ['placePipe', 'pubPipe', 'edPipe', 'datePipe', 'mainPipe']
+        mockFeatureUnion = mocker.patch('managers.kMeans.FeatureUnion')
+        mockFeatureUnion.return_value = 'testUnion'
+        mockKMeans = mocker.patch('managers.kMeans.KMeans')
+        mockKMeans.return_value = 'testKMeans'
+
+        testPipeline = testModel.createPipeline(['place', 'publisher'])
+
+        assert testPipeline == 'mainPipe'
+        mockFeatureUnion.assert_called_once_with(
+            transformer_list=[('place', 'placePipe'), ('publisher', 'pubPipe')],
+            transformer_weights={'place': 0.5, 'publisher': 1.0}
+        )
+        mockKMeans.assert_called_once_with(n_clusters=1)
+        assert mockPipeline.call_args == mocker.call([('union', 'testUnion'), ('kmeans', 'testKMeans')])
     
     def test_pubProcessor_str(self):
         cleanStr = KMeansManager.pubProcessor('Testing & Testing,')

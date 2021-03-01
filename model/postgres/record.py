@@ -1,16 +1,5 @@
-from datetime import datetime
-from sqlalchemy import (
-    Column,
-    DateTime,
-    ForeignKey,
-    Integer,
-    String,
-    Unicode,
-    Table,
-    Boolean,
-    Index
-)
-from sqlalchemy.dialects.postgresql import JSON, ARRAY, UUID, ENUM
+from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
+from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
 
 from .base import Base, Core
 
@@ -49,8 +38,6 @@ class Record(Base, Core):
     abstract = Column(Unicode) # dc:abstract, Non-Repeating
     has_part = Column(ARRAY(Unicode, dimensions=1)) # dc:hasPart, Repeating, Format "itemNo|uri|source|type|flags"
     coverage = Column(ARRAY(Unicode, dimensions=1)) # dc:coverage, non-Repeating, Format "locationCode|locationName|itemNo"
-
-    # edition_id = Column(Integer, ForeignKey('editions.id'))
 
     __tableargs__ = (Index('ix_record_identifiers', identifiers, postgresql_using="gin"))
 

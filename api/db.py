@@ -10,14 +10,14 @@ class DBClient():
 
     def fetchSearchedWorks(self, ids):
         uuids = [i[0] for i in ids]
-        editionIds = list(APIUtils.flatten([i[1] for i in ids]))
+        editionIds = list(set(APIUtils.flatten([i[1] for i in ids])))
 
         session = sessionmaker(bind=self.engine)()
 
         query = session.query(Work)\
             .join(Edition)\
             .join(Item, ITEM_LINKS, Link)\
-            .filter(Edition.id.in_(editionIds))
+            .filter(Work.uuid.in_(uuids), Edition.id.in_(editionIds))
 
         return query.all()
 

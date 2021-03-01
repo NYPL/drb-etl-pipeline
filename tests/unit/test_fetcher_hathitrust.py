@@ -60,6 +60,16 @@ class TestHathiFetcher:
         mockSetCover.assert_called_once_with(1, 24)
         mockRequest.assert_called_once_with('testAPIRoot/structure/1?format=json&v=2')
 
+    def test_fetchVolumeCover_mets_error(self, testFetcher, mockMETSObject, mocker):
+        mockResponse = mocker.MagicMock()
+        mockMETSObject['METS:structMap']['METS:div']['METS:div'] = {i: 'data' for i in range(25)}
+        mockResponse.json.return_value = mockMETSObject
+        mockRequest = mocker.patch.object(HathiFetcher, 'makeHathiReq')
+        mockRequest.return_value = mockResponse
+
+        with pytest.raises(HathiCoverError):
+            testFetcher.fetchVolumeCover(1)
+
     def test_fetchVolumeCover_error(self, testFetcher, mocker):
         mockRequest = mocker.patch.object(HathiFetcher, 'makeHathiReq')
         mockRequest.return_value = None
