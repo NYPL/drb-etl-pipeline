@@ -1,6 +1,4 @@
-from flask import (
-    Blueprint, request, session, url_for, redirect, current_app, jsonify
-)
+from flask import Blueprint, request, current_app
 from ..db import DBClient
 from ..utils import APIUtils
 from logger import createLog

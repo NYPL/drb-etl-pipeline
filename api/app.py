@@ -1,12 +1,10 @@
-from elasticsearch_dsl import Search, Q
-from flask import Flask, request, Response
+from flask import Flask
 from flask_cors import CORS
 import os
 from waitress import serve
 
 from logger import createLog
-from model import Work
-from .blueprints import search, work, info
+from .blueprints import search, work, info, edition, utils
 
 logger = createLog(__name__)
 
@@ -21,6 +19,8 @@ class FlaskAPI:
         self.app.register_blueprint(info)
         self.app.register_blueprint(search)
         self.app.register_blueprint(work)
+        self.app.register_blueprint(edition)
+        self.app.register_blueprint(utils)
 
     def run(self):
         if os.environ['ENVIRONMENT'] == 'local':
