@@ -1,4 +1,5 @@
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.sql import text
 
 from model import Work, Edition, Item, Link, Rights, Identifier
 from model.postgres.item import ITEM_LINKS
@@ -36,3 +37,14 @@ class DBClient():
             .outerjoin(Item, ITEM_LINKS, Link)\
             .filter(Edition.id == editionID).first()
 
+    def fetchRowCounts(self):
+        session = sessionmaker(bind=self.engine)()
+
+        countQuery = text("""SELECT relname AS table, reltuples AS row_count
+            FROM pg_class c JOIN pg_namespace n ON (n.oid = c.relnamespace)
+            WHERE nspname NOT IN ('pg_catalog', 'information_schema')
+            AND relkind = 'r'
+            AND relname IN ('records', 'works', 'editions', 'items', 'links')
+        """)
+
+        return session.execute(countQuery)
