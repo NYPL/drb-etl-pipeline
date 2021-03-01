@@ -85,4 +85,3 @@ class CoverProcess(CoreProcess):
         if len(self.records) >= self.batchSize:
             self.bulkSaveObjects(self.records)
             self.records = set()
-            print(self.records)
