@@ -5,6 +5,7 @@
 - Race conditions in OCLC Classify fetching process
 - Missing CASCADE constraints on several database tables
 - Missing indexes on several database tables
+- Fix processing of single record works at the clustering stage
 
 ## 2021-02-23 -- v0.2.3
 ### Fixed
