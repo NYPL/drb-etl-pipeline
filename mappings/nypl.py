@@ -68,7 +68,7 @@ class NYPLMapping(SQLMapping):
                 ('656', '{a}|{2}|'),
                 ('690', '{a} -- {b} -- {v} -- {x} -- {z}|lcsh|{0}'),
             ],
-            'has_part': [('856', '1|{u}|nypl|catalog|{z}')],
+            'has_part': [('856', '1|{u}|nypl|text/html|{z}')],
         }
 
     def applyMapping(self):
@@ -126,7 +126,7 @@ class NYPLMapping(SQLMapping):
 
         # Add catalog link derived from nypl identifier if 856 field is not present
         if len(self.record.has_part) < 1:
-            self.record.has_part.append('1|{}|nypl|catalog|text/html'.format(
+            self.record.has_part.append('1|{}|nypl|text/html|{{}}'.format(
                 'https://www.nypl.org/research/collections/shared-collection-catalog/bib/b{}'.format(self.source['id'])
             ))
 
@@ -144,7 +144,7 @@ class NYPLMapping(SQLMapping):
                     item['location']['code'], item['location']['name'], pos
                 ))
 
-                self.record.has_part.append('{}|{}|nypl|edd|text/html'.format(
+                self.record.has_part.append('{}|{}|nypl|application/x.html+edd|{{}}'.format(
                     pos,
-                    'http://www.nypl.com/research/collections/shared-collection-catalog/hold/request/b{}-i{}'.format(self.source['id'], item['id'])
+                    'http://www.nypl.org/research/collections/shared-collection-catalog/hold/request/b{}-i{}'.format(self.source['id'], item['id'])
                 ))

@@ -60,13 +60,18 @@ class APIUtils():
                 continue
 
             editionDict = dict(edition)
+            editionDict['edition_id'] = edition.id
             editionDict['items'] = []
 
             for item in edition.items:
                 itemDict = dict(item)
+                itemDict['item_id'] = item.id
+                itemDict['location'] = item.physical_location['name'] if item.physical_location else None
                 itemDict['links'] = []
                 for link in item.links:
-                    itemDict['links'].append(dict(link))
+                    linkDict = dict(link)
+                    linkDict['item_id'] = link.id
+                    itemDict['links'].append(linkDict)
 
                 editionDict['items'].append(itemDict)
 
