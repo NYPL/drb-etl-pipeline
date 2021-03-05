@@ -42,7 +42,7 @@ class TestAPIUtils:
 
     @pytest.fixture
     def testLink(self, MockDBObject):
-        return MockDBObject(id='li1')
+        return MockDBObject(id='li1', media_type='application/test')
 
     @pytest.fixture
     def testItem(self, MockDBObject, testLink):
@@ -65,11 +65,10 @@ class TestAPIUtils:
         assert testParams == {'test1': 1, 'test2': 2}
 
     def test_extractParamPairs(self):
-        testPairs = APIUtils.extractParamPairs(['test:value', 'bareValue'])
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['test:value', 'bareValue']})
 
-        print(testPairs)
         assert testPairs[0] == ('test', 'value')
-        assert testPairs[1] == (None, 'bareValue')
+        assert testPairs[1] == ('test', 'bareValue')
 
     def test_formatAggregationResult(self, testAggregationResp):
         languageAggregations = APIUtils.formatAggregationResult(testAggregationResp)
@@ -109,23 +108,26 @@ class TestAPIUtils:
             mocker.call('testWork2', [1, 2, 3], True)
         ])
 
-    def test_formatWork_showAll(self, testWork):
+    def test_formatWork_showAll(self, testWork, mocker):
+        mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
+        mockFormatEdition.return_value = {'edition_id': 'ed1', 'items': ['it1']}
+
         testWorkDict = APIUtils.formatWork(testWork, ['ed1'], True)
 
         assert testWorkDict['uuid'] == 'testUUID'
         assert testWorkDict['title'] == 'Test Title'
-        assert testWorkDict['editions'][0]['id'] == 'ed1'
-        assert testWorkDict['editions'][0]['items'][0]['id'] == 'it1'
-        assert testWorkDict['editions'][0]['items'][0]['location'] == 'test'
-        assert testWorkDict['editions'][0]['items'][0]['links'][0]['id'] == 'li1'
+        assert testWorkDict['editions'][0]['edition_id'] == 'ed1'
+        assert testWorkDict['editions'][0]['items'][0] == 'it1'
+        mockFormatEdition.assert_called_once()
 
-    def test_formatWork_showAll_false(self, testWork):
-        testWork.editions[0].items = []
+    def test_formatWork_showAll_false(self, testWork, mocker):
+        mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
+        mockFormatEdition.return_value = {'edition_id': 'ed1', 'items': ['it1']}
         testWorkDict = APIUtils.formatWork(testWork, ['ed1'], False)
 
         assert testWorkDict['uuid'] == 'testUUID'
         assert testWorkDict['title'] == 'Test Title'
-        assert len(testWorkDict['editions']) == 0
+        assert len(testWorkDict['editions']) == 1
 
     def test_formatWork_blocked_edition(self, testWork):
         testWork.editions[0].items = []
@@ -134,6 +136,44 @@ class TestAPIUtils:
         assert testWorkDict['uuid'] == 'testUUID'
         assert testWorkDict['title'] == 'Test Title'
         assert len(testWorkDict['editions']) == 0
+
+    def test_formatEditionOputput(self, mocker):
+        mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
+        mockFormatEdition.return_value = 'testEdition'
+
+        assert APIUtils.formatEditionOutput(1, True) == 'testEdition'
+
+    def test_formatEdition(self, testEdition):
+        formattedEdition = APIUtils.formatEdition(testEdition)
+
+        assert formattedEdition['edition_id'] == 'ed1'
+        assert formattedEdition['items'][0]['item_id'] == 'it1'
+        assert formattedEdition['items'][0]['location'] == 'test'
+        assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
+        assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
+
+    def test_formatLanguages_no_counts(self, mocker):
+        mockAggs = mocker.MagicMock()
+        mockAggs.languages.languages.buckets = [mocker.MagicMock(key='bLang'), mocker.MagicMock(key='aLang')]
+
+        assert APIUtils.formatLanguages(mockAggs) == [{'language': 'aLang'}, {'language': 'bLang'}]
+
+    def test_formatLanguages_counts(self, mocker):
+        mockAggs = mocker.MagicMock()
+        mockAggs.languages.languages.buckets = [
+            mocker.MagicMock(key='bLang', work_totals=mocker.MagicMock(doc_count=10)),
+            mocker.MagicMock(key='cLang', work_totals=mocker.MagicMock(doc_count=30)),
+            mocker.MagicMock(key='aLang', work_totals=mocker.MagicMock(doc_count=20))
+        ]
+
+        assert APIUtils.formatLanguages(mockAggs, True) == [
+            {'language': 'cLang', 'work_total': 30},
+            {'language': 'aLang', 'work_total': 20},
+            {'language': 'bLang', 'work_total': 10}
+        ]
+
+    def test_formatTotals(self):
+        assert APIUtils.formatTotals([('test', 3), ('other', 6)]) == {'test': 3, 'other': 6}
 
     def test_flatten_already_flat(self):
         flatArray = [i for i in APIUtils.flatten([1, 2, 3, 4, 5])]

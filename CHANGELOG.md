@@ -1,7 +1,12 @@
 # CHANGELOG
 
 ## unreleased -- v0.2.4
+### Added
+- Language and Total Record count API endpoints
+- Stand-alone Edition detail API endpoint
 ### Fixed
+- Updated API responses to include unique ids for edition, item and link objects
+- Added `mediaType` field to link response objects
 - Race conditions in OCLC Classify fetching process
 - Missing CASCADE constraints on several database tables
 - Missing indexes on several database tables

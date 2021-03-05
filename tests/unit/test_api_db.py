@@ -1,9 +1,8 @@
 import pytest
+from sqlalchemy.sql import text
 
 from api.db import DBClient
 from api.utils import APIUtils
-from model import Work, Edition, Item, Link, Rights, Identifier
-from model.postgres.item import ITEM_LINKS
 
 
 class TestDBClient:
@@ -14,6 +13,15 @@ class TestDBClient:
                 self.engine = mocker.MagicMock()
 
         return MockDBClient('testEngine')
+
+    @pytest.fixture
+    def testCountQuery(self):
+        return text("""SELECT relname AS table, reltuples AS row_count
+            FROM pg_class c JOIN pg_namespace n ON (n.oid = c.relnamespace)
+            WHERE nspname NOT IN ('pg_catalog', 'information_schema')
+            AND relkind = 'r'
+            AND relname IN ('records', 'works', 'editions', 'items', 'links')
+        """)
 
     def test_fetchSearchedWorks(self, testInstance, mocker):
         mockCreator = mocker.MagicMock()
@@ -32,8 +40,8 @@ class TestDBClient:
 
         assert workResult == ['work1', 'work3']
         mockMaker.assert_called_once_with(bind=testInstance.engine)
-        mockCreator.assert_called_once
-        mockSession.query.join.outerjoin.filter.all.assert_called_once
+        mockCreator.assert_called_once()
+        mockSession.query().join().join().filter().all.assert_called_once()
 
     def test_fetchSingleWork(self, testInstance, mocker):
         mockCreator = mocker.MagicMock()
@@ -47,5 +55,36 @@ class TestDBClient:
 
         assert workResult == 'testWork'
         mockMaker.assert_called_once_with(bind=testInstance.engine)
-        mockCreator.assert_called_once
-        mockSession.query.join.outerjoin.filter.first.assert_called_once
+        mockCreator.assert_called_once()
+        mockSession.query().join().join().filter().first.assert_called_once()
+
+    def test_fetchSingleEdition(self, testInstance, mocker):
+        mockCreator = mocker.MagicMock()
+        mockMaker = mocker.patch('api.db.sessionmaker')
+        mockMaker.return_value = mockCreator
+        mockSession = mocker.MagicMock()
+        mockCreator.return_value = mockSession
+        mockSession.query().outerjoin().filter().first.return_value = 'testEdition'
+
+        editionResult = testInstance.fetchSingleEdition('editionID')
+
+        assert editionResult == 'testEdition'
+        mockMaker.assert_called_once_with(bind=testInstance.engine)
+        mockCreator.assert_called_once()
+        mockSession.query().outerjoin().filter().first.assert_called_once()
+
+    def test_fetchRowCounts(self, testInstance, testCountQuery, mocker):
+        mockCreator = mocker.MagicMock()
+        mockMaker = mocker.patch('api.db.sessionmaker')
+        mockMaker.return_value = mockCreator
+        mockSession = mocker.MagicMock()
+        mockCreator.return_value = mockSession
+
+        mockSession.execute.return_value = 'testCounts'
+
+        totalResult = testInstance.fetchRowCounts()
+
+        assert totalResult == 'testCounts'
+        mockMaker.assert_called_once_with(bind=testInstance.engine)
+        mockCreator.assert_called_once()
+        mockSession.execute.call_args[0][0].compare(testCountQuery)

@@ -14,18 +14,21 @@ def standardQuery():
     dbClient = DBClient(current_app.config['DB_CLIENT'])
 
     searchParams = APIUtils.normalizeQueryParams(request.args)
-    queryTerms = APIUtils.extractParamPairs(searchParams.get('query', []))
-    sortTerms = APIUtils.extractParamPairs(searchParams.get('sort', []))
 
-    filterTerms = APIUtils.extractParamPairs(searchParams.get('filter', []))
-    filterTerms.extend(APIUtils.extractParamPairs(searchParams.get('showAll', [])))
+    terms = {}
+    for param in ['query', 'sort', 'filter', 'showAll']:
+        terms[param] = APIUtils.extractParamPairs(param, searchParams)
+
+    if terms.get('showAll', None):
+        terms['filter'].append(terms['showAll'][0])
+        del terms['showAll']
 
     searchPage = searchParams.get('page', [0])[0]
     searchSize = searchParams.get('size', [10])[0]
 
-    logger.info('Executing ES Query {} with filters {}'.format(searchParams, filterTerms))
+    logger.info('Executing ES Query {} with filters {}'.format(searchParams, terms['filter']))
 
-    searchResult = esClient.searchQuery(queryTerms, sortTerms, filterTerms, page=searchPage, perPage=searchSize)
+    searchResult = esClient.searchQuery(terms, page=searchPage, perPage=searchSize)
 
     resultIds = [
         (r.uuid, [e.edition_id for e in r.meta.inner_hits.editions.hits])

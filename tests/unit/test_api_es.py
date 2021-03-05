@@ -4,7 +4,6 @@ from tests.helper import TestHelpers
 from api.elastic import ElasticClient
 
 
-
 class TestElasticClient:
     @classmethod
     def setup_class(cls):
@@ -65,9 +64,11 @@ class TestElasticClient:
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.side_effect = ['testQuery1', 'testQuery2', 'searchClauses']
 
-        queryResult = testInstance.searchQuery(
-            [('keyword', 'test'), (None, 'test2')], ['sort'], ['filter']
-        )
+        queryResult = testInstance.searchQuery({
+            'query': [('keyword', 'test'), (None, 'test2')],
+            'sort': ['sort'],
+            'filter': ['filter']
+        })
 
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
@@ -79,14 +80,14 @@ class TestElasticClient:
         searchMocks['titleQuery'].assert_has_calls([mocker.call('test'), mocker.call('test2')])
         searchMocks['authorQuery'].assert_has_calls([mocker.call('test'), mocker.call('test2')])
         searchMocks['subjectQuery'].assert_has_calls([mocker.call('test'), mocker.call('test2')])
-        searchMocks['authorityQuery'].assert_not_called
+        searchMocks['authorityQuery'].assert_not_called()
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
         searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'])
         searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
 
-        mockSearch.execute.assert_called_once
+        mockSearch.execute.assert_called_once()
 
     def test_searchQuery_title_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
@@ -98,9 +99,9 @@ class TestElasticClient:
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.side_effect = ['searchClauses']
 
-        queryResult = testInstance.searchQuery(
-            [('title', 'test'), ], ['sort'], ['filter']
-        )
+        queryResult = testInstance.searchQuery({
+            'query': [('title', 'test'), ], 'sort': ['sort'], 'filter': ['filter']
+        })
 
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
@@ -127,9 +128,9 @@ class TestElasticClient:
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.side_effect = ['searchClauses']
 
-        queryResult = testInstance.searchQuery(
-            [('author', 'test'), ], ['sort'], ['filter']
-        )
+        queryResult = testInstance.searchQuery({
+            'query': [('author', 'test'),], 'sort': ['sort'], 'filter': ['filter']
+        })
 
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
@@ -156,9 +157,9 @@ class TestElasticClient:
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.side_effect = ['searchClauses']
 
-        queryResult = testInstance.searchQuery(
-            [('subject', 'test'), ], ['sort'], ['filter']
-        )
+        queryResult = testInstance.searchQuery({
+            'query': [('subject', 'test'),], 'sort': ['sort'], 'filter': ['filter']
+        })
 
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
@@ -185,9 +186,9 @@ class TestElasticClient:
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.side_effect = ['searchClauses']
 
-        queryResult = testInstance.searchQuery(
-            [('viaf', 'test'), ], ['sort'], ['filter']
-        )
+        queryResult = testInstance.searchQuery({
+            'query': [('viaf', 'test'),], 'sort': ['sort'], 'filter': ['filter']
+        })
 
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
@@ -213,9 +214,9 @@ class TestElasticClient:
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.side_effect = ['genericQuery', 'searchClauses']
 
-        queryResult = testInstance.searchQuery(
-            [('other', 'test'), ], ['sort'], ['filter']
-        )
+        queryResult = testInstance.searchQuery({
+            'query': [('other', 'test'),], 'sort': ['sort'], 'filter': ['filter']
+        })
 
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
@@ -246,9 +247,11 @@ class TestElasticClient:
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.side_effect = ['searchClauses']
 
-        queryResult = testInstance.searchQuery(
-            [('title', 'testTitle'), ('lcnaf', 'test'), ], ['sort'], ['filter']
-        )
+        queryResult = testInstance.searchQuery({
+            'query': [('title', 'testTitle'), ('lcnaf', 'test')],
+            'sort': ['sort'],
+            'filter': ['filter']
+        })
 
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
@@ -565,6 +568,20 @@ class TestElasticClient:
             mocker.call('nested', path='editions', inner_hits={'size': 100}, query='Lang1Filter'),
         ])
         mockQuery.query.assert_called_once_with('bool', must=['Lang1Nested'])
+
+    def test_applyFilters_no_filters(self, mocker):
+        mockQuery = mocker.MagicMock()
+        mockQuery.query.return_value = mockQuery
+        mockClause = mocker.patch('api.elastic.Q')
+        mockClause.return_value = 'filterQuery'
+
+        testQuery = ElasticClient.applyFilters(mockQuery, [], [])
+
+        assert testQuery == mockQuery
+        mockClause.assert_called_once_with('match_all')
+        mockQuery.query.assert_called_once_with(
+            'nested', path='editions', inner_hits={'size': 100}, query='filterQuery'
+        )
 
     def test_applyAggregations(self, mocker):
         mockAgg = mocker.patch('api.elastic.A')

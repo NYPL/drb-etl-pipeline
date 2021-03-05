@@ -8,10 +8,10 @@ class APIUtils():
         return {k: v for k, v in paramDict.items()}
 
     @staticmethod
-    def extractParamPairs(paramPairs):
+    def extractParamPairs(param, pairs):
         return [
-            tuple(p.split(':')) if len(p.split(':')) > 1 else (None, p)
-            for p in paramPairs
+            tuple(p.split(':')) if len(p.split(':')) > 1 else (param, p)
+            for p in pairs.get(param, [])
         ]
 
     @classmethod
@@ -59,27 +59,51 @@ class APIUtils():
             if editionIds and edition.id not in editionIds:
                 continue
 
-            editionDict = dict(edition)
-            editionDict['edition_id'] = edition.id
-            editionDict['items'] = []
-
-            for item in edition.items:
-                itemDict = dict(item)
-                itemDict['item_id'] = item.id
-                itemDict['location'] = item.physical_location['name'] if item.physical_location else None
-                itemDict['links'] = []
-                for link in item.links:
-                    linkDict = dict(link)
-                    linkDict['item_id'] = link.id
-                    itemDict['links'].append(linkDict)
-
-                editionDict['items'].append(itemDict)
+            editionDict = cls.formatEdition(edition)
 
             if showAll is True or (showAll is False and len(editionDict['items']) > 0):
                 workDict['editions'].append(editionDict)
 
         return workDict
 
+    @classmethod
+    def formatEditionOutput(cls, edition, showAll):
+        return cls.formatEdition(edition)
+
+    @classmethod
+    def formatEdition(cls, edition):
+        editionDict = dict(edition)
+        editionDict['edition_id'] = edition.id
+        editionDict['items'] = []
+
+        for item in edition.items:
+            itemDict = dict(item)
+            itemDict['item_id'] = item.id
+            itemDict['location'] = item.physical_location['name'] if item.physical_location else None
+            itemDict['links'] = []
+            for link in item.links:
+                itemDict['links'].append({'link_id': link.id, 'mediaType': link.media_type})
+
+            editionDict['items'].append(itemDict)
+
+        return editionDict
+
+    @classmethod
+    def formatLanguages(cls, aggregations, counts=False):
+        if counts:
+            return sorted([
+                {'language': lang.key, 'work_total': lang.work_totals.doc_count}
+                for lang in aggregations.languages.languages.buckets
+            ], key=lambda x: x['work_total'], reverse=True)
+        else:
+            return sorted(
+                [{'language': lang.key} for lang in aggregations.languages.languages.buckets],
+                key=lambda x: x['language']
+            )
+
+    @classmethod
+    def formatTotals(cls, response):
+        return {r[0]: r[1] for r in response}
 
     @classmethod
     def flatten(cls, nested):
