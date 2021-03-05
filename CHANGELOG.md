@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## unreleased -- v0.2.4
+### Added
+- Language and Total Record count API endpoints
+- Stand-alone Edition detail API endpoint
+### Fixed
+- Updated API responses to include unique ids for edition, item and link objects
+- Added `mediaType` field to link response objects
+
 ## 2021-02-23 -- v0.2.3
 ### Fixed
 - Update RabbitMQ client to work with credentials, virtual hosts and non-default exchanges
