@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import os
 import re
 
 from .core import CoreProcess
@@ -51,19 +50,21 @@ class ClusterProcess(CoreProcess):
         self.closeConnection()
 
     def clusterRecord(self, rec):
+        print(rec.title, rec.source_id)
         matchedIDs = self.findAllMatchingRecords(rec.identifiers)
 
         filterParams = None
         if len(matchedIDs) < 1:
             filterParams = Record.uuid == rec.uuid
+            matchedIDs = [rec.id]
         else:
             filterParams = Record.id.in_(matchedIDs)
 
-            clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
-            dbWork = self.createWorkFromEditions(clusteredEditions, instances)
-            self.session.flush()
+        clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
+        dbWork = self.createWorkFromEditions(clusteredEditions, instances)
+        self.session.flush()
 
-            self.indexWorkInElasticSearch(dbWork)
+        self.indexWorkInElasticSearch(dbWork)
 
         self.session.query(Record)\
             .filter(filterParams)\

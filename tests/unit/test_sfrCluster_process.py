@@ -25,11 +25,7 @@ class TestSFRClusterProcess:
 
     @pytest.fixture
     def testRecord(self, mocker):
-        mockRecord = mocker.MagicMock()
-        mockRecord.identifiers = ['1|test']
-        mockRecord.uuid = 'testUUID'
-
-        return mockRecord
+        return mocker.MagicMock(id=1, identifiers=['1|test'], uuid='testUUID')
 
     def test_runProcess_daily(self, testInstance, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'clusterRecords')
@@ -161,7 +157,9 @@ class TestSFRClusterProcess:
         mockFindMatching = mocker.patch.object(ClusterProcess, 'findAllMatchingRecords')
         mockFindMatching.return_value = []
         mockClusterMatched = mocker.patch.object(ClusterProcess, 'clusterMatchedRecords')
+        mockClusterMatched.return_value = (['ed1'], ['inst1'])
         mockCreateFromEds = mocker.patch.object(ClusterProcess, 'createWorkFromEditions')
+        mockCreateFromEds.return_value = 'testDBWork'
         mockIndexInES = mocker.patch.object(ClusterProcess, 'indexWorkInElasticSearch')
         mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
 
@@ -170,10 +168,10 @@ class TestSFRClusterProcess:
         testInstance.clusterRecord(testRecord)
 
         mockFindMatching.assert_called_once_with(['1|test'])
-        mockClusterMatched.assert_not_called
-        mockCreateFromEds.assert_not_called
-        mockIndexInES.assert_not_called
-        mockSession.flush.assert_not_called()
+        mockClusterMatched.assert_called_once_with([1])
+        mockCreateFromEds.assert_called_once_with(['ed1'], ['inst1'])
+        mockIndexInES.assert_called_once_with('testDBWork')
+        mockSession.flush.assert_called_once()
         mockSession.query.assert_called_once()
         mockCommit.assert_called_once()
 

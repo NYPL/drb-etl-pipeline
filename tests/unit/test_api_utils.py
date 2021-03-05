@@ -46,7 +46,7 @@ class TestAPIUtils:
 
     @pytest.fixture
     def testItem(self, MockDBObject, testLink):
-        return MockDBObject(id='it1', links=[testLink])
+        return MockDBObject(id='it1', links=[testLink], physical_location={'name': 'test'})
 
     @pytest.fixture
     def testEdition(self, MockDBObject, testItem):
@@ -148,6 +148,7 @@ class TestAPIUtils:
 
         assert formattedEdition['edition_id'] == 'ed1'
         assert formattedEdition['items'][0]['item_id'] == 'it1'
+        assert formattedEdition['items'][0]['location'] == 'test'
         assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
         assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
 

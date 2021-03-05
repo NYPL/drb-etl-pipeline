@@ -17,7 +17,7 @@ class HathiTrustProcess(CoreProcess):
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
 
     def __init__(self, *args):
-        super(HathiTrustProcess, self).__init__(*args[:4])
+        super(HathiTrustProcess, self).__init__(*args[:4], batchSize=1000)
         self.generateEngine()
         self.createSession()
 

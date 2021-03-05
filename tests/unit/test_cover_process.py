@@ -11,6 +11,7 @@ class TestCoverProcess:
         class TestCoverProcess(CoverProcess):
             def __init__(self, *args):
                 self.fileBucket = 'test_aws_bucket'
+                self.batchSize = 3
 
         return TestCoverProcess()
 
@@ -35,7 +36,7 @@ class TestCoverProcess:
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
-        mockSubQuery.select_from().join().filter.return_value = 'subQuery'
+        mockSubQuery.select_from().join().distinct().filter.return_value = 'subQuery'
 
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
@@ -48,14 +49,14 @@ class TestCoverProcess:
         testProcess.session.query.assert_has_calls([
             mocker.call(Edition), mocker.call('edition_id')
         ])
-        mockSubQuery.select_from().join().filter.call_args[0][0].compare(Link.flags['cover'] == 'true')
+        mockSubQuery.select_from().join().distinct().filter.call_args[0][0].compare(Link.flags['cover'] == 'true')
 
     def test_generateQuery_custom_date(self, testProcess, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
-        mockSubQuery.select_from().join().filter.return_value = 'subQuery'
+        mockSubQuery.select_from().join().distinct().filter.return_value = 'subQuery'
 
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
@@ -74,7 +75,7 @@ class TestCoverProcess:
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
-        mockSubQuery.select_from().join().filter.return_value = 'subQuery'
+        mockSubQuery.select_from().join().distinct().filter.return_value = 'subQuery'
 
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
@@ -93,16 +94,15 @@ class TestCoverProcess:
         assert mockQuery.filter.call_args[0][1].compare(Edition.date_modified >= testQueryDate)
 
     def test_fetchEditionCovers(self, testProcess, mocker):
-        mockQuery = mocker.MagicMock()
-        mockQuery.all.return_value = ['ed1', 'ed2', 'ed3']
-
         processMocks = mocker.patch.multiple(CoverProcess,
             searchForCover=mocker.DEFAULT,
-            storeFoundCover=mocker.DEFAULT
+            storeFoundCover=mocker.DEFAULT,
+            windowedQuery=mocker.DEFAULT
         )
         processMocks['searchForCover'].side_effect = ['manager1', None, 'manager2']
+        processMocks['windowedQuery'].return_value = ['ed1', 'ed2', 'ed3']
 
-        testProcess.fetchEditionCovers(mockQuery)
+        testProcess.fetchEditionCovers('mockQuery')
 
         processMocks['searchForCover'].assert_has_calls([
             mocker.call('ed1'), mocker.call('ed2'), mocker.call('ed3')
@@ -145,16 +145,18 @@ class TestCoverProcess:
 
     def test_storeFoundCover(self, testProcess, mocker):
         mockPut = mocker.patch.object(CoverProcess, 'putObjectInBucket')
+        mockSave = mocker.patch.object(CoverProcess, 'bulkSaveObjects')
 
         mockFetcher = mocker.MagicMock(SOURCE='test', coverID=1)
         mockManager = mocker.MagicMock(fetcher=mockFetcher, coverFormat='tst', coverContent='testBytes')
         mockEdition = mocker.MagicMock(links=[])
 
-        testProcess.records = []
+        testProcess.records = set(['ed1', 'ed2'])
         testProcess.storeFoundCover(mockManager, mockEdition)
 
-        assert testProcess.records[0] == mockEdition
+        assert list(testProcess.records) == []
         assert mockEdition.links[0].url == 'test_aws_bucket.s3.amazonaws.com/covers/test/1.tst'
         assert mockEdition.links[0].media_type == 'image/tst'
         assert mockEdition.links[0].flags == {'cover': True}
+        assert mockSave.call_args[0][0] == set(['ed1', 'ed2', mockEdition])
         mockPut.assert_called_once_with('testBytes', 'covers/test/1.tst', 'test_aws_bucket')

@@ -79,6 +79,7 @@ class APIUtils():
         for item in edition.items:
             itemDict = dict(item)
             itemDict['item_id'] = item.id
+            itemDict['location'] = item.physical_location['name'] if item.physical_location else None
             itemDict['links'] = []
             for link in item.links:
                 itemDict['links'].append({'link_id': link.id, 'mediaType': link.media_type})

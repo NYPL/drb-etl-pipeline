@@ -1,22 +1,22 @@
-from sqlalchemy import Date, Unicode, Integer, Column, Table, ForeignKey
+from sqlalchemy import Date, Unicode, Integer, Column, Table, ForeignKey, Index
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY, UUID
 from sqlalchemy.orm import relationship
 
 from .base import Base, Core
 
 EDITION_IDENTIFIERS = Table('edition_identifiers', Base.metadata,
-    Column('edition_id', Integer, ForeignKey('editions.id')),
-    Column('identifier_id', Integer, ForeignKey('identifiers.id'))
+    Column('edition_id', Integer, ForeignKey('editions.id', ondelete='CASCADE')),
+    Column('identifier_id', Integer, ForeignKey('identifiers.id', ondelete='CASCADE'))
 )
 
 EDITION_LINKS = Table('edition_links', Base.metadata,
-    Column('edition_id', Integer, ForeignKey('editions.id')),
-    Column('link_id', Integer, ForeignKey('links.id'))
+    Column('edition_id', Integer, ForeignKey('editions.id', ondelete='CASCADE')),
+    Column('link_id', Integer, ForeignKey('links.id', ondelete='CASCADE'))
 )
 
 EDITION_RIGHTS = Table('edition_rights', Base.metadata,
-    Column('edition_id', Integer, ForeignKey('editions.id')),
-    Column('rights_id', Integer, ForeignKey('rights.id'))
+    Column('edition_id', Integer, ForeignKey('editions.id', ondelete='CASCADE')),
+    Column('rights_id', Integer, ForeignKey('rights.id', ondelete='CASCADE'))
 )
 
 class Edition(Base, Core):
@@ -41,12 +41,14 @@ class Edition(Base, Core):
     languages = Column(JSONB)
     dcdw_uuids = Column(ARRAY(UUID, dimensions=1))
 
-    work_id = Column(Integer, ForeignKey('works.id'))
+    work_id = Column(Integer, ForeignKey('works.id', ondelete='CASCADE'), index=True)
     items = relationship('Item', backref='edition', cascade='all, delete-orphan')
 
-    identifiers = relationship('Identifier', secondary=EDITION_IDENTIFIERS, backref='editions')
-    links = relationship('Link', secondary=EDITION_LINKS, backref='editions')
-    rights = relationship('Rights', secondary=EDITION_RIGHTS, backref='editions')
+    identifiers = relationship('Identifier', secondary=EDITION_IDENTIFIERS, backref='editions', cascade='all, delete')
+    links = relationship('Link', secondary=EDITION_LINKS, backref='editions', cascade='all, delete')
+    rights = relationship('Rights', secondary=EDITION_RIGHTS, backref='editions', cascade='all, delete')
+
+    __tableargs__ = (Index('ix_editions_dcdw_uuids', dcdw_uuids, postgresql_using="gin"))
 
     def __repr__(self):
         return '<Edition(place={}, date={}, publisher={})>'.format(

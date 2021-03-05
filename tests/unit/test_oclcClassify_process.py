@@ -22,7 +22,7 @@ class TestOCLCClassifyProcess:
     def testInstance(self, mocker):
         class TestClassifyProcess(ClassifyProcess):
             def __init__(self, *args):
-                self.records = []
+                self.records = set()
                 self.ingestLimit = None
                 self.rabbitQueue = os.environ['OCLC_QUEUE']
                 self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']
@@ -140,32 +140,15 @@ class TestOCLCClassifyProcess:
 
         mockSession.query().filter.return_value = mockQuery
         mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
-        mockQuery.yield_per.return_value = mockRecords
+        mockWindowed = mocker.patch.object(ClassifyProcess, 'windowedQuery')
+        mockWindowed.return_value = mockRecords
 
         testInstance.ingestLimit = 100
         testInstance.classifyRecords(full=True)
 
-        mockSession.query.filter.assert_called_once
-        mockSession.query.limit.assert_called_once
-        mockDatetime.utcnow.assert_not_called
-        mockDatetime.timedelta.assert_not_called
-        mockQuery.filter.assert_not_called
-
-    def test_windowedQuery_single(self, testInstance, mocker):
-        mockQuery = mocker.MagicMock(is_single_entity=True)
-        mockQuery.add_column().order_by.return_value = mockQuery
-        mockQuery.filter.return_value = mockQuery
-        mockQuery.limit().all.side_effect = [[('rec1',), ('rec2',), ('rec3',)], None]
-
-        assert list(testInstance.windowedQuery(mockQuery)) == ['rec1', 'rec2', 'rec3']
-
-    def test_windowedQuery_tuple(self, testInstance, mocker):
-        mockQuery = mocker.MagicMock(is_single_entity=False)
-        mockQuery.add_column().order_by.return_value = mockQuery
-        mockQuery.filter.return_value = mockQuery
-        mockQuery.limit().all.side_effect = [[('rec1', 1), ('rec2', 2), ('rec3', 3)], None]
-
-        assert list(testInstance.windowedQuery(mockQuery)) == [('rec1',), ('rec2',), ('rec3',)]
+        mockDatetime.utcnow.assert_not_called()
+        mockDatetime.timedelta.assert_not_called()
+        mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
 
     def test_frbrizeRecord_success_valid_author(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyManager, 'getQueryableIdentifiers')

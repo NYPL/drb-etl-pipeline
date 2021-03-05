@@ -74,21 +74,23 @@ class KMeansManager:
                     ngram_range=(1,3))
                 )
             ])),
-            'pubDate': ('date', Pipeline([
+            'pubDate': ('pubDate', Pipeline([
                 ('selector', NumberSelector(key='pubDate')),
                 ('scaler', MinMaxScaler())
             ]))
         }
 
+        pipelineWeights = {
+            'place': 0.5,
+            'publisher': 1.0,
+            'edition': 0.75,
+            'pubDate': 2.0 
+        }
+
         return Pipeline([
             ('union', FeatureUnion(
                 transformer_list=[pipelineComponents[t] for t in transformers],
-                transformer_weights={
-                    'place': 0.5,
-                    'publisher': 1.0,
-                    'edition': 0.75,
-                    'date': 2.0 
-                }
+                transformer_weights={t: pipelineWeights[t] for t in transformers}
             )),
             ('kmeans', KMeans(n_clusters=self.currentK))
         ])
