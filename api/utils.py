@@ -88,11 +88,17 @@ class APIUtils():
         return editionDict
 
     @classmethod
-    def formatLanguages(cls, aggregations):
-        return sorted([
-            {'language': lang.key, 'work_total': lang.work_totals.doc_count}
-            for lang in aggregations.languages.languages.buckets
-        ], key=lambda x: x['work_total'], reverse=True)
+    def formatLanguages(cls, aggregations, counts=False):
+        if counts:
+            return sorted([
+                {'language': lang.key, 'work_total': lang.work_totals.doc_count}
+                for lang in aggregations.languages.languages.buckets
+            ], key=lambda x: x['work_total'], reverse=True)
+        else:
+            return sorted(
+                [{'language': lang.key} for lang in aggregations.languages.languages.buckets],
+                key=lambda x: x['language']
+            )
 
     @classmethod
     def formatTotals(cls, response):

@@ -63,9 +63,9 @@ class TestSearchBlueprint:
         mockDBClient = mocker.patch('api.blueprints.drbSearch.DBClient')
         mockDBClient.return_value = mockDB
 
-        mockUtils['normalizeQueryParams'].return_value = {
-            'query': ['q1', 'q2'], 'sort': ['s1'], 'size': [5]
-        }
+        queryParams = {'query': ['q1', 'q2'], 'sort': ['s1'], 'size': [5]}
+        mockUtils['normalizeQueryParams'].return_value = queryParams
+            
         mockUtils['extractParamPairs'].side_effect = [
             ['testQueryTerms'], ['testSortTerms'], ['testFilterTerms'], ['testShowAll']
         ]
@@ -94,10 +94,13 @@ class TestSearchBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['extractParamPairs'].assert_has_calls([
-                mocker.call(['q1', 'q2']), mocker.call(['s1']), mocker.call([])
+                mocker.call('query', queryParams),
+                mocker.call('sort', queryParams),
+                mocker.call('filter', queryParams),
+                mocker.call('showAll', queryParams)
             ])
             mockES.searchQuery.assert_called_once_with(
-                ['testQueryTerms'], ['testSortTerms'], ['testFilterTerms', 'testShowAll'],
+                {'query': ['testQueryTerms'], 'sort': ['testSortTerms'], 'filter': ['testFilterTerms', 'testShowAll']},
                 page=0, perPage=5
             )
             mockDB.fetchSearchedWorks.assert_called_once_with([

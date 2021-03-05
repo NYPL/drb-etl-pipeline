@@ -21,6 +21,7 @@ def standardQuery():
 
     if terms.get('showAll', None):
         terms['filter'].append(terms['showAll'][0])
+        del terms['showAll']
 
     searchPage = searchParams.get('page', [0])[0]
     searchSize = searchParams.get('size', [10])[0]

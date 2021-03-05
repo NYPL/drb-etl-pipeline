@@ -68,17 +68,6 @@ class ElasticClient():
 
         return query.execute()
 
-    def totalsQuery(self):
-        search = self.createSearch()
-
-        query = search.query(Q())[:0]
-
-        query.aggs.bucket('editions', A('nested', path='editions'))\
-            .bucket('items', A('nested', path='editions.items'))
-        query.aggs.bucket('links', A('nested', path='editions.items.links'))
-
-        return query.execute()
-
     @classmethod
     def titleQuery(cls, titleText):
         return Q('bool',

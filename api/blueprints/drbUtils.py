@@ -19,7 +19,7 @@ def languageCounts():
 
     langResult = esClient.languageQuery(workCounts)
 
-    languageList = APIUtils.formatLanguages(langResult.aggregations)
+    languageList = APIUtils.formatLanguages(langResult.aggregations, workCounts)
 
     logger.debug('Language list 200 OK on /utils/languages')
 

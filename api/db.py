@@ -1,7 +1,7 @@
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
-from model import Work, Edition, Item, Link, Rights, Identifier
+from model import Work, Edition, Item, Link
 from model.postgres.item import ITEM_LINKS
 from .utils import APIUtils
 
@@ -15,12 +15,11 @@ class DBClient():
 
         session = sessionmaker(bind=self.engine)()
 
-        query = session.query(Work)\
+        return session.query(Work)\
             .join(Edition)\
             .join(Item, ITEM_LINKS, Link)\
-            .filter(Edition.id.in_(editionIds))
-
-        return query.all()
+            .filter(Edition.id.in_(editionIds))\
+            .all()
 
     def fetchSingleWork(self, uuid):
         session = sessionmaker(bind=self.engine)()
