@@ -89,6 +89,15 @@ class APIUtils():
         return editionDict
 
     @classmethod
+    def formatLinkOutput(cls, link):
+        linkDict = dict(link)
+        linkDict['link_id'] = link.id
+        linkDict['work'] = dict(link.items[0].edition.work)
+        linkDict['work']['edition'] = dict(link.items[0].edition)
+
+        return linkDict
+
+    @classmethod
     def formatLanguages(cls, aggregations, counts=False):
         if counts:
             return sorted([

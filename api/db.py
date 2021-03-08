@@ -36,6 +36,16 @@ class DBClient():
             .outerjoin(Item, ITEM_LINKS, Link)\
             .filter(Edition.id == editionID).first()
 
+    def fetchSingleLink(self, linkID):
+        session = sessionmaker(bind=self.engine)()
+
+        return session.query(Link)\
+            .join(ITEM_LINKS, Item)\
+            .join(Edition)\
+            .join(Work)\
+            .filter(Link.id == linkID)\
+            .first()
+
     def fetchRowCounts(self):
         session = sessionmaker(bind=self.engine)()
 

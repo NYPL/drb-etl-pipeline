@@ -4,7 +4,7 @@ import os
 from waitress import serve
 
 from logger import createLog
-from .blueprints import search, work, info, edition, utils
+from .blueprints import search, work, info, edition, utils, link
 
 logger = createLog(__name__)
 
@@ -21,9 +21,10 @@ class FlaskAPI:
         self.app.register_blueprint(work)
         self.app.register_blueprint(edition)
         self.app.register_blueprint(utils)
+        self.app.register_blueprint(link)
 
     def run(self):
-        if os.environ['ENVIRONMENT'] == 'local':
+        if 'local' in os.environ['ENVIRONMENT']:
             logger.debug('Starting dev server on port 5000')
 
             self.app.config['ENV'] = 'development'
