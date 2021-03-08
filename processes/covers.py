@@ -6,6 +6,9 @@ from .core import CoreProcess
 from managers import CoverManager
 from model import Edition, Link
 from model.postgres.edition import EDITION_LINKS
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class CoverProcess(CoreProcess):
@@ -14,6 +17,9 @@ class CoverProcess(CoreProcess):
 
         self.generateEngine()
         self.createSession()
+
+        # Redis Connection
+        self.createRedisClient()
 
         self.createS3Client()
         self.fileBucket = os.environ['FILE_BUCKET']
@@ -56,13 +62,22 @@ class CoverProcess(CoreProcess):
             if coverManager: self.storeFoundCover(coverManager, edition)
 
     def searchForCover(self, edition):
-        manager = CoverManager(edition, self.session)
+        identifiers = [i for i in self.getEditionIdentifiers(edition)]
+        manager = CoverManager(identifiers, self.session)
 
         if manager.fetchCover() is True:
             manager.fetchCoverFile()
             manager.resizeCoverFile()
 
             return manager if manager.coverContent else None
+
+    def getEditionIdentifiers(self, edition):
+        for iden in edition.identifiers:
+            if self.checkSetRedis('sfrCovers', iden.identifier, iden.authority, expirationTime=60*60*24*30):
+                logger.debug('{} recently queried. Skipping'.format(iden))
+                continue
+            
+            yield (iden.identifier, iden.authority)
 
     def storeFoundCover(self, manager, edition):
         coverPath = 'covers/{}/{}.{}'.format(

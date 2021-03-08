@@ -24,14 +24,14 @@ class RedisManager:
             socket_timeout=5
         )
     
-    def checkSetRedis(self, service, identifier, idenType):
+    def checkSetRedis(self, service, identifier, idenType, expirationTime=60*60*24*7):
         queryTime = self.redisClient.get('{}/{}/{}/{}'.format(self.environment, service, identifier, idenType))
 
         if queryTime is not None and datetime.strptime(queryTime.decode('utf-8'), '%Y-%m-%dT%H:%M:%S') >= self.oneDayAgo:
             logger.debug('Identifier {} recently queried'.format(identifier))    
             return True
         
-        self.setRedis(service, identifier, idenType)
+        self.setRedis(service, identifier, idenType, expirationTime=expirationTime)
         return False
         
     

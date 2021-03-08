@@ -34,15 +34,22 @@ class TestHathiFetcher:
     def test_hasCover_true(self, testFetcher, mocker):
         mocker.patch.object(HathiFetcher, 'fetchVolumeCover')
 
-        testFetcher.identifiers = [(1, 'test'), (2, 'hathi')]
+        testFetcher.identifiers = [('1', 'test'), ('tst.2', 'hathi')]
         assert testFetcher.hasCover() == True
 
     def test_hasCover_false(self, testFetcher, mocker):
+        mocker.patch.object(HathiFetcher, 'fetchVolumeCover')
+
+        testFetcher.identifiers = [('1', 'test'), ('2', 'hathi')]
+        assert testFetcher.hasCover() == False
+
+    def test_hasCover_fetch_error(self, testFetcher, mocker):
         mockFetch = mocker.patch.object(HathiFetcher, 'fetchVolumeCover')
         mockFetch.side_effect = HathiCoverError('test error')
 
-        testFetcher.identifiers = [(1, 'test'), (2, 'hathi')]
+        testFetcher.identifiers = [('1', 'test'), ('tst.2', 'hathi')]
         assert testFetcher.hasCover() == False
+
 
     def test_fetchVolumeCover_success(self, testFetcher, mockMETSObject, mockPages, mocker):
         mockResponse = mocker.MagicMock()
