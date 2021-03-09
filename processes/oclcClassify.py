@@ -101,10 +101,14 @@ class ClassifyProcess(CoreProcess):
         self.fetchOCLCCatalogRecords(classifyRec.record.identifiers)
     
     def fetchOCLCCatalogRecords(self, identifiers):
+        owiNo, _ = tuple(identifiers[0].split('|'))
+
         for oclcID in list(filter(lambda x: 'oclc' in x, identifiers)):
             oclcNo, _ = tuple(oclcID.split('|'))
             if self.checkSetRedis('catalog', oclcNo, 'oclc') is False:
-                self.sendCatalogLookupMessage(oclcNo)
+                self.sendCatalogLookupMessage(oclcNo, owiNo)
     
-    def sendCatalogLookupMessage(self, oclcNo):
-        self.sendMessageToQueue(self.rabbitQueue, self.rabbitRoute, {'oclcNo': oclcNo})
+    def sendCatalogLookupMessage(self, oclcNo, owiNo):
+        self.sendMessageToQueue(
+            self.rabbitQueue, self.rabbitRoute, {'oclcNo': oclcNo, 'owiNo': owiNo}
+        )
