@@ -1,9 +1,9 @@
 import datetime
-from lxml import etree
 import pytest
 
 from tests.helper import TestHelpers
 from processes import ClusterProcess
+from model import Record
 
 
 class TestSFRClusterProcess:
@@ -199,10 +199,10 @@ class TestSFRClusterProcess:
         mockIDQuery = mocker.patch.object(ClusterProcess, 'queryIdens')
         mockIDQuery.return_value = ['rec1', 'rec2']
 
-        testRecords = testInstance.findAllMatchingRecords(['1|test', '2|oclc'])
+        testRecords = testInstance.findAllMatchingRecords(['1|lcc', '2|oclc'])
 
         assert testRecords == ['rec1', 'rec2']
-        mockIDQuery.assert_called_once_with(['2|oclc'], [])
+        mockIDQuery.assert_called_once_with(['2|oclc'])
 
     def test_createWorkFromEditions(self, testInstance, mocker):
         mockRecManager = mocker.MagicMock()
@@ -224,9 +224,9 @@ class TestSFRClusterProcess:
         mockRedisCheck = mocker.patch.object(ClusterProcess, 'checkSetRedis')
         mockRedisCheck.side_effect = [True, True, True]
 
-        testIDs = testInstance.queryIdens(['1|test', '2|test', '3|test'], ['4|match'])
+        testIDs = testInstance.queryIdens(['1|test', '2|test', '3|test'])
 
-        assert testIDs == ['4|match']
+        assert testIDs == []
         mockRedisCheck.assert_has_calls([
             mocker.call('cluster', '1|test', 'all'),
             mocker.call('cluster', '2|test', 'all'),
@@ -237,37 +237,36 @@ class TestSFRClusterProcess:
         mockRedisCheck = mocker.patch.object(ClusterProcess, 'checkSetRedis')
         mockRedisCheck.side_effect = [False, True, False]
 
-        mockSession = mocker.MagicMock()
-        mockSession.query().filter().all.return_value = []
-        testInstance.session = mockSession
-        testIDs = testInstance.queryIdens(['1|test', '2|test', '3|test'], ['4|match'])
+        mockGetBatch = mocker.patch.object(ClusterProcess, 'getRecordBatches')
+        mockGetBatch.side_effect = [[(1, ['4|lcc', '5|test'])], [(2, ['6|ddc'])], []]
 
-        assert testIDs == ['4|match']
+        testIDs = testInstance.queryIdens(['1|test', '2|test', '3|test'])
+
+        assert testIDs == [1, 2]
         mockRedisCheck.assert_has_calls([
             mocker.call('cluster', '1|test', 'all'),
             mocker.call('cluster', '2|test', 'all'),
             mocker.call('cluster', '3|test', 'all')
         ])
+        assert set(mockGetBatch.call_args_list[0][0][0]) == set(['1|test', '3|test'])
+        assert mockGetBatch.call_args_list[0][0][1] == set([])
+        assert set(mockGetBatch.call_args_list[1][0][0]) == set(['5|test'])
+        assert mockGetBatch.call_args_list[1][0][1] == set([1])
+        assert set(mockGetBatch.call_args_list[2][0][0]) == set([])
+        assert mockGetBatch.call_args_list[2][0][1] == set([1, 2])
 
-    def test_queryIdens_matching_ids_found_recurse(self, testInstance, mocker):
-        mockRedisCheck = mocker.patch.object(ClusterProcess, 'checkSetRedis')
-        mockRedisCheck.side_effect = [False, True, False, True, True]
+    def test_getRecordBatches(self, testInstance, mocker):
+        testInstance.session = mocker.MagicMock()
 
-        mockSession = mocker.MagicMock()
-        mockSession.query().filter().all.return_value = [
-            (4, ['5|issn']), (5, ['6|test']), (6, ['7|owi'])
-        ]
-        testInstance.session = mockSession
-        testIDs = testInstance.queryIdens(['1|test', '2|test', '3|test'], [])
+        testInstance.session.query().filter().filter().all.side_effect = [[1], [2, 3]]
 
-        assert testIDs == [4, 5, 6]
-        mockRedisCheck.assert_has_calls([
-            mocker.call('cluster', '1|test', 'all'),
-            mocker.call('cluster', '2|test', 'all'),
-            mocker.call('cluster', '3|test', 'all'),
-            mocker.call('cluster', '5|issn', 'all'),
-            mocker.call('cluster', '7|owi', 'all')
-        ], any_order=True)
+        testMatches = testInstance.getRecordBatches([str(i) for i in range(103)], set([]))
+
+        assert testMatches == [1, 2, 3]
+        testInstance.session.query().filter.call_args[0][0].compare(~Record.id.in_([]))
+
+        testIDArray = '{{{}}}'.format(','.join([str(i) for i in range(100)]))
+        testInstance.session.query().filter().filter.call_args[0][0].compare(Record.identifiers.overlap(testIDArray))
 
     def test_indexWorkInElasticSearch(self, testInstance, mocker):
         mockElasticInst = mocker.patch('processes.sfrCluster.SFRElasticRecordManager')

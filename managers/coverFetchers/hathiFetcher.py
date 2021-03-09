@@ -25,7 +25,7 @@ class HathiFetcher(AbstractFetcher):
 
     def hasCover(self):
         for value, source in self.identifiers:
-            if source != 'hathi': continue
+            if source != 'hathi' or '.' not in value: continue
 
             try:
                 self.fetchVolumeCover(value)
@@ -36,7 +36,6 @@ class HathiFetcher(AbstractFetcher):
             except HathiCoverError as e:
                 logger.error('Unable to parse HathiTrust volume for cover')
                 logger.debug(e.message)
-                pass
 
         return False
 
@@ -54,8 +53,8 @@ class HathiFetcher(AbstractFetcher):
 
         try:
             pageList = metsJSON['METS:structMap']['METS:div']['METS:div'][:25]
-        except TypeError:
-            logger.debug(metsJSON['METS:structMap']['METS:div']['METS:div'])
+        except (TypeError, KeyError):
+            logger.debug(metsJSON)
             raise HathiCoverError('Unexpected METS format in hathi rec {}'.format(htid))
 
         rankedMETSPages = sorted(

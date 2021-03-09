@@ -6,7 +6,6 @@ from time import sleep
 from .core import CoreProcess
 from managers import OCLCCatalogManager
 from mappings.oclcCatalog import CatalogMapping
-from model import Record
 
 
 class CatalogProcess(CoreProcess):
@@ -49,9 +48,9 @@ class CatalogProcess(CoreProcess):
         catalogManager = OCLCCatalogManager(message['oclcNo'])
         catalogXML = catalogManager.queryCatalog()
         if catalogXML:
-            self.parseCatalogRecord(catalogXML)
+            self.parseCatalogRecord(catalogXML, message['owiNo'])
 
-    def parseCatalogRecord(self, catalogXML):
+    def parseCatalogRecord(self, catalogXML, owiNo):
         try:
             parseMARC = etree.fromstring(catalogXML.encode('utf-8'))
         except etree.XMLSyntaxError as err:
@@ -67,6 +66,7 @@ class CatalogProcess(CoreProcess):
 
         try:
             catalogRec.applyMapping()
+            catalogRec.record.identifiers.append('{}|owi'.format(owiNo))
             self.addDCDWToUpdateList(catalogRec)
         except Exception as err:
             print(err)

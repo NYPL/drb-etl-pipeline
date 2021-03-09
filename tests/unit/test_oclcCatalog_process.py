@@ -67,11 +67,11 @@ class TestOCLCCatalogProcess:
         mockOCLC.return_value = mockManager
         mockParser = mocker.patch.object(CatalogProcess, 'parseCatalogRecord')
 
-        testInstance.processCatalogQuery('{"oclcNo": 1}')
+        testInstance.processCatalogQuery('{"oclcNo": 1, "owiNo": 1}')
 
         mockOCLC.assert_called_once_with(1)
-        mockManager.queryCatalog.assert_called_once
-        mockParser.assert_called_once_with('testXML')
+        mockManager.queryCatalog.assert_called_once()
+        mockParser.assert_called_once_with('testXML', 1)
 
     def test_processCatalogQuery_no_record_found(self, testInstance, mocker):
         mockOCLC = mocker.patch('processes.oclcCatalog.OCLCCatalogManager')
@@ -83,26 +83,27 @@ class TestOCLCCatalogProcess:
         testInstance.processCatalogQuery('{"oclcNo": "badID"}')
 
         mockOCLC.assert_called_once_with('badID')
-        mockManager.queryCatalog.assert_called_once
-        mockParser.assert_not_called
+        mockManager.queryCatalog.assert_called_once()
+        mockParser.assert_not_called()
 
     def test_parseCatalogRecord_success(self, testInstance, mocker):
         mockXMLParser = mocker.patch.object(etree, 'fromstring')
         mockXMLParser.return_value = 'testMARC'
 
-        mockCatalogRec = mocker.MagicMock()
+        mockCatalogRec = mocker.MagicMock(record=mocker.MagicMock(identifiers=[]))
         mockMapping = mocker.patch('processes.oclcCatalog.CatalogMapping')
         mockMapping.return_value = mockCatalogRec
 
         mockAdd = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
-        testInstance.parseCatalogRecord('rawXML')
+        testInstance.parseCatalogRecord('rawXML', 1)
 
         mockXMLParser.assert_called_once_with(b'rawXML')
         mockMapping.assert_called_once_with(
             'testMARC', {'oclc': 'http://www.loc.gov/MARC21/slim'}, {}
         )
-        mockCatalogRec.applyMapping.assert_called_once
+        mockCatalogRec.applyMapping.assert_called_once()
+        assert mockCatalogRec.record.identifiers[0] == '1|owi'
         mockAdd.assert_called_once_with(mockCatalogRec)
 
     def test_parseCatalogRecord_mapping_failure(self, testInstance, mocker):
@@ -116,14 +117,14 @@ class TestOCLCCatalogProcess:
 
         mockAdd = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
-        testInstance.parseCatalogRecord('rawXML')
+        testInstance.parseCatalogRecord('rawXML', 1)
 
         mockXMLParser.assert_called_once_with(b'rawXML')
         mockMapping.assert_called_once_with(
             'testMARC', {'oclc': 'http://www.loc.gov/MARC21/slim'}, {}
         )
-        mockCatalogRec.applyMapping.assert_called_once
-        mockAdd.assert_not_called
+        mockCatalogRec.applyMapping.assert_called_once()
+        mockAdd.assert_not_called()
 
     def test_parseCatalogRecord_parsing_failure(self, testInstance, mocker):
         mockCatalogRec = mocker.MagicMock()
@@ -132,8 +133,8 @@ class TestOCLCCatalogProcess:
 
         mockAdd = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
-        testInstance.parseCatalogRecord('rawXML')
+        testInstance.parseCatalogRecord('rawXML', 1)
 
-        mockMapping.assert_not_called
-        mockCatalogRec.applyMapping.assert_not_called
-        mockAdd.assert_not_called
+        mockMapping.assert_not_called()
+        mockCatalogRec.applyMapping.assert_not_called()
+        mockAdd.assert_not_called()
