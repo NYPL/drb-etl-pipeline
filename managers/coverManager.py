@@ -6,8 +6,8 @@ import managers.coverFetchers as fetchers
 
 
 class CoverManager:
-    def __init__(self, edition, dbSession):
-        self.edition = edition
+    def __init__(self, identifiers, dbSession):
+        self.identifiers = identifiers
         self.dbSession = dbSession
 
         self.loadFetchers()
@@ -26,13 +26,8 @@ class CoverManager:
             self.fetchers[fetcherClass.ORDER - 1] = fetcherClass
 
     def fetchCover(self):
-        edIdentifiers = [
-            (i.identifier, i.authority)
-            for i in self.edition.identifiers
-        ]
-
         for fetcherClass in self.fetchers:
-            fetcher = fetcherClass(edIdentifiers, self.dbSession)
+            fetcher = fetcherClass(self.identifiers, self.dbSession)
             
             if fetcher.hasCover() is True:
                 self.fetcher = fetcher

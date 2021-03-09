@@ -112,6 +112,9 @@ class TestCoverProcess:
         ])
 
     def test_searchForCover_success(self, testProcess, mocker):
+        mockIdentifierGet = mocker.patch.object(CoverProcess, 'getEditionIdentifiers')
+        mockIdentifierGet.return_value = [(1, 'test')]
+
         mockManager = mocker.MagicMock()
         mockManager.fetchCover.return_value = True
 
@@ -122,12 +125,16 @@ class TestCoverProcess:
         testManager = testProcess.searchForCover('testEdition')
 
         assert testManager == mockManager
-        mockGenerator.assert_called_once_with('testEdition', 'testSession')
+        mockIdentifierGet.assert_called_once_with('testEdition')
+        mockGenerator.assert_called_once_with([(1, 'test')], 'testSession')
         mockManager.fetchCover.assert_called_once()
         mockManager.fetchCoverFile.assert_called_once()
         mockManager.resizeCoverFile.assert_called_once()
 
     def test_searchForCover_missing(self, testProcess, mocker):
+        mockIdentifierGet = mocker.patch.object(CoverProcess, 'getEditionIdentifiers')
+        mockIdentifierGet.return_value = [(1, 'test')]
+
         mockManager = mocker.MagicMock()
         mockManager.fetchCover.return_value = False
 
@@ -138,10 +145,26 @@ class TestCoverProcess:
         testManager = testProcess.searchForCover('testEdition')
 
         assert testManager == None
-        mockGenerator.assert_called_once_with('testEdition', 'testSession')
+        mockIdentifierGet.assert_called_once_with('testEdition')
+        mockGenerator.assert_called_once_with([(1, 'test')], 'testSession')
         mockManager.fetchCover.assert_called_once()
         mockManager.fetchCoverFile.assert_not_called()
         mockManager.resizeCoverFile.assert_not_called()
+
+    def test_getEditionIdentifiers(self, testProcess, mocker):
+        mockCheckRedis = mocker.patch.object(CoverProcess, 'checkSetRedis')
+        mockCheckRedis.side_effect = [True, False]
+
+        mockIdentifiers = [mocker.MagicMock(identifier=1, authority='test'), mocker.MagicMock(identifier=2, authority='test')]
+        mockEdition = mocker.MagicMock(identifiers=mockIdentifiers)
+
+        testIdentifiers = list(testProcess.getEditionIdentifiers(mockEdition))
+        
+        assert testIdentifiers == [(2, 'test')]
+        mockCheckRedis.assert_has_calls([
+            mocker.call('sfrCovers', 1, 'test', expirationTime=2592000),
+            mocker.call('sfrCovers', 2, 'test', expirationTime=2592000)
+        ])
 
     def test_storeFoundCover(self, testProcess, mocker):
         mockPut = mocker.patch.object(CoverProcess, 'putObjectInBucket')
