@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased -- v0.3.1
+### Added
+- Redis cache check for cover process
+### Fixed
+- HathiTrust cover process error handling
+
 ## 2021-03-05 -- v0.3.0
 ### Added
 - Language and Total Record count API endpoints

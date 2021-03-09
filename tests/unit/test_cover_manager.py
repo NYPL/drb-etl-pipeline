@@ -8,11 +8,11 @@ class TestCoverManager:
     @pytest.fixture
     def testManager(self, mocker):
         class MockCoverManager(CoverManager):
-            def __init__(self, edition, dbSession):
-                self.edition = edition
+            def __init__(self, identifiers, dbSession):
+                self.identifiers = identifiers
                 self.dbSession = dbSession
 
-        return MockCoverManager(mocker.MagicMock(), mocker.MagicMock())
+        return MockCoverManager([(1, 'test')], mocker.MagicMock())
 
     @pytest.fixture
     def mockImageCreator(self, mocker):
@@ -34,8 +34,6 @@ class TestCoverManager:
         assert testManager.fetchers[3].__name__ == 'ContentCafeFetcher'
 
     def test_fetchCover_success(self, testManager, mocker):
-        testManager.edition.identifiers = [mocker.MagicMock(identifier=1, authority='test')]
-
         mockFetcher = mocker.MagicMock()
         mockFetcher.hasCover.return_value = True
         testManager.fetchers = [mocker.MagicMock(return_value=mockFetcher)]
@@ -46,8 +44,6 @@ class TestCoverManager:
         mockFetcher.hasCover.assert_called_once()
 
     def test_fetchCover_none(self, testManager, mocker):
-        testManager.edition.identifiers = [mocker.MagicMock(identifier=1, authority='test')]
-
         mockFetcher = mocker.MagicMock()
         mockFetcher.hasCover.return_value = False
         testManager.fetchers = [mocker.MagicMock(return_value=mockFetcher)]
