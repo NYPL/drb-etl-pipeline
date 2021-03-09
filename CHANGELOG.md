@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.3.1
+### Added
+- Link Details endpoint
+
 ## 2021-03-05 -- v0.3.0
 ### Added
 - Language and Total Record count API endpoints
