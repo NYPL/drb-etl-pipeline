@@ -4,6 +4,9 @@ import re
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
 from model import Record
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class ClusterProcess(CoreProcess):
@@ -50,7 +53,7 @@ class ClusterProcess(CoreProcess):
         self.closeConnection()
 
     def clusterRecord(self, rec):
-        print(rec.title, rec.source_id)
+        logger.info('Clustering {}'.format(rec))
         matchedIDs = self.findAllMatchingRecords(rec.identifiers)
 
         filterParams = None
@@ -86,11 +89,9 @@ class ClusterProcess(CoreProcess):
         return editions, records
 
     def findAllMatchingRecords(self, identifiers):
-        idens = list(filter(
-            lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None,
-            identifiers)
-        )
-        return self.queryIdens(idens, [])
+        idens = list(filter(lambda x: re.search(r'\|(?:lcc|ddc)$', x) == None, identifiers))
+
+        return self.queryIdens(idens)
 
     def createWorkFromEditions(self, editions, instances):
         recordManager = SFRRecordManager(self.session)
@@ -100,33 +101,51 @@ class ClusterProcess(CoreProcess):
 
         return recordManager.work
     
-    def queryIdens(self, idens, matchedIDs):
-        checkIdens = list(set(filter(None, [
+    def queryIdens(self, idens):
+        matchedIDs = set()
+        checkedIdens = set()
+
+        checkIdens = set(filter(None, [
             i if self.checkSetRedis('cluster', i, 'all') is False else None
             for i in idens
-        ])))
+        ]))
 
-        if len(checkIdens) < 1:
-            return matchedIDs
+        while True:
+            matches = self.getRecordBatches(list(checkIdens), matchedIDs.copy())
 
-        queryArray = '{{{}}}'.format(','.join(checkIdens))
-        matches = self.session.query(Record.id, Record.identifiers)\
-            .filter(Record.identifiers.overlap(queryArray))\
-            .all()
+            if len(matches) == 0:
+                break
 
-        if len(matches) == 0:
-            return matchedIDs
+            checkedIdens.update(checkIdens)
         
-        matchIdens = set() 
-        for match in matches:
-            recID, recIdentifiers = match
-            matchIdens.update(filter(
-                lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None,
-                recIdentifiers)
-            )
-            matchedIDs.append(recID)
+            checkIdens = set()
+            for match in matches:
+                recID, recIdentifiers = match
+                checkIdens.update(list(filter(
+                    lambda x: re.search(r'\|(?:lcc|ddc)$', x) == None and x not in checkedIdens,
+                    recIdentifiers)
+                ))
+                matchedIDs.add(recID)
 
-        return self.queryIdens(matchIdens, matchedIDs)
+        return list(matchedIDs)
+
+    def getRecordBatches(self, identifiers, matchedIDs):
+        step = 100 
+        i = 0
+        totalMatches = []
+
+        while i < len(identifiers):
+            idArray = '{{{}}}'.format(','.join(identifiers[i:i+step]))
+            matches = self.session.query(Record.id, Record.identifiers)\
+                .filter(~Record.id.in_(list(matchedIDs)))\
+                .filter(Record.identifiers.overlap(idArray))\
+                .all()
+
+            totalMatches.extend(matches)
+
+            i += step
+        
+        return totalMatches
 
     def indexWorkInElasticSearch(self, dbWork):
         elasticManager = SFRElasticRecordManager(dbWork)

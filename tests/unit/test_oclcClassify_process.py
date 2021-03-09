@@ -6,7 +6,6 @@ from tests.helper import TestHelpers
 from processes import ClassifyProcess
 from managers import ClassifyManager
 from managers.oclcClassify import ClassifyError
-from model import Record
 
 
 class TestOCLCClassifyProcess:
@@ -255,10 +254,10 @@ class TestOCLCClassifyProcess:
         mockRedisCheck.return_value = False
         mockSendLookup = mocker.patch.object(ClassifyProcess, 'sendCatalogLookupMessage')
 
-        testInstance.fetchOCLCCatalogRecords(['1|test', '2|oclc'])
+        testInstance.fetchOCLCCatalogRecords(['1|owi', '2|oclc'])
 
         mockRedisCheck.assert_called_once_with('catalog', '2', 'oclc')
-        mockSendLookup.assert_called_once_with('2')
+        mockSendLookup.assert_called_once_with('2', '1')
 
     def test_fetchOCLCCatalogRecords_redis_match(self, testInstance, mocker):
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
@@ -268,13 +267,13 @@ class TestOCLCClassifyProcess:
         testInstance.fetchOCLCCatalogRecords(['1|test', '2|oclc'])
 
         mockRedisCheck.assert_called_once_with('catalog', '2', 'oclc')
-        mockSendLookup.assert_not_called
+        mockSendLookup.assert_not_called()
     
     def test_sendCatalogLookupMessage(self, testInstance, mocker):
         mockSendMessage = mocker.patch.object(ClassifyProcess, 'sendMessageToQueue')
 
-        testInstance.sendCatalogLookupMessage('1')
+        testInstance.sendCatalogLookupMessage('1', '1')
 
         mockSendMessage.assert_called_once_with(
-            'test_oclc_queue', 'test_oclc_key', {'oclcNo': '1'}
+            'test_oclc_queue', 'test_oclc_key', {'oclcNo': '1', 'owiNo': '1'}
         )
