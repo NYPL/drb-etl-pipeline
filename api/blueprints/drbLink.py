@@ -8,7 +8,7 @@ logger = createLog(__name__)
 link = Blueprint('link', __name__, url_prefix='/link')
 
 @link.route('/<linkID>', methods=['GET'])
-def workFetch(linkID):
+def linkFetch(linkID):
     logger.info('Fetching Link #{}'.format(linkID))
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])

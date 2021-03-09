@@ -82,7 +82,11 @@ class APIUtils():
             itemDict['location'] = item.physical_location['name'] if item.physical_location else None
             itemDict['links'] = []
             for link in item.links:
-                itemDict['links'].append({'link_id': link.id, 'mediaType': link.media_type})
+                itemDict['links'].append({
+                    'link_id': link.id,
+                    'mediaType': link.media_type,
+                    'url': link.url
+                })
 
             editionDict['items'].append(itemDict)
 
@@ -94,6 +98,9 @@ class APIUtils():
         linkDict['link_id'] = link.id
         linkDict['work'] = dict(link.items[0].edition.work)
         linkDict['work']['edition'] = dict(link.items[0].edition)
+        linkDict['work']['edition']['edition_id'] = link.items[0].edition.id
+        linkDict['work']['edition']['item'] = dict(link.items[0])
+        linkDict['work']['edition']['item']['item_id'] = link.items[0].id
 
         return linkDict
 
