@@ -2,6 +2,7 @@
 
 ## unreleased -- v0.3.1
 ### Added
+- Link Details endpoint
 - Redis cache check for cover process
 ### Fixed
 - HathiTrust cover process error handling

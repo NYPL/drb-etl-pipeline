@@ -73,6 +73,21 @@ class TestDBClient:
         mockCreator.assert_called_once()
         mockSession.query().outerjoin().filter().first.assert_called_once()
 
+    def test_fetchSingleLink(self, testInstance, mocker):
+        mockCreator = mocker.MagicMock()
+        mockMaker = mocker.patch('api.db.sessionmaker')
+        mockMaker.return_value = mockCreator
+        mockSession = mocker.MagicMock()
+        mockCreator.return_value = mockSession
+        mockSession.query().join().join().join().filter().first.return_value = 'testLink'
+
+        editionResult = testInstance.fetchSingleLink('linkID')
+
+        assert editionResult == 'testLink'
+        mockMaker.assert_called_once_with(bind=testInstance.engine)
+        mockCreator.assert_called_once()
+        mockSession.query().join().join().join().filter().first.assert_called_once()
+
     def test_fetchRowCounts(self, testInstance, testCountQuery, mocker):
         mockCreator = mocker.MagicMock()
         mockMaker = mocker.patch('api.db.sessionmaker')

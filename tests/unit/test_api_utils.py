@@ -42,7 +42,7 @@ class TestAPIUtils:
 
     @pytest.fixture
     def testLink(self, MockDBObject):
-        return MockDBObject(id='li1', media_type='application/test')
+        return MockDBObject(id='li1', media_type='application/test', url='testURI')
 
     @pytest.fixture
     def testItem(self, MockDBObject, testLink):
@@ -151,6 +151,19 @@ class TestAPIUtils:
         assert formattedEdition['items'][0]['location'] == 'test'
         assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
         assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
+        assert formattedEdition['items'][0]['links'][0]['url'] == 'testURI'
+
+    def test_formatLinkOutput(self, testLink, testWork, testEdition, testItem):
+        testEdition.work = testWork
+        testItem.edition = testEdition
+        testLink.items = [testItem]
+
+        testLink = APIUtils.formatLinkOutput(testLink)
+
+        assert testLink['link_id'] == 'li1'
+        assert testLink['work']['uuid'] == 'testUUID'
+        assert testLink['work']['edition']['edition_id'] == 'ed1'
+        assert testLink['work']['edition']['item']['item_id'] == 'it1'
 
     def test_formatLanguages_no_counts(self, mocker):
         mockAggs = mocker.MagicMock()
