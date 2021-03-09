@@ -5,6 +5,7 @@
 - Redis cache check for cover process
 ### Fixed
 - HathiTrust cover process error handling
+- Clustering process on very large groups of records
 
 ## 2021-03-05 -- v0.3.0
 ### Added
