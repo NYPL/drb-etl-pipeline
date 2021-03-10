@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from math import ceil
 import re
 
 from .core import CoreProcess
@@ -110,13 +111,17 @@ class ClusterProcess(CoreProcess):
             for i in idens
         ]))
 
-        while True:
-            matches = self.getRecordBatches(list(checkIdens), matchedIDs.copy())
+        iterations = 0
 
+        while iterations < 6:
+            logger.debug('Checking IDS: {}'.format(len(checkIdens)))
+            matches = self.getRecordBatches(list(checkIdens), matchedIDs.copy())
+            logger.debug('Got Matches: {}'.format(len(matches)))
             if len(matches) == 0:
                 break
 
             checkedIdens.update(checkIdens)
+            logger.debug('Checked IDS: {}'.format(len(checkedIdens)))
         
             checkIdens = set()
             for match in matches:
@@ -127,6 +132,8 @@ class ClusterProcess(CoreProcess):
                 ))
                 matchedIDs.add(recID)
 
+            iterations += 1
+
         return list(matchedIDs)
 
     def getRecordBatches(self, identifiers, matchedIDs):
@@ -135,6 +142,7 @@ class ClusterProcess(CoreProcess):
         totalMatches = []
 
         while i < len(identifiers):
+            logger.debug('Querying Batch {} of {}'.format(ceil(i/100)+1, ceil(len(identifiers)/100)))
             idArray = '{{{}}}'.format(','.join(identifiers[i:i+step]))
             matches = self.session.query(Record.id, Record.identifiers)\
                 .filter(~Record.id.in_(list(matchedIDs)))\

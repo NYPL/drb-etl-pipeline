@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -92,7 +93,7 @@ class KMeansManager:
                 transformer_list=[pipelineComponents[t] for t in transformers],
                 transformer_weights={t: pipelineWeights[t] for t in transformers}
             )),
-            ('kmeans', KMeans(n_clusters=self.currentK))
+            ('kmeans', KMeans(n_clusters=self.currentK, max_iter=150, n_init=5))
         ])
     
     @classmethod
@@ -127,7 +128,9 @@ class KMeansManager:
             if KMeansManager.emptyInstance(i) != False
         ])
         self.maxK = len(self.df.index) if len(self.df.index) > 1 else 2
-        if self.maxK > 1000:
+        if self.maxK > 5000:
+            self.maxK = int(self.maxK * (1/9))
+        elif self.maxK > 1000:
             self.maxK = int(self.maxK * (2/9))
         elif self.maxK > 500:
             self.maxK = int(self.maxK * (3/9))
@@ -196,24 +199,10 @@ class KMeansManager:
     def generateClusters(self):
         print('Generating Clusters from instances')
         try:
-            # Calculate the step for the first run at determining k
-            # Use the natural log of the value to get a reasonable scale
-            # for different values
-            step = int(np.log(self.maxK)**1.5 - 1) if np.log(self.maxK) > 1.6 else 1
-            # First pass at finding best value for k, using the step value
-            # derived above
             print('Calculating number of clusters, max {}'.format(
                 self.maxK
             ))
-            self.getK(1, self.maxK, step)
-            # Get narrower band of possible k values, based off the initial
-            # step value
-            startK = self.k - (step - 1) if self.k > (step - 1) else 1
-            stopK = self.k + step if (self.k + step) <= self.maxK else self.maxK
-            # Get the final k value by iterating through the much narrower
-            # range returned above
-            print('Calculating best k between {} and {}'.format(startK, stopK))
-            self.getK(startK, stopK, 1)
+            self.getK(2, self.maxK)
             print('Setting K to {}'.format(self.k))
         except ZeroDivisionError:
             print('Single instance found setting K to 1')
@@ -230,46 +219,64 @@ class KMeansManager:
             except KeyError:
                 continue
     
-    def getK(self, start, stop, step):
+    def getK(self, start, stop):
         warnings.filterwarnings('error', category=ConvergenceWarning)
-        wcss = []
-        for i in range(start, stop, step):
+
+        startScore = 0
+        stopScore = 0
+
+        prevStart = 0
+        prevStop = 0
+
+        while True:
+            middle = int((stop + start)/2)
+
+            print(start, stop, middle)
+
             try:
-                wcss.append((self.cluster(i, score=True), i))
+                if start != prevStart: startScore = self.cluster(start, score=True) 
+                if stop != prevStop: stopScore = self.cluster(stop, score=True) 
             except ConvergenceWarning:
                 print('Exceeded number of distinct clusters, break')
-                break
-            except ValueError as e:
+                if start == 2:
+                    start = 1
+                    startScore = 1
+                    break
+                else:
+                    stop = middle
+                    continue
+            except ValueError:
                 self.k = 1
                 return None
-        
-        x1, y1 = wcss[0][1], wcss[0][0]
-        x2, y2 = wcss[len(wcss) - 1][1], wcss[(len(wcss) - 1)][0]
 
-        distances = []
-        denominator = sqrt((y2 - y1)**2 + (x2 - x1)**2)
-        for i in range(len(wcss)):
-            x0 = i + 2
-            y0 = wcss[i][0]
+            if stop - start <= 1:
+                break
 
-            numerator = abs((y2 - y1)*x0 - (x2 - x1)*y0 + x2*y1 - y2*x1)
-            distances.append((numerator/denominator, wcss[i][1]))
-        
-        distances.sort(key=lambda x: x[0], reverse=True)
-        self.k = distances[0][1]
-    
+            prevStart = start
+            prevStop = stop
+
+            if startScore > stopScore:
+                stop = middle
+            else:
+                start = middle
+
+        self.k = start if startScore > stopScore else stop
+
     def cluster(self, k, score=False):
         self.currentK = k
         print('Generating cluster for k={}'.format(k))
         columnsWithData = self.getDataColumns()
         pipeline = self.createPipeline(columnsWithData)
+
+        labels = pipeline.fit_predict(self.df)
+
         if score is True:
-            print('Returning score for n_clusters estimation')
-            pipeline.fit(self.df)
-            return pipeline['kmeans'].inertia_
+            pipeline.set_params(kmeans=None)
+            X = pipeline.fit_transform(self.df)
+            return silhouette_score(X, labels)
         else:
             print('Returning model prediction')
-            return pipeline.fit_predict(self.df)
+            return labels
 
     def getDataColumns(self):
         dataColumns = []
