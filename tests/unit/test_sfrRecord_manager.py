@@ -145,8 +145,10 @@ class TestSFRRecordManager:
             mockRecords, [(1900, ['uuid1', 'uuid2', 'uuid4']), (2000, ['uuid3', 'uuid5'])]
         )
 
-        assert testEditions[1900] == mockRecords[:2]
-        assert testEditions[2000] == mockRecords[2:]
+        assert testEditions[0][0] == 1900
+        assert testEditions[0][1] == mockRecords[:2]
+        assert testEditions[1][0] == 2000
+        assert testEditions[1][1] == mockRecords[2:]
 
     def test_buildWork(self, testInstance, mocker):
         managerMocks = mocker.patch.multiple(
@@ -156,10 +158,10 @@ class TestSFRRecordManager:
             buildEdition=mocker.DEFAULT
         )
 
-        managerMocks['buildEditionStructure'].return_value = {
-            1900: ['instance1', 'instance2'],
-            2000: ['instance3', 'instance4', 'instance5']
-        }
+        managerMocks['buildEditionStructure'].return_value = [
+            (1900, ['instance1', 'instance2']),
+            (2000, ['instance3', 'instance4', 'instance5'])
+        ]
         managerMocks['createEmptyWorkRecord'].return_value = 'testWorkData'
         
         testWorkData = testInstance.buildWork('testRecords', 'testEditions')

@@ -90,7 +90,7 @@ class ClusterProcess(CoreProcess):
         return editions, records
 
     def findAllMatchingRecords(self, identifiers):
-        idens = list(filter(lambda x: re.search(r'\|(?:lcc|ddc)$', x) == None, identifiers))
+        idens = list(filter(lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None, identifiers))
 
         return self.queryIdens(idens)
 
@@ -113,7 +113,7 @@ class ClusterProcess(CoreProcess):
 
         iterations = 0
 
-        while iterations < 6:
+        while iterations < 3:
             logger.debug('Checking IDS: {}'.format(len(checkIdens)))
             matches = self.getRecordBatches(list(checkIdens), matchedIDs.copy())
             logger.debug('Got Matches: {}'.format(len(matches)))
@@ -127,7 +127,7 @@ class ClusterProcess(CoreProcess):
             for match in matches:
                 recID, recIdentifiers = match
                 checkIdens.update(list(filter(
-                    lambda x: re.search(r'\|(?:lcc|ddc)$', x) == None and x not in checkedIdens,
+                    lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None and x not in checkedIdens,
                     recIdentifiers)
                 ))
                 matchedIDs.add(recID)

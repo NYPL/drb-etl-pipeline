@@ -235,19 +235,18 @@ class KMeansManager:
 
             try:
                 if start != prevStart: startScore = self.cluster(start, score=True) 
-                if stop != prevStop: stopScore = self.cluster(stop, score=True) 
-            except ConvergenceWarning:
+            except (ValueError, ConvergenceWarning):
                 print('Exceeded number of distinct clusters, break')
-                if start == 2:
-                    start = 1
-                    startScore = 1
-                    break
-                else:
-                    stop = middle
-                    continue
-            except ValueError:
-                self.k = 1
-                return None
+                start = 1
+                startScore = 1
+                break
+
+            try:
+                if stop != prevStop: stopScore = self.cluster(stop, score=True) 
+            except (ValueError, ConvergenceWarning):
+                print('Exceeded number of distinct clusters, break')
+                stop = middle
+                continue
 
             if stop - start <= 1:
                 break
