@@ -18,7 +18,7 @@ class HathiMapping(CSVMapping):
                 ('{}|oclc', 7),
                 ('{}|isbn', 8),
                 ('{}|issn', 9),
-                ('{}|isbn', 10)
+                ('{}|lccn', 10)
             ],
             'rights': ('hathitrust|{}|{}||{}', 2, 13, 14),
             'is_part_of': [('{}|volume', 4)],

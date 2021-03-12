@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from math import ceil
 import re
 
 from .core import CoreProcess
@@ -89,7 +90,7 @@ class ClusterProcess(CoreProcess):
         return editions, records
 
     def findAllMatchingRecords(self, identifiers):
-        idens = list(filter(lambda x: re.search(r'\|(?:lcc|ddc)$', x) == None, identifiers))
+        idens = list(filter(lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None, identifiers))
 
         return self.queryIdens(idens)
 
@@ -110,22 +111,28 @@ class ClusterProcess(CoreProcess):
             for i in idens
         ]))
 
-        while True:
-            matches = self.getRecordBatches(list(checkIdens), matchedIDs.copy())
+        iterations = 0
 
+        while iterations < 3:
+            logger.debug('Checking IDS: {}'.format(len(checkIdens)))
+            matches = self.getRecordBatches(list(checkIdens), matchedIDs.copy())
+            logger.debug('Got Matches: {}'.format(len(matches)))
             if len(matches) == 0:
                 break
 
             checkedIdens.update(checkIdens)
+            logger.debug('Checked IDS: {}'.format(len(checkedIdens)))
         
             checkIdens = set()
             for match in matches:
                 recID, recIdentifiers = match
                 checkIdens.update(list(filter(
-                    lambda x: re.search(r'\|(?:lcc|ddc)$', x) == None and x not in checkedIdens,
+                    lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None and x not in checkedIdens,
                     recIdentifiers)
                 ))
                 matchedIDs.add(recID)
+
+            iterations += 1
 
         return list(matchedIDs)
 
@@ -135,6 +142,7 @@ class ClusterProcess(CoreProcess):
         totalMatches = []
 
         while i < len(identifiers):
+            logger.debug('Querying Batch {} of {}'.format(ceil(i/100)+1, ceil(len(identifiers)/100)))
             idArray = '{{{}}}'.format(','.join(identifiers[i:i+step]))
             matches = self.session.query(Record.id, Record.identifiers)\
                 .filter(~Record.id.in_(list(matchedIDs)))\

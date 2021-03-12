@@ -238,19 +238,19 @@ class TestSFRClusterProcess:
         mockRedisCheck.side_effect = [False, True, False]
 
         mockGetBatch = mocker.patch.object(ClusterProcess, 'getRecordBatches')
-        mockGetBatch.side_effect = [[(1, ['4|lcc', '5|test'])], [(2, ['6|ddc'])], []]
+        mockGetBatch.side_effect = [[(1, ['4|lcc', '5|oclc'])], [(2, ['6|ddc'])], []]
 
-        testIDs = testInstance.queryIdens(['1|test', '2|test', '3|test'])
+        testIDs = testInstance.queryIdens(['1|oclc', '2|oclc', '3|oclc'])
 
         assert testIDs == [1, 2]
         mockRedisCheck.assert_has_calls([
-            mocker.call('cluster', '1|test', 'all'),
-            mocker.call('cluster', '2|test', 'all'),
-            mocker.call('cluster', '3|test', 'all')
+            mocker.call('cluster', '1|oclc', 'all'),
+            mocker.call('cluster', '2|oclc', 'all'),
+            mocker.call('cluster', '3|oclc', 'all')
         ])
-        assert set(mockGetBatch.call_args_list[0][0][0]) == set(['1|test', '3|test'])
+        assert set(mockGetBatch.call_args_list[0][0][0]) == set(['1|oclc', '3|oclc'])
         assert mockGetBatch.call_args_list[0][0][1] == set([])
-        assert set(mockGetBatch.call_args_list[1][0][0]) == set(['5|test'])
+        assert set(mockGetBatch.call_args_list[1][0][0]) == set(['5|oclc'])
         assert mockGetBatch.call_args_list[1][0][1] == set([1])
         assert set(mockGetBatch.call_args_list[2][0][0]) == set([])
         assert mockGetBatch.call_args_list[2][0][1] == set([1, 2])

@@ -123,7 +123,7 @@ class TestKMeansModel(object):
             transformer_list=[('place', 'placePipe'), ('publisher', 'pubPipe')],
             transformer_weights={'place': 0.5, 'publisher': 1.0}
         )
-        mockKMeans.assert_called_once_with(n_clusters=1)
+        mockKMeans.assert_called_once_with(n_clusters=1, max_iter=150, n_init=5)
         assert mockPipeline.call_args == mocker.call([('union', 'testUnion'), ('kmeans', 'testKMeans')])
     
     def test_pubProcessor_str(self):
@@ -300,23 +300,20 @@ class TestKMeansModel(object):
 
     def test_cluster_score(self, mocker, testModel):
         mockPipeline = mocker.MagicMock()
-        
-        def fakeGet(self, key):
-            mockGet = mocker.MagicMock()
-            mockGet.inertia_ = 1
-            if key == 'kmeans':
-                return mockGet   
-            return mocker.MagicMock()
+        mockPipeline.fit_transform.return_value = 'testLabels'
 
         mockCreate = mocker.patch.object(KMeansManager, 'createPipeline')
-        mockGetColumns = mocker.patch.object(KMeansManager, 'getDataColumns')
         mockCreate.return_value = mockPipeline
-        mockPipeline.__getitem__ = fakeGet
+        mockGetColumns = mocker.patch.object(KMeansManager, 'getDataColumns')
+        mockSilhouette = mocker.patch('managers.kMeans.silhouette_score')
+        mockSilhouette.return_value = 1
 
         out = testModel.cluster(1, score=True)
         assert out == 1
         mockGetColumns.assert_called_once()
-        mockPipeline.fit.assert_called_once()
+        mockPipeline.set_params.assert_called_once_with(kmeans=None)
+        mockPipeline.fit_transform.assert_called_once()
+        mockSilhouette.assert_called_once()
     
     def test_cluster_predict(self, mocker, testModel):
         mockPipeline = mocker.MagicMock()

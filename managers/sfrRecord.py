@@ -81,13 +81,13 @@ class SFRRecordManager:
         return list(cleanLinks)
 
     def buildEditionStructure(self, records, editions):
-        editionRecs = {}
+        editionRecs = [] 
 
         for editionTuple in editions:
             edYear, recs = editionTuple
-            editionRecs[edYear] = list(filter(None, [
+            editionRecs.append((edYear, list(filter(None, [
                 r if r.uuid in recs else None for r in records
-            ]))
+            ]))))
         
         return editionRecs
 
@@ -96,7 +96,7 @@ class SFRRecordManager:
         
         workData = SFRRecordManager.createEmptyWorkRecord()
         
-        for pubYear, instances in editionRecs.items():
+        for pubYear, instances in editionRecs:
             self.buildEdition(workData, pubYear, instances)
         
         return workData
