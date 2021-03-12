@@ -48,7 +48,7 @@ class ClassifyProcess(CoreProcess):
                 startDateTime = datetime.utcnow() - timedelta(hours=24)
             baseQuery = baseQuery.filter(Record.date_modified > startDateTime)
 
-        windowSize = 100 if (self.ingestLimit and self.ingestLimit > 100) else self.ingestLimit
+        windowSize = 100 if (self.ingestLimit is None or self.ingestLimit > 100) else self.ingestLimit
         for rec in self.windowedQuery(Record, baseQuery, windowSize=windowSize):
             self.frbrizeRecord(rec)
 
