@@ -10,3 +10,4 @@ from .developmentSetup import DevelopmentSetupProcess
 from .s3Files import S3Process
 from .api import APIProcess
 from .muse import MUSEProcess
+from .ingestReport import IngestReportProcess

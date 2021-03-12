@@ -4,6 +4,7 @@
 ### Added
 - Link Details endpoint
 - Redis cache check for cover process
+- Added Ingest Analytics process for output to Smartsheet
 ### Fixed
 - HathiTrust cover process error handling
 - Clustering process on very large groups of records
