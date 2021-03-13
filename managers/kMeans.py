@@ -1,18 +1,20 @@
 from collections import defaultdict
-from math import sqrt
 import re
 import string
 import warnings
 
 import pandas as pd
-import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.exceptions import ConvergenceWarning
+
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class TextSelector(BaseEstimator, TransformerMixin):
@@ -111,11 +113,11 @@ class KMeansManager:
                 .replace('publisher not identified', '')
             cleanStr = re.sub(r'\s+', ' ', cleanStr)
             return cleanStr
-        print('Unable to clean NoneType, returning empty string')
+        logger.debug('Unable to clean NoneType, returning empty string')
         return ''
 
     def createDF(self):
-        print('Generating DataFrame from instance data')
+        logger.info('Generating DataFrame from instance data')
         self.df = pd.DataFrame([
             {
                 'place': i.spatial if i.spatial else '',
@@ -160,20 +162,24 @@ class KMeansManager:
                 endYear = rangeMatches.group(2)
                 pubYears[dateType] = (int(startYear) + int(endYear)) / 2
             elif re.match(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', dateStr):
-                year, month, day = tuple(dateStr.split('-'))
-                pubYears[dateType] = int(year)
+                try:
+                    year, _, _ = tuple(dateStr.split('-'))
+                    pubYears[dateType] = int(year)
+                except ValueError:
+                    logger.warning('Unable to parse date {}'.format(dateStr))
             else:
                 try:
                     dateInt = int(dateStr)
                     pubYears[dateType] = dateInt
                 except ValueError:
+                    logger.warning('Unable to parse date {}'.format(dateStr))
                     pass
 
         for datePref in ['copyright_date', 'publication_date']:
             if datePref in pubYears.keys():
                 return pubYears[datePref]
         
-        print('Unable to locate publication date')
+        logger.debug('Unable to locate publication date')
         return 0
     
     @classmethod
@@ -199,13 +205,13 @@ class KMeansManager:
     def generateClusters(self):
         print('Generating Clusters from instances')
         try:
-            print('Calculating number of clusters, max {}'.format(
+            logger.info('Calculating number of clusters, max {}'.format(
                 self.maxK
             ))
             self.getK(2, self.maxK)
-            print('Setting K to {}'.format(self.k))
+            logger.info('Setting K to {}'.format(self.k))
         except ZeroDivisionError:
-            print('Single instance found setting K to 1')
+            logger.info('Single instance found setting K to 1')
             self.k = 1
         
         try:
@@ -231,12 +237,12 @@ class KMeansManager:
         while True:
             middle = int((stop + start)/2)
 
-            print(start, stop, middle)
+            logger.info('Getting Scores for Start: {}, Stop: {}, Middle: {}'.format(start, stop, middle))
 
             try:
                 if start != prevStart: startScore = self.cluster(start, score=True) 
             except (ValueError, ConvergenceWarning):
-                print('Exceeded number of distinct clusters, break')
+                logger.debug('Exceeded number of distinct clusters, break')
                 start = 1
                 startScore = 1
                 break
@@ -244,7 +250,7 @@ class KMeansManager:
             try:
                 if stop != prevStop: stopScore = self.cluster(stop, score=True) 
             except (ValueError, ConvergenceWarning):
-                print('Exceeded number of distinct clusters, break')
+                logger.debug('Exceeded number of distinct clusters, break')
                 stop = middle
                 continue
 
@@ -263,7 +269,7 @@ class KMeansManager:
 
     def cluster(self, k, score=False):
         self.currentK = k
-        print('Generating cluster for k={}'.format(k))
+        logger.debug('Generating cluster for k={}'.format(k))
         columnsWithData = self.getDataColumns()
         pipeline = self.createPipeline(columnsWithData)
 
@@ -274,7 +280,6 @@ class KMeansManager:
             X = pipeline.fit_transform(self.df)
             return silhouette_score(X, labels)
         else:
-            print('Returning model prediction')
             return labels
 
     def getDataColumns(self):
@@ -290,12 +295,12 @@ class KMeansManager:
     
     def parseEditions(self):
         eds = []
-        print('Generating editions from clusters')
+        logger.info('Generating editions from clusters')
         for clust in dict(self.clusters):
             yearEds = defaultdict(list)
-            print('Parsing cluster {}'.format(clust))
+            logger.debug('Parsing cluster {}'.format(clust))
             for ed in self.clusters[clust]:
-                print('Adding instance to {} edition'.format(
+                logger.debug('Adding instance to {} edition'.format(
                     ed.iloc[0]['pubDate']
                 ))
                 yearEds[ed.iloc[0]['pubDate']].append(ed.iloc[0]['uuid'])

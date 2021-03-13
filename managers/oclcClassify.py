@@ -1,4 +1,5 @@
 from lxml import etree
+import pycld2
 from polyglot.detect import Detector
 from polyglot.detect.base import UnknownLanguage
 import re
@@ -231,9 +232,7 @@ class ClassifyManager:
     def getStrLang(string):
         try:
             langCode = Detector(string).language.code
-        except UnknownLanguage:
-            langCode = 'unk'
-        except AttributeError:
+        except (UnknownLanguage, AttributeError, pycld2.error):
             langCode = 'unk'
         
         return langCode
