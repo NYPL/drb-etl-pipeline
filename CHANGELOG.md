@@ -7,6 +7,8 @@
 ### Fixed
 - HathiTrust cover process error handling
 - Clustering process on very large groups of records
+- UTF-8 error in language parsing module
+- Unexpected number of elements in date parsing during clustering process
 
 ## 2021-03-05 -- v0.3.0
 ### Added
