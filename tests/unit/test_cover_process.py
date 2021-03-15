@@ -36,7 +36,7 @@ class TestCoverProcess:
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
-        mockSubQuery.select_from().join().distinct().filter.return_value = '{\'sub\'}'
+        mockSubQuery.select_from().join().distinct().filter.return_value = ['sub']
 
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
@@ -45,7 +45,7 @@ class TestCoverProcess:
         testQuery = testProcess.generateQuery()
 
         assert testQuery == 'testQuery'
-        assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_('{\'sub\'}'))
+        assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_(['sub']))
         testProcess.session.query.assert_has_calls([
             mocker.call(Edition), mocker.call('edition_id')
         ])
@@ -56,7 +56,7 @@ class TestCoverProcess:
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
-        mockSubQuery.select_from().join().distinct().filter.return_value = '{\'sub\'}'
+        mockSubQuery.select_from().join().distinct().filter.return_value = ['sub'] 
 
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
@@ -66,7 +66,7 @@ class TestCoverProcess:
         testQuery = testProcess.generateQuery()
 
         assert testQuery == 'testQuery'
-        assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_('{\'sub\'}'))
+        assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_(['sub']))
         testDate = datetime.datetime.strptime('2020-01-01', '%Y-%m-%d')
         assert mockQuery.filter.call_args[0][1].compare(Edition.date_modified >= testDate)
 
@@ -75,7 +75,7 @@ class TestCoverProcess:
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
-        mockSubQuery.select_from().join().distinct().filter.return_value = '{\'sub\'}'
+        mockSubQuery.select_from().join().distinct().filter.return_value = ['sub']
 
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
@@ -90,7 +90,7 @@ class TestCoverProcess:
         testQuery = testProcess.generateQuery()
 
         assert testQuery == 'testQuery'
-        assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_('{\'sub\'}'))
+        assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_(['sub']))
         assert mockQuery.filter.call_args[0][1].compare(Edition.date_modified >= testQueryDate)
 
     def test_fetchEditionCovers(self, testProcess, mocker):
