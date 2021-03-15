@@ -19,14 +19,17 @@ class IngestReportProcess(CoreProcess):
         # Smartsheet SDK
         self.smartsheet = SmartSheetManager()
         self.smartsheet.createClient()
+        print(self.smartsheet.client.Server.server_info())
+        # raise Exception
 
     def runProcess(self):
         self.generateReport()
 
     def generateReport(self):
-        periodStart = datetime.utcnow() - timedelta(days=1)
+        now = datetime.utcnow()
+        periodStart = now - timedelta(days=1)
 
-        dailyRow = {'Date': {'value': periodStart.strftime('%Y-%m-%d')}}
+        dailyRow = {'Date': {'value': now.strftime('%Y-%m-%d')}}
         for table in [Work, Edition, Item, Record]:
             totals = self.getTableCounts(table, periodStart)
             dailyRow = {**dailyRow, **totals}

@@ -32,8 +32,7 @@ class SmartSheetManager:
             colID = columns[name]
 
             cellValue = {'column_id': colID, 'value': value['value']}
-
-            if value.get('anomaly', False): cellValue['format'] = ',,,,,,,,,28,,,,,,,'
+            cellValue['format'] = ',,,,,,,,,28,,,,,,,' if value.get('anomaly', False) else ',,,,,,,,,3,,,,,,,'
 
             newRow.cells.append(cellValue)
 

@@ -23,10 +23,10 @@ class TestIngestReportProcess:
 
     def test_generateReport(self, testInstance, mocker):
         now = datetime.utcnow()
+        startTime = now - timedelta(days=1)
         mockDate = mocker.patch('processes.ingestReport.datetime')
         mockDate.utcnow.return_value = now 
-        testDate = now - timedelta(days=1)
-        testDateStr = testDate.strftime('%Y-%m-%d')
+        nowStr = now.strftime('%Y-%m-%d')
 
         mockGetTable = mocker.patch.object(IngestReportProcess, 'getTableCounts')
         mockGetTable.side_effect = [
@@ -36,11 +36,11 @@ class TestIngestReportProcess:
         testInstance.generateReport()
 
         mockGetTable.assert_has_calls([
-            mocker.call(Work, testDate), mocker.call(Edition, testDate),
-            mocker.call(Item, testDate), mocker.call(Record, testDate)
+            mocker.call(Work, startTime), mocker.call(Edition, startTime),
+            mocker.call(Item, startTime), mocker.call(Record, startTime)
         ])
         testInstance.smartsheet.insertRow.assert_called_once_with(
-            {'Date': {'value': testDateStr}, 'Works': 'test', 'Editions': 'test', 'Items': 'test', 'Records': 'test'}
+            {'Date': {'value': nowStr}, 'Works': 'test', 'Editions': 'test', 'Items': 'test', 'Records': 'test'}
         )
 
     def test_getTableCounts(self, testInstance, mocker):

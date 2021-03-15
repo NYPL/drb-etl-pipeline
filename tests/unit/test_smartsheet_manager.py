@@ -67,10 +67,10 @@ class TestNYPLApiManager:
         sheetMocks['getColumns'].assert_called_once()
         sheetMocks['getRows'].assert_called_once_with(columnIDs=[2], modifiedSince='testDate')
         mockRow.cells.append.assert_has_calls([
-            mocker.call({'column_id': 1, 'value': 'testDate'}),
-            mocker.call({'column_id': 3, 'value': 10}),
+            mocker.call({'column_id': 1, 'value': 'testDate', 'format': ',,,,,,,,,3,,,,,,,'}),
+            mocker.call({'column_id': 3, 'value': 10, 'format': ',,,,,,,,,3,,,,,,,'}),
             mocker.call({'column_id': 4, 'value': 25, 'format': ',,,,,,,,,28,,,,,,,'}),
-            mocker.call({'column_id': 2, 'value': 1})
+            mocker.call({'column_id': 2, 'value': 1, 'format': ',,,,,,,,,3,,,,,,,'})
         ])
         testInstance.client.Sheets.add_rows.assert_called_once_with(1000, [mockRow])
          
