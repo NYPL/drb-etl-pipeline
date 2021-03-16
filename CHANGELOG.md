@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.3.1
+## 2021-03-16 -- v0.4.0
 ### Added
 - Link Details endpoint
 - Redis cache check for cover process
