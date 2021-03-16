@@ -1,9 +1,6 @@
 name: ETL_Pipeline_Tests
 
 on: 
-  push: 
-    braches:
-      - '*'
   pull_request:
     actions: [ opened ]
 
