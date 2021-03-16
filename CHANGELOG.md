@@ -5,6 +5,7 @@
 - Link Details endpoint
 - Redis cache check for cover process
 - Added Ingest Analytics process for output to Smartsheet
+- Added GHA deployment step to ECS
 ### Fixed
 - HathiTrust cover process error handling
 - Clustering process on very large groups of records
