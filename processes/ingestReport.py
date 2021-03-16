@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import date, timedelta
+from sqlalchemy import func
+from sqlalchemy.dialects.postgresql import DATE
 
 from .core import CoreProcess
 from model import Work, Edition, Item, Record
@@ -19,35 +21,33 @@ class IngestReportProcess(CoreProcess):
         # Smartsheet SDK
         self.smartsheet = SmartSheetManager()
         self.smartsheet.createClient()
-        print(self.smartsheet.client.Server.server_info())
-        # raise Exception
 
     def runProcess(self):
         self.generateReport()
 
     def generateReport(self):
-        now = datetime.utcnow()
-        periodStart = now - timedelta(days=1)
+        ingestDate = date.today() - timedelta(days=1)
 
-        dailyRow = {'Date': {'value': now.strftime('%Y-%m-%d')}}
+        dailyRow = {'Date': {'value': ingestDate.strftime('%Y-%m-%d')}}
         for table in [Work, Edition, Item, Record]:
-            totals = self.getTableCounts(table, periodStart)
+            totals = self.getTableCounts(table, ingestDate)
             dailyRow = {**dailyRow, **totals}
 
         self.smartsheet.insertRow(dailyRow)
 
-    def getTableCounts(self, table, periodStart):
+    def getTableCounts(self, table, ingestPeriod):
         logger.info('Getting Totals for {}'.format(table.__name__))
 
         totalCount = self.session.query(table.id).count()
 
         modifiedCount = self.session.query(table.id)\
-            .filter(table.date_modified > periodStart)\
-            .filter(table.date_created < periodStart)\
+            .filter(func.cast(table.date_modified, DATE) == ingestPeriod)\
+            .filter(func.cast(table.date_created, DATE) < ingestPeriod)\
             .count()
 
         createdCount = self.session.query(table.id)\
-            .filter(table.date_created > periodStart).count()
+            .filter(func.cast(table.date_created, DATE) == ingestPeriod)\
+            .count()
 
         totals = self.setAnomalyStatus(totalCount, modifiedCount, createdCount)
 
