@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.4.1
+### Fixed
+- Update QA Config file
+
 ## 2021-03-16 -- v0.4.0
 ### Added
 - Link Details endpoint
