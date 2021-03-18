@@ -84,7 +84,7 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'])
+        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
         searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
 
         mockSearch.execute.assert_called_once()
@@ -113,7 +113,7 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'])
+        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
         searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
 
         mockSearch.execute.assert_called_once
@@ -142,7 +142,7 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'])
+        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
         searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
 
         mockSearch.execute.assert_called_once
@@ -171,7 +171,7 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'])
+        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
         searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
 
         mockSearch.execute.assert_called_once
@@ -200,7 +200,7 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'])
+        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
         searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
 
         mockSearch.execute.assert_called_once
@@ -231,7 +231,7 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'])
+        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
         searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
 
         mockSearch.execute.assert_called_once
@@ -264,7 +264,7 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'])
+        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
         searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
 
     def test_titleQuery(self):
@@ -386,12 +386,12 @@ class TestElasticClient:
         mockApply.return_value = mockSearch
         mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
 
-        filtersAndAggs = ElasticClient.addFilterClausesAndAggregations(mockSearch, [])
+        ElasticClient.addFilterClausesAndAggregations(mockSearch, [], 1)
 
         mockQuery.assert_called_once_with('exists', field='editions.formats')
         mockAgg.assert_called_once_with('filter', exists={'field': 'editions.formats'})
 
-        mockApply.assert_called_once_with(mockSearch, [], ['formatFilter'])
+        mockApply.assert_called_once_with(mockSearch, [], ['formatFilter'], size=1)
         mockApplyAggs.assert_called_once_with(mockSearch, ['formatAggregation'])
 
     def test_addFilterClausesAndAggregations_w_date(self, mocker):
@@ -408,7 +408,7 @@ class TestElasticClient:
         mockApply.return_value = mockSearch
         mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
 
-        filtersAndAggs = ElasticClient.addFilterClausesAndAggregations(mockSearch, [('startYear', 1900)])
+        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('startYear', 1900)], 1)
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
@@ -419,7 +419,7 @@ class TestElasticClient:
             mocker.call('filter', range={'editions.publication_date': 'testRange'})
         ])
 
-        mockApply.assert_called_once_with(mockSearch, [], ['formatFilter', 'dateFilter'])
+        mockApply.assert_called_once_with(mockSearch, [], ['formatFilter', 'dateFilter'], size=1)
         mockApplyAggs.assert_called_once_with(mockSearch, ['formatAggregation', 'dateAggregation'])
 
     def test_addFilterClausesAndAggregations_w_format(self, mocker):
@@ -434,7 +434,7 @@ class TestElasticClient:
         mockApply.return_value = mockSearch
         mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
 
-        filtersAndAggs = ElasticClient.addFilterClausesAndAggregations(mockSearch, [('format', 'test1'), ('format', 'test2')])
+        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('format', 'test1'), ('format', 'test2')], 1)
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
@@ -445,7 +445,7 @@ class TestElasticClient:
             mocker.call('filter', terms={'editions.formats': ['test1', 'test2']})
         ])
 
-        mockApply.assert_called_once_with(mockSearch, [], ['formatFilter', 'displayFilter'])
+        mockApply.assert_called_once_with(mockSearch, [], ['formatFilter', 'displayFilter'], size=1)
         mockApplyAggs.assert_called_once_with(mockSearch, ['formatAggregation', 'displayAggregation'])
 
     def test_addFilterClausesAndAggregations_w_language(self, mocker):
@@ -460,7 +460,7 @@ class TestElasticClient:
         mockApply.return_value = mockSearch
         mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
 
-        filtersAndAggs = ElasticClient.addFilterClausesAndAggregations(mockSearch, [('language', 'Test1')])
+        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('language', 'Test1')], 1)
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
@@ -469,7 +469,7 @@ class TestElasticClient:
             mocker.call('filter', exists={'field': 'editions.formats'}),
         ])
 
-        mockApply.assert_called_once_with(mockSearch, [('language', 'Test1')], ['displayFilter'])
+        mockApply.assert_called_once_with(mockSearch, [('language', 'Test1')], ['displayFilter'], size=1)
         mockApplyAggs.assert_called_once_with(mockSearch, ['displayAggregation'])
 
     def test_addFilterClausesAndAggregations_no_filters(self, mocker):
@@ -482,7 +482,7 @@ class TestElasticClient:
         mockApply.return_value = mockSearch
         mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
 
-        filtersAndAggs = ElasticClient.addFilterClausesAndAggregations(mockSearch, [('showAll', 'true')])
+        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('showAll', 'true')], 1)
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
@@ -491,7 +491,7 @@ class TestElasticClient:
             mocker.call('filter', exists={'field': 'editions.formats'}),
         ])
 
-        mockApply.assert_called_once_with(mockSearch, [], [])
+        mockApply.assert_called_once_with(mockSearch, [], [], size=1)
         mockApplyAggs.assert_called_once_with(mockSearch, [])
 
     def test_geneateDateRange_start_end(self):

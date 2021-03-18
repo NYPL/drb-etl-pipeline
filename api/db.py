@@ -1,8 +1,7 @@
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
-from model import Work, Edition, Item, Link
-from model.postgres.item import ITEM_LINKS
+from model import Work, Edition, Link
 from .utils import APIUtils
 
 class DBClient():
@@ -17,34 +16,23 @@ class DBClient():
 
         return session.query(Work)\
             .join(Edition)\
-            .join(Item, ITEM_LINKS, Link)\
             .filter(Work.uuid.in_(uuids), Edition.id.in_(editionIds))\
             .all()
 
     def fetchSingleWork(self, uuid):
         session = sessionmaker(bind=self.engine)()
 
-        return session.query(Work)\
-            .join(Edition)\
-            .join(Item, ITEM_LINKS, Link)\
-            .filter(Work.uuid == uuid).first()
+        return session.query(Work).filter(Work.uuid == uuid).first()
 
     def fetchSingleEdition(self, editionID, showAll=False):
         session = sessionmaker(bind=self.engine)()
 
-        return session.query(Edition)\
-            .outerjoin(Item, ITEM_LINKS, Link)\
-            .filter(Edition.id == editionID).first()
+        return session.query(Edition).filter(Edition.id == editionID).first()
 
     def fetchSingleLink(self, linkID):
         session = sessionmaker(bind=self.engine)()
 
-        return session.query(Link)\
-            .join(ITEM_LINKS, Item)\
-            .join(Edition)\
-            .join(Work)\
-            .filter(Link.id == linkID)\
-            .first()
+        return session.query(Link).filter(Link.id == linkID).first()
 
     def fetchRowCounts(self):
         session = sessionmaker(bind=self.engine)()
