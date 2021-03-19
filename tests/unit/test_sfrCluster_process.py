@@ -25,7 +25,7 @@ class TestSFRClusterProcess:
 
     @pytest.fixture
     def testRecord(self, mocker):
-        return mocker.MagicMock(id=1, identifiers=['1|test'], uuid='testUUID')
+        return mocker.MagicMock(id=1, title='Test', identifiers=['1|test'], uuid='testUUID')
 
     def test_runProcess_daily(self, testInstance, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'clusterRecords')
@@ -130,50 +130,62 @@ class TestSFRClusterProcess:
         mockClose.assert_called_once
 
     def test_clusterRecord_w_matching_records(self, testInstance, testRecord, mocker):
-        mockFindMatching = mocker.patch.object(ClusterProcess, 'findAllMatchingRecords')
-        mockFindMatching.return_value = ['3|test']
-        mockClusterMatched = mocker.patch.object(ClusterProcess, 'clusterMatchedRecords')
-        mockClusterMatched.return_value = (['ed1', 'ed2'], ['inst1', 'inst2', 'inst3'])
-        mockCreateFromEds = mocker.patch.object(ClusterProcess, 'createWorkFromEditions')
-        mockCreateFromEds.return_value = 'testDBWork'
-        mockIndexInES = mocker.patch.object(ClusterProcess, 'indexWorkInElasticSearch')
-        mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
+        clusterMocks = mocker.patch.multiple(ClusterProcess,
+            tokenizeTitle=mocker.DEFAULT,
+            findAllMatchingRecords=mocker.DEFAULT,
+            clusterMatchedRecords=mocker.DEFAULT,
+            createWorkFromEditions=mocker.DEFAULT,
+            indexWorkInElasticSearch=mocker.DEFAULT,
+            commitChanges=mocker.DEFAULT
+        )
+        clusterMocks['findAllMatchingRecords'].return_value = ['3|test']
+        clusterMocks['clusterMatchedRecords'].return_value = (['ed1', 'ed2'], ['inst1', 'inst2', 'inst3'])
+        clusterMocks['createWorkFromEditions'].return_value = 'testDBWork'
+        clusterMocks['tokenizeTitle'].return_value = set(['test', 'title'])
 
         mockSession = mocker.MagicMock()
         testInstance.session = mockSession
         testInstance.clusterRecord(testRecord)
 
-        mockFindMatching.assert_called_once_with(['1|test'])
-        mockClusterMatched.assert_called_once_with(['3|test'])
-        mockCreateFromEds.assert_called_once_with(
+        clusterMocks['tokenizeTitle'].assert_called_once_with('Test')
+        assert testInstance.matchTitleTokens == set(['test', 'title'])
+        clusterMocks['findAllMatchingRecords'].assert_called_once_with(['1|test'])
+        clusterMocks['clusterMatchedRecords'].assert_called_once_with(['3|test'])
+        clusterMocks['createWorkFromEditions'].assert_called_once_with(
             ['ed1', 'ed2'], ['inst1', 'inst2', 'inst3']
         )
-        mockIndexInES.assert_called_once_with('testDBWork')
+        clusterMocks['indexWorkInElasticSearch'].assert_called_once_with('testDBWork')
         mockSession.flush.assert_called_once()
         mockSession.query.assert_called_once()
-        mockCommit.assert_called_once()
+        clusterMocks['commitChanges'].assert_called_once()
 
     def test_clusterRecord_wo_matching_records(self, testInstance, testRecord, mocker):
-        mockFindMatching = mocker.patch.object(ClusterProcess, 'findAllMatchingRecords')
-        mockFindMatching.return_value = []
-        mockClusterMatched = mocker.patch.object(ClusterProcess, 'clusterMatchedRecords')
-        mockClusterMatched.return_value = (['ed1'], ['inst1'])
-        mockCreateFromEds = mocker.patch.object(ClusterProcess, 'createWorkFromEditions')
-        mockCreateFromEds.return_value = 'testDBWork'
-        mockIndexInES = mocker.patch.object(ClusterProcess, 'indexWorkInElasticSearch')
-        mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
+        clusterMocks = mocker.patch.multiple(ClusterProcess,
+            tokenizeTitle=mocker.DEFAULT,
+            findAllMatchingRecords=mocker.DEFAULT,
+            clusterMatchedRecords=mocker.DEFAULT,
+            createWorkFromEditions=mocker.DEFAULT,
+            indexWorkInElasticSearch=mocker.DEFAULT,
+            commitChanges=mocker.DEFAULT
+        )
+        clusterMocks['findAllMatchingRecords'].return_value = []
+        clusterMocks['clusterMatchedRecords'].return_value = (['ed1'], ['inst1'])
+        clusterMocks['createWorkFromEditions'].return_value = 'testDBWork'
+        clusterMocks['tokenizeTitle'].return_value = set(['test', 'title'])
 
         mockSession = mocker.MagicMock()
         testInstance.session = mockSession
         testInstance.clusterRecord(testRecord)
 
-        mockFindMatching.assert_called_once_with(['1|test'])
-        mockClusterMatched.assert_called_once_with([1])
-        mockCreateFromEds.assert_called_once_with(['ed1'], ['inst1'])
-        mockIndexInES.assert_called_once_with('testDBWork')
+        clusterMocks['tokenizeTitle'].assert_called_once_with('Test')
+        assert testInstance.matchTitleTokens == set(['test', 'title'])
+        clusterMocks['findAllMatchingRecords'].assert_called_once_with(['1|test'])
+        clusterMocks['clusterMatchedRecords'].assert_called_once_with([1])
+        clusterMocks['createWorkFromEditions'].assert_called_once_with(['ed1'], ['inst1'])
+        clusterMocks['indexWorkInElasticSearch'].assert_called_once_with('testDBWork')
         mockSession.flush.assert_called_once()
         mockSession.query.assert_called_once()
-        mockCommit.assert_called_once()
+        clusterMocks['commitChanges'].assert_called_once()
 
     def test_clusterMatchedRecords(self, testInstance, mocker):
         mockMLModel = mocker.MagicMock()
@@ -218,42 +230,34 @@ class TestSFRClusterProcess:
         mockManagerInst.assert_called_once_with('testSession')
         mockRecManager.buildWork.assert_called_once_with('testInstances', 'testEditions')
         mockRecManager.saveWork.assert_called_once_with('testWorkData')
-        mockRecManager.assert_called_once
+        mockRecManager.mergeRecords.assert_called_once()
 
-    def test_queryIdens_no_queryable_ids(self, testInstance, mocker):
-        mockRedisCheck = mocker.patch.object(ClusterProcess, 'checkSetRedis')
-        mockRedisCheck.side_effect = [True, True, True]
+    def test_queryIdens_success(self, testInstance, mocker):
+        mockGetBatches = mocker.patch.object(ClusterProcess, 'getRecordBatches')
+        mockGetBatches.side_effect = [
+            [('title1', 1, ['1|isbn']), ('title2', 2, ['2|oclc', '3|other'])],
+            [('title3', 3, ['4|oclc'])],
+            []
+        ]
+
+        mockCompareTitles = mocker.patch.object(ClusterProcess, 'compareTitleTokens')
+        mockCompareTitles.return_value = True
 
         testIDs = testInstance.queryIdens(['1|test', '2|test', '3|test'])
 
-        assert testIDs == []
-        mockRedisCheck.assert_has_calls([
-            mocker.call('cluster', '1|test', 'all'),
-            mocker.call('cluster', '2|test', 'all'),
-            mocker.call('cluster', '3|test', 'all')
-        ])
-
-    def test_queryIdens_no_matching_ids_found(self, testInstance, mocker):
-        mockRedisCheck = mocker.patch.object(ClusterProcess, 'checkSetRedis')
-        mockRedisCheck.side_effect = [False, True, False]
-
-        mockGetBatch = mocker.patch.object(ClusterProcess, 'getRecordBatches')
-        mockGetBatch.side_effect = [[(1, ['4|lcc', '5|oclc'])], [(2, ['6|ddc'])], []]
-
-        testIDs = testInstance.queryIdens(['1|oclc', '2|oclc', '3|oclc'])
-
         assert testIDs == [1, 2]
-        mockRedisCheck.assert_has_calls([
-            mocker.call('cluster', '1|oclc', 'all'),
-            mocker.call('cluster', '2|oclc', 'all'),
-            mocker.call('cluster', '3|oclc', 'all')
-        ])
-        assert set(mockGetBatch.call_args_list[0][0][0]) == set(['1|oclc', '3|oclc'])
-        assert mockGetBatch.call_args_list[0][0][1] == set([])
-        assert set(mockGetBatch.call_args_list[1][0][0]) == set(['5|oclc'])
-        assert mockGetBatch.call_args_list[1][0][1] == set([1])
-        assert set(mockGetBatch.call_args_list[2][0][0]) == set([])
-        assert mockGetBatch.call_args_list[2][0][1] == set([1, 2])
+        assert mockGetBatches.call_count == 3
+        mockCompareTitles.assert_called_once_with('title3')
+
+    def test_queryIdens_exceed_cluster_threshold(self, testInstance, mocker):
+        mockGetBatch = mocker.patch.object(ClusterProcess, 'getRecordBatches')
+        mockGetBatch.side_effect = [
+            [('title{}'.format(i), i, ['{}|test'.format(i)]) for i in range(10001)],
+            []
+        ]
+
+        with pytest.raises(Exception):
+            testInstance.queryIdens(['1|oclc', '2|oclc', '3|oclc'])
 
     def test_getRecordBatches(self, testInstance, mocker):
         testInstance.session = mocker.MagicMock()

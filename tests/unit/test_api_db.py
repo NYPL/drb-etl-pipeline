@@ -29,7 +29,7 @@ class TestDBClient:
         mockMaker.return_value = mockCreator
         mockSession = mocker.MagicMock()
         mockCreator.return_value = mockSession
-        mockSession.query().join().join().filter().all.return_value = ['work1', 'work3']
+        mockSession.query().join().filter().all.return_value = ['work1', 'work3']
 
         mockFlatten = mocker.patch.object(APIUtils, 'flatten')
         mockFlatten.return_value = [1, 2, 3]
@@ -41,7 +41,7 @@ class TestDBClient:
         assert workResult == ['work1', 'work3']
         mockMaker.assert_called_once_with(bind=testInstance.engine)
         mockCreator.assert_called_once()
-        mockSession.query().join().join().filter().all.assert_called_once()
+        mockSession.query().join().filter().all.assert_called_once()
 
     def test_fetchSingleWork(self, testInstance, mocker):
         mockCreator = mocker.MagicMock()
@@ -49,14 +49,14 @@ class TestDBClient:
         mockMaker.return_value = mockCreator
         mockSession = mocker.MagicMock()
         mockCreator.return_value = mockSession
-        mockSession.query().join().join().filter().first.return_value = 'testWork'
+        mockSession.query().filter().first.return_value = 'testWork'
 
         workResult = testInstance.fetchSingleWork('uuid')
 
         assert workResult == 'testWork'
         mockMaker.assert_called_once_with(bind=testInstance.engine)
         mockCreator.assert_called_once()
-        mockSession.query().join().join().filter().first.assert_called_once()
+        mockSession.query().filter().first.assert_called_once()
 
     def test_fetchSingleEdition(self, testInstance, mocker):
         mockCreator = mocker.MagicMock()
@@ -64,14 +64,14 @@ class TestDBClient:
         mockMaker.return_value = mockCreator
         mockSession = mocker.MagicMock()
         mockCreator.return_value = mockSession
-        mockSession.query().outerjoin().filter().first.return_value = 'testEdition'
+        mockSession.query().filter().first.return_value = 'testEdition'
 
         editionResult = testInstance.fetchSingleEdition('editionID')
 
         assert editionResult == 'testEdition'
         mockMaker.assert_called_once_with(bind=testInstance.engine)
         mockCreator.assert_called_once()
-        mockSession.query().outerjoin().filter().first.assert_called_once()
+        mockSession.query().filter().first.assert_called_once()
 
     def test_fetchSingleLink(self, testInstance, mocker):
         mockCreator = mocker.MagicMock()
@@ -79,14 +79,14 @@ class TestDBClient:
         mockMaker.return_value = mockCreator
         mockSession = mocker.MagicMock()
         mockCreator.return_value = mockSession
-        mockSession.query().join().join().join().filter().first.return_value = 'testLink'
+        mockSession.query().filter().first.return_value = 'testLink'
 
         editionResult = testInstance.fetchSingleLink('linkID')
 
         assert editionResult == 'testLink'
         mockMaker.assert_called_once_with(bind=testInstance.engine)
         mockCreator.assert_called_once()
-        mockSession.query().join().join().join().filter().first.assert_called_once()
+        mockSession.query().filter().first.assert_called_once()
 
     def test_fetchRowCounts(self, testInstance, testCountQuery, mocker):
         mockCreator = mocker.MagicMock()

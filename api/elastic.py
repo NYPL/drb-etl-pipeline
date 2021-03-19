@@ -49,7 +49,7 @@ class ElasticClient():
 
         coreSearch = search.query(Q('bool', must=searchClauses))[startPos:endPos]
 
-        coreSearch = ElasticClient.addFilterClausesAndAggregations(coreSearch, params['filter'])
+        coreSearch = ElasticClient.addFilterClausesAndAggregations(coreSearch, params['filter'], 3)
 
         coreSearch = ElasticClient.addSortClause(coreSearch, params['sort'])
 
@@ -148,7 +148,7 @@ class ElasticClient():
         return query.sort(*sortValues)
     
     @staticmethod
-    def addFilterClausesAndAggregations(query, filterParams):
+    def addFilterClausesAndAggregations(query, filterParams, innerHits):
         dateFilters = list(filter(lambda x: 'year' in x[0].lower(), filterParams))
         languageFilters = list(filter(lambda x: x[0] == 'language', filterParams))
         formatFilters = list(filter(lambda x: x[0] == 'format', filterParams))
@@ -175,7 +175,7 @@ class ElasticClient():
         appliedFilters = list(filter(None, [dateFilter, formatFilter, displayFilter]))
         aggregationFilters = list(filter(None, [dateAggregation, formatAggregation, displayAggregation]))
 
-        query = ElasticClient.applyFilters(query, languageFilters, appliedFilters)
+        query = ElasticClient.applyFilters(query, languageFilters, appliedFilters, size=innerHits)
         ElasticClient.applyAggregations(query, aggregationFilters)
 
         return query
@@ -192,22 +192,22 @@ class ElasticClient():
         return filterRange
 
     @staticmethod
-    def applyFilters(query, languageFilters, appliedFilters):
+    def applyFilters(query, languageFilters, appliedFilters, size=100):
         if len(languageFilters) > 0:
             filters = []
             for i, language in enumerate(languageFilters):
                 langFilter = Q('nested', path='editions.languages', query=Q('term', editions__languages__language=language[1]))
                 filterSet = appliedFilters + [langFilter]
                 if i == 0:
-                    filters.append(Q('nested', path='editions', inner_hits={'size': 100}, query=Q('bool', must=filterSet)))
+                    filters.append(Q('nested', path='editions', inner_hits={'size': size}, query=Q('bool', must=filterSet)))
                 else:
                     filters.append(Q('nested', path='editions', query=Q('bool', must=filterSet)))
             
             query = query.query('bool', must=filters)
         elif len(appliedFilters) > 0:
-            query = query.query('nested', path='editions', inner_hits={'size': 100}, query=Q('bool', must=appliedFilters))
+            query = query.query('nested', path='editions', inner_hits={'size': size}, query=Q('bool', must=appliedFilters))
         else:
-            query = query.query('nested', path='editions', inner_hits={'size': 100}, query=Q('match_all'))
+            query = query.query('nested', path='editions', inner_hits={'size': size}, query=Q('match_all'))
 
         return query
 

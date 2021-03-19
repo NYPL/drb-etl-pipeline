@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 import os
-
+from sqlalchemy import column
 
 from .core import CoreProcess
 from managers import CoverManager
@@ -37,7 +37,7 @@ class CoverProcess(CoreProcess):
     def generateQuery(self):
         baseQuery = self.session.query(Edition)
 
-        subQuery = self.session.query('edition_id')\
+        subQuery = self.session.query(column('edition_id'))\
             .select_from(EDITION_LINKS)\
             .join(Link)\
             .distinct('edition_id')\

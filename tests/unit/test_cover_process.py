@@ -1,5 +1,6 @@
 import datetime
 import pytest
+from sqlalchemy import column
 
 from model import Edition, Link
 from processes import CoverProcess
@@ -46,9 +47,7 @@ class TestCoverProcess:
 
         assert testQuery == 'testQuery'
         assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_(['sub']))
-        testProcess.session.query.assert_has_calls([
-            mocker.call(Edition), mocker.call('edition_id')
-        ])
+        assert testProcess.session.query.call_count == 2
         mockSubQuery.select_from().join().distinct().filter.call_args[0][0].compare(Link.flags['cover'] == 'true')
 
     def test_generateQuery_custom_date(self, testProcess, mocker):

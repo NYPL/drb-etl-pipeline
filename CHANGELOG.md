@@ -1,8 +1,12 @@
 # CHANGELOG
 
 ## unreleased -- v0.4.1
+### Added
+- OCLC API Rate Limit Check in Classify Process
+- Improved clustering process with more accurate date and title checking
 ### Fixed
 - Update QA Config file
+- Removed unecessary SQL queries from record building process
 
 ## 2021-03-16 -- v0.4.0
 ### Added
