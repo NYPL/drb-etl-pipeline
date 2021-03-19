@@ -7,6 +7,7 @@
 ### Fixed
 - Update QA Config file
 - Removed unecessary SQL queries from record building process
+- Updated Queries to be compatible with SQLAlchemy 1.4
 
 ## 2021-03-16 -- v0.4.0
 ### Added

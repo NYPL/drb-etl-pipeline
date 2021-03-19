@@ -37,7 +37,7 @@ class TestCoverProcess:
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
-        mockSubQuery.select_from().join().distinct().filter.return_value = ['sub']
+        mockSubQuery.join().distinct().filter.return_value = ['sub']
 
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
@@ -48,14 +48,14 @@ class TestCoverProcess:
         assert testQuery == 'testQuery'
         assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_(['sub']))
         assert testProcess.session.query.call_count == 2
-        mockSubQuery.select_from().join().distinct().filter.call_args[0][0].compare(Link.flags['cover'] == 'true')
+        mockSubQuery.join().distinct().filter.call_args[0][0].compare(Link.flags['cover'] == 'true')
 
     def test_generateQuery_custom_date(self, testProcess, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
-        mockSubQuery.select_from().join().distinct().filter.return_value = ['sub'] 
+        mockSubQuery.join().distinct().filter.return_value = ['sub'] 
 
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
@@ -74,7 +74,7 @@ class TestCoverProcess:
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
-        mockSubQuery.select_from().join().distinct().filter.return_value = ['sub']
+        mockSubQuery.join().distinct().filter.return_value = ['sub']
 
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
