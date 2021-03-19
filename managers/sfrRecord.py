@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date
 import json
 from Levenshtein import jaro_winkler
@@ -22,20 +22,28 @@ class SFRRecordManager:
 
     def mergeRecords(self):
         existingIDs = {}
-        for edition in self.work.editions:
-            matchedEditions = self.session.query(Edition)\
-                .filter(Edition.dcdw_uuids.overlap(edition.dcdw_uuids))\
-                .all()
 
-            if matchedEditions:
-                useEdition = matchedEditions[0]
+        dcdwUUIDs = set()
+        for edition in self.work.editions:
+            dcdwUUIDs.union(edition.dcdw_uuids)
+
+        matchedEditions = defaultdict(list)
+        for matchedEdition in self.session.query(Edition)\
+            .filter(Edition.dcdw_uuids.overlap(list(dcdwUUIDs))).all():
+            for matchedUUID in matchedEdition.dcdw_uuids:
+                matchedEditions[matchedUUID].append(matchedEdition)
+
+        for edition in self.work.editions:
+            existingEditions = []
+            for dcdwUUID in edition.dcdw_uuids:
+                existingEditions.extend(matchedEditions.get(dcdwUUID, []))
+
+            if len(existingEditions) > 0:
+                useEdition = existingEditions[0]
                 self.work.id = useEdition.work_id
                 edition.id = useEdition.id
-                for otherEd in matchedEditions[1:]:
-                    for otherItem in otherEd.items:
-                        self.session.delete(otherItem)
+                for otherEd in existingEditions[1:]:
                     self.session.delete(otherEd.work)
-                    self.session.delete(otherEd)
                 
             edition.identifiers = self.dedupeIdentifiers(edition.identifiers, existingIDs)
 
@@ -48,21 +56,35 @@ class SFRRecordManager:
         self.work = self.session.merge(self.work)
 
     def dedupeIdentifiers(self, identifiers, existingIDs):
+        queryGroups = defaultdict(list)
         cleanIdentifiers = set()
-        for i in range(len(identifiers)):
-            idTuple = (identifiers[i].identifier, identifiers[i].authority)
-            if (idTuple) in existingIDs.keys():
-                cleanIdentifiers.add(existingIDs[idTuple])
-            else:
-                matchedID = self.session.query(Identifier)\
-                    .filter(Identifier.identifier == idTuple[0])\
-                    .filter(Identifier.authority == idTuple[1])\
-                    .one_or_none()
-                if matchedID:
-                    identifiers[i].id = matchedID.id
 
-                cleanIdentifiers.add(identifiers[i])
-                existingIDs[idTuple] = identifiers[i]
+        for iden in identifiers:
+            if existingIDs.get((iden.authority, iden.identifier), None):
+                cleanIdentifiers.add(existingIDs[(iden.authority, iden.identifier)])
+                continue
+
+            queryGroups[iden.authority].append(iden)
+
+        for authority, identifiers in queryGroups.items():
+            idenNos = {i.identifier: i for i in identifiers}
+
+            for matchedID in self.session.query(Identifier)\
+                .filter(Identifier.identifier.in_(idenNos.keys()))\
+                .filter(Identifier.authority == authority)\
+                .all():
+                try:
+                    newIden = idenNos[matchedID.identifier]
+                    newIden.id = matchedID.id
+                    cleanIdentifiers.add(newIden)
+                    existingIDs[(newIden.authority, newIden.identifier)] = newIden
+                    del idenNos[matchedID.identifier]
+                except KeyError:
+                    pass
+
+            for _, newIden in idenNos.items():
+                cleanIdentifiers.add(newIden)
+                existingIDs[(newIden.authority, newIden.identifier)] = newIden
 
         return list(cleanIdentifiers)
 

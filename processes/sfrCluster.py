@@ -55,6 +55,9 @@ class ClusterProcess(CoreProcess):
 
     def clusterRecord(self, rec):
         logger.info('Clustering {}'.format(rec))
+
+        self.matchTitleTokens = self.tokenizeTitle(rec.title)
+
         matchedIDs = self.findAllMatchingRecords(rec.identifiers)
 
         filterParams = None
@@ -105,11 +108,8 @@ class ClusterProcess(CoreProcess):
     def queryIdens(self, idens):
         matchedIDs = set()
         checkedIdens = set()
-
-        checkIdens = set(filter(None, [
-            i if self.checkSetRedis('cluster', i, 'all') is False else None
-            for i in idens
-        ]))
+        
+        checkIdens = idens
 
         iterations = 0
 
@@ -125,7 +125,12 @@ class ClusterProcess(CoreProcess):
         
             checkIdens = set()
             for match in matches:
-                recID, recIdentifiers = match
+                recTitle, recID, recIdentifiers = match
+
+                if iterations > 0 and self.compareTitleTokens(recTitle):
+                    logger.debug('Matched Title Error: {}'.format(recTitle))
+                    continue
+
                 checkIdens.update(list(filter(
                     lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None and x not in checkedIdens,
                     recIdentifiers)
@@ -133,6 +138,10 @@ class ClusterProcess(CoreProcess):
                 matchedIDs.add(recID)
 
             iterations += 1
+
+        if len(matchedIDs) > 10000:
+            logger.info(matchedIDs)
+            raise Exception('Clustering Error encountered, unreasonable number of records matched')
 
         return list(matchedIDs)
 
@@ -144,7 +153,7 @@ class ClusterProcess(CoreProcess):
         while i < len(identifiers):
             logger.debug('Querying Batch {} of {}'.format(ceil(i/100)+1, ceil(len(identifiers)/100)))
             idArray = '{{{}}}'.format(','.join(identifiers[i:i+step]))
-            matches = self.session.query(Record.id, Record.identifiers)\
+            matches = self.session.query(Record.title, Record.id, Record.identifiers)\
                 .filter(~Record.id.in_(list(matchedIDs)))\
                 .filter(Record.identifiers.overlap(idArray))\
                 .all()
@@ -159,3 +168,25 @@ class ClusterProcess(CoreProcess):
         elasticManager = SFRElasticRecordManager(dbWork)
         elasticManager.getCreateWork()
         elasticManager.saveWork()
+
+    def compareTitleTokens(self, recTitle):
+        recTitleTokens = self.tokenizeTitle(recTitle)
+
+        if len(self.matchTitleTokens) == 1 and (self.matchTitleTokens <= recTitleTokens) is not True:
+            return True
+        elif len(recTitleTokens) == 1 and (self.matchTitleTokens >= recTitleTokens) is not True:
+            return True
+        elif (len(self.matchTitleTokens) > 1 and len(recTitleTokens) > 1) and len(self.matchTitleTokens & recTitleTokens) < 2:
+            return True
+
+        return False
+
+    @staticmethod
+    def tokenizeTitle(title):
+        lowerTitle = title.lower()
+
+        titleTokens = re.findall(r'(\w+)', lowerTitle)
+
+        titleTokenSet = set(titleTokens) - set(['a', 'an', 'the', 'of'])
+
+        return titleTokenSet

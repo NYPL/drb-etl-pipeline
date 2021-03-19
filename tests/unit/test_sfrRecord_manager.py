@@ -67,17 +67,17 @@ class TestSFRRecordManager:
             mocker.MagicMock(identifiers=['it4'], links=['url5', 'url6'])
         ]
         testInstance.work.editions = [
-            mocker.MagicMock(identifiers=['id1', 'id2'], items=firstEdItems),
-            mocker.MagicMock(identifiers=['id3'], items=secondEdItems)
+            mocker.MagicMock(identifiers=['id1', 'id2'], items=firstEdItems, dcdw_uuids=['uuid1', 'uuid2']),
+            mocker.MagicMock(identifiers=['id3'], items=secondEdItems, dcdw_uuids=['uuid4'])
         ]
         testInstance.work.identifiers = ['wo1', 'wo2', 'wo3']
 
         matchingEditions = [
-            mocker.MagicMock(work_id=1, id='ed1', work='testWork'),
-            mocker.MagicMock(work_id=1, id='ed2', work='testWork'),
-            mocker.MagicMock(work_id=1, id='ed3', work='testWork')
+            mocker.MagicMock(work_id=1, id='ed1', work='testWork', dcdw_uuids=['uuid1']),
+            mocker.MagicMock(work_id=1, id='ed2', work='testWork', dcdw_uuids=['uuid2']),
+            mocker.MagicMock(work_id=1, id='ed3', work='testWork', dcdw_uuids=['uuid3'])
         ]
-        testInstance.session.query().filter().all.side_effect = [matchingEditions, None]
+        testInstance.session.query().filter().all.return_value = matchingEditions
         testInstance.session.merge.return_value = testInstance.work
 
         testInstance.mergeRecords()
@@ -89,11 +89,8 @@ class TestSFRRecordManager:
         assert testInstance.work.editions[0].items[0].identifiers == ['item1']
         assert testInstance.work.editions[1].items[1].links == ['url4']
 
-        testInstance.session.query().filter().all.assert_has_calls([mocker.call(), mocker.call()])
-        testInstance.session.delete.assert_has_calls([
-            mocker.call('testWork'), mocker.call(matchingEditions[1]),
-            mocker.call('testWork'), mocker.call(matchingEditions[2])
-        ])
+        testInstance.session.query().filter().all.assert_called_once()
+        testInstance.session.delete.assert_called_once_with('testWork')
 
         testInstance.session.merge.assert_called_once_with(testInstance.work)
 
@@ -107,18 +104,20 @@ class TestSFRRecordManager:
             mocker.MagicMock(identifier=2, authority='test', id=None),
         ]
 
-        testInstance.session.query().filter().filter().one_or_none.side_effect = [
-            None, mocker.MagicMock(id='id1'), None, mocker.MagicMock(id='id2')
+        testInstance.session.query().filter().filter().all.return_value = [
+            mocker.MagicMock(id=5, identifier=3, authority='test'),
+            mocker.MagicMock(id=6, identifier=1, authority='test'),
         ]
 
         testIdentifiers = testInstance.dedupeIdentifiers(mockIdentifiers, testExistingIDs)
 
         assert len(testExistingIDs) == 4
-        assert testExistingIDs[(3, 'test')] == mockIdentifiers[2]
-        assert testInstance.session.query().filter().filter().one_or_none.call_count == 4
+        assert testExistingIDs[('test', 3)].id == 5
+        assert testExistingIDs[('test', 2)].id == None
         assert len(testIdentifiers) == 4
         assert set([i.identifier for i in testIdentifiers]) == set([1, 2, 3, 4])
-        assert set([getattr(i, 'id', None) for i in testIdentifiers]) == set(['id1', 'id2', None])
+        assert set([getattr(i, 'id', None) for i in testIdentifiers]) == set([5, 6, None])
+        testInstance.session.query().filter().filter().all.assert_called_once()
 
     def test_dedupeLinks(self, testInstance, mocker):
         mockLinks = [
