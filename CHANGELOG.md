@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.4.1
+## 2021-03-19 -- v0.4.1
 ### Added
 - OCLC API Rate Limit Check in Classify Process
 - Improved clustering process with more accurate date and title checking
