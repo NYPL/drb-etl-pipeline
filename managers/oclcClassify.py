@@ -252,7 +252,7 @@ class ClassifyManager:
     @staticmethod
     def getQueryableIdentifiers(identifiers):
         return list(filter(
-            lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn)$', x) != None,
+            lambda x: re.search(r'\|(?:isbn|issn|oclc)$', x) != None,
             identifiers
         ))
 

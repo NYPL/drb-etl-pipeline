@@ -6,6 +6,9 @@ from managers import ClassifyManager
 from managers.oclcClassify import ClassifyError
 from mappings.oclcClassify import ClassifyMapping
 from model import Record
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class ClassifyProcess(CoreProcess):
@@ -56,6 +59,10 @@ class ClassifyProcess(CoreProcess):
                 .filter(Record.id == rec.id)\
                 .update({'cluster_status': False, 'frbr_status': 'complete'}, synchronize_session='fetch')
 
+            if self.checkIncrementerRedis('oclcCatalog', 'API'):
+                logger.warning('Exceeding max requests to OCLC catalog, breaking')
+                break
+
     def frbrizeRecord(self, record):
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
             identifier, idenType = tuple(iden.split('|'))
@@ -74,7 +81,8 @@ class ClassifyProcess(CoreProcess):
                     identifier, idenType, author, record.title
                 )
             except ClassifyError as err:
-                print(err.message)
+                logger.warning('Unable to Classify {}'.format(record))
+                logger.debug(err.message)
 
     def classifyRecordByMetadata(self, identifier, idType, author, title):
         classifier = ClassifyManager(
@@ -107,6 +115,7 @@ class ClassifyProcess(CoreProcess):
             oclcNo, _ = tuple(oclcID.split('|'))
             if self.checkSetRedis('catalog', oclcNo, 'oclc') is False:
                 self.sendCatalogLookupMessage(oclcNo, owiNo)
+                self.setIncrementerRedis('oclcCatalog', 'API')
     
     def sendCatalogLookupMessage(self, oclcNo, owiNo):
         self.sendMessageToQueue(

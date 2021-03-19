@@ -65,3 +65,43 @@ class TestRedisManager:
         testInstance.redisClient.set.assert_called_once_with(
             'testEnv/test/1/test', testInstance.presentTime.strftime('%Y-%m-%dT%H:%M:%S'), ex=604800
         )
+
+    def test_checkIncrementerRedis_false(self, testInstance, mocker):
+        testInstance.redisClient = mocker.MagicMock()
+        testInstance.redisClient.get.return_value = b'1'
+
+        assert testInstance.checkIncrementerRedis('test', 'id') == False
+
+        testInstance.redisClient.get.assert_called_once_with(
+            'test/{}/id'.format(testInstance.presentTime.strftime('%Y-%m-%d'))
+        )
+
+    def test_checkIncrementerRedis_true(self, testInstance, mocker):
+        testInstance.redisClient = mocker.MagicMock()
+        testInstance.redisClient.get.return_value = b'500001'
+
+        assert testInstance.checkIncrementerRedis('test', 'id') == True
+
+        testInstance.redisClient.get.assert_called_once_with(
+            'test/{}/id'.format(testInstance.presentTime.strftime('%Y-%m-%d'))
+        )
+
+    def test_checkIncrementerRedis_none_false(self, testInstance, mocker):
+        testInstance.redisClient = mocker.MagicMock()
+        testInstance.redisClient.get.return_value = None
+
+        assert testInstance.checkIncrementerRedis('test', 'id') == False
+
+        testInstance.redisClient.get.assert_called_once_with(
+            'test/{}/id'.format(testInstance.presentTime.strftime('%Y-%m-%d'))
+        )
+
+    def test_setIncrementerRedis(self, testInstance, mocker):
+        testInstance.redisClient = mocker.MagicMock()
+
+        testInstance.setIncrementerRedis('test', 'id')
+
+        testInstance.redisClient.incr.assert_called_once_with(
+            'test/{}/id'.format(testInstance.presentTime.strftime('%Y-%m-%d'))
+        )
+

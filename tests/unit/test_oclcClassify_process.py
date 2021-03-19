@@ -86,6 +86,9 @@ class TestOCLCClassifyProcess:
         mockWindowed = mocker.patch.object(ClassifyProcess, 'windowedQuery')
         mockWindowed.return_value = mockRecords
 
+        mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
+        mockOCLCCheck.side_effect = [False] * 100
+
         testInstance.classifyRecords()
 
         mockWindowed.assert_called_once()
@@ -103,6 +106,9 @@ class TestOCLCClassifyProcess:
         mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
         mockWindowed = mocker.patch.object(ClassifyProcess, 'windowedQuery')
         mockWindowed.return_value = mockRecords
+
+        mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
+        mockOCLCCheck.side_effect = [False] * 100
 
         testInstance.classifyRecords(startDateTime='testDate')
 
@@ -123,12 +129,15 @@ class TestOCLCClassifyProcess:
         mockWindowed = mocker.patch.object(ClassifyProcess, 'windowedQuery')
         mockWindowed.return_value = mockRecords
 
+        mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
+        mockOCLCCheck.side_effect = [False] * 50 + [True]
+
         testInstance.classifyRecords(full=True)
 
         mockDatetime.utcnow.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockWindowed.assert_called_once()
-        mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
+        mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords[:50]])
 
     def test_classifyRecords_full_batch(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
@@ -141,6 +150,9 @@ class TestOCLCClassifyProcess:
         mockRecords = [mocker.MagicMock(name=i) for i in range(100)]
         mockWindowed = mocker.patch.object(ClassifyProcess, 'windowedQuery')
         mockWindowed.return_value = mockRecords
+
+        mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
+        mockOCLCCheck.side_effect = [False] * 100
 
         testInstance.ingestLimit = 100
         testInstance.classifyRecords(full=True)
@@ -253,21 +265,25 @@ class TestOCLCClassifyProcess:
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
         mockRedisCheck.return_value = False
         mockSendLookup = mocker.patch.object(ClassifyProcess, 'sendCatalogLookupMessage')
+        mockSetRedis = mocker.patch.object(ClassifyProcess, 'setIncrementerRedis')
 
         testInstance.fetchOCLCCatalogRecords(['1|owi', '2|oclc'])
 
         mockRedisCheck.assert_called_once_with('catalog', '2', 'oclc')
         mockSendLookup.assert_called_once_with('2', '1')
+        mockSetRedis.assert_called_once_with('oclcCatalog', 'API')
 
     def test_fetchOCLCCatalogRecords_redis_match(self, testInstance, mocker):
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
         mockRedisCheck.return_value = True
         mockSendLookup = mocker.patch.object(ClassifyProcess, 'sendCatalogLookupMessage')
+        mockSetRedis = mocker.patch.object(ClassifyProcess, 'setIncrementerRedis')
 
         testInstance.fetchOCLCCatalogRecords(['1|test', '2|oclc'])
 
         mockRedisCheck.assert_called_once_with('catalog', '2', 'oclc')
         mockSendLookup.assert_not_called()
+        mockSetRedis.assert_not_called()
     
     def test_sendCatalogLookupMessage(self, testInstance, mocker):
         mockSendMessage = mocker.patch.object(ClassifyProcess, 'sendMessageToQueue')
