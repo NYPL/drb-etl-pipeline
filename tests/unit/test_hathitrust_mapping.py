@@ -20,7 +20,7 @@ class TestHathingMapping:
     @pytest.fixture
     def testRecord_standard(self, mocker):
         return mocker.MagicMock(
-            identifiers=['1|hathi', '2|test'],
+            identifiers=['1|hathi', '2|test', '3,4|test'],
             dates=['Test Publisher [1900]|publication_date', '2000 [other]|copyright_date'],
             contributors=['contr|test'],
             rights='hathitrust|testLic|testReas||summary',
@@ -58,6 +58,7 @@ class TestHathingMapping:
 
         assert testMapping.record.source == 'hathitrust'
         assert testMapping.record.source_id == '1|hathi'
+        assert testMapping.record.identifiers == ['1|hathi', '2|test', '3|test', '4|test']
         assert testMapping.record.dates == ['1900|publication_date', '2000 [other]|copyright_date']
         assert testMapping.record.publisher == 'Test Publisher||'
         assert testMapping.record.contributors == ['Contributor|test']

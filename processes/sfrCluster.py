@@ -152,7 +152,9 @@ class ClusterProcess(CoreProcess):
 
         while i < len(identifiers):
             logger.debug('Querying Batch {} of {}'.format(ceil(i/100)+1, ceil(len(identifiers)/100)))
-            idArray = '{{{}}}'.format(','.join(identifiers[i:i+step]))
+
+            idArray = self.formatIdenArray(identifiers[i:i+step])
+
             matches = self.session.query(Record.title, Record.id, Record.identifiers)\
                 .filter(~Record.id.in_(list(matchedIDs)))\
                 .filter(Record.identifiers.overlap(idArray))\
@@ -190,3 +192,13 @@ class ClusterProcess(CoreProcess):
         titleTokenSet = set(titleTokens) - set(['a', 'an', 'the', 'of'])
 
         return titleTokenSet
+
+    @staticmethod
+    def formatIdenArray(identifiers):
+        idenStrings = []
+        
+        for iden in identifiers:
+            idenStr = '"{}"'.format(iden) if ',' in iden else iden
+            idenStrings.append(idenStr)
+        
+        return '{{{}}}'.format(','.join(idenStrings))

@@ -40,6 +40,17 @@ class HathiMapping(CSVMapping):
         self.record.source = 'hathitrust'
         self.record.source_id = self.record.identifiers[0]
 
+        # Split any identifier that contains a comma into multiple values
+        cleanIdentifiers = []
+        for iden in self.record.identifiers:
+            if ',' in iden:
+                sourceIdens, idenType = iden.split('|')
+                idenList = sourceIdens.split(',')
+                cleanIdentifiers.extend(['{}|{}'.format(i, idenType) for i in idenList])
+            else:
+                cleanIdentifiers.append(iden)
+        self.record.identifiers = cleanIdentifiers
+
         # Parse publisher from publication date
         self.record.dates = self.record.dates or ['']
         pubDate = self.record.dates[0]
@@ -52,7 +63,6 @@ class HathiMapping(CSVMapping):
         publisher = pubDate.replace(pubDateExtract, '').split('|')[0].strip('[], .;')
         self.record.publisher = '{}||'.format(publisher)
 
-        
         # Parse contributers into full names
         self.record.contributors = self.record.contributors or []
         for i, contributor in enumerate(self.record.contributors):
