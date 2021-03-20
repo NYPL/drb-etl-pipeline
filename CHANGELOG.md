@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.4.2
+## Fixed
+- Handle identifiers with commas in record queries and import processes
+
 ## 2021-03-19 -- v0.4.1
 ### Added
 - OCLC API Rate Limit Check in Classify Process
