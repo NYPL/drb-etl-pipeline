@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
@@ -45,3 +46,14 @@ class DBClient():
         """)
 
         return session.execute(countQuery)
+
+    def fetchNewWorks(self, page=0, size=50):
+        session = sessionmaker(bind=self.engine)()
+
+        offset = page * size
+
+        createdSince = datetime.utcnow() - timedelta(days=1)
+
+        baseQuery = session.query(Work).filter(Work.date_created >= createdSince)
+
+        return (baseQuery.count(), baseQuery.offset(offset).limit(size).all())

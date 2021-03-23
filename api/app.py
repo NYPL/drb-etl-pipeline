@@ -4,7 +4,7 @@ import os
 from waitress import serve
 
 from logger import createLog
-from .blueprints import search, work, info, edition, utils, link
+from .blueprints import search, work, info, edition, utils, link, opds
 
 logger = createLog(__name__)
 
@@ -22,6 +22,7 @@ class FlaskAPI:
         self.app.register_blueprint(edition)
         self.app.register_blueprint(utils)
         self.app.register_blueprint(link)
+        self.app.register_blueprint(opds)
 
     def run(self):
         if 'local' in os.environ['ENVIRONMENT']:
