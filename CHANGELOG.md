@@ -1,9 +1,14 @@
 # CHANGELOG
 
+## unreleased -- v0.4.3
+### Fixed
+- Extended API handling of multiple query parameters
+- Resolved bug in search API response that omitted `formats` facet
+
 ## 2021-03-25 -- v0.4.2
-## Added
+### Added
 - Swagger documentation
-## Fixed
+### Fixed
 - Handle identifiers with commas in record queries and import processes
 - Minor bug in handling keyword queries
 

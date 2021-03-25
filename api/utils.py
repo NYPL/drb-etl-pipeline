@@ -9,21 +9,31 @@ class APIUtils():
 
     @staticmethod
     def extractParamPairs(param, pairs):
-        return [
-            tuple(p.split(':')) if len(p.split(':')) > 1 else (param, p)
-            for p in pairs.get(param, [])
-        ]
+        outPairs = []
+
+        for pairStr in pairs.get(param, []):
+            for pair in pairStr.split(','):
+                pairSet = tuple(pair.split(':')) if len(pair.split(':')) > 1 else (param, pair)
+                outPairs.append(pairSet)
+
+        return outPairs
 
     @classmethod
-    def formatAggregationResult(cls, aggregations):
+    def formatAggregationResult(cls, aggregations, parentKey=None):
+        aggs = {}
+
         for key, value in aggregations.items():
             if key == 'buckets':
-                return [
-                    {'value': b['key'], 'count': b['editions_per_language']['doc_count']}
+                aggs[parentKey] = [
+                    {'value': b['key'], 'count': b['editions_per']['doc_count']}
                     for b in value
                 ]
-            elif isinstance(value, dict):
-                return cls.formatAggregationResult(value)
+                return aggs
+            
+            if isinstance(value, dict):
+                aggs = {**aggs, **cls.formatAggregationResult(value, parentKey=key)}
+
+        return aggs
 
     @staticmethod
     def formatPagingOptions(hits):

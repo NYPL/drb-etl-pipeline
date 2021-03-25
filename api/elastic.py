@@ -220,6 +220,9 @@ class ElasticClient():
             currentAgg = 'edition_filter_{}'.format(i)
             lastAgg = lastAgg.bucket(currentAgg, agg)
         
-        lastAgg.bucket('lang_parent', 'nested', path='editions.languages')\
+        lastAgg = lastAgg.bucket('lang_parent', 'nested', path='editions.languages')\
             .bucket('languages', 'terms', **{'field': 'editions.languages.language', 'size': 200})\
-            .bucket('editions_per_language', 'reverse_nested')
+            .bucket('editions_per', 'reverse_nested')
+
+        lastAgg.bucket('formats', 'terms', **{'field': 'editions.formats', 'size': 10})\
+            .bucket('editions_per', 'reverse_nested')
