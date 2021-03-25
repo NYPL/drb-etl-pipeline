@@ -170,26 +170,32 @@ def createPublicationObject(publication, searchResult=True):
 def addFacets(feed, path, facets):
     reducedFacets = APIUtils.formatAggregationResult(facets)
 
-    languageFacet = Facet(metadata={'title': 'Languages'})
+    opdsFacets = []
 
-    for facet in reducedFacets:
-        facetDict = {
-            'href': '{}&language={}'.format(path, facet['value']),
-            'type': 'application/opds+json',
-            'title': facet['value'],
-            'properties': {'numberOfItems': facet['count']}
-        }
+    for facet, options in reducedFacets.items():
+        newFacet = Facet(metadata={'title': facet})
+        facetOptions = [
+            {
+                'href': '{}&filter={}:{}'.format(path, facet, option['value']),
+                'type': 'application/opds+json',
+                'title': option['value'],
+                'properties': {'numberOfItems': option['count']}
+            }
+            for option in options
+        ]
 
-        languageFacet.addLink(facetDict)
+        newFacet.addLinks(facetOptions)
 
-    showAllFacet = Facet(
+        opdsFacets.append(newFacet)
+
+    opdsFacets.append(Facet(
         metadata={'title': 'Show All Editions'},
         links=[
             {'href': '{}&showAll=true'.format(path), 'type': 'application/opds+json', 'title': 'True'},
             {'href': '{}&showAll=false'.format(path), 'type': 'application/opds+json', 'title': 'False'}
         ]
-    )
+    ))
 
-    feed.addFacets([languageFacet, showAllFacet])
+    feed.addFacets(opdsFacets)
 
     

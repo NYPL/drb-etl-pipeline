@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from .metadata import Metadata
 from .link import Link
 
