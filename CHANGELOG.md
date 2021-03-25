@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.4.2
+## 2021-03-25 -- v0.4.2
 ## Added
 - Swagger documentation
 ## Fixed
