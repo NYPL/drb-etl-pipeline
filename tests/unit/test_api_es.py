@@ -597,5 +597,9 @@ class TestElasticClient:
         mockQuery.aggs.bucket.assert_called_once_with('editions', 'baseAgg')
         mockRoot.bucket.assert_has_calls([
             mocker.call('edition_filter_0', 'testAgg'),
-            mocker.call('lang_parent', 'nested', path='editions.languages')
+            mocker.call('lang_parent', 'nested', path='editions.languages'),
+            mocker.call('languages', 'terms', field='editions.languages.language', size=200),
+            mocker.call('editions_per', 'reverse_nested'),
+            mocker.call('formats', 'terms', field='editions.formats', size=10),
+            mocker.call('editions_per', 'reverse_nested')
         ])

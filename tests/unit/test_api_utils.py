@@ -8,11 +8,17 @@ class TestAPIUtils:
         return {
             'editions': {
                 'edition_filter_0': {
-                    'key': 'lang_parent',
-                    'buckets': [
-                        {'key': 'Test1', 'editions_per_language': {'doc_count': 1}},
-                        {'key': 'Test2', 'editions_per_language': {'doc_count': 3}}
-                    ]
+                    'languages': {
+                        'buckets': [
+                            {'key': 'Lang1', 'editions_per': {'doc_count': 1}},
+                            {'key': 'Lang2', 'editions_per': {'doc_count': 3}}
+                        ]
+                    },
+                    'formats': {
+                        'buckets': [
+                            {'key': 'Format1', 'editions_per': {'doc_count': 5}}
+                        ]
+                    }
                 }
             }
         }
@@ -70,11 +76,18 @@ class TestAPIUtils:
         assert testPairs[0] == ('test', 'value')
         assert testPairs[1] == ('test', 'bareValue')
 
-    def test_formatAggregationResult(self, testAggregationResp):
-        languageAggregations = APIUtils.formatAggregationResult(testAggregationResp)
+    def test_extractParamPairs_comma_delimited(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['test:value,bareValue']})
 
-        assert languageAggregations[0] == {'value': 'Test1', 'count': 1}
-        assert languageAggregations[1] == {'value': 'Test2', 'count': 3}
+        assert testPairs[0] == ('test', 'value')
+        assert testPairs[1] == ('test', 'bareValue')
+
+    def test_formatAggregationResult(self, testAggregationResp):
+        testAggregations = APIUtils.formatAggregationResult(testAggregationResp)
+
+        assert testAggregations['languages'][0] == {'value': 'Lang1', 'count': 1}
+        assert testAggregations['languages'][1] == {'value': 'Lang2', 'count': 3}
+        assert testAggregations['formats'][0] == {'value': 'Format1', 'count': 5}
 
     def test_formatPagingOptions(self, testHitObject):
         testPagingOptions = APIUtils.formatPagingOptions(testHitObject)

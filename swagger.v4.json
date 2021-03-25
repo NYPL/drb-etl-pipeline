@@ -447,9 +447,9 @@
             "type": "object",
             "properties": {
                 "facets": {
-                    "type": "array",
+                    "type": "object",
                     "items": {
-                        "$ref": "#/definitions/FacetOption"
+                        "$ref": "#/definitions/FacetObject"
                     }
                 },
                 "paging": {
@@ -634,6 +634,23 @@
                 },
                 "volume": {
                     "type": "string"
+                }
+            }
+        },
+        "FacetObject": {
+            "type": "object",
+            "properties": {
+                "languages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FacetOption"
+                    }
+                },
+                "formats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FacetOption"
+                    }
                 }
             }
         },
