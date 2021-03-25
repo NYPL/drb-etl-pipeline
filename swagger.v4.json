@@ -1,0 +1,882 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "version": "v0.4.2",
+        "title": "Digital Research Books Search API",
+        "description": "RESTful API for the Digital Research Books Project"
+    },
+    "basePath": "/",
+    "schemes": ["http", "https"],
+    "tags": [
+        {
+            "name": "digital-research-books",
+            "description": "Digital Research Books Search API"
+        }
+    ],
+    "paths": {
+        "/search": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "v4 Basic/Advanced Search",
+                "description": "Queries DRB collection via ElasticSearch and returns work objects",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "Query field/term pair (e.g. keyword:baseball or subject:cricket). Valid fields are keyword, title, author and subject",
+                        "required": true,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Sort option field/direction pair (e.g. title:desc). Valid options are: title, author and date",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "filter",
+                        "in": "query",
+                        "description": "Fiter option field/term pair (e.g. language:French). Valid options are date, language and format",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "showAll",
+                        "in": "query",
+                        "description": "Setting that controls display of either all editions (true) or only editions with links (false)",
+                        "required": false,
+                        "type": "boolean"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Sets the page of results to return",
+                        "required": false,
+                        "type": "integer"
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Sets the number of results to return per page",
+                        "required": false,
+                        "type": "integer"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A search result",
+                        "schema": {
+                            "$ref": "#/definitions/SearchResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource was not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/work/{uuid}": {
+           "get": {
+                "tags": ["digital-research-books"],
+                "summary": "v4 Get Single Work",
+                "description": "Return a single work record identified by a UUID",
+                "parameters": [
+                    {
+                        "name": "showAll",
+                        "in": "query",
+                        "description": "If True all editions are returned, if False only editions with readable links are returned",
+                        "type": "boolean",
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A single DRB Work record",
+                        "schema": {
+                            "$ref": "#/definitions/SingleWorkResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource was not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+           } 
+        },
+        "/edition/{id}": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "v4 Get Single Edition",
+                "description": "Return a single edition record identified by an internal id",
+                "parameters": [
+                    {
+                        "name": "showAll",
+                        "in": "query",
+                        "description": "If True all editions are returned, if False only editions with readable links are returned",
+                        "type": "boolean",
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A single DRB Edition record",
+                        "schema": {
+                            "$ref": "#/definitions/SingleEditionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource was not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/link/{id}": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "v4 Get Single Link",
+                "description": "Return a single link record with a nested work to provide context",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "A single DRB Link record",
+                        "schema": {
+                            "$ref": "#/definitions/SingleLinkResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource was not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/utils/languages": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "v4 Get Language Counts",
+                "description": "Returns an array of all languages present in the collection, optionally with total counts for each language",
+                "parameters": [
+                    {
+                        "name": "totals",
+                        "in": "query",
+                        "description": "If True return total counts for languages, if False return only languages",
+                        "type": "boolean",
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A response containing an array of all",
+                        "schema": {
+                            "$ref": "#/definitions/LanguageResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource was not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/utils/counts": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "v4 Get Total Record Counts",
+                "description": "Returns counts of work, edition, item and record totals",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "A response containing an array of all",
+                        "schema": {
+                            "$ref": "#/definitions/CountResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Resource was not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "responseType": {
+                    "type": "string"
+                },
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "CountResponse": {
+            "type": "object",
+            "properties": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "responseType": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "$ref": "#/definitions/CountsObject"
+                    }
+                }
+            }
+        },
+        "LanguageResponse": {
+            "type": "object",
+            "properties": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "responseType": {
+                        "type": "string"
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/LanguageCountObject"
+                        }
+                    }
+                }
+            }
+        },
+        "SearchResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "responseType": {
+                    "type": "string"
+                },
+                "data": {
+                    "$ref": "#/definitions/SearchResults"
+                }
+            }
+        },
+        "SingleEditionResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "responseType": {
+                    "type": "string"
+                },
+                "data": {
+                    "$ref": "#/definitions/EditionObject"
+                }
+            }
+        },
+        "SingleLinkResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "responseType": {
+                    "type": "string"
+                },
+                "data": {
+                    "$ref": "#/definitions/SingleLinkObject"
+                }
+            }
+        },
+        "SingleWorkResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer",
+                    "format": "int32"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "responseType": {
+                    "type": "string"
+                },
+                "data": {
+                    "$ref": "#/definitions/WorkObject"
+                }
+            }
+        },
+        "SearchResults": {
+            "type": "object",
+            "properties": {
+                "facets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FacetOption"
+                    }
+                },
+                "paging": {
+                    "$ref": "#/definitions/PagingOptions"
+                },
+                "totalWorks": {
+                    "type": "integer"
+                },
+                "works": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/WorkObject"
+                    }
+                }
+            }
+        },
+        "FacetOption": {
+            "type": "object",
+            "properties": {
+                "value": {
+                    "type": "string"
+                },
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "PagingOptions": {
+            "type": "object",
+            "properties": {
+                "prev_page_sort": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "next_page_sort": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "AuthorObject": {
+            "type": "object",
+            "properties": {
+                "lcnaf": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "primary": {
+                    "type": "boolean"
+                },
+                "viaf": {
+                    "type": "string"
+                }
+            }
+        },
+        "ContributorObject": {
+            "type": "object",
+            "properties": {
+                "lcnaf": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "viaf": {
+                    "type": "string"
+                }
+            }
+        },
+        "CountsObject": {
+            "type": "object",
+            "properties": {
+                "editions": {
+                    "type": "integer"
+                },
+                "items": {
+                    "type": "integer"
+                },
+                "links": {
+                    "type": "integer"
+                },
+                "records": {
+                    "type": "integer"
+                },
+                "works": {
+                    "type": "integer"
+                }
+            }
+        },
+        "DateObject": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "EditionObject": {
+            "type": "object",
+            "properties": {
+                "alt_titles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ContributorObject"
+                    }
+                },
+                "edition": {
+                    "type": "string"
+                },
+                "edition_id": {
+                    "type": "integer"
+                },
+                "edition_statement": {
+                    "type": "string"
+                },
+                "extent": {
+                    "type": "string"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ItemObject"
+                    }
+                },
+                "languages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LanguageObject"
+                    }
+                },
+                "measurements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MeasurementObject"
+                    }
+                },
+                "publication_date": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "publication_place": {
+                    "type": "string"
+                },
+                "publishers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/PublisherObject"
+                    }
+                },
+                "sub_title": {
+                    "type": "string"
+                },
+                "summary": {
+                    "type": "string"
+                },
+                "table_of_contents": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "volume": {
+                    "type": "string"
+                }
+            }
+        },
+        "ItemObject": {
+            "type": "object",
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ContributorObject"
+                    }
+                },
+                "drm": {
+                    "type": "object"
+                },
+                "item_id": {
+                    "type": "integer"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/LinkObject"
+                    }
+                },
+                "location": {
+                    "type": "string"
+                },
+                "measurements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MeasurementObject"
+                    }
+                },
+                "modified": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "rights": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/RightsObject"
+                    }
+                },
+                "source": {
+                    "type": "string"
+                }
+            }
+        },
+        "LanguageObject": {
+            "type": "object",
+            "properties": {
+                "iso_2": {
+                    "type": "string"
+                },
+                "iso_3": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string"
+                }
+            }
+        },
+        "LanguageCountObject": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "type": "string"
+                },
+                "work_total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "LinkObject": {
+            "type": "object",
+            "properties": {
+                "link_id": {
+                    "type": "integer"
+                },
+                "mediaType": {
+                    "$ref": "#/definitions/MediaType"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri"
+                }
+            }
+        },
+        "MeasurementObject": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "PublisherObject": {
+            "type": "object",
+            "properties": {
+                "lcnaf": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "viaf": {
+                    "type": "string"
+                }
+            }
+        },
+        "RightsObject": {
+            "type": "object",
+            "properties": {
+                "source": {
+                    "type": "string"
+                },
+                "license": {
+                    "type": "string"
+                },
+                "rights_statement": {
+                    "type": "string"
+                },
+                "rights_reason": {
+                    "type": "string"
+                }
+            }
+        },
+        "SingleLinkObject": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "flags": {
+                    "type": "object"
+                },
+                "link_id": {
+                    "type": "integer"
+                },
+                "md5": {
+                    "type": "string"
+                },
+                "media_type": {
+                    "$ref": "#/definitions/MediaType"
+                },
+                "url": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "work": {
+                    "$ref": "#/definitions/WorkObject"
+                }
+            }
+        },
+        "SubjectObject": {
+            "type": "object",
+            "properties": {
+                "authority": {
+                    "type": "string"
+                },
+                "controlNo": {
+                    "type": "string"
+                },
+                "heading": {
+                    "type": "string"
+                }
+            }
+        },
+        "WorkObject": {
+            "type": "object",
+            "properties": {
+                "alt_titles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "authors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/AuthorObject"
+                    }
+                },
+                "contributors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ContributorObject"
+                    }
+                },
+                "dates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/DateObject"
+                    }
+                },
+                "editions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/EditionObject"
+                    }
+                },
+                "measurements": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/MeasurementObject"
+                    }
+                },
+                "medium": {
+                    "type": "string"
+                },
+                "series": {
+                    "type": "string"
+                },
+                "series_position": {
+                    "type": "integer"
+                },
+                "sub_title": {
+                    "type": "string"
+                },
+                "subjects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/SubjectObject"
+                    }
+                },
+                "title": {
+                    "type": "string"
+                },
+                "uuid": {
+                    "type": "string",
+                    "format": "uuid"
+                }
+            }
+        },
+        "MediaType": {
+            "type": "string",
+            "enum": ["text/html", "application/pdf", "application/epub+zip", "application/epub+xml", "application/webpub+json", "image/jpeg", "image/png"]
+        }
+    }
+}
