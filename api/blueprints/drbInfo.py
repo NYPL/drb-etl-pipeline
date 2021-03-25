@@ -1,5 +1,4 @@
-from flask import Blueprint, jsonify
-import os
+from flask import Blueprint, url_for, redirect
 
 from logger import createLog
 
@@ -12,7 +11,4 @@ info = Blueprint('info', __name__, url_prefix='/')
 def apiInfo():
     logger.debug('Status check 200 OK on /')
 
-    return (
-        jsonify({'environment': os.environ['ENVIRONMENT'], 'status': 'RUNNING'}),
-        200
-    )
+    return redirect(url_for('flasgger.apidocs'))

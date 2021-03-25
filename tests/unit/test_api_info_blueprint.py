@@ -1,7 +1,9 @@
 from flask import Flask
+from flasgger import Swagger
+import json
 import pytest
 
-from api.blueprints.drbInfo import apiInfo
+from api.blueprints.drbInfo import info
 
 
 class TestInfoBlueprint:
@@ -9,8 +11,12 @@ class TestInfoBlueprint:
         mocker.patch.dict('os.environ', {'ENVIRONMENT': 'test'})
 
         flaskApp = Flask('test')
+        flaskApp.testing = True
+        Swagger(flaskApp, template=json.load(open('swagger.v4.json', 'r')))
+        flaskApp.register_blueprint(info)
+        
+        testClient = flaskApp.test_client()
+        apiResp = testClient.get('/', follow_redirects=True)
 
-        with flaskApp.test_request_context('/?testing=true'):
-            apiResp, _ = apiInfo()
-            assert apiResp.status_code == 200
-            assert apiResp.get_json() == {'environment': 'test', 'status': 'RUNNING'}
+        assert apiResp.status_code == 200
+        assert apiResp.mimetype == 'text/html'

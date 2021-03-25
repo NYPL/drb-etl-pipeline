@@ -1,5 +1,7 @@
+from flasgger import Swagger
 from flask import Flask
 from flask_cors import CORS
+import json
 import os
 from waitress import serve
 
@@ -13,6 +15,7 @@ class FlaskAPI:
     def __init__(self, client, dbEngine):
         self.app = Flask(__name__)
         CORS(self.app)
+        Swagger(self.app, template=json.load(open('swagger.v4.json', 'r')))
         self.app.config['ES_CLIENT'] = client
         self.app.config['DB_CLIENT'] = dbEngine
 

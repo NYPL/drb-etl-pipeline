@@ -28,7 +28,7 @@ class ElasticClient():
 
         searchClauses = []
         for field, query in params['query']:
-            if field is None or field == 'keyword':
+            if field is None or field in ['keyword', 'query']:
                 searchClauses.append(Q('bool',
                     should=[
                         ElasticClient.titleQuery(query),
