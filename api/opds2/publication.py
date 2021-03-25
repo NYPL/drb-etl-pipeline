@@ -1,7 +1,9 @@
 from collections import defaultdict
 
+from model import Work, Edition
 from .metadata import Metadata
 from .link import Link
+from .image import Image
 
 class Publication:
     METADATA_FIELDS = [
@@ -13,11 +15,12 @@ class Publication:
         'collection', 'position', 'alternate', 'isbn', 'locationCreated'
     ]
 
-    def __init__(self, metadata={}, links=[]):
+    def __init__(self, metadata={}, links=[], images=[]):
         metadata['@type'] = 'http://schema.org/Book'
 
         self.metadata = Metadata(**metadata)
         self.links = [Link(**link) for link in links]
+        self.images = [Image(**image) for image in images]
         self.editions = []
         self.type = 'application/opds-publication+json'
 
@@ -33,6 +36,15 @@ class Publication:
             link = Link(**link)
 
         self.links.append(link)
+
+    def addImages(self, images):
+        for image in images: self.addImage(image)
+
+    def addImage(self, image):
+        if isinstance(image, dict):
+            image = Image(**image)
+
+        self.images.append(image)
 
     def addEditions(self, editions):
         for edition in editions: self.addEdition(edition)
@@ -71,6 +83,9 @@ class Publication:
         self.addLink({'href': '/opds/publication/{}'.format(workRecord.uuid), 'rel': 'self', 'type': 'application/opds-publication+json'})
         self.setPreferredLink(workRecord.editions)
 
+        # Covers
+        self.findAndAddCover(workRecord)
+
         # If not in search context, add editions block
         if searchResult is False:
             self.parseEditions(workRecord.editions)
@@ -102,6 +117,9 @@ class Publication:
         # Created/Modified
         self.metadata.addField('created', editionRecord.date_created)
         self.metadata.addField('modified', editionRecord.date_modified)
+
+        # Covers
+        self.findAndAddCover(editionRecord)
 
         # Acquisition Links
         for item in editionRecord.items:
@@ -143,10 +161,27 @@ class Publication:
 
         self.addLink({'href': firstLink.url, 'type': firstLink.media_type, 'rel': 'http://opds-spec.org/acquisition/open-access'})
 
+    def findAndAddCover(self, record):
+        editions = [record] if isinstance(record, Edition) else [e for e in record.editions]
+
+        for edition in editions:
+            for link in edition.links:
+                if link.media_type in ['image/jpeg', 'image/png']:
+                    self.addImage({
+                        'href': link.url,
+                        'type': link.media_type
+                    })
+                    return
+
     def __dir__(self):
-        return ['type', 'metadata', 'links', 'editions']
+        return ['type', 'metadata', 'links', 'editions', 'images']
 
     def __iter__(self):
+        '''
+        if len(self.images) == 0:
+            raise OPDS2PublicationException('Publications require an image')
+        '''
+
         for attr in dir(self):
             component = getattr(self, attr)
             
