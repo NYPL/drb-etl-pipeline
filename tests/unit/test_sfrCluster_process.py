@@ -262,6 +262,9 @@ class TestSFRClusterProcess:
     def test_getRecordBatches(self, testInstance, mocker):
         testInstance.session = mocker.MagicMock()
 
+        mockFormatArray = mocker.patch.object(ClusterProcess, 'formatIdenArray')
+        mockFormatArray.return_value = 'testIdentifierArray'
+
         testInstance.session.query().filter().filter().all.side_effect = [[1], [2, 3]]
 
         testMatches = testInstance.getRecordBatches([str(i) for i in range(103)], set([]))
@@ -269,8 +272,7 @@ class TestSFRClusterProcess:
         assert testMatches == [1, 2, 3]
         testInstance.session.query().filter.call_args[0][0].compare(~Record.id.in_([]))
 
-        testIDArray = '{{{}}}'.format(','.join([str(i) for i in range(100)]))
-        testInstance.session.query().filter().filter.call_args[0][0].compare(Record.identifiers.overlap(testIDArray))
+        testInstance.session.query().filter().filter.call_args[0][0].compare(Record.identifiers.overlap('testIdentifierArray'))
 
     def test_indexWorkInElasticSearch(self, testInstance, mocker):
         mockElasticInst = mocker.patch('processes.sfrCluster.SFRElasticRecordManager')
@@ -282,3 +284,7 @@ class TestSFRClusterProcess:
         mockElasticInst.assert_called_once_with('testDBWork')
         mockESManager.getCReateWork.assert_called_once
         mockESManager.saveWork.assert_called_once
+
+    def test_formatIdenArray(self):
+        assert ClusterProcess.formatIdenArray(['test|test', 'multi,test|test'])\
+            == '{test|test,"multi,test|test"}'

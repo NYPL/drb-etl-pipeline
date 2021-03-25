@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2021-03-25 -- v0.4.2
+## Added
+- Swagger documentation
+## Fixed
+- Handle identifiers with commas in record queries and import processes
+- Minor bug in handling keyword queries
+
 ## 2021-03-19 -- v0.4.1
 ### Added
 - OCLC API Rate Limit Check in Classify Process
