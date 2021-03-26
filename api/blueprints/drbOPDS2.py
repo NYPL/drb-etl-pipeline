@@ -4,7 +4,7 @@ from ..db import DBClient
 from ..elastic import ElasticClient
 
 from ..utils import APIUtils
-from ..opds2 import Feed, Link, Metadata, Navigation, Publication, Facet
+from ..opds2 import Feed, Link, Metadata, Navigation, Publication, Facet, Group
 from logger import createLog
 
 logger = createLog(__name__)
@@ -32,13 +32,13 @@ def newPublications():
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])
 
-    baseFeed = constructBaseFeed(request.full_path, 'New Publications: Digital Research Books')
+    baseFeed = constructBaseFeed(request.full_path, 'New Publications: Digital Research Books', grouped=True)
 
     pubCount, newPubs = dbClient.fetchNewWorks(page=page, size=pageSize)
 
     addPagingOptions(baseFeed, request.full_path, pubCount, page=page+1, pageSize=pageSize)
 
-    addPublications(baseFeed, newPubs)
+    addPublications(baseFeed, newPubs, grouped=True)
 
     return APIUtils.formatOPDS2Object(200, baseFeed)
 
@@ -52,7 +52,7 @@ def opdsSearch():
     pageSize = int(params.get('size', [25])[0])
 
     queryList = []
-    for queryField, queryTerms in APIUtils.normalizeQueryParams(request.args).items():
+    for queryField, queryTerms in params.items():
         esField = queryField if queryField != 'query' else 'keyword'
         queryList.extend([(esField, term) for term in queryTerms])
 
@@ -72,13 +72,13 @@ def opdsSearch():
 
     works = dbClient.fetchSearchedWorks(resultIds)
 
-    searchFeed = constructBaseFeed(request.full_path, 'Search Results')
+    searchFeed = constructBaseFeed(request.full_path, 'Search Results', grouped=True)
 
     addPagingOptions(searchFeed, request.full_path, searchResult.hits.total, page=page+1, pageSize=pageSize)
 
     addFacets(searchFeed, request.full_path, searchResult.aggregations.to_dict())
 
-    addPublications(searchFeed, works)
+    addPublications(searchFeed, works, grouped=True)
 
     return APIUtils.formatOPDS2Object(200, searchFeed)
 
@@ -98,7 +98,7 @@ def fetchPublication(uuid):
     return APIUtils.formatOPDS2Object(200, publication)
 
 
-def constructBaseFeed(path, title):
+def constructBaseFeed(path, title, grouped=False):
     feed = Feed()
 
     feedMetadata = Metadata(title=title)
@@ -114,14 +114,20 @@ def constructBaseFeed(path, title):
 
     navOptions = [currentNavigation]
 
-    if path != '/opds':
+    if path != '/opds/':
         baseNavigation = Navigation(href='/opds', title='Home', type='application/opds+json', rel='home')
         navOptions.append(baseNavigation)
-    elif path != '/opds/new':
+
+    if path != '/opds/new/':
         newNavigation = Navigation(href='/opds/new', title='New Works', type='application/opds+json', rel='http://opds-spec.org/sort/new')
         navOptions.append(newNavigation)
 
-    feed.addNavigations(navOptions)
+    if grouped is True:
+        navGroup = Group(metadata={'title': 'Main Menu'})
+        navGroup.addNavigations(navOptions)
+        feed.addGroup(navGroup)
+    else:
+        feed.addNavigations(navOptions)
 
     return feed
 
@@ -154,11 +160,15 @@ def addPagingOptions(feed, path, publicationCount, page=1, pageSize=50):
             feed.addLink({'rel': relAttr, 'href': pageHref, 'type': 'application/odps+json'})
 
 
-def addPublications(feed, publications):
-    for pub in publications:
-        pubRecord = createPublicationObject(pub)
-        feed.addPublication(pubRecord)
+def addPublications(feed, publications, grouped=False):
+    opdsPubs = [createPublicationObject(pub) for pub in publications]
 
+    if grouped is True:
+        pubGroup = Group(metadata={'title': 'Publications'})
+        pubGroup.addPublications(opdsPubs)
+        feed.addGroup(pubGroup)
+    else:
+        feed.addPublications(opdsPubs)
 
 def createPublicationObject(publication, searchResult=True):
         newPub = Publication()

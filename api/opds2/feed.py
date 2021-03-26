@@ -1,5 +1,7 @@
+from .group import Group
 from .metadata import Metadata
 from .navigation import Navigation
+from .publication import Publication
 from .link import Link
 
 
@@ -7,7 +9,9 @@ class Feed:
     COMPONENT_MAPPING = {
         'metadata': Metadata,
         'navigation': Navigation,
-        'links': Link
+        'links': Link,
+        'groups': Group,
+        'publications': Publication
     }
 
     def __init__(self, *args, **kwargs):
