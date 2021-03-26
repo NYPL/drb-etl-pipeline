@@ -17,7 +17,7 @@ class RedisManager:
         self.presentTime = datetime.utcnow()
         self.oneDayAgo = self.presentTime - timedelta(days=1)
 
-        self.oclcLimit = os.environ.get('OCLC_QUERY_LIMIT', 500000)
+        self.oclcLimit = os.environ.get('OCLC_QUERY_LIMIT', 400000)
     
     def createRedisClient(self):
         self.redisClient = Redis(
@@ -48,7 +48,7 @@ class RedisManager:
         incrementValue = self.redisClient.get('{}/{}/{}'.format(
             service, self.presentTime.strftime('%Y-%m-%d'), identifier
         ))
-        print('REDIS TAG ', incrementValue)
+
         return bool(incrementValue) and (int(incrementValue) >= self.oclcLimit)
 
     def setIncrementerRedis(self, service, identifier):

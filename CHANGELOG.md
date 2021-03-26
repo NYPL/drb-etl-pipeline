@@ -4,6 +4,7 @@
 ### Fixed
 - Extended API handling of multiple query parameters
 - Resolved bug in search API response that omitted `formats` facet
+- Lowered OCLC Query Limit to match actual 24-limit (400,000)
 
 ## 2021-03-25 -- v0.4.2
 ### Added
