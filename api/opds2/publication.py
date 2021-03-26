@@ -1,6 +1,7 @@
 from collections import defaultdict
+import os
 
-from model import Work, Edition
+from model import Edition
 from .metadata import Metadata
 from .link import Link
 from .image import Image
@@ -171,16 +172,23 @@ class Publication:
                         'href': link.url,
                         'type': link.media_type
                     })
-                    return
+                    break
+            
+            if len(self.images) > 0:
+                return
+
+        # Add default cover image if none found
+        self.addImage({
+            'href': os.environ['DEFAULT_COVER_URL'],
+            'type': 'image/png'
+        })
 
     def __dir__(self):
         return ['type', 'metadata', 'links', 'editions', 'images']
 
     def __iter__(self):
-        '''
         if len(self.images) == 0:
-            raise OPDS2PublicationException('Publications require an image')
-        '''
+            raise OPDS2PublicationException('At least one image must be present in an OPDS2 publication')
 
         for attr in dir(self):
             component = getattr(self, attr)
