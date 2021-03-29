@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.4.3
+## 2021-03-29 -- v0.4.3
 ### Fixed
 - Extended API handling of multiple query parameters
 - Resolved bug in search API response that omitted `formats` facet
