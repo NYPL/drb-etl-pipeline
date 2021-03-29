@@ -372,3 +372,13 @@ class TestSFRRecordManager:
         testDates = testInstance.normalizeDates(['1999.|test', '2000|other', 'sometime 1900-12 [pub]|other'])
 
         assert sorted(testDates) == sorted(['1999|test', '2000|other', '1900-12|other'])
+
+    def test_subjectParser(self, testInstance, mocker):
+        mockSetDelimited = mocker.patch.object(SFRRecordManager, 'setPipeDelimitedData')
+        mockSetDelimited.return_value = ['testSubject']
+        testInstance.subjectParser(['Test||', 'test.|auth|1234'])
+
+        assert testInstance.work.subjects == ['testSubject']
+        mockSetDelimited.assert_called_once_with(
+            ['Test|auth|1234'], ['heading', 'authority', 'controlNo']
+        )

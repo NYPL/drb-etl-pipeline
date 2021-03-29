@@ -17,7 +17,7 @@ class RedisManager:
         self.presentTime = datetime.utcnow()
         self.oneDayAgo = self.presentTime - timedelta(days=1)
 
-        self.oclcLimit = os.environ.get('OCLC_QUERY_LIMIT', 400000)
+        self.oclcLimit = int(os.environ.get('OCLC_QUERY_LIMIT', 400000))
     
     def createRedisClient(self):
         self.redisClient = Redis(

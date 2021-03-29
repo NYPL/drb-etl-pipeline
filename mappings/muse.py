@@ -77,6 +77,12 @@ class MUSEMapping(MARCMapping):
             for s in self.record.subjects
         ]
 
+        # Add Rights statement
+        self.record.rights = '{}|{}||{}|'.format(
+            'muse', 'https://creativecommons.org/licenses/by-nc/4.0/',
+            'Creative Commons Attribution-NonCommercial 4.0 International'
+        )
+
     def cleanUpSubjectHead(self, subject):
         subjectStr, *subjectMeta = subject.split('|')
         subjectParts = subjectStr.split('--')

@@ -1,5 +1,6 @@
 from datetime import datetime
 from flask import jsonify
+from math import ceil
 
 class APIUtils():
     @staticmethod
@@ -36,12 +37,18 @@ class APIUtils():
         return aggs
 
     @staticmethod
-    def formatPagingOptions(hits):
-        if len(hits) == 0: return {}
+    def formatPagingOptions(page, pageSize, totalHits):
+        if totalHits == 0: return {}
+
+        lastPage = ceil(totalHits / pageSize)
 
         return {
-            'prevPageSort': list(hits[0].meta.sort),
-            'nextPageSort': list(hits[-1].meta.sort)
+            'recordsPerPage': pageSize,
+            'firstPage': 1,
+            'previousPage': page - 1 if page > 1 else None,
+            'currentPage': page,
+            'nextPage': page + 1 if page < lastPage else None,
+            'lastPage': lastPage
         }
 
     @classmethod
@@ -90,12 +97,21 @@ class APIUtils():
             itemDict = dict(item)
             itemDict['item_id'] = item.id
             itemDict['location'] = item.physical_location['name'] if item.physical_location else None
+
             itemDict['links'] = []
             for link in item.links:
                 itemDict['links'].append({
                     'link_id': link.id,
                     'mediaType': link.media_type,
                     'url': link.url
+                })
+
+            itemDict['rights'] = []
+            for rights in item.rights:
+                itemDict['rights'].append({
+                    'source': rights.source,
+                    'license': rights.license,
+                    'rightsStatement': rights.rights_statement
                 })
 
             editionDict['items'].append(itemDict)

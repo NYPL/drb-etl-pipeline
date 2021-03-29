@@ -1,5 +1,4 @@
-from sqlalchemy import Unicode, Integer, Column
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy import Unicode, Integer, Column, Date
 
 from .base import Base, Core
 
@@ -11,6 +10,7 @@ class Rights(Base, Core):
     license = Column(Unicode, nullable=False, index=True)
     rights_statement = Column(Unicode)
     rights_reason = Column(Unicode)
+    rights_date = Column(Date)
 
     def __repr__(self):
         return '<Rights(license={}, source={})>'.format(
