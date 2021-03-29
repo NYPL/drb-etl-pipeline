@@ -23,8 +23,8 @@ def standardQuery():
         terms['filter'].append(terms['showAll'][0])
         del terms['showAll']
 
-    searchPage = searchParams.get('page', [0])[0]
-    searchSize = searchParams.get('size', [10])[0]
+    searchPage = int(searchParams.get('page', [1])[0]) - 1
+    searchSize = int(searchParams.get('size', [10])[0])
 
     logger.info('Executing ES Query {} with filters {}'.format(searchParams, terms['filter']))
 
@@ -39,7 +39,7 @@ def standardQuery():
 
     works = dbClient.fetchSearchedWorks(resultIds)
     facets = APIUtils.formatAggregationResult(searchResult.aggregations.to_dict())
-    paging = APIUtils.formatPagingOptions(searchResult.hits)
+    paging = APIUtils.formatPagingOptions(searchPage + 1, searchSize, searchResult.hits.total)
 
     dataBlock = {
         'totalWorks': searchResult.hits.total,

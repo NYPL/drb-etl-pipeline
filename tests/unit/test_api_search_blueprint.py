@@ -108,7 +108,7 @@ class TestSearchBlueprint:
                 ('uuid3', ['ed4', 'ed5', 'ed6']), ('uuid4', ['ed7']), ('uuid5', ['ed8'])
             ])
             mockUtils['formatAggregationResult'].assert_called_once_with({'aggs': []})
-            mockUtils['formatPagingOptions'].assert_called_once_with(mockHits)
+            mockUtils['formatPagingOptions'].assert_called_once_with(1, 5, 5)
             mockUtils['formatWorkOutput'].assert_called_once
 
             mockUtils['formatResponseObject'].assert_called_once_with(

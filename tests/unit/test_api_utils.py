@@ -89,10 +89,29 @@ class TestAPIUtils:
         assert testAggregations['languages'][1] == {'value': 'Lang2', 'count': 3}
         assert testAggregations['formats'][0] == {'value': 'Format1', 'count': 5}
 
-    def test_formatPagingOptions(self, testHitObject):
-        testPagingOptions = APIUtils.formatPagingOptions(testHitObject)
+    def test_formatPagingOptions_previous_null(self):
+        testPagingOptions = APIUtils.formatPagingOptions(1, 10, 50)
 
-        assert testPagingOptions == {'prevPageSort': ['firstSort'], 'nextPageSort': ['lastSort']}
+        assert testPagingOptions == {
+            'recordsPerPage': 10,
+            'firstPage': 1,
+            'previousPage': None,
+            'currentPage': 1,
+            'nextPage': 2,
+            'lastPage': 5
+        }
+
+    def test_formatPagingOptions_next_null(self):
+        testPagingOptions = APIUtils.formatPagingOptions(6, 10, 55)
+
+        assert testPagingOptions == {
+            'recordsPerPage': 10,
+            'firstPage': 1,
+            'previousPage': 5,
+            'currentPage': 6,
+            'nextPage': None,
+            'lastPage': 6
+        }
 
     def test_formatWorkOutput_single_work(self, mocker):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
