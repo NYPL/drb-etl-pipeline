@@ -7,6 +7,7 @@
 - Lowered OCLC Query Limit to match actual 24-limit (400,000)
 - Resolved bug with rights data not being stored/processed properly
 - Updated paging response to more useful format
+- Improve parsing of entity, subject and title data
 
 ## 2021-03-25 -- v0.4.2
 ### Added

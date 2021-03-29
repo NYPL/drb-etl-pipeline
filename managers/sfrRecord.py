@@ -275,7 +275,7 @@ class SFRRecordManager:
     def saveWork(self, workData):
         # Set Titles
         try:
-            self.work.title = workData['title'].most_common(1)[0][0]
+            self.work.title = workData['title'].most_common(1)[0][0].strip(' .:/')
         except IndexError:
             self.work.title = ''
 
@@ -293,10 +293,8 @@ class SFRRecordManager:
         )
 
         # Set Subjects
-        self.work.subjects = SFRRecordManager.setPipeDelimitedData(
-            workData['subjects'], ['heading', 'authority', 'controlNo']
-        )
-
+        self.subjectParser(workData['subjects'])
+        
         # Set Measurements 
         self.work.measurements = SFRRecordManager.setPipeDelimitedData(workData['measurements'], ['value', 'type'])
 
@@ -328,7 +326,7 @@ class SFRRecordManager:
         newEd = Edition(items=[], links=[])
 
         # Set Titles
-        newEd.title = edition['title'].most_common(1)[0][0]
+        newEd.title = edition['title'].most_common(1)[0][0].strip(' .:/')
         if len(edition['sub_title']):
             newEd.sub_title = edition['sub_title'].most_common(1)[0][0]
         newEd.alt_titles = [t[0] for t in edition['alt_titles'].most_common()]
@@ -347,7 +345,6 @@ class SFRRecordManager:
 
         # Set Edition Data
         if len(edition['edition_data']):
-            print(edition['edition_data'])
             editionStmt, editionNo = tuple(edition['edition_data'].most_common(1)[0][0].split('|'))
             newEd.edition_statement = editionStmt
             try:
@@ -460,19 +457,22 @@ class SFRRecordManager:
         return linkData
 
     def agentParser(self, agents, fields):
-        outAgents = []
+        outAgents = {}
+
         for agent in agents:
             agentParts = agent.split('|')
             if len(agentParts) < len(fields):
                 agentParts.insert(1, '')
                 agentParts.insert(2, '')
+
             rec = dict(zip(fields, agentParts))
+            recKey = re.sub(r'[.,:\(\)]+', '', rec['name'].lower())
 
             if rec['name'] == '' and rec['viaf'] == '' and rec['lcnaf'] == '':
                 continue
             
             existingMatch = False
-            for oa in outAgents:
+            for oaKey, oa in outAgents.items():
                 for checkField in ['viaf', 'lcnaf']:
                     if rec[checkField] and rec[checkField] != '' and rec[checkField] == oa[checkField]:
                         existingMatch = True
@@ -480,22 +480,41 @@ class SFRRecordManager:
                         break
 
                 if existingMatch is False:
-                    if jaro_winkler(oa['name'], rec['name']) > 0.9:
+                    if jaro_winkler(oaKey, recKey) > 0.9:
                         SFRRecordManager.mergeAgents(oa, rec)
                         existingMatch = True
                         break
 
             if existingMatch is False:
                 if 'role' in rec.keys():
-                    rec['roles'] = set([rec['role']])
+                    rec['roles'] = list(set([rec['role']]))
                     del rec['role']
-                outAgents.append(rec)
+                outAgents[recKey] = rec
 
-        for ag in outAgents:
-            if 'roles' in ag.keys():
-                ag['roles'] = list(ag['roles'])
 
-        return outAgents
+        return [a for _, a in outAgents.items()]
+
+    def subjectParser(self, subjects):
+        cleanSubjects = {}
+        for subj in subjects:
+            heading, auth, authNo = subj.split('|')
+
+            if heading == '': continue
+
+            cleanHeading = heading.strip(',.')
+            headingKey = cleanHeading.lower()
+
+            if headingKey in cleanSubjects.keys():
+                if cleanSubjects[headingKey][1] == '' and auth != '':
+                    cleanSubjects[headingKey][1] = auth
+                    cleanSubjects[headingKey][2] = authNo
+            else:
+                cleanSubjects[headingKey] = [cleanHeading, auth, authNo] 
+
+        cleanSubjStrs = ['|'.join(subj) for _, subj in cleanSubjects.items()]
+        self.work.subjects = SFRRecordManager.setPipeDelimitedData(
+            cleanSubjStrs, ['heading', 'authority', 'controlNo']
+        )
 
     def normalizeDates(self, dates):
         outDates = set()
@@ -518,7 +537,9 @@ class SFRRecordManager:
             existing['lcnaf'] = new['lcnaf']
 
         if 'role' in new.keys():
-            existing['roles'].add(new['role'])
+            roleSet = set(existing['roles'])
+            roleSet.add(new['role'])
+            existing['roles'] = list(roleSet)
 
     @staticmethod
     def createEmptyWorkRecord():
