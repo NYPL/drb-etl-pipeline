@@ -51,8 +51,14 @@ class TestAPIUtils:
         return MockDBObject(id='li1', media_type='application/test', url='testURI')
 
     @pytest.fixture
-    def testItem(self, MockDBObject, testLink):
-        return MockDBObject(id='it1', links=[testLink], physical_location={'name': 'test'})
+    def testRights(self, MockDBObject):
+        return MockDBObject(id='ri1', source='test', license='testLicense', rights_statement='testStatement')
+
+    @pytest.fixture
+    def testItem(self, MockDBObject, testLink, testRights):
+        return MockDBObject(
+            id='it1', links=[testLink], rights=[testRights], physical_location={'name': 'test'}
+        )
 
     @pytest.fixture
     def testEdition(self, MockDBObject, testItem):
@@ -184,6 +190,9 @@ class TestAPIUtils:
         assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
         assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
         assert formattedEdition['items'][0]['links'][0]['url'] == 'testURI'
+        assert formattedEdition['items'][0]['rights'][0]['source'] == 'test'
+        assert formattedEdition['items'][0]['rights'][0]['license'] == 'testLicense'
+        assert formattedEdition['items'][0]['rights'][0]['rightsStatement'] == 'testStatement'
 
     def test_formatLinkOutput(self, testLink, testWork, testEdition, testItem):
         testEdition.work = testWork

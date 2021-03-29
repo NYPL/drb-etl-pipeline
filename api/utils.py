@@ -97,12 +97,21 @@ class APIUtils():
             itemDict = dict(item)
             itemDict['item_id'] = item.id
             itemDict['location'] = item.physical_location['name'] if item.physical_location else None
+
             itemDict['links'] = []
             for link in item.links:
                 itemDict['links'].append({
                     'link_id': link.id,
                     'mediaType': link.media_type,
                     'url': link.url
+                })
+
+            itemDict['rights'] = []
+            for rights in item.rights:
+                itemDict['rights'].append({
+                    'source': rights.source,
+                    'license': rights.license,
+                    'rightsStatement': rights.rights_statement
                 })
 
             editionDict['items'].append(itemDict)

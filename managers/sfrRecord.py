@@ -412,7 +412,7 @@ class SFRRecordManager:
 
         # Set Rights
         newItem.rights = SFRRecordManager.setPipeDelimitedData(
-            [rights], ['source', 'license', 'rights_reason', 'rights_statement'], Rights
+            [rights], ['source', 'license', 'rights_reason', 'rights_statement', 'rights_date'], Rights
         )
 
         # Set Contributors

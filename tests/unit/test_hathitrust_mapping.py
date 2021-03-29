@@ -23,7 +23,7 @@ class TestHathingMapping:
             identifiers=['1|hathi', '2|test', '3,4|test'],
             dates=['Test Publisher [1900]|publication_date', '2000 [other]|copyright_date'],
             contributors=['contr|test'],
-            rights='hathitrust|testLic|testReas||summary',
+            rights='hathitrust|testLic|testReas|statement|',
             spatial='tst  '
         )
 
@@ -62,7 +62,7 @@ class TestHathingMapping:
         assert testMapping.record.dates == ['1900|publication_date', '2000 [other]|copyright_date']
         assert testMapping.record.publisher == 'Test Publisher||'
         assert testMapping.record.contributors == ['Contributor|test']
-        assert testMapping.record.rights == 'test|Test Reason|Test License|summary'
+        assert testMapping.record.rights == 'hathitrust|test|Test Reason|Test License|'
         assert testMapping.record.has_part == [
             '1|https://babel.hathitrust.org/cgi/pt?id=recordID|hathitrust|text/html|{"reader": false, "download": false, "catalog": false}',
             '1|https://babel.hathitrust.org/cgi/imgsrv/download/pdf?id=recordID|hathitrust|application/pdf|{"reader": false, "download": true, "catalog": false}',
