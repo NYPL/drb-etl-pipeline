@@ -480,17 +480,23 @@
         "PagingOptions": {
             "type": "object",
             "properties": {
-                "prev_page_sort": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "recordsPerPage": {
+                    "type": "integer"
                 },
-                "next_page_sort": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "firstPage": {
+                    "type": "integer"
+                },
+                "previousPage": {
+                    "type": "integer"
+                },
+                "currentPage": {
+                    "type": "integer"
+                },
+                "nextPage": {
+                    "type": "integer"
+                },
+                "lastPage": {
+                    "type": "integer"
                 }
             }
         },

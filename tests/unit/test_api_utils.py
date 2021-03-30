@@ -51,8 +51,14 @@ class TestAPIUtils:
         return MockDBObject(id='li1', media_type='application/test', url='testURI')
 
     @pytest.fixture
-    def testItem(self, MockDBObject, testLink):
-        return MockDBObject(id='it1', links=[testLink], physical_location={'name': 'test'})
+    def testRights(self, MockDBObject):
+        return MockDBObject(id='ri1', source='test', license='testLicense', rights_statement='testStatement')
+
+    @pytest.fixture
+    def testItem(self, MockDBObject, testLink, testRights):
+        return MockDBObject(
+            id='it1', links=[testLink], rights=[testRights], physical_location={'name': 'test'}
+        )
 
     @pytest.fixture
     def testEdition(self, MockDBObject, testItem):
@@ -89,10 +95,29 @@ class TestAPIUtils:
         assert testAggregations['languages'][1] == {'value': 'Lang2', 'count': 3}
         assert testAggregations['formats'][0] == {'value': 'Format1', 'count': 5}
 
-    def test_formatPagingOptions(self, testHitObject):
-        testPagingOptions = APIUtils.formatPagingOptions(testHitObject)
+    def test_formatPagingOptions_previous_null(self):
+        testPagingOptions = APIUtils.formatPagingOptions(1, 10, 50)
 
-        assert testPagingOptions == {'prevPageSort': ['firstSort'], 'nextPageSort': ['lastSort']}
+        assert testPagingOptions == {
+            'recordsPerPage': 10,
+            'firstPage': 1,
+            'previousPage': None,
+            'currentPage': 1,
+            'nextPage': 2,
+            'lastPage': 5
+        }
+
+    def test_formatPagingOptions_next_null(self):
+        testPagingOptions = APIUtils.formatPagingOptions(6, 10, 55)
+
+        assert testPagingOptions == {
+            'recordsPerPage': 10,
+            'firstPage': 1,
+            'previousPage': 5,
+            'currentPage': 6,
+            'nextPage': None,
+            'lastPage': 6
+        }
 
     def test_formatWorkOutput_single_work(self, mocker):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
@@ -165,6 +190,9 @@ class TestAPIUtils:
         assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
         assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
         assert formattedEdition['items'][0]['links'][0]['url'] == 'testURI'
+        assert formattedEdition['items'][0]['rights'][0]['source'] == 'test'
+        assert formattedEdition['items'][0]['rights'][0]['license'] == 'testLicense'
+        assert formattedEdition['items'][0]['rights'][0]['rightsStatement'] == 'testStatement'
 
     def test_formatLinkOutput(self, testLink, testWork, testEdition, testItem):
         testEdition.work = testWork

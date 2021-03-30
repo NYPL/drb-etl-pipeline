@@ -73,7 +73,7 @@ class HathiMapping(CSVMapping):
         # Parse rights codes
         rightsElements = self.record.rights.split('|') if self.record.rights else [''] * 5
         rightsMetadata = self.staticValues['hathitrust']['rightsValues'].get(rightsElements[1], {'license': 'und', 'statement': 'und'}) 
-        self.record.rights = '{}|{}|{}|{}'.format(
+        self.record.rights = 'hathitrust|{}|{}|{}|{}'.format(
             rightsMetadata['license'],
             self.staticValues['hathitrust']['rightsReasons'].get(rightsElements[2], rightsElements[2]),
             rightsMetadata['statement'],

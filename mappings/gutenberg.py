@@ -13,9 +13,9 @@ class GutenbergMapping(XMLMapping):
             'title': ('//dcterms:title/text()', '{0}'),
             'alternative': ('//dcterms:alternative/text()', '{0}'),
             'publisher': ('//dcterms:publisher/text()', '{0}||'),
-            'rights': [
-                (['//dcterms:rights/text()', '*/cc:license/@rdf:resource'], 'gutenberg|{1}||{0}|'),
-            ],
+            'rights': (
+                ['//dcterms:rights/text()', '*/cc:license/@rdf:resource'], 'gutenberg|{1}||{0}|'
+            ),
             'identifiers': [
                 ('//pgterms:ebook/@rdf:about', '{0}|gutenberg'),
                 ('//pgterms:marc010/text()', '{0}|lccn'),

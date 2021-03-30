@@ -14,7 +14,7 @@ class StaticManager:
             self.parseStaticPath(staticPath)
     
     def parseStaticPath(self, staticPath):
-        staticName = re.search(r'\/([a-z]+)\.json', staticPath).group(1)
+        staticName = re.search(r'\/([a-z0-9]+)\.json', staticPath).group(1)
 
         with open(staticPath, 'r') as staticFile:
             staticJSON = json.load(staticFile)
