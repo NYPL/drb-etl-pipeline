@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## unreleased -- v0.4.4
+### Fixed
+- Handling of ISO-639-2/b language codes
+- Insertion of blank values into `rights_date` column
+
 ## 2021-03-29 -- v0.4.3
 ### Fixed
 - Extended API handling of multiple query parameters

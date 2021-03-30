@@ -98,7 +98,7 @@ class ClusterProcess(CoreProcess):
         return self.queryIdens(idens)
 
     def createWorkFromEditions(self, editions, instances):
-        recordManager = SFRRecordManager(self.session)
+        recordManager = SFRRecordManager(self.session, self.statics['iso639'])
         workData = recordManager.buildWork(instances, editions)
         recordManager.saveWork(workData)
         recordManager.mergeRecords()

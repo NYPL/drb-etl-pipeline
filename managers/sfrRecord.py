@@ -16,8 +16,9 @@ class SFRRecordManager:
         'esp': ['el', 'la', 'los', 'las', 'un', 'una']
     }
 
-    def __init__(self, session):
+    def __init__(self, session, iso639):
         self.session = session
+        self.iso639_2b = iso639['2b']
         self.work = Work(uuid=uuid4(), editions=[])
 
     def mergeRecords(self):
@@ -300,7 +301,7 @@ class SFRRecordManager:
 
         # Set Languages
         self.work.languages = SFRRecordManager.setPipeDelimitedData(
-            workData['languages'], ['language', 'iso_2', 'iso_3'], dParser=SFRRecordManager.getLanguage
+            workData['languages'], ['language', 'iso_2', 'iso_3'], dParser=self.getLanguage
         )
 
         # Set Medium
@@ -368,7 +369,7 @@ class SFRRecordManager:
 
         # Set Languages
         newEd.languages = SFRRecordManager.setPipeDelimitedData(
-            edition['languages'], ['language', 'iso_2', 'iso_3'], dParser=SFRRecordManager.getLanguage
+            edition['languages'], ['language', 'iso_2', 'iso_3'], dParser=self.getLanguage
         )
 
         # Set Measurements 
@@ -409,7 +410,10 @@ class SFRRecordManager:
 
         # Set Rights
         newItem.rights = SFRRecordManager.setPipeDelimitedData(
-            [rights], ['source', 'license', 'rights_reason', 'rights_statement', 'rights_date'], Rights
+            [rights],
+            ['source', 'license', 'rights_reason', 'rights_statement', 'rights_date'],
+            Rights,
+            dParser=lambda x: dict(list(filter(lambda y: y[1] != '', x.items())))
         )
 
         # Set Contributors
@@ -434,18 +438,20 @@ class SFRRecordManager:
 
         return dType(**dataEntry)
 
-    @staticmethod
-    def getLanguage(langData):
+    def getLanguage(self, langData):
         values = list(filter(lambda x: x != '', [v for _, v in langData.items()]))
         for v in values:
             for attr in ['alpha_2', 'alpha_3', 'name']:
+                if attr == 'alpha_3': v = self.iso639_2b.get(v, v)
+
                 pyLang = pycountry.languages.get(**{attr: v})
+
                 if pyLang is not None:
-                    try:
-                        iso2 = pyLang.alpha_2
-                    except AttributeError:
-                        iso2 = None
-                    return {'language': pyLang.name, 'iso_2': iso2, 'iso_3': pyLang.alpha_3}
+                    return {
+                        'language': pyLang.name,
+                        'iso_2': getattr(pyLang, 'alpha_2', None),
+                        'iso_3': getattr(pyLang, 'alpha_3', None)
+                    }
 
     @staticmethod
     def parseLinkFlags(linkData):

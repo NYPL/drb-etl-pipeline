@@ -7,7 +7,7 @@ class TestSFRRecordManager:
     @pytest.fixture
     def testInstance(self, mocker):
         mocker.patch('managers.sfrRecord.Work')
-        return SFRRecordManager(mocker.MagicMock())
+        return SFRRecordManager(mocker.MagicMock(), {'2b': {'ger': 'deu'}})
 
     @pytest.fixture
     def testDCDWRecord(self, mocker):
@@ -272,26 +272,33 @@ class TestSFRRecordManager:
 
         assert parsedData.tests == [1, 2, 3]
 
-    def test_getLanguage_all_values_match_full_name(self):
-        testLanguage = SFRRecordManager.getLanguage({'language': 'English'})
+    def test_getLanguage_all_values_match_full_name(self, testInstance):
+        testLanguage = testInstance.getLanguage({'language': 'English'})
 
         assert testLanguage['iso_2'] == 'en'
         assert testLanguage['iso_3'] == 'eng'
         assert testLanguage['language'] == 'English'
 
-    def test_getLanguage_all_values_match_iso_2(self):
-        testLanguage = SFRRecordManager.getLanguage({'iso_2': 'de'})
+    def test_getLanguage_all_values_match_iso_2(self, testInstance):
+        testLanguage = testInstance.getLanguage({'iso_2': 'de'})
 
         assert testLanguage['iso_2'] == 'de'
         assert testLanguage['iso_3'] == 'deu'
         assert testLanguage['language'] == 'German'
 
-    def test_getLanguage_all_values_match_iso_3(self):
-        testLanguage = SFRRecordManager.getLanguage({'iso_2': 'zho'})
+    def test_getLanguage_all_values_match_iso_3(self, testInstance):
+        testLanguage = testInstance.getLanguage({'iso_3': 'zho'})
 
         assert testLanguage['iso_2'] == 'zh'
         assert testLanguage['iso_3'] == 'zho'
         assert testLanguage['language'] == 'Chinese'
+
+    def test_getLanguage_all_values_match_iso_639_2_b(self, testInstance):
+        testLanguage = testInstance.getLanguage({'iso_3': 'ger'})
+
+        assert testLanguage['iso_2'] == 'de'
+        assert testLanguage['iso_3'] == 'deu'
+        assert testLanguage['language'] == 'German'
 
     def test_parseLinkFlags(self):
         assert (
@@ -300,8 +307,8 @@ class TestSFRRecordManager:
             {'flags': {'testing': True}, 'key': 'value'}
         )
 
-    def test_getLanguage_all_values_match_missing_iso_2(self):
-        testLanguage = SFRRecordManager.getLanguage({'language': 'Klingon'})
+    def test_getLanguage_all_values_match_missing_iso_2(self, testInstance):
+        testLanguage = testInstance.getLanguage({'language': 'Klingon'})
 
         assert testLanguage['iso_2'] is None
         assert testLanguage['iso_3'] == 'tlh'
