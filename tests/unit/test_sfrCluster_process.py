@@ -20,6 +20,7 @@ class TestSFRClusterProcess:
         class TestClusterProcess(ClusterProcess):
             def __init__(self, process, customFile, ingestPeriod):
                 self.records = []
+                self.statics = {'iso639': {}}
         
         return TestClusterProcess('TestProcess', 'testFile', 'testDate')
 
@@ -227,7 +228,7 @@ class TestSFRClusterProcess:
         testWork = testInstance.createWorkFromEditions('testEditions', 'testInstances')
 
         assert testWork == 'testWork'
-        mockManagerInst.assert_called_once_with('testSession')
+        mockManagerInst.assert_called_once_with('testSession', {})
         mockRecManager.buildWork.assert_called_once_with('testInstances', 'testEditions')
         mockRecManager.saveWork.assert_called_once_with('testWorkData')
         mockRecManager.mergeRecords.assert_called_once()
