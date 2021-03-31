@@ -16,4 +16,6 @@ class APIProcess(CoreProcess):
     def runProcess(self):
         logger.info('Starting API...')
 
+        self.api.createErrorResponses()
+
         self.api.run()
