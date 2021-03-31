@@ -90,6 +90,11 @@ def fetchPublication(uuid):
     dbClient = DBClient(current_app.config['DB_CLIENT'])
 
     workRecord = dbClient.fetchSingleWork(uuid)
+    
+    if workRecord is None:
+        return APIUtils.formatResponseObject(
+            404, 'opdsPublication', {'message': 'Unable to find work for uuid {}'.format(uuid)}
+        )
 
     publication = createPublicationObject(workRecord, searchResult=False)
 
@@ -186,7 +191,7 @@ def addFacets(feed, path, facets):
         newFacet = Facet(metadata={'title': facet})
         facetOptions = [
             {
-                'href': '{}&filter={}:{}'.format(path, facet, option['value']),
+                'href': '{}&filter={}:{}'.format(path, facet[:-1], option['value']),
                 'type': 'application/opds+json',
                 'title': option['value'],
                 'properties': {'numberOfItems': option['count']}

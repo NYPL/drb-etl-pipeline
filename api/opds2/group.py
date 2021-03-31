@@ -43,8 +43,9 @@ class Group:
         for attr in ['metadata', 'publications', 'navigation']:
             value = getattr(self, attr)
 
-            if isinstance(value, list) and len(value) > 0:
-                yield attr, [dict(item) for item in value]
+            if isinstance(value, list):
+                if len(value) > 0:
+                    yield attr, [dict(item) for item in value]
             else:
                 yield attr, dict(value)
 

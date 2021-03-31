@@ -1,8 +1,5 @@
 
 
-from api.opds2.metadata import OPDS2MetadataException
-
-
 class Link:
     ALLOWED_FIELDS = [
         'href', 'type', 'rel', 'title', 'templated', 'language', 'alternate',
