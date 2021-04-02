@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from math import ceil
 import re
+from sqlalchemy.exc import DataError
 
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
@@ -155,12 +156,16 @@ class ClusterProcess(CoreProcess):
 
             idArray = self.formatIdenArray(identifiers[i:i+step])
 
-            matches = self.session.query(Record.title, Record.id, Record.identifiers)\
-                .filter(~Record.id.in_(list(matchedIDs)))\
-                .filter(Record.identifiers.overlap(idArray))\
-                .all()
+            try:
+                matches = self.session.query(Record.title, Record.id, Record.identifiers)\
+                    .filter(~Record.id.in_(list(matchedIDs)))\
+                    .filter(Record.identifiers.overlap(idArray))\
+                    .all()
 
-            totalMatches.extend(matches)
+                totalMatches.extend(matches)
+            except DataError as e:
+                logger.warning('Unable to execute batch id query')
+                logger.debug(e)
 
             i += step
         
@@ -198,7 +203,7 @@ class ClusterProcess(CoreProcess):
         idenStrings = []
         
         for iden in identifiers:
-            idenStr = '"{}"'.format(iden) if ',' in iden else iden
+            idenStr = '"{}"'.format(iden) if re.search(r'[{},]{1}', iden) else iden
             idenStrings.append(idenStr)
         
         return '{{{}}}'.format(','.join(idenStrings))
