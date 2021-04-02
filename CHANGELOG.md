@@ -7,6 +7,7 @@
 - Handling of `{}` in record identifiers
 - Parsing of publication objects to simple year representations in API response
 - Preservation of search result sort order after database query
+- Resolve bug in single work parsing
 
 ## 2021-03-29 -- v0.4.3
 ### Fixed
