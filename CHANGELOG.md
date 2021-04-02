@@ -1,6 +1,9 @@
 # CHANGELOG
 
-## unreleased -- v0.4.4
+## unreleased -- v0.5.0
+### Added
+- OPDS2 endpoints and structure
+- Graceful handling of 404 errors and 500 database errors
 ### Fixed
 - Handling of ISO-639-2/b language codes
 - Insertion of blank values into `rights_date` column
