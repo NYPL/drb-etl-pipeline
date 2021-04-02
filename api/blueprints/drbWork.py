@@ -24,7 +24,7 @@ def workFetch(uuid):
         return APIUtils.formatResponseObject(
             200,
             'singleWork',
-            APIUtils.formatWorkOutput(work, showAll=showAll)
+            APIUtils.formatWorkOutput(work, None, showAll=showAll)
         )
     else:
         logger.warning('Work Fetch 404 on /work/{}'.format(uuid))
