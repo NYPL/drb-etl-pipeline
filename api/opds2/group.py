@@ -1,7 +1,6 @@
 from .metadata import Metadata
 from .navigation import Navigation
 from .publication import Publication
-from api.opds2 import publication
 
 
 class Group:
@@ -40,6 +39,7 @@ class Group:
     def __iter__(self):
         if len(self.publications) > 0 and len(self.navigation) > 0:
             raise OPDS2GroupException('Group cannot contain publication and navigation arrays')
+
         for attr in ['metadata', 'publications', 'navigation']:
             value = getattr(self, attr)
 

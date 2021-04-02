@@ -51,17 +51,18 @@ def opdsSearch():
     page = int(params.get('page', [1])[0]) - 1
     pageSize = int(params.get('size', [25])[0])
 
-    queryList = []
-    for queryField, queryTerms in params.items():
-        esField = queryField if queryField != 'query' else 'keyword'
-        queryList.extend([(esField, term) for term in queryTerms])
+    searchTerms = {'query': [], 'filter': [], 'sort': []}
+    for queryField in ['keyword', 'title', 'author', 'subject']:
+        searchTerms['query'].extend([(queryField, term) for term in params.get(queryField, [])])
+
+    searchTerms['filter'] = APIUtils.extractParamPairs('filter', params)
+    if params.get('showAll', None):
+        searchTerms['filter'].append(('showAll', params['showAll'][0]))
 
     esClient = ElasticClient(current_app.config['ES_CLIENT'])
     dbClient = DBClient(current_app.config['DB_CLIENT'])
 
-    logger.info('Executing ES Query {}'.format(queryList))
-
-    searchTerms = {'query': queryList, 'filter': [], 'sort': []}
+    logger.info('Executing ES Query {}'.format(searchTerms))
 
     searchResult = esClient.searchQuery(searchTerms, page=page, perPage=pageSize)
 
@@ -154,7 +155,7 @@ def addPagingOptions(feed, path, publicationCount, page=1, pageSize=50):
     joinChar = '&' if '?' in path else '?'
 
     for pageNo, rels in pagingRels.items():
-        relAttr = rels[0] if len(rels) == 0 else rels
+        relAttr = rels[0] if len(rels) == 1 else rels
 
         if 'self' in rels:
             selfLink = list(filter(lambda x: x.rel == 'self', feed.links))[0]
@@ -162,7 +163,7 @@ def addPagingOptions(feed, path, publicationCount, page=1, pageSize=50):
             selfLink.rel = relAttr
         else:
             pageHref = '{}{}page={}'.format(path, joinChar, pageNo)
-            feed.addLink({'rel': relAttr, 'href': pageHref, 'type': 'application/odps+json'})
+            feed.addLink({'rel': relAttr, 'href': pageHref, 'type': 'application/opds+json'})
 
 
 def addPublications(feed, publications, grouped=False):
@@ -174,6 +175,7 @@ def addPublications(feed, publications, grouped=False):
         feed.addGroup(pubGroup)
     else:
         feed.addPublications(opdsPubs)
+
 
 def createPublicationObject(publication, searchResult=True):
         newPub = Publication()

@@ -8,7 +8,7 @@ class Link:
 
     REQUIRED_FIELDS = ['href']
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self.attrs = set(kwargs.keys())
 
         for field, value in kwargs.items():

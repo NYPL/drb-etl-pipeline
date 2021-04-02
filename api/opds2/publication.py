@@ -59,7 +59,7 @@ class Publication:
     def parseWorkToPublication(self, workRecord, searchResult=True):
         # Title Fields
         self.metadata.addField('title', workRecord.title)
-        self.metadata.addField('sortAS', workRecord.title.lower())
+        self.metadata.addField('sortAs', workRecord.title.lower())
         self.metadata.addField('subtitle', workRecord.sub_title)
         self.metadata.addField('alternate', workRecord.alt_titles)
 
@@ -94,7 +94,7 @@ class Publication:
     def parseEditionToPublication(self, editionRecord):
         # Title Fields
         self.metadata.addField('title', editionRecord.title)
-        self.metadata.addField('sortAS', editionRecord.title.lower())
+        self.metadata.addField('sortAs', editionRecord.title.lower())
         self.metadata.addField('subtitle', editionRecord.sub_title)
         self.metadata.addField('alternate', editionRecord.alt_titles)
 

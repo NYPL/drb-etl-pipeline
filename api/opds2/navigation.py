@@ -1,7 +1,7 @@
 
 
 class Navigation:
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         self.href = kwargs.get('href', None)
         self.title = kwargs.get('title', None)
         self.rel = kwargs.get('rel', None)
@@ -9,7 +9,6 @@ class Navigation:
 
     def addField(self, field, value):
         setattr(self, field, value)
-        self.attrs.add(field)
 
     def addFields(self, fields):
         if isinstance(fields, dict):
