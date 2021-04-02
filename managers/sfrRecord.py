@@ -525,11 +525,13 @@ class SFRRecordManager:
     def normalizeDates(self, dates):
         outDates = set()
         for date in dates:
-            dateValue, dateType = tuple(date.split('|'))
             try:
+                dateValue, dateType = tuple(date.split('|'))
+    
                 cleanDate = re.search(r'\d+.*\d+', dateValue).group()
+
                 outDates.add('{}|{}'.format(cleanDate, dateType))
-            except AttributeError:
+            except (AttributeError, ValueError):
                 pass
 
         return list(outDates)

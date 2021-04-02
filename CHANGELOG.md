@@ -4,6 +4,9 @@
 ### Fixed
 - Handling of ISO-639-2/b language codes
 - Insertion of blank values into `rights_date` column
+- Handling of `{}` in record identifiers
+- Parsing of publication objects to simple year representations in API response
+- Preservation of search result sort order after database query
 
 ## 2021-03-29 -- v0.4.3
 ### Fixed

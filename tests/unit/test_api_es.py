@@ -438,7 +438,7 @@ class TestElasticClient:
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
-            mocker.call('terms', instances__formats=['test1', 'test2'])
+            mocker.call('terms', editions__formats=['test1', 'test2'])
         ])
         mockAgg.assert_has_calls([
             mocker.call('filter', exists={'field': 'editions.formats'}),

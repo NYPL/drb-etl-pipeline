@@ -165,7 +165,7 @@ class ElasticClient():
 
         if len(formatFilters) > 0:
             formats = [f[1] for f in formatFilters]
-            formatFilter = Q('terms', instances__formats=formats)
+            formatFilter = Q('terms', editions__formats=formats)
             formatAggregation = A('filter', **{'terms': {'editions.formats': formats}})
 
         if len(displayFilters) > 0 and displayFilters[0][1] == 'true':
