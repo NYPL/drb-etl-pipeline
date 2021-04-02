@@ -61,8 +61,10 @@ class TestAPIUtils:
         )
 
     @pytest.fixture
-    def testEdition(self, MockDBObject, testItem):
-        return MockDBObject(id='ed1', items=[testItem])
+    def testEdition(self, MockDBObject, testItem, mocker):
+        return MockDBObject(
+            id='ed1', publication_date=mocker.MagicMock(year=2000), items=[testItem]
+        )
 
     @pytest.fixture
     def testWork(self, MockDBObject, testEdition):
@@ -123,27 +125,22 @@ class TestAPIUtils:
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
         mockFormat.return_value = 'formattedWork'
 
-        outWork = APIUtils.formatWorkOutput('testWork')
+        outWork = APIUtils.formatWorkOutput('testWork', None)
 
         assert outWork == 'formattedWork'
         mockFormat.assert_called_once_with('testWork', None, True)
 
     def test_formatWorkOutput_multiple_works(self, mocker):
-        mockFlatten = mocker.patch.object(APIUtils, 'flatten')
-        mockFlatten.return_value = [1, 2, 3]
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
         mockFormat.side_effect = ['formattedWork1', 'formattedWork2']
 
-        outWorks = APIUtils.formatWorkOutput(
-            ['testWork1', 'testWork2'],
-            [('test', 1), ('test', 2), ('test', 3)]
-        )
+        testWorks = [mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2')]
+
+        outWorks = APIUtils.formatWorkOutput(testWorks, [('uuid1', 1), ('uuid2', 2)])
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
-        mockFlatten.assert_called_once_with([1, 2, 3])
         mockFormat.assert_has_calls([
-            mocker.call('testWork1', [1, 2, 3], True),
-            mocker.call('testWork2', [1, 2, 3], True)
+            mocker.call(testWorks[0], 1, True), mocker.call(testWorks[1], 2, True)
         ])
 
     def test_formatWork_showAll(self, testWork, mocker):
@@ -185,6 +182,7 @@ class TestAPIUtils:
         formattedEdition = APIUtils.formatEdition(testEdition)
 
         assert formattedEdition['edition_id'] == 'ed1'
+        assert formattedEdition['publication_date'] == 2000
         assert formattedEdition['items'][0]['item_id'] == 'it1'
         assert formattedEdition['items'][0]['location'] == 'test'
         assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'

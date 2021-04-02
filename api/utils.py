@@ -52,15 +52,13 @@ class APIUtils():
         }
 
     @classmethod
-    def formatWorkOutput(cls, works, identifiers=None, showAll=True):
+    def formatWorkOutput(cls, works, identifiers, showAll=True):
         if isinstance(works, list):
             outWorks = []
-            editionIds = []
+            workDict = {str(work.uuid): work for work in works}
 
-            if identifiers:
-                editionIds = list(cls.flatten([i[1] for i in identifiers]))
-
-            for work in works:
+            for workUUID, editionIds in identifiers:
+                work = workDict[workUUID]
                 outWorks.append(cls.formatWork(work, editionIds, showAll))
             
             return outWorks
@@ -92,6 +90,7 @@ class APIUtils():
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
         editionDict['items'] = []
+        editionDict['publication_date'] = edition.publication_date.year if edition.publication_date else None
 
         for item in edition.items:
             itemDict = dict(item)

@@ -287,5 +287,5 @@ class TestSFRClusterProcess:
         mockESManager.saveWork.assert_called_once
 
     def test_formatIdenArray(self):
-        assert ClusterProcess.formatIdenArray(['test|test', 'multi,test|test'])\
-            == '{test|test,"multi,test|test"}'
+        assert ClusterProcess.formatIdenArray(['{test}|test', 'multi,test|test'])\
+            == '{"{test}|test","multi,test|test"}'
