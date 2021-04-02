@@ -41,7 +41,7 @@ class TestSearchBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', showAll=True
+                'dbWorkRecord', None, showAll=True
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'
@@ -90,8 +90,8 @@ class TestSearchBlueprint:
             assert testAPIResponse == 'errorResponse'
             mockDBClient.assert_called_once_with('testDBClient')
 
-            mockUtils['normalizeQueryParams'].assert_called_once
-            mockUtils['formatWorkOutput'].assert_not_called
+            mockUtils['normalizeQueryParams'].assert_called_once()
+            mockUtils['formatWorkOutput'].assert_not_called()
             mockUtils['formatResponseObject'].assert_called_once_with(
                 404, 'singleWork', {'message': 'Unable to locate work with UUID testUUID'}
             )
