@@ -136,7 +136,7 @@ class TestAPIUtils:
 
         testWorks = [mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2')]
 
-        outWorks = APIUtils.formatWorkOutput(testWorks, [('uuid1', 1), ('uuid2', 2)])
+        outWorks = APIUtils.formatWorkOutput(testWorks, [('uuid1', 1), ('uuid2', 2), ('uuid3', 3)])
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
         mockFormat.assert_has_calls([
