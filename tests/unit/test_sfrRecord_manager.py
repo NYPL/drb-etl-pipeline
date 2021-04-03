@@ -72,15 +72,19 @@ class TestSFRRecordManager:
         ]
         testInstance.work.identifiers = ['wo1', 'wo2', 'wo3']
 
+        testWork = mocker.MagicMock(id='wo1', uuid='uuid1')
+
         matchingEditions = [
-            mocker.MagicMock(work_id=1, id='ed1', work='testWork', dcdw_uuids=['uuid1']),
-            mocker.MagicMock(work_id=1, id='ed2', work='testWork', dcdw_uuids=['uuid2']),
-            mocker.MagicMock(work_id=1, id='ed3', work='testWork', dcdw_uuids=['uuid3'])
+            mocker.MagicMock(work_id=1, id='ed1', work=testWork, dcdw_uuids=['uuid1']),
+            mocker.MagicMock(work_id=1, id='ed2', work=testWork, dcdw_uuids=['uuid2']),
+            mocker.MagicMock(work_id=1, id='ed3', work=testWork, dcdw_uuids=['uuid3'])
         ]
         testInstance.session.query().filter().all.return_value = matchingEditions
         testInstance.session.merge.return_value = testInstance.work
 
-        testInstance.mergeRecords()
+        testUUIDsToDelete = testInstance.mergeRecords()
+
+        assert testUUIDsToDelete == set(['uuid1'])
 
         assert testInstance.work.id == 1
         assert testInstance.work.identifiers == ['work1']
@@ -90,7 +94,7 @@ class TestSFRRecordManager:
         assert testInstance.work.editions[1].items[1].links == ['url4']
 
         testInstance.session.query().filter().all.assert_called_once()
-        testInstance.session.delete.assert_called_once_with('testWork')
+        testInstance.session.delete.assert_called_once_with(testWork)
 
         testInstance.session.merge.assert_called_once_with(testInstance.work)
 

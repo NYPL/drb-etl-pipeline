@@ -7,7 +7,7 @@ from elasticsearch.exceptions import (
     ConflictError
 )
 from elasticsearch.helpers import bulk
-from elasticsearch_dsl import connections
+from elasticsearch_dsl import connections, Search
 
 from model import ESWork
 
@@ -24,7 +24,9 @@ class ElasticsearchManager:
         try:
             self.client = Elasticsearch(
                hosts=['{}:{}'.format(host, port)],
-               timeout = timeout
+               timeout = timeout,
+               retry_on_timeout=True,
+               max_retries=3
             )
         except ConnectionError as err:
             raise err
@@ -39,4 +41,9 @@ class ElasticsearchManager:
     
     def bulkSaveElasticSearchRecords(self, records):
         bulk(client=self.client, index=self.index, actions=records)
+
+    def deleteWorkRecords(self, uuids):
+        for uuid in uuids:
+            workSearch = Search(index=self.index).query('match', uuid=uuid)
+            workSearch.delete()
     
