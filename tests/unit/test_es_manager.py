@@ -35,7 +35,7 @@ class TestElasticsearchManager:
         assert mockConnection.connections._conns['default'] == mockClient
 
         mockES.assert_called_once_with(
-            hosts=['host:port'], timeout=1000
+            hosts=['host:port'], timeout=1000, retry_on_timeout=True, max_retries=3
         )
 
     def test_createElasticConnection_error(self, testInstance, mocker):
@@ -77,3 +77,21 @@ class TestElasticsearchManager:
         testInstance.bulkSaveElasticSearchRecords([1, 2, 3])
 
         mockBulk.assert_called_once_with(client=None, index='testES', actions=[1, 2, 3])
+
+    def test_deleteWorkRecords(self, testInstance, mocker):
+        mockResp = mocker.MagicMock(name='testQuery')
+        mockSearchObj = mocker.MagicMock(name='searchObject')
+        mockSearch = mocker.patch('managers.elasticsearch.Search')
+        mockSearch.return_value = mockSearchObj
+        mockSearchObj.query.return_value = mockResp
+
+        testInstance.deleteWorkRecords(['uuid1', 'uuid2', 'uuid3'])
+
+        assert mockSearch.call_count == 3
+        mockSearchObj.query.assert_has_calls([
+            mocker.call('match', uuid='uuid1'),
+            mocker.call('match', uuid='uuid2'),
+            mocker.call('match', uuid='uuid3')
+        ])
+
+        assert mockResp.delete.call_count == 3
