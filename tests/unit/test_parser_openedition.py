@@ -58,14 +58,14 @@ class TestOpenEditionParser:
             loadEbookLinks=mocker.DEFAULT,
             createPDFLink=mocker.DEFAULT
         )
-        parserMocks['loadEbookLinks'].return_value = [('pdfURI', 'application/pdf+json', 'testFlags')]
+        parserMocks['loadEbookLinks'].return_value = [('pdfURI', 'application/webpub+json', 'testFlags')]
         parserMocks['createPDFLink'].return_value = ['pdfJSON', 'pdfSource']
 
         testLinks = testParser.createLinks()
 
         assert testLinks == ['pdfJSON', 'pdfSource']
         parserMocks['loadEbookLinks'].assert_called_once()
-        parserMocks['createPDFLink'].assert_called_once_with('pdfURI', 'application/pdf+json', 'testFlags')
+        parserMocks['createPDFLink'].assert_called_once_with('pdfURI', 'application/webpub+json', 'testFlags')
 
     def test_createLinks_other(self, testParser, mocker):
         mockLoad = mocker.patch.object(OpenEditionParser, 'loadEbookLinks')
@@ -100,10 +100,10 @@ class TestOpenEditionParser:
 
         testParser.publisher = 'pub'
         testParser.uriIdentifier = 1
-        testLinks = testParser.createPDFLink('sourceURI', 'application/pdf+json', {'reader': True})
+        testLinks = testParser.createPDFLink('sourceURI', 'application/webpub+json', {'reader': True})
 
         assert testLinks == [
-            ('testRoot/manifests/doab/pub_1.json', {'reader': True}, 'application/pdf+json', ('manifests/doab/pub_1.json', 'testManifestJSON'), None),
+            ('testRoot/manifests/doab/pub_1.json', {'reader': True}, 'application/webpub+json', ('manifests/doab/pub_1.json', 'testManifestJSON'), None),
             ('sourceURI', {'download': True}, 'application/pdf', None, None)
         ]
 

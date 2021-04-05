@@ -24,7 +24,7 @@ class DefaultParser(AbstractParser):
             manifestJSON = self.generateManifest(self.uri, manifestURI)
 
             return [
-                (manifestURI, {'reader': True}, 'application/pdf+json', (manifestPath, manifestJSON), None),
+                (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
                 (self.uri, {'reader': False, 'download': True}, self.mediaType, None, None)
             ]
         elif self.mediaType == 'application/epub+zip':

@@ -251,7 +251,7 @@ class TestMUSEProcess:
         processMocks['constructPDFManifest'].assert_called_once_with('testURL', 'type', mockRecord)
         processMocks['createManifestInS3'].assert_called_once_with('testManifest', 'muse1')
         mockMapping.addHasPartLink.assert_called_once_with(
-            'testS3URL', 'application/pdf+json', '{"reader": true, "download": false, "catalog": false}'
+            'testS3URL', 'application/webpub+json', '{"reader": true, "download": false, "catalog": false}'
         )
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
 
@@ -260,7 +260,7 @@ class TestMUSEProcess:
         mockLoad.return_value = testMUSEPage
 
         mockManifest = mocker.MagicMock()
-        mockManifestConstructor = mocker.patch('processes.muse.PDFManifest')
+        mockManifestConstructor = mocker.patch('processes.muse.WebpubManifest')
         mockManifestConstructor.return_value = mockManifest
 
         testManifest = testProcess.constructPDFManifest('testLink', 'testType', 'testRecord')
@@ -277,21 +277,21 @@ class TestMUSEProcess:
         ])
 
         mockManifest.addChapter.assert_has_calls([
-            mocker.call('https://muse.jhu.edu/chapter/440/pdf', 'Cover', None),
-            mocker.call('https://muse.jhu.edu/chapter/2183675/pdf', 'Title Page', 'pp. i-iii'),
-            mocker.call('https://muse.jhu.edu/chapter/2183674/pdf', 'Copyright', 'p. iv'),
-            mocker.call('https://muse.jhu.edu/chapter/2183673/pdf', 'Dedication', 'pp. v-vi'),
-            mocker.call('https://muse.jhu.edu/chapter/441/pdf', 'Contents', 'pp. vii-viii'),
-            mocker.call('https://muse.jhu.edu/chapter/442/pdf', 'Preface', 'pp. ix-xiv'),
-            mocker.call('https://muse.jhu.edu/chapter/444/pdf', 'Chapter 1. Historical Hermeneutics, Reception Theory, and the Social Conditions of Reading in Antebellum America', 'pp. 3-35'),
-            mocker.call('https://muse.jhu.edu/chapter/445/pdf', 'Chapter 2. Interpretive Strategies and Informed Reading in the Antebellum Public Sphere', 'pp. 36-84'),
-            mocker.call('https://muse.jhu.edu/chapter/6239/pdf', 'Chapter 3. “These Days of Double Dealing”: Informed Response, Reader Appropriation, and the Tales of Poe', 'pp. 87-137'),
-            mocker.call('https://muse.jhu.edu/chapter/6240/pdf', 'Chapter 4. Multiple Audiences and Melville’s Fiction: Receptions, Recoveries, and Regressions', 'pp. 138-200'),
-            mocker.call('https://muse.jhu.edu/chapter/6241/pdf', 'Chapter 5. Response as (Re)construction: The Reception of Catharine Sedgwick’s Novels', 'pp. 201-255'),
-            mocker.call('https://muse.jhu.edu/chapter/6242/pdf', 'Chapter 6. Mercurial Readings: The Making and Unmaking of Caroline Chesebro’', 'pp. 256-298'),
-            mocker.call('https://muse.jhu.edu/chapter/6243/pdf', 'Conclusion. American Literary History and the Historical Study of Interpretive Practices', 'pp. 299-320'),
-            mocker.call('https://muse.jhu.edu/chapter/6244/pdf', 'Notes', 'pp. 321-392'),
-            mocker.call('https://muse.jhu.edu/chapter/6245/pdf', 'Index', 'pp. 393-403')
+            mocker.call('https://muse.jhu.edu/chapter/440/pdf', 'Cover'),
+            mocker.call('https://muse.jhu.edu/chapter/2183675/pdf', 'Title Page'),
+            mocker.call('https://muse.jhu.edu/chapter/2183674/pdf', 'Copyright'),
+            mocker.call('https://muse.jhu.edu/chapter/2183673/pdf', 'Dedication'),
+            mocker.call('https://muse.jhu.edu/chapter/441/pdf', 'Contents'),
+            mocker.call('https://muse.jhu.edu/chapter/442/pdf', 'Preface'),
+            mocker.call('https://muse.jhu.edu/chapter/444/pdf', 'Chapter 1. Historical Hermeneutics, Reception Theory, and the Social Conditions of Reading in Antebellum America'),
+            mocker.call('https://muse.jhu.edu/chapter/445/pdf', 'Chapter 2. Interpretive Strategies and Informed Reading in the Antebellum Public Sphere'),
+            mocker.call('https://muse.jhu.edu/chapter/6239/pdf', 'Chapter 3. “These Days of Double Dealing”: Informed Response, Reader Appropriation, and the Tales of Poe'),
+            mocker.call('https://muse.jhu.edu/chapter/6240/pdf', 'Chapter 4. Multiple Audiences and Melville’s Fiction: Receptions, Recoveries, and Regressions'),
+            mocker.call('https://muse.jhu.edu/chapter/6241/pdf', 'Chapter 5. Response as (Re)construction: The Reception of Catharine Sedgwick’s Novels'),
+            mocker.call('https://muse.jhu.edu/chapter/6242/pdf', 'Chapter 6. Mercurial Readings: The Making and Unmaking of Caroline Chesebro’'),
+            mocker.call('https://muse.jhu.edu/chapter/6243/pdf', 'Conclusion. American Literary History and the Historical Study of Interpretive Practices'),
+            mocker.call('https://muse.jhu.edu/chapter/6244/pdf', 'Notes'),
+            mocker.call('https://muse.jhu.edu/chapter/6245/pdf', 'Index')
         ])
 
         mockManifest.closeSection.assert_has_calls([mocker.call(), mocker.call()])
@@ -301,7 +301,7 @@ class TestMUSEProcess:
         mockLoad.return_value = testMUSEPageUnreleased
 
         mockManifest = mocker.MagicMock()
-        mockManifestConstructor = mocker.patch('processes.muse.PDFManifest')
+        mockManifestConstructor = mocker.patch('processes.muse.WebpubManifest')
         mockManifestConstructor.return_value = mockManifest
 
         mockRecord = mocker.MagicMock()
@@ -339,11 +339,11 @@ class TestMUSEProcess:
         mockPut = mocker.patch.object(MUSEProcess, 'putObjectInBucket')
 
         mockManifest = mocker.MagicMock()
-        mockManifest.links = {'self': {}}
+        mockManifest.links = []
         mockManifest.toJson.return_value = 'testJSON'
 
         testURL = testProcess.createManifestInS3(mockManifest, 1)
 
         assert testURL == 'https://test_aws_bucket.s3.amazonaws.com/manifests/muse/1.json'
-        assert mockManifest.links['self'] == {'href': testURL, 'type': 'application/pdf+json'}
+        assert mockManifest.links[0] == {'href': testURL, 'type': 'application/webpub+json', 'rel': 'self'}
         mockPut.assert_called_once_with(b'testJSON', 'manifests/muse/1.json', 'test_aws_bucket')

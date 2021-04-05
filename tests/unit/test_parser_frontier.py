@@ -84,7 +84,7 @@ class TestFrontierParser:
         testLinks = testParser.generatePDFLinks('testRoot/')
 
         assert testLinks == [
-            ('testRoot/manifests/frontier/1.json', {'reader': True}, 'application/pdf+json', ('manifests/frontier/1.json', 'testManifestJSON'), None),
+            ('testRoot/manifests/frontier/1.json', {'reader': True}, 'application/webpub+json', ('manifests/frontier/1.json', 'testManifestJSON'), None),
             ('https://www.frontiersin.org/research-topics/1/pdf', {'download': True}, 'application/pdf', None, None)
         ]
 

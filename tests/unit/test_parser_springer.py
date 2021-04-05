@@ -129,7 +129,7 @@ class TestSpringerParser:
         testLinks = testParser.createPDFLinks('testRoot/')
 
         assert testLinks == [
-            ('testRoot/manifests/springer/10-007_1.json', {'reader': True}, 'application/pdf+json', ('manifests/springer/10-007_1.json', 'testManifestJSON'), None),
+            ('testRoot/manifests/springer/10-007_1.json', {'reader': True}, 'application/webpub+json', ('manifests/springer/10-007_1.json', 'testManifestJSON'), None),
             ('https://link.springer.com/content/pdf/10.007/1.pdf', {'download': True}, 'application/pdf', None, None)
         ]
         parserMocks['generateManifest'].assert_called_once_with('https://link.springer.com/content/pdf/10.007/1.pdf', 'testRoot/manifests/springer/10-007_1.json')

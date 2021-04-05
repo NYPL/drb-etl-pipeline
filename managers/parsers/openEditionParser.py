@@ -11,7 +11,7 @@ class OpenEditionParser(AbstractParser):
     REGEX = r'books.openedition.org/([a-z0-9]+)/([0-9]+)$'
     FORMATS = [
         {'regex': r'\/(epub\/[0-9]+)', 'mediaType': 'application/epub+xml', 'flags': {'reader': True}},
-        {'regex': r'\/(pdf\/[0-9]+)', 'mediaType': 'application/pdf+json', 'flags': {'reader': True}},
+        {'regex': r'\/(pdf\/[0-9]+)', 'mediaType': 'application/webpub+json', 'flags': {'reader': True}},
         {'regex': r'([0-9]+\?format=reader)$', 'mediaType': 'text/html', 'flags': {}},
         {'regex': r'([0-9]+)$', 'mediaType': 'text/html', 'flags': {}},
     ]
@@ -43,7 +43,7 @@ class OpenEditionParser(AbstractParser):
 
             if bookType == 'application/epub+xml':
                outLinks.extend(self.createEpubLink(bookURI, bookType, bookFlags)) 
-            elif bookType == 'application/pdf+json':
+            elif bookType == 'application/webpub+json':
                 outLinks.extend(self.createPDFLink(bookURI, bookType, bookFlags))
             else:
                 outLinks.append((bookURI, bookFlags, bookType, None, None))

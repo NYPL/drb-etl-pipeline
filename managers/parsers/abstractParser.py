@@ -38,9 +38,9 @@ class AbstractParser(ABC):
 
         manifest.addMetadata(self.record)
 
-        manifest.addChapter(sourceURI, self.record.title, None)
+        manifest.addChapter(sourceURI, self.record.title)
 
-        manifest.links['self'] = {'href': manifestURI, 'type': 'application/pdf+json'}
+        manifest.links['self'] = {'href': manifestURI, 'type': 'application/webpub+json'}
 
         return manifest.toJson()
 

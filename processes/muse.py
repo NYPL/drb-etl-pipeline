@@ -49,7 +49,7 @@ class MUSEProcess(CoreProcess):
 
         s3URL = self.createManifestInS3(pdfManifest, museRec.record.source_id)
         museRec.addHasPartLink(
-            s3URL, 'application/pdf+json',
+            s3URL, 'application/webpub+json',
             json.dumps({'reader': True, 'download': False, 'catalog': False})
         )
         self.addDCDWToUpdateList(museRec)
@@ -142,7 +142,6 @@ class MUSEProcess(CoreProcess):
 
         for card in chapterTable.find_all(class_='card_text'):
             titleItem = card.find('li', class_='title')
-            pageItem = card.find('li', class_='pg')
 
             if not titleItem:
                 continue
@@ -156,7 +155,6 @@ class MUSEProcess(CoreProcess):
                 pdfManifest.addChapter(
                     '{}{}/pdf'.format(self.MUSE_ROOT_URL, titleItem.span.a.get('href')),
                     titleItem.span.a.string,
-                    pageItem.string if pageItem else None
                 )
         
         pdfManifest.closeSection()
@@ -175,7 +173,7 @@ class MUSEProcess(CoreProcess):
         bucketLocation = 'manifests/muse/{}.json'.format(museID)
         s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
 
-        pdfManifest.links['self'] = {'href': s3URL, 'type': 'application/pdf+json'}
+        pdfManifest.links.append({'href': s3URL, 'type': 'application/webpub+json', 'rel': 'self'})
 
         self.putObjectInBucket(pdfManifest.toJson().encode('utf-8'), bucketLocation, self.s3Bucket)
 

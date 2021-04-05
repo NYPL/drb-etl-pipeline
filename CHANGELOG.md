@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.5.1
+### Fixed
+- Convert PDF Manifest class to standard Readium Webpub format
+
 ## 2021-04-05 -- v0.5.0
 ### Added
 - OPDS2 endpoints and structure

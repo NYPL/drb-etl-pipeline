@@ -1,16 +1,13 @@
 import json
 import os
-import re
 
 
 class WebpubManifest:
     def __init__(self, source, sourceType):
         self.metadata = {'@type': 'https://schema.org/Book'}
-        self.links = {
-            'self': {},
-            'alternate': [{'href': source, 'type': sourceType}]
-        }
-        self.components = []
+        self.links = [{'href': source, 'type': sourceType, 'rel': 'alternate'}]
+        self.readingOrder = []
+        self.resources = set()
         self.tableOfContents = []
 
         self.openSection = None
@@ -43,13 +40,9 @@ class WebpubManifest:
         self.openSection = None
 
     # TODO Make it possible to add subsections iteratively
-    def addChapter(self, link, title, pageRange, subsections=None):
-        newChapter = PDFChapter(link, title, pageRange)
-        newChapter.parsePageRange()
-
-        tocEntry = {
-            'href': link, 'title': title, 'pages': pageRange
-        }
+    def addChapter(self, link, title, subsections=None):
+        component = {'href': link, 'title': title}
+        tocEntry = component.copy()
 
         if subsections and isinstance(subsections, list):
             tocEntry['children'] = subsections
@@ -59,85 +52,28 @@ class WebpubManifest:
         else:
             self.tableOfContents.append(tocEntry)
 
-        self.components.append(newChapter)
+        self.addReadingOrder(component)
+        self.addResource(component['href'])
+
+    def addReadingOrder(self, component):
+        component['type'] = 'application/pdf'
+
+        self.readingOrder.append(component)
+
+    def addResource(self, href):
+        rootHref, *_ = href.split('#')
+
+        self.resources.add(rootHref)
 
     def toDict(self):
         return {
             'context': 'https://{}-s3.amazonaws.com/manifests/context.jsonld'.format(os.environ['FILE_BUCKET']),
             'metadata': self.metadata,
             'links': self.links,
-            'readingOrder': [c.toDict() for c in self.components],
-            'resources': [c.toDict(resource=True) for c in self.components],
+            'readingOrder': self.readingOrder,
+            'resources': [{'href': res, 'type': 'application/pdf'} for res in self.resources],
             'toc': self.tableOfContents
         }
 
     def toJson(self):
         return json.dumps(self.toDict())
-
-
-class PDFChapter:
-    ROMAN_NUMERALS = {'i': 1, 'v': 5, 'x': 10, 'l': 50, 'c': 100, 'm': 1000}
-    def __init__(self, link, title, pageRange):
-        self.link = link
-        self.title = title
-        self.pageRange = pageRange
-        self.startPage = None
-        self.endPage = None
-
-        self.type = 'application/pdf'
-
-    def parsePageRange(self):
-        if not self.pageRange: return None
-
-        rangeMatch = re.search(r'([\w]+)\-([\w]+)', self.pageRange)
-
-        if rangeMatch:
-            self.startPage = self.parseRangeValue(rangeMatch.group(1))
-            self.endPage = self.parseRangeValue(rangeMatch.group(2))
-
-    @classmethod
-    def parseRangeValue(cls, rangeValue):
-        try:
-            return int(rangeValue)
-        except ValueError:
-            return cls.translateRomanNumeral(rangeValue)
-
-    @classmethod
-    def translateRomanNumeral(cls, rangeValue):
-        rangeLower = rangeValue.lower()
-
-        if not re.search(r'^[ivxlcm]+$', rangeLower): return None
-
-        num = 0
-        pos = 0
-        charVal = cls.ROMAN_NUMERALS[rangeLower[pos]]
-        while pos < len(rangeLower):
-            pos += 1
-
-            try:
-                nextCharVal = cls.ROMAN_NUMERALS[rangeLower[pos]]
-            except IndexError:
-                num += charVal
-                break
-
-            if charVal < nextCharVal:
-                charVal = charVal * -1
-
-            num += charVal
-
-            charVal = nextCharVal
-                
-        return num
-
-    def toDict(self, resource=False):
-        componentEntry = {
-            'href': self.link, 'title': self.title
-        }
-
-        if self.startPage:
-            componentEntry['pageStart'] = self.startPage
-
-        if self.endPage:
-            componentEntry['pageEnd'] = self.endPage
-
-        return componentEntry

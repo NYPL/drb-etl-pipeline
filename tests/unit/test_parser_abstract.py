@@ -50,16 +50,16 @@ class TestAbstractParser:
         mockManifest = mocker.MagicMock(links={})
         mockManifest.toJson.return_value = 'jsonManifest'
 
-        mockManifestManager = mocker.patch('managers.parsers.abstractParser.PDFManifest')
+        mockManifestManager = mocker.patch('managers.parsers.abstractParser.WebpubManifest')
         mockManifestManager.return_value = mockManifest
 
         testManifest = testParser.generateManifest('sourceURI', 'manifestURI')
 
         assert testManifest == 'jsonManifest'
-        assert mockManifest.links == {'self': {'href': 'manifestURI', 'type': 'application/pdf+json'}}
+        assert mockManifest.links == {'self': {'href': 'manifestURI', 'type': 'application/webpub+json'}}
         mockManifestManager.assert_called_once_with('sourceURI', 'application/pdf')
         mockManifest.addMetadata.assert_called_once_with(testParser.record)
-        mockManifest.addChapter.assert_called_once_with('sourceURI', 'testRecord', None)
+        mockManifest.addChapter.assert_called_once_with('sourceURI', 'testRecord')
         mockManifest.toJson.assert_called_once()
 
     def test_generateS3Root(self, testParser):
