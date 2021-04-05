@@ -10,7 +10,7 @@ from requests.exceptions import ReadTimeout, HTTPError
 
 from .core import CoreProcess
 from mappings.muse import MUSEMapping
-from managers import PDFManifest
+from managers import WebpubManifest
 from logger import createLog
 
 logger = createLog(__name__)
@@ -131,7 +131,7 @@ class MUSEProcess(CoreProcess):
         except Exception as e:
             return None
 
-        pdfManifest = PDFManifest(museLink, museType)
+        pdfManifest = WebpubManifest(museLink, museType)
         pdfManifest.addMetadata(museRecord)
 
         museSoup = BeautifulSoup(museHTML, features='lxml')

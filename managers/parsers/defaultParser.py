@@ -1,7 +1,5 @@
-import os
-
 from managers.parsers.abstractParser import AbstractParser
-from managers.pdfManifest import PDFManifest
+from managers.webpubManifest import WebpubManifest
 
 
 class DefaultParser(AbstractParser):

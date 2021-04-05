@@ -4,7 +4,6 @@ import requests
 from requests.exceptions import ReadTimeout
 
 from managers.parsers.abstractParser import AbstractParser
-from managers.pdfManifest import PDFManifest
 
 
 class OpenEditionParser(AbstractParser):

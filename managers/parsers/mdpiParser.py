@@ -1,8 +1,6 @@
 import re
-import requests
 
 from managers.parsers.abstractParser import AbstractParser
-from managers.pdfManifest import PDFManifest
 
 
 class MDPIParser(AbstractParser):
