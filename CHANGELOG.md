@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.5.0
+## 2021-04-05 -- v0.5.0
 ### Added
 - OPDS2 endpoints and structure
 - Graceful handling of 404 errors and 500 database errors
