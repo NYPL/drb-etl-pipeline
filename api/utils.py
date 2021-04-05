@@ -170,3 +170,7 @@ class APIUtils():
             }),
             status
         )
+
+    @staticmethod
+    def formatOPDS2Object(status, feedObject):
+        return (jsonify(dict(feedObject)), status)
