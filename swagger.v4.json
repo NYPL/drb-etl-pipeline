@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "version": "v0.4.2",
+        "version": "v0.5.0",
         "title": "Digital Research Books Search API",
         "description": "RESTful API for the Digital Research Books Project"
     },
@@ -107,6 +107,13 @@
                 "description": "Return a single work record identified by a UUID",
                 "parameters": [
                     {
+                        "name": "uuid",
+                        "in": "path",
+                        "description": "UUID for work record",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
                         "name": "showAll",
                         "in": "query",
                         "description": "If True all editions are returned, if False only editions with readable links are returned",
@@ -149,6 +156,13 @@
                 "description": "Return a single edition record identified by an internal id",
                 "parameters": [
                     {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier for Edition record",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
                         "name": "showAll",
                         "in": "query",
                         "description": "If True all editions are returned, if False only editions with readable links are returned",
@@ -189,7 +203,15 @@
                 "tags": ["digital-research-books"],
                 "summary": "v4 Get Single Link",
                 "description": "Return a single link record with a nested work to provide context",
-                "parameters": [],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier for Link record",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "A single DRB Link record",
@@ -293,7 +315,205 @@
                     }
                 }
             }
-        }
+        },
+        "/opds": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "OPDS2 Root Endpoint",
+                "description": "Provides a basic overview of the OPDS2 feed and access methods",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "A basic OPDS2 feed response",
+                        "schema": {
+                            "$ref": "#/definitions/OPDSFeedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    } 
+                }
+            }
+        },
+        "/opds/new": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "OPDS2 New Publications",
+                "description": "A feed of recently updated DRB publications",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "A basic OPDS2 feed response",
+                        "schema": {
+                            "$ref": "#/definitions/OPDSFeedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    } 
+                }
+            }
+        },
+        "/opds/search": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "OPDS2 Publications Search",
+                "description": "Search endpoint for querying DRB Collection",
+                "parameters": [
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "description": "Query across title, subject and author fields",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "title",
+                        "in": "query",
+                        "description": "title query (Includes subtitle and alternate title fields)",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "author",
+                        "in": "query",
+                        "description": "Query on author names",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "subject",
+                        "in": "query",
+                        "description": "Query on subject headings (across all authorities)",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "filter",
+                        "in": "query",
+                        "description": "Fiter option field/term pair (e.g. language:French). Valid options are date, language and format",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "showAll",
+                        "in": "query",
+                        "description": "Setting that controls display of either all editions (true) or only editions with links (false)",
+                        "required": false,
+                        "type": "boolean"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Sets the page of results to return",
+                        "required": false,
+                        "type": "integer"
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "description": "Sets the number of results to return per page",
+                        "required": false,
+                        "type": "integer"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A basic OPDS2 feed response",
+                        "schema": {
+                            "$ref": "#/definitions/OPDSFeedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    } 
+                }
+            }
+        },
+        "/opds/publication/{uuid}": {
+            "get": {
+                 "tags": ["digital-research-books"],
+                 "summary": "OPDS2 Get Single Publication",
+                 "description": "Return a single publication record identified by a UUID",
+                 "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "description": "UUID for publication record",
+                        "type": "string",
+                        "required": true
+                    }
+                 ],
+                 "responses": {
+                     "200": {
+                         "description": "A single DRB Work record",
+                         "schema": {
+                             "$ref": "#/definitions/OPDSPublicationObject"
+                         }
+                     },
+                     "404": {
+                         "description": "Resource was not found",
+                         "schema": {
+                             "$ref": "#/definitions/ErrorResponse"
+                         }
+                     },
+                     "500": {
+                         "description": "Internal Server Error",
+                         "schema": {
+                             "$ref": "#/definitions/ErrorResponse"
+                         }
+                     },
+                     "default": {
+                         "description": "Unexpected Error",
+                         "schema": {
+                             "$ref": "#/definitions/ErrorResponse"
+                         }
+                     }
+                 }
+            } 
+         }
     },
     "definitions": {
         "ErrorResponse": {
@@ -900,6 +1120,321 @@
         "MediaType": {
             "type": "string",
             "enum": ["text/html", "application/pdf", "application/epub+zip", "application/epub+xml", "application/webpub+json", "image/jpeg", "image/png"]
+        },
+        "OPDSFeedResponse": {
+            "type": "object",
+            "properties": {
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSLinkObject"
+                    }
+                },
+                "metadata": {
+                    "type": "object",
+                    "$ref": "#/definitions/OPDSMetadataObject"
+                },
+                "navigation": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSNavigationObject"
+                    }
+                },
+                "publications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSPublicationObject"
+                    }
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSGroupObject"
+                    }
+                },
+                "facets": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSFacetObject"
+                    }
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSLinkObject"
+                    }
+                }
+            }
+        },
+        "OPDSLinkObject": {
+            "type": "object",
+            "properties": {
+                "href": {
+                    "type": "string",
+                    "format": "uri",
+                    "required": true
+                },
+                "type": {
+                    "type": "string"
+                },
+                "rel": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "templated": {
+                    "type": "boolean"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "alternate": {
+                    "type": "string"
+                },
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSLinkObject"
+                    }
+                },
+                "properties": {
+                    "type": "object"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "width": {
+                    "type": "integer"
+                },
+                "duration": {
+                    "type": "integer"
+                },
+                "bitrate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "OPDSMetadataObject": {
+            "type": "object",
+            "properties": {
+                "identifier": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "subtitle": {
+                    "type": "string"
+                },
+                "sortAs": {
+                    "type": "string"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "translator": {
+                    "type": "string"
+                },
+                "editor": {
+                    "type": "string"
+                },
+                "illustrator": {
+                    "type": "string"
+                },
+                "artist": {
+                    "type": "string"
+                },
+                "colorist": {
+                    "type": "string"
+                },
+                "inker": {
+                    "type": "string"
+                },
+                "penciler": {
+                    "type": "string"
+                },
+                "letterer": {
+                    "type": "string"
+                },
+                "narrator": {
+                    "type": "string"
+                },
+                "contributor": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "subject": {
+                    "type": "string"
+                },
+                "numberOfPages": {
+                    "type": "integer"
+                },
+                "duration": {
+                    "type": "integer"
+                },
+                "abridged": {
+                    "type": "string"
+                },
+                "publisher": {
+                    "type": "string"
+                },
+                "imprint": {
+                    "type": "string"
+                },
+                "modified": {
+                    "type": "string",
+                    "format": "date-time"
+                },
+                "published": {
+                    "type": "integer",
+                    "format": "date-time"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "belongsTo": {
+                    "type": "string"
+                },
+                "series": {
+                    "type": "string"
+                },
+                "collection": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "string"
+                },
+                "readingOrder": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSLinkObject"
+                    }
+                },
+                "resources": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSLinkObject"
+                    }
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSLinkObject"
+                    }
+                },
+                "href": {
+                    "type": "string",
+                    "format": "url"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "rel": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "width": {
+                    "type": "integer"
+                },
+                "bitrate": {
+                    "type": "integer"
+                },
+                "alternate": {
+                    "type": "integer"
+                }
+            }
+        },
+        "OPDSNavigationObject": {
+            "type": "object",
+            "properties": {
+                "href": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string",
+                    "required": true
+                },
+                "type": {
+                    "type": "string"
+                },
+                "rel": {
+                    "type": "string"
+                }
+            }
+        },
+        "OPDSPublicationObject": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "$ref": "#/definitions/OPDSMetadataObject"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSLinkObject"
+                    }
+                },
+                "images": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSLinkObject"
+                    }
+                },
+                "editions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSPublicationObject"
+                    }
+                }
+            }
+        },
+        "OPDSGroupObject": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "$ref": "#/definitions/OPDSMetadataObject"
+                },
+                "navigation": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSNavigationObject"
+                    }
+                },
+                "publications": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSPublicationObject"
+                    }
+                }
+            }
+        },
+        "OPDSFacetObject": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "$ref": "#/definitions/OPDSMetadataObject"
+                },
+                "links": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/OPDSLinkObject"
+                    }
+                }
+            }
         }
     }
 }

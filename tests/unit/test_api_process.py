@@ -23,6 +23,7 @@ class TestAPIProcess:
 
         return APIProcess('TestProcess', 'testFile', 'testDate', 'testRecord')
     
-    def test_api_runProcess(self, apiInstance, mocker):
+    def test_api_runProcess(self, apiInstance):
         apiInstance.runProcess()
-        apiInstance.api.run.assert_called_once
+        apiInstance.api.run.assert_called_once()
+        apiInstance.api.createErrorResponses.assert_called_once()
