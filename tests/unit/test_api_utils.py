@@ -63,7 +63,10 @@ class TestAPIUtils:
     @pytest.fixture
     def testEdition(self, MockDBObject, testItem, mocker):
         return MockDBObject(
-            id='ed1', publication_date=mocker.MagicMock(year=2000), items=[testItem]
+            id='ed1',
+            publication_date=mocker.MagicMock(year=2000),
+            items=[testItem],
+            links=[mocker.MagicMock(id='co1', media_type='image/png', url='testCover')]
         )
 
     @pytest.fixture
@@ -183,6 +186,9 @@ class TestAPIUtils:
 
         assert formattedEdition['edition_id'] == 'ed1'
         assert formattedEdition['publication_date'] == 2000
+        assert formattedEdition['links'][0]['link_id'] == 'co1'
+        assert formattedEdition['links'][0]['mediaType'] == 'image/png'
+        assert formattedEdition['links'][0]['url'] == 'testCover'
         assert formattedEdition['items'][0]['item_id'] == 'it1'
         assert formattedEdition['items'][0]['location'] == 'test'
         assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
