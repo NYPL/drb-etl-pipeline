@@ -3,6 +3,7 @@
 ## unreleased -- v0.5.1
 ### Fixed
 - Convert PDF Manifest class to standard Readium Webpub format
+- Ensure that covers are present in API responses
 
 ## 2021-04-05 -- v0.5.0
 ### Added

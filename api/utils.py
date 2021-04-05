@@ -76,7 +76,7 @@ class APIUtils():
         for edition in work.editions:
             if editionIds and edition.id not in editionIds:
                 continue
-
+            
             editionDict = cls.formatEdition(edition)
 
             if showAll is True or (showAll is False and len(editionDict['items']) > 0):
@@ -92,29 +92,27 @@ class APIUtils():
     def formatEdition(cls, edition):
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
-        editionDict['items'] = []
         editionDict['publication_date'] = edition.publication_date.year if edition.publication_date else None
+        editionDict['links'] = [
+            {'link_id': l.id, 'mediaType': l.media_type, 'url': l.url}
+            for l in edition.links
+        ]
 
+        editionDict['items'] = []
         for item in edition.items:
             itemDict = dict(item)
             itemDict['item_id'] = item.id
             itemDict['location'] = item.physical_location['name'] if item.physical_location else None
 
-            itemDict['links'] = []
-            for link in item.links:
-                itemDict['links'].append({
-                    'link_id': link.id,
-                    'mediaType': link.media_type,
-                    'url': link.url
-                })
+            itemDict['links'] = [
+                {'link_id': l.id, 'mediaType': l.media_type, 'url': l.url}
+                for l in item.links
+            ]
 
-            itemDict['rights'] = []
-            for rights in item.rights:
-                itemDict['rights'].append({
-                    'source': rights.source,
-                    'license': rights.license,
-                    'rightsStatement': rights.rights_statement
-                })
+            itemDict['rights'] = [
+                {'source': r.source, 'license': r.license, 'rightsStatement': r.rights_statement}
+                for r in item.rights
+            ]
 
             editionDict['items'].append(itemDict)
 
