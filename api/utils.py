@@ -58,7 +58,10 @@ class APIUtils():
             workDict = {str(work.uuid): work for work in works}
 
             for workUUID, editionIds in identifiers:
-                work = workDict[workUUID]
+                work = workDict.get(workUUID, None)
+
+                if work is None: continue
+
                 outWorks.append(cls.formatWork(work, editionIds, showAll))
             
             return outWorks

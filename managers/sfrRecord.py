@@ -23,6 +23,7 @@ class SFRRecordManager:
 
     def mergeRecords(self):
         existingIDs = {}
+        uuidsToDelete = set()
 
         dcdwUUIDs = set()
         for edition in self.work.editions:
@@ -45,6 +46,7 @@ class SFRRecordManager:
                 edition.id = useEdition.id
                 for otherEd in existingEditions[1:]:
                     self.session.delete(otherEd.work)
+                    uuidsToDelete.add(otherEd.work.uuid)
                 
             edition.identifiers = self.dedupeIdentifiers(edition.identifiers, existingIDs)
 
@@ -55,6 +57,8 @@ class SFRRecordManager:
         self.work.identifiers = self.dedupeIdentifiers(self.work.identifiers, existingIDs)
 
         self.work = self.session.merge(self.work)
+
+        return uuidsToDelete
 
     def dedupeIdentifiers(self, identifiers, existingIDs):
         queryGroups = defaultdict(list)
