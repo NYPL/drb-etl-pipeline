@@ -387,9 +387,19 @@ class TestSFRRecordManager:
     def test_subjectParser(self, testInstance, mocker):
         mockSetDelimited = mocker.patch.object(SFRRecordManager, 'setPipeDelimitedData')
         mockSetDelimited.return_value = ['testSubject']
-        testInstance.subjectParser(['Test||', 'test.|auth|1234'])
+        testInstance.subjectParser(['Test||', 'test.|auth|1234', '|auth|56768'])
 
         assert testInstance.work.subjects == ['testSubject']
         mockSetDelimited.assert_called_once_with(
             ['Test|auth|1234'], ['heading', 'authority', 'controlNo']
+        )
+
+    def test_subjectParser_unexpected_heading(self, testInstance, mocker):
+        mockSetDelimited = mocker.patch.object(SFRRecordManager, 'setPipeDelimitedData')
+        mockSetDelimited.return_value = ['testSubject']
+        testInstance.subjectParser(['Test|Other|auth|1234'])
+
+        assert testInstance.work.subjects == ['testSubject']
+        mockSetDelimited.assert_called_once_with(
+            ['Test,Other|auth|1234'], ['heading', 'authority', 'controlNo']
         )

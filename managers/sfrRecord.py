@@ -507,7 +507,13 @@ class SFRRecordManager:
     def subjectParser(self, subjects):
         cleanSubjects = {}
         for subj in subjects:
-            heading, auth, authNo = subj.split('|')
+            try:
+                heading, auth, authNo = subj.split('|')
+            except ValueError:
+                authNoRev, authRev, *headRevArr = subj[::-1].split('|')
+                authNo = authNoRev[::-1]
+                auth = authRev[::-1]
+                heading = ','.join(headRevArr)[::-1]
 
             if heading == '': continue
 
