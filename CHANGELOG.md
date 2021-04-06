@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.5.1
+## 2021-04-06 -- v0.5.1
 ### Added
 - Format crosswalk for API filtering and related 400 Invalid request error
 ### Fixed
