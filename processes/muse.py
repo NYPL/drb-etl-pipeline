@@ -45,7 +45,7 @@ class MUSEProcess(CoreProcess):
 
         # Use the available source link to create a PDF manifest file and store in S3
         _, museLink, _, museType, _ = list(museRec.record.has_part[0].split('|'))
-        webpubManifest = self.constructPDFManifest(museLink, museType, museRec.record)
+        webpubManifest = self.constructWebpubManifest(museLink, museType, museRec.record)
 
         s3URL = self.createManifestInS3(webpubManifest, museRec.record.source_id)
         museRec.addHasPartLink(
@@ -125,7 +125,7 @@ class MUSEProcess(CoreProcess):
         recordURL = record.get_fields('856')[0]['u']
         return self.updateDates.get(recordURL[:-1], datetime(1970, 1, 1)) >= startDate
 
-    def constructPDFManifest(self, museLink, museType, museRecord):
+    def constructWebpubManifest(self, museLink, museType, museRecord):
         try:
             museHTML = self.loadMusePage(museLink)
         except Exception as e:

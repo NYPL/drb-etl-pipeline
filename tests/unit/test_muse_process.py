@@ -236,26 +236,26 @@ class TestMUSEProcess:
         mockMapper.return_value = mockMapping
 
         processMocks = mocker.patch.multiple(MUSEProcess,
-            constructPDFManifest=mocker.DEFAULT,
+            constructWebpubManifest=mocker.DEFAULT,
             createManifestInS3=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
 
-        processMocks['constructPDFManifest'].return_value = 'testManifest'
+        processMocks['constructWebpubManifest'].return_value = 'testManifest'
         processMocks['createManifestInS3'].return_value = 'testS3URL'
 
         testProcess.parseMuseRecord('testMARC')
 
         mockMapper.assert_called_once_with('testMARC')
         mockMapping.applyMapping.assert_called_once
-        processMocks['constructPDFManifest'].assert_called_once_with('testURL', 'type', mockRecord)
+        processMocks['constructWebpubManifest'].assert_called_once_with('testURL', 'type', mockRecord)
         processMocks['createManifestInS3'].assert_called_once_with('testManifest', 'muse1')
         mockMapping.addHasPartLink.assert_called_once_with(
             'testS3URL', 'application/webpub+json', '{"reader": true, "download": false, "catalog": false}'
         )
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
 
-    def test_constructPDFManifest(self, testProcess, testMUSEPage, mocker):
+    def test_constructWebpubManifest(self, testProcess, testMUSEPage, mocker):
         mockLoad = mocker.patch.object(MUSEProcess, 'loadMusePage')
         mockLoad.return_value = testMUSEPage
 
@@ -263,7 +263,7 @@ class TestMUSEProcess:
         mockManifestConstructor = mocker.patch('processes.muse.WebpubManifest')
         mockManifestConstructor.return_value = mockManifest
 
-        testManifest = testProcess.constructPDFManifest('testLink', 'testType', 'testRecord')
+        testManifest = testProcess.constructWebpubManifest('testLink', 'testType', 'testRecord')
 
         assert testManifest == mockManifest
 
@@ -296,7 +296,7 @@ class TestMUSEProcess:
 
         mockManifest.closeSection.assert_has_calls([mocker.call(), mocker.call()])
 
-    def test_constructPDFManifest_muse_error(self, testProcess, testMUSEPageUnreleased, mocker):
+    def test_constructWebpubManifest_muse_error(self, testProcess, testMUSEPageUnreleased, mocker):
         mockLoad = mocker.patch.object(MUSEProcess, 'loadMusePage')
         mockLoad.return_value = testMUSEPageUnreleased
 
@@ -308,13 +308,14 @@ class TestMUSEProcess:
         mockRecord.source_id = 1
 
         with pytest.raises(MUSEError):
-            testProcess.constructPDFManifest('testLink', 'testType', mockRecord)
+            testProcess.constructWebpubManifest('testLink', 'testType', mockRecord)
 
-    def test_constructPDFManifest_error(self, testProcess, mocker):
+    def test_constructWebpubManifest_error(self, testProcess, mocker):
         mockLoad = mocker.patch.object(MUSEProcess, 'loadMusePage')
         mockLoad.side_effect = Exception
 
-        assert testProcess.constructPDFManifest('testLink', 'testType', 'testRecord') == None
+        with pytest.raises(MUSEError):
+            testProcess.constructWebpubManifest('testLink', 'testType', 'testRecord')
 
     def test_loadMusePage_success(self, testProcess, mocker):
         mockGet = mocker.patch.object(requests, 'get')
