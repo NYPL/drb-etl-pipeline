@@ -2,7 +2,6 @@ import re
 import requests
 
 from managers.parsers.abstractParser import AbstractParser
-from managers.pdfManifest import PDFManifest
 
 
 class DeGruyterParser(AbstractParser):
@@ -64,7 +63,7 @@ class DeGruyterParser(AbstractParser):
         manifestJSON = self.generateManifest(pdfSourceURI, manifestURI)
 
         return [
-            (manifestURI, {'reader': True}, 'application/pdf+json', (manifestPath, manifestJSON), None),
+            (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
             (pdfSourceURI, {'download': True}, 'application/pdf', None, None)
         ]
 

@@ -1,7 +1,5 @@
-import os
-
 from managers.parsers.abstractParser import AbstractParser
-from managers.pdfManifest import PDFManifest
+from managers.webpubManifest import WebpubManifest
 
 
 class DefaultParser(AbstractParser):
@@ -26,7 +24,7 @@ class DefaultParser(AbstractParser):
             manifestJSON = self.generateManifest(self.uri, manifestURI)
 
             return [
-                (manifestURI, {'reader': True}, 'application/pdf+json', (manifestPath, manifestJSON), None),
+                (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
                 (self.uri, {'reader': False, 'download': True}, self.mediaType, None, None)
             ]
         elif self.mediaType == 'application/epub+zip':

@@ -1,8 +1,6 @@
 import re
-import requests
 
 from managers.parsers.abstractParser import AbstractParser
-from managers.pdfManifest import PDFManifest
 
 
 class MDPIParser(AbstractParser):
@@ -29,7 +27,7 @@ class MDPIParser(AbstractParser):
         manifestJSON = self.generateManifest(pdfSourceURI, manifestURI)
 
         return [
-            (manifestURI, {'reader': True}, 'application/pdf+json', (manifestPath, manifestJSON), None),
+            (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
             (pdfSourceURI, {'download': True}, self.mediaType, None, None)
         ]
 

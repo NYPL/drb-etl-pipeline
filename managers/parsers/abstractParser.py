@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import re
 
-from managers.pdfManifest import PDFManifest
+from managers.webpubManifest import WebpubManifest
 
 class AbstractParser(ABC):
     TIMEOUT = 15
@@ -34,13 +34,13 @@ class AbstractParser(ABC):
 
     @abstractmethod
     def generateManifest(self, sourceURI, manifestURI):
-        manifest = PDFManifest(sourceURI, 'application/pdf')
+        manifest = WebpubManifest(sourceURI, 'application/pdf')
 
         manifest.addMetadata(self.record)
 
-        manifest.addChapter(sourceURI, self.record.title, None)
+        manifest.addChapter(sourceURI, self.record.title)
 
-        manifest.links['self'] = {'href': manifestURI, 'type': 'application/pdf+json'}
+        manifest.links['self'] = {'href': manifestURI, 'type': 'application/webpub+json'}
 
         return manifest.toJson()
 

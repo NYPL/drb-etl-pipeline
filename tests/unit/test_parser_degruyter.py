@@ -116,7 +116,7 @@ class TestDeGruyterParser:
         testLinks = testParser.generatePDFLinks('testRoot/', 'pdfSourceURI')
 
         assert testLinks == [
-            ('testRoot/manifests/degruyter/1.json', {'reader': True}, 'application/pdf+json', ('manifests/degruyter/1.json', 'testManifestJSON'), None),
+            ('testRoot/manifests/degruyter/1.json', {'reader': True}, 'application/webpub+json', ('manifests/degruyter/1.json', 'testManifestJSON'), None),
             ('pdfSourceURI', {'download': True}, 'application/pdf', None, None)
         ]
 

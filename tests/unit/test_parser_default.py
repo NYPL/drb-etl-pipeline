@@ -38,7 +38,7 @@ class TestDefaultParser:
         testLinks = testParser.createLinks()
 
         assert testLinks == [
-            ('testRoot/manifests/testSource/1.json', {'reader': True}, 'application/pdf+json', ('manifests/testSource/1.json', 'testManifestJSON'), None),
+            ('testRoot/manifests/testSource/1.json', {'reader': True}, 'application/webpub+json', ('manifests/testSource/1.json', 'testManifestJSON'), None),
             ('http://testURI', {'reader': False, 'download': True}, 'application/pdf', None, None)
         ]
         parserMocks['generateS3Root'].assert_called_once()

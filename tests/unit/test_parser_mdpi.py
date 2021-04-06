@@ -45,7 +45,7 @@ class TestMDPIParser:
         testLinks = testParser.generatePDFLinks('testRoot/')
 
         assert testLinks == [
-            ('testRoot/manifests/mdpi/1.json', {'reader': True}, 'application/pdf+json', ('manifests/mdpi/1.json', 'testManifestJSON'), None),
+            ('testRoot/manifests/mdpi/1.json', {'reader': True}, 'application/webpub+json', ('manifests/mdpi/1.json', 'testManifestJSON'), None),
             ('http://mdpi.com/books/pdfdownload/book/1', {'download': True}, 'application/pdf', None, None)
         ]
 
