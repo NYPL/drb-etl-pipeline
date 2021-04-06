@@ -1,8 +1,12 @@
 # CHANGELOG
 
 ## unreleased -- v0.5.1
+### Added
+- Format crosswalk for API filtering and related 400 Invalid request error
 ### Fixed
 - Ensure that covers are present in API responses
+- Add `edition_count` to API response
+- Handle additional `|` characters in subject headings
 
 ## 2021-04-05 -- v0.5.0
 ### Added

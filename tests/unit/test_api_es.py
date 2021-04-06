@@ -1,7 +1,7 @@
 import pytest
 
 from tests.helper import TestHelpers
-from api.elastic import ElasticClient
+from api.elastic import ElasticClient, ElasticClientError
 
 
 class TestElasticClient:
@@ -434,19 +434,23 @@ class TestElasticClient:
         mockApply.return_value = mockSearch
         mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
 
-        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('format', 'test1'), ('format', 'test2')], 1)
+        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('format', 'pdf'), ('format', 'html_edd')], 1)
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
-            mocker.call('terms', editions__formats=['test1', 'test2'])
+            mocker.call('terms', editions__formats=['application/pdf', 'application/html+edd'])
         ])
         mockAgg.assert_has_calls([
             mocker.call('filter', exists={'field': 'editions.formats'}),
-            mocker.call('filter', terms={'editions.formats': ['test1', 'test2']})
+            mocker.call('filter', terms={'editions.formats': ['application/pdf', 'application/html+edd']})
         ])
 
         mockApply.assert_called_once_with(mockSearch, [], ['formatFilter', 'displayFilter'], size=1)
         mockApplyAggs.assert_called_once_with(mockSearch, ['formatAggregation', 'displayAggregation'])
+
+    def test_addFilterClausesAndAggregations_w_format_error(self):
+        with pytest.raises(ElasticClientError):
+            ElasticClient.addFilterClausesAndAggregations('testQuery', [('format', 'test')], 1)
 
     def test_addFilterClausesAndAggregations_w_language(self, mocker):
         mockQuery = mocker.patch('api.elastic.Q')

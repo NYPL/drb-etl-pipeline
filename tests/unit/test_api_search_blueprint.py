@@ -3,6 +3,7 @@ import pytest
 
 from api.blueprints.drbSearch import standardQuery
 from api.utils import APIUtils
+from api.elastic import ElasticClientError
 
 class TestSearchBlueprint:
     @pytest.fixture
@@ -114,4 +115,35 @@ class TestSearchBlueprint:
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'searchResponse',
                 {'totalWorks': 5, 'works': 'testWorks', 'paging': 'testPaging', 'facets': 'testFacets'}
+            )
+
+    def test_standardQuery_elastic_error(self, mockUtils, mocker):
+        flaskApp = Flask('test')
+        flaskApp.config['ES_CLIENT'] = 'testESClient'
+        flaskApp.config['DB_CLIENT'] = 'testDBClient'
+
+        mockES = mocker.MagicMock()
+        mockESClient = mocker.patch('api.blueprints.drbSearch.ElasticClient')
+        mockESClient.return_value = mockES
+
+        mocker.patch('api.blueprints.drbSearch.DBClient')
+
+        queryParams = {'query': ['q1', 'q2'], 'sort': ['s1'], 'size': [5]}
+        mockUtils['normalizeQueryParams'].return_value = queryParams
+            
+        mockUtils['extractParamPairs'].side_effect = [
+            ['testQueryTerms'], ['testSortTerms'], ['testFilterTerms'], ['testShowAll']
+        ]
+
+        mockUtils['formatResponseObject'].return_value = 'mockAPIResponse'
+
+        mockES.searchQuery.side_effect = ElasticClientError('Test Exception')
+
+        with flaskApp.test_request_context('/?testing=true'):
+            testAPIResponse = standardQuery()
+
+            assert testAPIResponse == 'mockAPIResponse'
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                400, 'searchResponse', {'message': 'Test Exception'}
             )

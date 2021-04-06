@@ -1,6 +1,5 @@
 import os
 
-from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, Q, A
 
 class ElasticClient():
@@ -14,6 +13,15 @@ class ElasticClient():
         'publishing director', 'retager', 'secretary', 'sponsor', 'stereotyper',
         'thesis advisor', 'transcriber', 'typographer', 'woodcutter',
     ]
+
+    FORMAT_CROSSWALK = {
+        'epub_zip': 'application/epub+zip',
+        'epub_xml': 'application/epub+xml',
+        'html': 'text/html',
+        'html_edd': 'application/html+edd',
+        'pdf': 'application/pdf',
+        'webpub_json': 'application/webpub+json'
+    }
 
     def __init__(self, esClient):
         self.client = esClient
@@ -147,8 +155,8 @@ class ElasticClient():
         
         return query.sort(*sortValues)
     
-    @staticmethod
-    def addFilterClausesAndAggregations(query, filterParams, innerHits):
+    @classmethod
+    def addFilterClausesAndAggregations(cls, query, filterParams, innerHits):
         dateFilters = list(filter(lambda x: 'year' in x[0].lower(), filterParams))
         languageFilters = list(filter(lambda x: x[0] == 'language', filterParams))
         formatFilters = list(filter(lambda x: x[0] == 'format', filterParams))
@@ -164,7 +172,13 @@ class ElasticClient():
             dateAggregation = A('filter', **{'range': {'editions.publication_date': dateRange}})
 
         if len(formatFilters) > 0:
-            formats = [f[1] for f in formatFilters]
+            formats = []
+            for format in formatFilters:
+                try:
+                    formats.append(cls.FORMAT_CROSSWALK[format[1]])
+                except KeyError:
+                    raise ElasticClientError('Invalid format filter {} received'.format(format[1]))
+
             formatFilter = Q('terms', editions__formats=formats)
             formatAggregation = A('filter', **{'terms': {'editions.formats': formats}})
 
@@ -226,3 +240,7 @@ class ElasticClient():
 
         lastAgg.bucket('formats', 'terms', **{'field': 'editions.formats', 'size': 10})\
             .bucket('editions_per', 'reverse_nested')
+
+
+class ElasticClientError(Exception):
+    pass
