@@ -45,9 +45,9 @@ class MUSEProcess(CoreProcess):
 
         # Use the available source link to create a PDF manifest file and store in S3
         _, museLink, _, museType, _ = list(museRec.record.has_part[0].split('|'))
-        pdfManifest = self.constructPDFManifest(museLink, museType, museRec.record)
+        webpubManifest = self.constructPDFManifest(museLink, museType, museRec.record)
 
-        s3URL = self.createManifestInS3(pdfManifest, museRec.record.source_id)
+        s3URL = self.createManifestInS3(webpubManifest, museRec.record.source_id)
         museRec.addHasPartLink(
             s3URL, 'application/webpub+json',
             json.dumps({'reader': True, 'download': False, 'catalog': False})
@@ -129,7 +129,7 @@ class MUSEProcess(CoreProcess):
         try:
             museHTML = self.loadMusePage(museLink)
         except Exception as e:
-            return None
+            raise MUSEError('Unable to load record from link {}'.format(museLink))
 
         pdfManifest = WebpubManifest(museLink, museType)
         pdfManifest.addMetadata(museRecord)
@@ -138,7 +138,8 @@ class MUSEProcess(CoreProcess):
 
         chapterTable = museSoup.find(id='available_items_list_wrap')
 
-        if not chapterTable: raise MUSEError('Book {} unavailable'.format(museRecord.source_id))
+        if not chapterTable:
+            raise MUSEError('Book {} unavailable'.format(museRecord.source_id))
 
         for card in chapterTable.find_all(class_='card_text'):
             titleItem = card.find('li', class_='title')
@@ -169,13 +170,13 @@ class MUSEProcess(CoreProcess):
 
         raise Exception('Unable to load HTML page from Project MUSE')
 
-    def createManifestInS3(self, pdfManifest, museID):
+    def createManifestInS3(self, webpubManifest, museID):
         bucketLocation = 'manifests/muse/{}.json'.format(museID)
         s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
 
-        pdfManifest.links.append({'href': s3URL, 'type': 'application/webpub+json', 'rel': 'self'})
+        webpubManifest.links.append({'href': s3URL, 'type': 'application/webpub+json', 'rel': 'self'})
 
-        self.putObjectInBucket(pdfManifest.toJson().encode('utf-8'), bucketLocation, self.s3Bucket)
+        self.putObjectInBucket(webpubManifest.toJson().encode('utf-8'), bucketLocation, self.s3Bucket)
 
         return s3URL
 
