@@ -1,10 +1,13 @@
 # CHANGELOG
 
+## unreleased -- v0.5.2
+### Fixed
+- Convert PDF Manifest class to standard Readium Webpub format
+
 ## 2021-04-06 -- v0.5.1
 ### Added
 - Format crosswalk for API filtering and related 400 Invalid request error
 ### Fixed
-- Convert PDF Manifest class to standard Readium Webpub format
 - Ensure that covers are present in API responses
 - Add `edition_count` to API response
 - Handle additional `|` characters in subject headings
