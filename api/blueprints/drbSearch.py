@@ -1,5 +1,5 @@
 from flask import Blueprint, request, current_app
-from ..elastic import ElasticClient
+from ..elastic import ElasticClient, ElasticClientError
 from ..db import DBClient
 from ..utils import APIUtils
 from logger import createLog
@@ -28,7 +28,12 @@ def standardQuery():
 
     logger.info('Executing ES Query {} with filters {}'.format(searchParams, terms['filter']))
 
-    searchResult = esClient.searchQuery(terms, page=searchPage, perPage=searchSize)
+    try:
+        searchResult = esClient.searchQuery(terms, page=searchPage, perPage=searchSize)
+    except ElasticClientError as e:
+        return APIUtils.formatResponseObject(
+            400, 'searchResponse', {'message': str(e)}
+        )
 
     resultIds = [
         (r.uuid, [e.edition_id for e in r.meta.inner_hits.editions.hits])

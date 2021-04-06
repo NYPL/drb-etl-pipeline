@@ -156,6 +156,7 @@ class TestAPIUtils:
         assert testWorkDict['title'] == 'Test Title'
         assert testWorkDict['editions'][0]['edition_id'] == 'ed1'
         assert testWorkDict['editions'][0]['items'][0] == 'it1'
+        assert testWorkDict['edition_count'] == 1
         mockFormatEdition.assert_called_once()
 
     def test_formatWork_showAll_false(self, testWork, mocker):
@@ -166,6 +167,7 @@ class TestAPIUtils:
         assert testWorkDict['uuid'] == 'testUUID'
         assert testWorkDict['title'] == 'Test Title'
         assert len(testWorkDict['editions']) == 1
+        assert testWorkDict['edition_count'] == 1
 
     def test_formatWork_blocked_edition(self, testWork):
         testWork.editions[0].items = []
@@ -174,6 +176,7 @@ class TestAPIUtils:
         assert testWorkDict['uuid'] == 'testUUID'
         assert testWorkDict['title'] == 'Test Title'
         assert len(testWorkDict['editions']) == 0
+        assert testWorkDict['edition_count'] == 1
 
     def test_formatEditionOputput(self, mocker):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')

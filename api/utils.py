@@ -71,6 +71,7 @@ class APIUtils():
     @classmethod
     def formatWork(cls, work, editionIds, showAll):
         workDict = dict(work)
+        workDict['edition_count'] = len(work.editions)
         workDict['editions'] = []
 
         for edition in work.editions:
