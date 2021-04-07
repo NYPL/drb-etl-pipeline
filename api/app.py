@@ -1,3 +1,4 @@
+from elasticsearch.exceptions import RequestError
 from flasgger import Swagger
 from flask import Flask
 from flask_cors import CORS
@@ -56,5 +57,14 @@ class FlaskAPI:
             logger.debug(error)
             return APIUtils.formatResponseObject(
                 500, 'dataError', {'message': 'Encountered fatal database error'}
+            )
+
+        @self.app.errorhandler(RequestError)
+        def requestError(error):
+            logger.warning('Invalid parameter passed to ElasticSearch')
+            logger.debug(error)
+            return APIUtils.formatResponseObject(
+                400, 'requestError',
+                {'message': error.info['error']['root_cause'][0]['reason']}
             )
             

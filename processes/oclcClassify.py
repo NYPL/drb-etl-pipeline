@@ -63,6 +63,9 @@ class ClassifyProcess(CoreProcess):
                 logger.warning('Exceeding max requests to OCLC catalog, breaking')
                 break
 
+            if len(self.records) >= 100:
+                self.saveRecords()
+
     def frbrizeRecord(self, record):
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
             identifier, idenType = tuple(iden.split('|'))

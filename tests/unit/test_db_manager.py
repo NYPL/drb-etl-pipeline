@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy.exc import OperationalError
 
 from managers import DBManager
 
@@ -97,12 +98,36 @@ class TestDBManager:
 
         testInstance.session.begin_nested.assert_called_once
 
-    def test_commitChanges(self, testInstance, mocker):
+    def test_commitChanges_success(self, testInstance, mocker):
         testInstance.session = mocker.MagicMock()
 
         testInstance.commitChanges()
 
-        testInstance.session.commit.assert_called_once
+        testInstance.session.commit.assert_called_once()
+
+    def test_commitChanges_deadlock(self, testInstance, mocker):
+        testInstance.session = mocker.MagicMock()
+        testInstance.session.commit.side_effect = [
+            OperationalError('test', 'test', 'test'), None
+        ]
+
+        mockRollback = mocker.patch.object(DBManager, 'rollbackChanges')
+
+        testInstance.commitChanges()
+
+        assert testInstance.session.commit.call_count == 2
+        mockRollback.assert_called_once()
+
+    def test_commitChanges_deadlock_repeated(self, testInstance, mocker):
+        testInstance.session = mocker.MagicMock()
+        testInstance.session.commit.side_effect = OperationalError('test', 'test', 'test')
+
+        mockRollback = mocker.patch.object(DBManager, 'rollbackChanges')
+
+        testInstance.commitChanges()
+
+        assert testInstance.session.commit.call_count == 2
+        assert mockRollback.call_count == 2
 
     def test_rollbackChanges(self, testInstance, mocker):
         testInstance.session = mocker.MagicMock()

@@ -45,6 +45,13 @@ class TestGoogleBooksFetcher:
         assert testFetcher.fetchVolume(1, 'isbn') == None
         mockGetResponse.assert_called_once_with('https://www.googleapis.com/books/v1/volumes?q=isbn:1&key=testAPIKey')
 
+    def test_fetchVolume_array_missing(self, testFetcher, mocker):
+        mockGetResponse = mocker.patch.object(GoogleBooksFetcher, 'getAPIResponse')
+        mockGetResponse.return_value = {'kind': 'books#volumes', 'totalItems': 0}
+
+        assert testFetcher.fetchVolume(1, 'isbn') == None
+        mockGetResponse.assert_called_once_with('https://www.googleapis.com/books/v1/volumes?q=isbn:1&key=testAPIKey')
+
     def test_fetchCover_success(self, testFetcher, mocker):
         mockGetResponse = mocker.patch.object(GoogleBooksFetcher, 'getAPIResponse')
         mockGetResponse.return_value = {'volumeInfo': {'imageLinks': {'large': 'largeLink', 'small': 'smallLink'}}}

@@ -39,7 +39,10 @@ class GoogleBooksFetcher(AbstractFetcher):
 
         searchResp = GoogleBooksFetcher.getAPIResponse(googleSearchURI)
 
-        if searchResp and searchResp.get('kind', '') == 'books#volumes' and searchResp.get('totalItems', 0) == 1:
+        if searchResp and\
+            searchResp.get('kind', '') == 'books#volumes' and\
+            searchResp.get('totalItems', 0) == 1 and\
+            searchResp.get('items', None) is not None:
             return searchResp['items'][0]
 
     def fetchCover(self, volume):

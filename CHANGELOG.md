@@ -3,6 +3,9 @@
 ## unreleased -- v0.5.2
 ### Fixed
 - Convert PDF Manifest class to standard Readium Webpub format
+- Handle deadlock errors in PostgreSQL
+- Return 400 Bad Request error for invalid query parameters
+- Catch edge case error in Google Books cover fetcher
 
 ## 2021-04-06 -- v0.5.1
 ### Added
