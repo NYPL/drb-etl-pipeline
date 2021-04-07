@@ -1,8 +1,12 @@
 import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import OperationalError
 
 from model import Base
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class DBManager:
@@ -43,8 +47,19 @@ class DBManager:
     def startSession(self):
         self.session.begin_nested()
 
-    def commitChanges(self):
-        self.session.commit()
+    def commitChanges(self, retry=False):
+        try:
+            self.session.commit()
+        except OperationalError as oprErr:
+            logger.error('Deadlock in database layer, retry batch')
+            logger.debug(oprErr)
+
+            self.rollbackChanges()
+            
+            if retry is False:
+                self.commitChanges(retry=True)
+            else:
+                logger.warning('Already retried batch, dropping')
 
     def rollbackChanges(self):
         self.session.rollback()
