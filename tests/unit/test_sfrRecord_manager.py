@@ -246,15 +246,17 @@ class TestSFRRecordManager:
 
     def test_setPipeDelimitedData(self, mocker):
         mockParse = mocker.patch.object(SFRRecordManager, 'parseDelimitedEntry')
-        mockParse.side_effect = [1, 2, 3]
+        mockParse.side_effect = [1, None, 2, None, 3]
 
-        testParsedData = SFRRecordManager.setPipeDelimitedData([1, 2, 3], 'testFields', dType='testType', dParser='testFunction')
+        testParsedData = SFRRecordManager.setPipeDelimitedData([1, 2, 3, 4, 5], 'testFields', dType='testType', dParser='testFunction')
 
         assert testParsedData == [1, 2, 3]
         mockParse.assert_has_calls([
             mocker.call(1, 'testFields', 'testType', 'testFunction'),
             mocker.call(2, 'testFields', 'testType', 'testFunction'),
-            mocker.call(3, 'testFields', 'testType', 'testFunction')
+            mocker.call(3, 'testFields', 'testType', 'testFunction'),
+            mocker.call(4, 'testFields', 'testType', 'testFunction'),
+            mocker.call(5, 'testFields', 'testType', 'testFunction')
         ])
 
     def test_parseDelimitedEntry_no_function_no_type(self):

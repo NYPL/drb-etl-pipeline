@@ -32,7 +32,7 @@ class TestAPIUtils:
         return mockHits
 
     @pytest.fixture
-    def MockDBObject(self):
+    def MockDBObject(self, mocker):
         class MockDB:
             def __init__(self, *args, **kwargs):
                 self.attrs = []
@@ -42,9 +42,34 @@ class TestAPIUtils:
 
             def __iter__(self):
                 for attr in self.attrs:
-                    yield attr, getattr(self, attr)
+                    value = getattr(self, attr)
+
+                    if isinstance(value, mocker.MagicMock):
+                        value = dict(value)
+                    elif isinstance(value, list):
+                        value = [dict(v) for v in value]
+
+                    yield attr, value
 
         return MockDB
+
+    @pytest.fixture
+    def testRecord(self, MockDBObject):
+        return MockDBObject(
+            id='rec1',
+            title='Test Record',
+            spatial='Test Place',
+            extent='Test Extent',
+            abstract='Test Summary',
+            table_of_contents='Test TOC',
+            authors=['auth1', 'auth2', 'auth3'],
+            contributors=['contrib1', 'contrib2'],
+            publishers=['pub1'],
+            dates=['date1', 'date2'],
+            languages=['lang1'],
+            identifiers=['id1', 'id2', 'id3'],
+            has_part=['1|url1|', '2|url2|']
+        )
 
     @pytest.fixture
     def testLink(self, MockDBObject):
@@ -182,9 +207,11 @@ class TestAPIUtils:
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
         mockFormatEdition.return_value = 'testEdition'
 
-        assert APIUtils.formatEditionOutput(1, True) == 'testEdition'
+        assert APIUtils.formatEditionOutput(1, records='testRecords', showAll=True) == 'testEdition'
 
-    def test_formatEdition(self, testEdition):
+        mockFormatEdition.assert_called_once_with(1, 'testRecords')
+
+    def test_formatEdition_no_records(self, testEdition):
         formattedEdition = APIUtils.formatEdition(testEdition)
 
         assert formattedEdition['edition_id'] == 'ed1'
@@ -200,6 +227,59 @@ class TestAPIUtils:
         assert formattedEdition['items'][0]['rights'][0]['source'] == 'test'
         assert formattedEdition['items'][0]['rights'][0]['license'] == 'testLicense'
         assert formattedEdition['items'][0]['rights'][0]['rightsStatement'] == 'testStatement'
+        assert formattedEdition.get('instances', None) == None
+
+    def test_formatEdition_w_records(self, testEdition, testItem, mocker):
+        mockRecFormat = mocker.patch.object(APIUtils, 'formatRecord')
+        mockRecFormat.side_effect = [1, 2]
+
+        formattedEdition = APIUtils.formatEdition(testEdition, ['rec1', 'rec2'])
+
+        assert formattedEdition['instances'] == [1, 2]
+        assert formattedEdition.get('items', None) == None
+
+        testItemDict = {
+            'id': 'it1',
+            'links': [{'link_id': 'li1', 'mediaType': 'application/test', 'url': 'testURI'}],
+            'rights': [{'source': 'test', 'license': 'testLicense', 'rightsStatement': 'testStatement'}],
+            'physical_location': {'name': 'test'},
+            'item_id': 'it1',
+            'location': 'test'
+        }
+
+        mockRecFormat.assert_has_calls([
+            mocker.call('rec1', {'testURI': testItemDict}),
+            mocker.call('rec2', {'testURI': testItemDict})
+        ])
+
+    def test_formatRecord(self, testRecord, mocker):
+        testLinkItems = {
+            'url1': {'item_id': 1, 'url': 'url1'},
+            'url2': {'item_id': 2, 'url': 'url2'}
+        }
+
+        mockFormatPipe = mocker.patch.object(APIUtils, 'formatPipeDelimitedData')
+        mockFormatPipe.side_effect = [
+            'testAuthors', 'testContribs', 'testPublishers', 'testDates', 'testLangs', 'testIDs'
+        ]
+
+        testFormatted = APIUtils.formatRecord(testRecord, testLinkItems)
+
+        assert testFormatted['instance_id'] == 'rec1'
+        assert testFormatted['title'] == 'Test Record'
+        assert testFormatted['publication_place'] == 'Test Place'
+        assert testFormatted['extent'] == 'Test Extent'
+        assert testFormatted['summary'] == 'Test Summary'
+        assert testFormatted['table_of_contents'] == 'Test TOC'
+        assert testFormatted['authors'] == 'testAuthors'
+        assert testFormatted['contributors'] == 'testContribs'
+        assert testFormatted['publishers'] == 'testPublishers'
+        assert testFormatted['dates'] == 'testDates'
+        assert testFormatted['languages'] == 'testLangs'
+        assert testFormatted['identifiers'] == 'testIDs'
+        assert testFormatted['items'] == [
+            {'item_id': 1, 'url': 'url1'}, {'item_id': 2, 'url': 'url2'}
+        ]
 
     def test_formatLinkOutput(self, testLink, testWork, testEdition, testItem):
         testEdition.work = testWork
@@ -210,8 +290,8 @@ class TestAPIUtils:
 
         assert testLink['link_id'] == 'li1'
         assert testLink['work']['uuid'] == 'testUUID'
-        assert testLink['work']['edition']['edition_id'] == 'ed1'
-        assert testLink['work']['edition']['item']['item_id'] == 'it1'
+        assert testLink['work']['editions'][0]['edition_id'] == 'ed1'
+        assert testLink['work']['editions'][0]['items'][0]['item_id'] == 'it1'
 
     def test_formatLanguages_no_counts(self, mocker):
         mockAggs = mocker.MagicMock()
@@ -260,3 +340,11 @@ class TestAPIUtils:
         mockJsonify.assert_called_once_with({
             'status': 200, 'timestamp': 'presentTimestamp', 'responseType': 'test', 'data': 'testData'
         })
+
+    def test_formatPipeDelimitedData_string(self):
+        assert APIUtils.formatPipeDelimitedData('test|object', ['one', 'two'])\
+            == {'one': 'test', 'two': 'object'}
+
+    def test_formatPipeDelimitedData_list(self):
+        assert APIUtils.formatPipeDelimitedData(['test|object', 'another|thing'], ['one', 'two'])\
+            == [{'one': 'test', 'two': 'object'}, {'one': 'another', 'two': 'thing'}]
