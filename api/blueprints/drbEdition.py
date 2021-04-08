@@ -27,10 +27,12 @@ def editionFetch(editionID):
             {'message': 'Unable to locate edition with id {}'.format(editionID)}
         )
 
+    records = dbClient.fetchRecordsByUUID(edition.dcdw_uuids)
+
     logger.debug('Edition Fetch 200 on /edition/{}'.format(editionID))
 
     return APIUtils.formatResponseObject(
         200,
         'singleEdition',
-        APIUtils.formatEditionOutput(edition, showAll=showAll)
+        APIUtils.formatEditionOutput(edition, records=records, showAll=showAll)
     )

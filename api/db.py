@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.sql import text
 
-from model import Work, Edition, Link
+from model import Work, Edition, Link, Item, Record
 from .utils import APIUtils
 
 class DBClient():
@@ -34,6 +34,11 @@ class DBClient():
         session = sessionmaker(bind=self.engine)()
 
         return session.query(Link).filter(Link.id == linkID).first()
+
+    def fetchRecordsByUUID(self, uuids):
+        session = sessionmaker(bind=self.engine)()
+
+        return session.query(Record).filter(Record.uuid.in_(uuids)).all()
 
     def fetchRowCounts(self):
         session = sessionmaker(bind=self.engine)()
