@@ -29,7 +29,8 @@ class TestDBClient:
         mockMaker.return_value = mockCreator
         mockSession = mocker.MagicMock()
         mockCreator.return_value = mockSession
-        mockSession.query().join().filter().all.return_value = ['work1', 'work3']
+        mockSession.query().join().option().join().option().filter()\
+            .all.return_value = ['work1', 'work3']
 
         mockFlatten = mocker.patch.object(APIUtils, 'flatten')
         mockFlatten.return_value = [1, 2, 3]
@@ -41,7 +42,8 @@ class TestDBClient:
         assert workResult == ['work1', 'work3']
         mockMaker.assert_called_once_with(bind=testInstance.engine)
         mockCreator.assert_called_once()
-        mockSession.query().join().filter().all.assert_called_once()
+        mockSession.query().join().option().join().option().filter()\
+            .all.assert_called_once()
 
     def test_fetchSingleWork(self, testInstance, mocker):
         mockCreator = mocker.MagicMock()

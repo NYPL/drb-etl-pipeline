@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.sql import text
 
 from model import Work, Edition, Link, Item, Record
@@ -17,6 +17,9 @@ class DBClient():
 
         return session.query(Work)\
             .join(Edition)\
+            .option(joinedload(Edition.links))\
+            .join(Item)\
+            .option(joinedload(Item.links))\
             .filter(Work.uuid.in_(uuids), Edition.id.in_(editionIds))\
             .all()
 
