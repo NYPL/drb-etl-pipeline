@@ -17,9 +17,9 @@ class DBClient():
 
         return session.query(Work)\
             .join(Edition)\
-            .option(joinedload(Edition.links))\
+            .options(joinedload(Work.editions, Edition.links))\
             .join(Item)\
-            .option(joinedload(Item.links))\
+            .options(joinedload(Work.editions, Edition.items, Item.links))\
             .filter(Work.uuid.in_(uuids), Edition.id.in_(editionIds))\
             .all()
 
