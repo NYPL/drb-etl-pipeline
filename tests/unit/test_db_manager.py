@@ -167,6 +167,36 @@ class TestDBManager:
             [1, 2, 3], update_changed_only=False
         )
 
+    def test_bulkSaveObjects_readlock_retry(self, testInstance, mocker):
+        testInstance.session = mocker.MagicMock()
+        testInstance.session.bulk_save_objects.side_effect = [
+            OperationalError('test', 'test', 'test'), None
+        ]
+
+        mockRollback = mocker.patch.object(DBManager, 'rollbackChanges')
+
+        testInstance.bulkSaveObjects([1, 2, 3])
+
+        testInstance.session.bulk_save_objects.assert_has_calls([
+            mocker.call([1, 2, 3], update_changed_only=True),
+            mocker.call([1, 2, 3], update_changed_only=True)
+        ])
+        mockRollback.assert_called_once()
+
+    def test_bulkSaveObjects_readlock_retry_fail(self, testInstance, mocker):
+        testInstance.session = mocker.MagicMock()
+        testInstance.session.bulk_save_objects.side_effect = OperationalError('test', 'test', 'test')
+
+        mockRollback = mocker.patch.object(DBManager, 'rollbackChanges')
+
+        testInstance.bulkSaveObjects([1, 2, 3], onlyChanged=False)
+
+        testInstance.session.bulk_save_objects.assert_has_calls([
+            mocker.call([1, 2, 3], update_changed_only=False),
+            mocker.call([1, 2, 3], update_changed_only=False)
+        ])
+        assert mockRollback.call_count == 2
+
     def test_decryptEnvVar_present(self, mocker):
         mocker.patch.dict('os.environ', {'test': 'testValue'})
 

@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.5.3
+### Fixed
+- Added deadlock handling to batch commit method
+
 ## 2021-04-07 -- v0.5.2
 ### Fixed
 - Convert PDF Manifest class to standard Readium Webpub format

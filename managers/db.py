@@ -69,10 +69,21 @@ class DBManager:
         self.session.close()
         self.engine.dispose()
     
-    def bulkSaveObjects(self, objects, onlyChanged=True):
-        self.session.bulk_save_objects(objects, update_changed_only=onlyChanged)
-        self.session.commit()
-        self.session.flush()
+    def bulkSaveObjects(self, objects, onlyChanged=True, retry=False):
+        try:
+            self.session.bulk_save_objects(objects, update_changed_only=onlyChanged)
+            self.session.commit()
+            self.session.flush()
+        except OperationalError as oprErr:
+            logger.error('Deadlock in database layer, retry batch')
+            logger.debug(oprErr)
+
+            self.rollbackChanges()
+            
+            if retry is False:
+                self.bulkSaveObjects(objects, onlyChanged=onlyChanged, retry=True)
+            else:
+                logger.warning('Already retried batch, dropping')
 
     @staticmethod
     def decryptEnvVar(envVar):
