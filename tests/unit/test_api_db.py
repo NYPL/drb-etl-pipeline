@@ -29,7 +29,8 @@ class TestDBClient:
         mockMaker.return_value = mockCreator
         mockSession = mocker.MagicMock()
         mockCreator.return_value = mockSession
-        mockSession.query().join().filter().all.return_value = ['work1', 'work3']
+        mockSession.query().join().options().join().options().filter()\
+            .all.return_value = ['work1', 'work3']
 
         mockFlatten = mocker.patch.object(APIUtils, 'flatten')
         mockFlatten.return_value = [1, 2, 3]
@@ -41,7 +42,8 @@ class TestDBClient:
         assert workResult == ['work1', 'work3']
         mockMaker.assert_called_once_with(bind=testInstance.engine)
         mockCreator.assert_called_once()
-        mockSession.query().join().filter().all.assert_called_once()
+        mockSession.query().join().options().join().options().filter()\
+            .all.assert_called_once()
 
     def test_fetchSingleWork(self, testInstance, mocker):
         mockCreator = mocker.MagicMock()
@@ -87,6 +89,21 @@ class TestDBClient:
         mockMaker.assert_called_once_with(bind=testInstance.engine)
         mockCreator.assert_called_once()
         mockSession.query().filter().first.assert_called_once()
+
+    def test_fetchRecordsByUUID(self, testInstance, mocker):
+        mockCreator = mocker.MagicMock()
+        mockMaker = mocker.patch('api.db.sessionmaker')
+        mockMaker.return_value = mockCreator
+        mockSession = mocker.MagicMock()
+        mockCreator.return_value = mockSession
+        mockSession.query().filter().all.return_value = 'testRecords'
+
+        editionResult = testInstance.fetchRecordsByUUID(['uuid1', 'uuid2'])
+
+        assert editionResult == 'testRecords'
+        mockMaker.assert_called_once_with(bind=testInstance.engine)
+        mockCreator.assert_called_once()
+        mockSession.query().filter().all.assert_called_once()
 
     def test_fetchRowCounts(self, testInstance, testCountQuery, mocker):
         mockCreator = mocker.MagicMock()

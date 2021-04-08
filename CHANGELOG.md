@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 2021-04-08 --v0.5.3
+### Fixed
+- Included instance records in edition detail response
+- Improved database query performance in the search context
+
 ## 2021-04-07 -- v0.5.2
 ### Fixed
 - Convert PDF Manifest class to standard Readium Webpub format

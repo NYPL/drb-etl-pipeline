@@ -427,10 +427,10 @@ class SFRRecordManager:
 
     @staticmethod
     def setPipeDelimitedData(data, fields, dType=None, dParser=None):
-        return [
+        return list(filter(None, [
             SFRRecordManager.parseDelimitedEntry(d, fields, dType, dParser)
             for d in list(filter(None, data))
-        ]
+        ]))
 
     @staticmethod
     def parseDelimitedEntry(dInst, fields, dType, dParser):
