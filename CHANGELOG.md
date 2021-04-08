@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased --v0.5.3
+## 2021-04-08 --v0.5.3
 ### Fixed
 - Included instance records in edition detail response
 - Improved database query performance in the search context
