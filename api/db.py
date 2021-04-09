@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from sqlalchemy.orm import joinedload, sessionmaker
+from sqlalchemy.orm import joinedload, contains_eager, sessionmaker
 from sqlalchemy.sql import text
 
 from model import Work, Edition, Link, Item, Record
@@ -17,21 +17,39 @@ class DBClient():
 
         return session.query(Work)\
             .join(Edition)\
-            .options(joinedload(Work.editions, Edition.links))\
-            .join(Item)\
-            .options(joinedload(Work.editions, Edition.items, Item.links))\
+            .options(
+                contains_eager(Work.editions),
+                joinedload(Work.editions, Edition.links),
+                joinedload(Work.editions, Edition.items),
+                joinedload(Work.editions, Edition.items, Item.links, innerjoin=True),
+                joinedload(Work.editions, Edition.items, Item.rights),
+            )\
             .filter(Work.uuid.in_(uuids), Edition.id.in_(editionIds))\
             .all()
 
     def fetchSingleWork(self, uuid):
         session = sessionmaker(bind=self.engine)()
 
-        return session.query(Work).filter(Work.uuid == uuid).first()
+        return session.query(Work)\
+            .options(
+                joinedload(Work.editions),
+                joinedload(Work.editions, Edition.rights),
+                joinedload(Work.editions, Edition.items),
+                joinedload(Work.editions, Edition.items, Item.links, innerjoin=True)
+            )\
+            .filter(Work.uuid == uuid).first()
 
     def fetchSingleEdition(self, editionID, showAll=False):
         session = sessionmaker(bind=self.engine)()
 
-        return session.query(Edition).filter(Edition.id == editionID).first()
+        return session.query(Edition)\
+            .options(
+                joinedload(Edition.links),
+                joinedload(Edition.items),
+                joinedload(Edition.items, Item.links),
+                joinedload(Edition.items, Item.rights)
+            )\
+            .filter(Edition.id == editionID).first()
 
     def fetchSingleLink(self, linkID):
         session = sessionmaker(bind=self.engine)()

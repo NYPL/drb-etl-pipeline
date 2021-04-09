@@ -64,7 +64,7 @@ class TestAPIUtils:
             table_of_contents='Test TOC',
             authors=['auth1', 'auth2', 'auth3'],
             contributors=['contrib1', 'contrib2'],
-            publishers=['pub1'],
+            publisher=['pub1'],
             dates=['date1', 'date2'],
             languages=['lang1'],
             identifiers=['id1', 'id2', 'id3'],
@@ -273,7 +273,7 @@ class TestAPIUtils:
         assert testFormatted['table_of_contents'] == 'Test TOC'
         assert testFormatted['authors'] == 'testAuthors'
         assert testFormatted['contributors'] == 'testContribs'
-        assert testFormatted['publishers'] == 'testPublishers'
+        assert testFormatted['publishers'] == ['testPublishers']
         assert testFormatted['dates'] == 'testDates'
         assert testFormatted['languages'] == 'testLangs'
         assert testFormatted['identifiers'] == 'testIDs'
@@ -346,5 +346,8 @@ class TestAPIUtils:
             == {'one': 'test', 'two': 'object'}
 
     def test_formatPipeDelimitedData_list(self):
-        assert APIUtils.formatPipeDelimitedData(['test|object', 'another|thing'], ['one', 'two'])\
+        assert APIUtils.formatPipeDelimitedData(['test|object', None, 'another|thing'], ['one', 'two'])\
             == [{'one': 'test', 'two': 'object'}, {'one': 'another', 'two': 'thing'}]
+
+    def test_formatPipeDelimitedData_none(self):
+        assert APIUtils.formatPipeDelimitedData(None, ['one', 'two']) == None

@@ -69,7 +69,17 @@ class RabbitMQManager:
 
     
     def getMessageFromQueue(self, queueName):
-        return self.channel.basic_get(queueName)
+        try:
+            return self.channel.basic_get(queueName)
+        except (ConnectionWrongStateError, StreamLostError):
+            self.createRabbitConnection()
+            self.createChannel()
+            return self.getMessageFromQueue(queueName)
     
     def acknowledgeMessageProcessed(self, deliveryTag):
-        self.channel.basic_ack(deliveryTag)
+        try:
+            self.channel.basic_ack(deliveryTag)
+        except (ConnectionWrongStateError, StreamLostError):
+            self.createRabbitConnection()
+            self.createChannel()
+            self.acknowledgeMessageProcessed(deliveryTag)

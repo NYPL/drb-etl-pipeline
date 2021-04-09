@@ -142,7 +142,7 @@ class APIUtils():
         
         outRecord['authors'] = cls.formatPipeDelimitedData(record.authors, ['name', 'viaf', 'lcnaf', 'primary'])
         outRecord['contributors'] = cls.formatPipeDelimitedData(record.contributors, ['name', 'viaf', 'lcnaf', 'rolse'])
-        outRecord['publishers'] = cls.formatPipeDelimitedData(record.publishers, ['name', 'viaf', 'lcnaf'])
+        outRecord['publishers'] = [cls.formatPipeDelimitedData(record.publisher, ['name', 'viaf', 'lcnaf'])]
         outRecord['dates'] = cls.formatPipeDelimitedData(record.dates, ['date', 'type'])
         outRecord['languages'] = cls.formatPipeDelimitedData(record.languages, ['language', 'iso_2', 'iso_3'])
         outRecord['identifiers'] = cls.formatPipeDelimitedData(record.identifiers, ['identifier', 'authority'])
@@ -214,7 +214,10 @@ class APIUtils():
 
     @staticmethod
     def formatPipeDelimitedData(data, fields):
-        if isinstance(data, list):
-            return [dict(zip(fields, d.split('|'))) for d in data]
+        if data is None:
+            return None
+        elif isinstance(data, list):
+            dataList = list(filter(None, data))
+            return [dict(zip(fields, d.split('|'))) for d in dataList]
         else:
             return dict(zip(fields, data.split('|')))
