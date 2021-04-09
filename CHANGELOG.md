@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.5.4
+## 2021-04-09 -- v0.5.4
 ### Fixed
 - Typo in edition detail parsing method
 - Handle errors in connection to RabbitMQ server on message get and acknowledge
