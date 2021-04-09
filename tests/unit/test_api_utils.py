@@ -64,7 +64,7 @@ class TestAPIUtils:
             table_of_contents='Test TOC',
             authors=['auth1', 'auth2', 'auth3'],
             contributors=['contrib1', 'contrib2'],
-            publishers=['pub1'],
+            publisher=['pub1'],
             dates=['date1', 'date2'],
             languages=['lang1'],
             identifiers=['id1', 'id2', 'id3'],
