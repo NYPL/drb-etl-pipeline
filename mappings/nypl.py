@@ -39,7 +39,7 @@ class NYPLMapping(SQLMapping):
                 ('074', '{a}|gpoin'),
                 ('086', '{a}|gdcn')
             ],
-            'publisher': ('260', '{b}||'),
+            'publisher': [('260', '{b}||')],
             'contributors': [
                 ('260', '{f}|||manufacturer'),
                 ('700', '{a}|||{e}'),

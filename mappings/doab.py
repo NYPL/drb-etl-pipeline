@@ -37,7 +37,7 @@ class DOABMapping(MARCMapping):
                 ('247', '{a}')
             ],
             'has_version': ('250', '{a} {b}|'),
-            'publisher': ('260', '{b}||'),
+            'publisher': [('260', '{b}||')],
             'spatial': ('264', '{a}'),
             'dates': [
                 ('260', '{c}|publication_date'),

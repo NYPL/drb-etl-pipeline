@@ -139,7 +139,7 @@ class KMeansManager:
     def getInstanceData(cls, instance):
         spatial = instance.spatial
         date = cls.getPubDateObject(instance.dates)
-        publisher = cls.getPublisher(instance.publisher)
+        publisher = cls.getPublishers(instance.publisher)
 
         return (spatial, date, publisher)
 
@@ -186,11 +186,15 @@ class KMeansManager:
         return {}
     
     @classmethod
-    def getPublisher(cls, pubStr):
-        if not pubStr:
-            return ''
-        publisher, *_ = tuple(pubStr.split('|'))
-        return publisher.strip(',. []').lower()
+    def getPublishers(cls, publishers):
+        pubs = []
+        for pub in publishers:
+            if not pub: continue 
+
+            publisher, *_ = tuple(pub.split('|'))
+            pubs.append(publisher.strip(',. []').lower())
+
+        return ', '.join(pubs)
 
     @classmethod
     def getEditionStatement(cls, hasVersion):
