@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from sqlalchemy.orm import joinedload, contains_eager, sessionmaker
+from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.sql import text
 
 from model import Work, Edition, Link, Item, Record
@@ -18,7 +18,6 @@ class DBClient():
         return session.query(Work)\
             .join(Edition)\
             .options(
-                contains_eager(Work.editions),
                 joinedload(Work.editions, Edition.links),
                 joinedload(Work.editions, Edition.items),
                 joinedload(Work.editions, Edition.items, Item.links, innerjoin=True),
