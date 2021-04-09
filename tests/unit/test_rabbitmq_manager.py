@@ -1,4 +1,5 @@
 import pytest
+from pika.exceptions import StreamLostError
 
 from managers import RabbitMQManager
 
@@ -103,10 +104,39 @@ class TestRabbitMQManager:
         assert testInstance.getMessageFromQueue('testQueue') == 'testMessage'
         testInstance.channel.basic_get.assert_called_once_with('testQueue')
 
+    def test_getMessageFromQueue_error(self, testInstance, mocker):
+        testInstance.channel = mocker.MagicMock()
+        testInstance.channel.basic_get.side_effect = [StreamLostError, 'testMessage']
+
+        mockCreateConn = mocker.patch.object(RabbitMQManager, 'createRabbitConnection')
+        mockCreateCh = mocker.patch.object(RabbitMQManager, 'createChannel')
+
+        assert testInstance.getMessageFromQueue('testQueue') == 'testMessage'
+        testInstance.channel.basic_get.assert_has_calls([
+            mocker.call('testQueue'), mocker.call('testQueue')
+        ])
+        mockCreateConn.assert_called_once()
+        mockCreateCh.assert_called_once()
+
     def test_acknowledgeMessageProcessed(self, testInstance, mocker):
         testInstance.channel = mocker.MagicMock()
 
         testInstance.acknowledgeMessageProcessed('testDeliveryTag')
 
         testInstance.channel.basic_ack.assert_called_once_with('testDeliveryTag')
+
+    def test_acknowledgeMessageProcessed_error(self, testInstance, mocker):
+        testInstance.channel = mocker.MagicMock()
+        testInstance.channel.basic_ack.side_effect = [StreamLostError, None]
+
+        mockCreateConn = mocker.patch.object(RabbitMQManager, 'createRabbitConnection')
+        mockCreateCh = mocker.patch.object(RabbitMQManager, 'createChannel')
+
+        testInstance.acknowledgeMessageProcessed('testDeliveryTag')
+
+        testInstance.channel.basic_ack.assert_has_calls([
+            mocker.call('testDeliveryTag'), mocker.call('testDeliveryTag')
+        ])
+        mockCreateConn.assert_called_once()
+        mockCreateCh.assert_called_once()
 
