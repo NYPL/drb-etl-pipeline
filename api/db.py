@@ -52,9 +52,7 @@ class DBClient():
     def fetchSingleLink(self, linkID):
         session = sessionmaker(bind=self.engine)()
 
-        return session.query(Link)\
-            .options(joinedload(Link.items, Item.edition, Edition.work))\
-            .filter(Link.id == linkID).first()
+        return session.query(Link).filter(Link.id == linkID).first()
 
     def fetchRecordsByUUID(self, uuids):
         session = sessionmaker(bind=self.engine)()

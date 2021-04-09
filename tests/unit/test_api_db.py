@@ -79,14 +79,14 @@ class TestDBClient:
         mockMaker.return_value = mockCreator
         mockSession = mocker.MagicMock()
         mockCreator.return_value = mockSession
-        mockSession.query().options().filter().first.return_value = 'testLink'
+        mockSession.query().filter().first.return_value = 'testLink'
 
         editionResult = testInstance.fetchSingleLink('linkID')
 
         assert editionResult == 'testLink'
         mockMaker.assert_called_once_with(bind=testInstance.engine)
         mockCreator.assert_called_once()
-        mockSession.query().options().filter().first.assert_called_once()
+        mockSession.query().filter().first.assert_called_once()
 
     def test_fetchRecordsByUUID(self, testInstance, mocker):
         mockCreator = mocker.MagicMock()
