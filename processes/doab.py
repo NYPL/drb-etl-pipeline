@@ -57,13 +57,11 @@ class DOABProcess(CoreProcess):
         except MappingError as e:
             raise DOABError(e.message)
 
-        for field in ['identifiers', 'authors', 'contributors', 'title', 'is_part_of', 'publisher', 'spatial', 'dates', 'languages', 'extent', 'abstract', 'subjects', 'has_part', 'rights']:
-            print(field, getattr(doabRec.record, field, None))
-
-        '''
         linkManager = DOABLinkManager(doabRec.record)
         
         linkManager.parseLinks()
+
+        print(doabRec.record.has_part)
 
         for manifest in linkManager.manifests:
             manifestPath, manifestJSON = manifest
@@ -74,7 +72,6 @@ class DOABProcess(CoreProcess):
             self.sendFileToProcessingQueue(ePubURI, ePubPath)
 
         self.addDCDWToUpdateList(doabRec)
-        '''
 
     def importSingleOAIRecord(self, recordID):
         urlParams = 'verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:{}'.format(recordID)
