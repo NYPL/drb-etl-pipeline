@@ -273,7 +273,7 @@ class TestAPIUtils:
         assert testFormatted['table_of_contents'] == 'Test TOC'
         assert testFormatted['authors'] == 'testAuthors'
         assert testFormatted['contributors'] == 'testContribs'
-        assert testFormatted['publishers'] == 'testPublishers'
+        assert testFormatted['publishers'] == ['testPublishers']
         assert testFormatted['dates'] == 'testDates'
         assert testFormatted['languages'] == 'testLangs'
         assert testFormatted['identifiers'] == 'testIDs'
