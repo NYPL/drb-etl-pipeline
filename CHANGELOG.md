@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## unreleased -- v0.5.4
+### Fixed
+- Typo in edition detail parsing method
+- Handle errors in connection to RabbitMQ server on message get and acknowledge
+
 ## 2021-04-08 --v0.5.3
 ### Fixed
 - Included instance records in edition detail response
