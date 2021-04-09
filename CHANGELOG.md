@@ -4,6 +4,8 @@
 ### Fixed
 - Typo in edition detail parsing method
 - Handle errors in connection to RabbitMQ server on message get and acknowledge
+- Handle None values in Record array fields
+- Handle expired session error in Edition detail request
 
 ## 2021-04-08 --v0.5.3
 ### Fixed

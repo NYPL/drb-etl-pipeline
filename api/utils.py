@@ -214,7 +214,10 @@ class APIUtils():
 
     @staticmethod
     def formatPipeDelimitedData(data, fields):
-        if isinstance(data, list):
-            return [dict(zip(fields, d.split('|'))) for d in data]
+        if data is None:
+            return None
+        elif isinstance(data, list):
+            dataList = list(filter(None, data))
+            return [dict(zip(fields, d.split('|'))) for d in dataList]
         else:
             return dict(zip(fields, data.split('|')))

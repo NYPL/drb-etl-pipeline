@@ -20,9 +20,9 @@ class DBClient():
             .options(
                 contains_eager(Work.editions),
                 joinedload(Work.editions, Edition.links),
-                joinedload(Work.editions, Edition.rights),
                 joinedload(Work.editions, Edition.items),
-                joinedload(Work.editions, Edition.items, Item.links, innerjoin=True)
+                joinedload(Work.editions, Edition.items, Item.links, innerjoin=True),
+                joinedload(Work.editions, Edition.items, Item.rights),
             )\
             .filter(Work.uuid.in_(uuids), Edition.id.in_(editionIds))\
             .all()
@@ -45,7 +45,9 @@ class DBClient():
         return session.query(Edition)\
             .options(
                 joinedload(Edition.links),
-                joinedload(Edition.rights)
+                joinedload(Edition.items),
+                joinedload(Edition.items, Item.links),
+                joinedload(Edition.items, Item.rights)
             )\
             .filter(Edition.id == editionID).first()
 

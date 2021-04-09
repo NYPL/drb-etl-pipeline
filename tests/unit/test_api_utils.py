@@ -346,5 +346,8 @@ class TestAPIUtils:
             == {'one': 'test', 'two': 'object'}
 
     def test_formatPipeDelimitedData_list(self):
-        assert APIUtils.formatPipeDelimitedData(['test|object', 'another|thing'], ['one', 'two'])\
+        assert APIUtils.formatPipeDelimitedData(['test|object', None, 'another|thing'], ['one', 'two'])\
             == [{'one': 'test', 'two': 'object'}, {'one': 'another', 'two': 'thing'}]
+
+    def test_formatPipeDelimitedData_none(self):
+        assert APIUtils.formatPipeDelimitedData(None, ['one', 'two']) == None
