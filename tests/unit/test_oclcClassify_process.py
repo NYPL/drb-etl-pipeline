@@ -273,7 +273,7 @@ class TestOCLCClassifyProcess:
         mockAddDCDW = mocker.patch.object(ClassifyProcess, 'addDCDWToUpdateList')
         mockfetchOCLC = mocker.patch.object(ClassifyProcess, 'fetchOCLCCatalogRecords')
 
-        testInstance.createClassifyDCDWRecord(('testXML', []), '1', 'test')
+        testInstance.createClassifyDCDWRecord('testXML', [], '1', 'test')
 
         mockMapping.assert_called_once_with(
             'testXML', {'oclc': 'http://classify.oclc.org'}, {}, ('1', 'test')
