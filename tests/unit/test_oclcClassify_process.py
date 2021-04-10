@@ -1,4 +1,5 @@
 import datetime
+from lxml import etree
 import os
 import pytest
 
@@ -27,6 +28,18 @@ class TestOCLCClassifyProcess:
                 self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']
         
         return TestClassifyProcess('TestProcess', 'testFile', 'testDate')
+    
+    @pytest.fixture
+    def testXMLResponse(self):
+        def constructResponse(code, responseBlock):
+            return etree.fromstring('''<?xml version="1.0"?>
+                <classify xmlns="http://classify.oclc.org" xmlns:oclc="http://classify.oclc.org">
+                    <response code="{}"/>
+                    {}
+                </classify>
+            '''.format(code, responseBlock))
+        
+        return constructResponse
 
     @pytest.fixture
     def testRecord(self, mocker):
@@ -210,12 +223,14 @@ class TestOCLCClassifyProcess:
         
     def test_classifyRecordByMetadata_success(self, testInstance, mocker):
         mockClassifier = mocker.patch('processes.oclcClassify.ClassifyManager')
-        mockClassifierInstance = mocker.MagicMock()
+        mockClassifierInstance = mocker.MagicMock(addlIds=[])
         mockClassifier.return_value = mockClassifierInstance
         mockClassifierInstance.getClassifyResponse.return_value = [
             'xml1', 'xml2', 'xml3'
         ]
 
+        mockCheckFetched = mocker.patch.object(ClassifyProcess, 'checkIfClassifyWorkFetched')
+        mockCheckFetched.side_effect = [False, True, False]
         mockCreateDCDW = mocker.patch.object(ClassifyProcess, 'createClassifyDCDWRecord')
 
         testInstance.classifyRecordByMetadata('1', 'test', 'testAuthor', 'testTitle')
@@ -223,12 +238,19 @@ class TestOCLCClassifyProcess:
         mockClassifier.assert_called_once_with(
             iden='1', idenType='test', author='testAuthor', title='testTitle'
         )
-        mockClassifier.getClassifyResponse.assert_called_once
+
+        mockClassifierInstance.getClassifyResponse.assert_called_once()
+
+        mockCheckFetched.assert_has_calls([
+            mocker.call('xml1'), mocker.call('xml2'), mocker.call('xml3')
+        ])
+
+        mockClassifierInstance.checkAndFetchAdditionalEditions.assert_has_calls([
+            mocker.call('xml1'), mocker.call('xml3')
+        ])
 
         mockCreateDCDW.assert_has_calls([
-            mocker.call('xml1', '1', 'test'),
-            mocker.call('xml2', '1', 'test'),
-            mocker.call('xml3', '1', 'test')
+            mocker.call('xml1', [], '1', 'test'), mocker.call('xml3', [], '1', 'test')
         ])
 
     def test_classifyRecordByMetadata_error(self, testInstance, mocker):
@@ -237,7 +259,7 @@ class TestOCLCClassifyProcess:
         mockClassifier.return_value = mockClassifierInstance
         mockClassifierInstance.getClassifyResponse.side_effect = ClassifyError
 
-        mockCreateDCDW = mocker.patch.object(ClassifyProcess, 'createClassifyDCDWRecord')
+        mocker.patch.object(ClassifyProcess, 'createClassifyDCDWRecord')
 
         with pytest.raises(ClassifyError):
             testInstance.classifyRecordByMetadata('1', 'test', 'testAuthor', 'testTitle')
@@ -293,3 +315,13 @@ class TestOCLCClassifyProcess:
         mockSendMessage.assert_called_once_with(
             'test_oclc_queue', 'test_oclc_key', {'oclcNo': '1', 'owiNo': '1'}
         )
+
+    def test_checkIfClassifyWorkFetched(self, testInstance, testXMLResponse, mocker):
+        testXML = testXMLResponse(2, '<work owi="1"/>')
+
+        mockCheckRedis = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
+        mockCheckRedis.return_value = False
+
+        assert testInstance.checkIfClassifyWorkFetched(testXML) == False
+
+        mockCheckRedis.assert_called_once_with('classifyWork', '1', 'owi')
