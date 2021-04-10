@@ -1,5 +1,5 @@
 import pytest
-from pika.exceptions import StreamLostError
+from pika.exceptions import StreamLostError, ChannelClosedByBroker
 
 from managers import RabbitMQManager
 
@@ -115,6 +115,18 @@ class TestRabbitMQManager:
         testInstance.channel.basic_get.assert_has_calls([
             mocker.call('testQueue'), mocker.call('testQueue')
         ])
+        mockCreateConn.assert_called_once()
+        mockCreateCh.assert_called_once()
+
+    def test_getMessageFromQueue_channel_closed_error(self, testInstance, mocker):
+        testInstance.channel = mocker.MagicMock()
+        testInstance.channel.basic_get.side_effect = ChannelClosedByBroker(500, 'test')
+
+        mockCreateConn = mocker.patch.object(RabbitMQManager, 'createRabbitConnection')
+        mockCreateCh = mocker.patch.object(RabbitMQManager, 'createChannel')
+
+        assert testInstance.getMessageFromQueue('testQueue') == None
+        testInstance.channel.basic_get.assert_called_once_with('testQueue')
         mockCreateConn.assert_called_once()
         mockCreateCh.assert_called_once()
 

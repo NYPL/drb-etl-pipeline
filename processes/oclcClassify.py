@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from lxml import etree
 import os
 
 from .core import CoreProcess
@@ -63,9 +64,6 @@ class ClassifyProcess(CoreProcess):
                 logger.warning('Exceeding max requests to OCLC catalog, breaking')
                 break
 
-            if len(self.records) >= 100:
-                self.saveRecords()
-
     def frbrizeRecord(self, record):
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
             identifier, idenType = tuple(iden.split('|'))
@@ -92,17 +90,25 @@ class ClassifyProcess(CoreProcess):
             iden=identifier, idenType=idType, author=author, title=title
         )
 
-        for classifyResult in classifier.getClassifyResponse():
-            self.createClassifyDCDWRecord(classifyResult, identifier, idType)
+        for classifyXML in classifier.getClassifyResponse():
+            if self.checkIfClassifyWorkFetched(classifyXML) is True:
+                logger.debug('Skipping Duplicate Classify Record')
+                continue
+
+            classifier.checkAndFetchAdditionalEditions(classifyXML)
+
+            self.createClassifyDCDWRecord(
+                classifyXML, classifier.addlIds, identifier, idType
+            )
     
-    def createClassifyDCDWRecord(self, classifyResult, identifier, idType):
-        classifyXML, additionalOCLCs = classifyResult
+    def createClassifyDCDWRecord(self, classifyXML, additionalOCLCs, identifier, idType):
         classifyRec = ClassifyMapping(
             classifyXML,
             {'oclc': 'http://classify.oclc.org'},
             {},
             (identifier, idType)
         )
+
         classifyRec.applyMapping()
 
         classifyRec.extendIdentifiers(additionalOCLCs)
@@ -124,3 +130,10 @@ class ClassifyProcess(CoreProcess):
         self.sendMessageToQueue(
             self.rabbitQueue, self.rabbitRoute, {'oclcNo': oclcNo, 'owiNo': owiNo}
         )
+
+    def checkIfClassifyWorkFetched(self, classifyXML):
+        workOWI = classifyXML.find(
+            './/work', namespaces=ClassifyManager.NAMESPACE
+        ).attrib['owi']
+
+        return self.checkSetRedis('classifyWork', workOWI, 'owi')
