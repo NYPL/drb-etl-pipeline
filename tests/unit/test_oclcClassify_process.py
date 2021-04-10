@@ -76,7 +76,6 @@ class TestOCLCClassifyProcess:
 
     def test_classifyRecords_not_full(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
-        mockFrbrize.side_effect = lambda x: testInstance.records.add(len(testInstance.records))
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
@@ -90,17 +89,13 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 100
 
-        mockSave = mocker.patch.object(ClassifyProcess, 'saveRecords')
-
         testInstance.classifyRecords()
 
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
-        mockSave.assert_called_once()
 
     def test_classifyRecords_custom_range(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
-        mockFrbrize.side_effect = lambda x: testInstance.records.add(len(testInstance.records))
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
@@ -115,19 +110,15 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 100
 
-        mockSave = mocker.patch.object(ClassifyProcess, 'saveRecords')
-
         testInstance.classifyRecords(startDateTime='testDate')
 
         mockDatetime.utcnow.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
-        mockSave.assert_called_once()
 
     def test_classifyRecords_full(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
-        mockFrbrize.side_effect = lambda x: testInstance.records.add(len(testInstance.records))
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
@@ -141,19 +132,15 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 50 + [True]
 
-        mockSave = mocker.patch.object(ClassifyProcess, 'saveRecords')
-
         testInstance.classifyRecords(full=True)
 
         mockDatetime.utcnow.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords[:50]])
-        mockSave.assert_not_called()
 
     def test_classifyRecords_full_batch(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
-        mockFrbrize.side_effect = lambda x: testInstance.records.add(len(testInstance.records))
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
@@ -167,15 +154,12 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 100
 
-        mockSave = mocker.patch.object(ClassifyProcess, 'saveRecords')
-
         testInstance.ingestLimit = 100
         testInstance.classifyRecords(full=True)
 
         mockDatetime.utcnow.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
-        mockSave.assert_called_once()
 
     def test_frbrizeRecord_success_valid_author(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyManager, 'getQueryableIdentifiers')
