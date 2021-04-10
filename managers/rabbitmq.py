@@ -1,7 +1,7 @@
 import json
 from pika import BlockingConnection, ConnectionParameters
 from pika.credentials import PlainCredentials
-from pika.exceptions import ConnectionWrongStateError, StreamLostError
+from pika.exceptions import ConnectionWrongStateError, StreamLostError, ChannelClosedByBroker
 import os
 
 class RabbitMQManager:
@@ -75,6 +75,11 @@ class RabbitMQManager:
             self.createRabbitConnection()
             self.createChannel()
             return self.getMessageFromQueue(queueName)
+        except ChannelClosedByBroker:
+            self.createRabbitConnection()
+            self.createChannel()
+
+        return None
     
     def acknowledgeMessageProcessed(self, deliveryTag):
         try:
