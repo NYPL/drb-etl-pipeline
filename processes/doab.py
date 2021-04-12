@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from lxml import etree
 import os
-from pymarc import parse_xml_to_array
 import requests
 
 from .core import CoreProcess
@@ -12,7 +11,15 @@ from managers import DOABLinkManager
 
 
 class DOABProcess(CoreProcess):
-    OAI_NS = '{http://www.openarchives.org/OAI/2.0/}'
+    ROOT_NAMESPACE = {None: 'http://www.openarchives.org/OAI/2.0/'}
+
+    OAI_NAMESPACES = {
+        'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
+        'dc': 'http://purl.org/dc/elements/1.1/',
+        'datacite': 'https://schema.datacite.org/meta/kernel-4.1/metadata.xsd',
+        'oapen': 'http://purl.org/dc/elements/1.1/',
+        'oaire': 'https://raw.githubusercontent.com/rcic/openaire4/master/schemas/4.0/oaire.xsd'
+    }
 
     def __init__(self, *args):
         super(DOABProcess, self).__init__(*args[:4])
@@ -45,9 +52,9 @@ class DOABProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
     
-    def parseDOABRecord(self, marcRec):
+    def parseDOABRecord(self, oaiRec):
         try:
-            doabRec = DOABMapping(marcRec, self.statics)
+            doabRec = DOABMapping(oaiRec, self.OAI_NAMESPACES, self.statics)
             doabRec.applyMapping()
         except MappingError as e:
             raise DOABError(e.message)
@@ -67,17 +74,17 @@ class DOABProcess(CoreProcess):
         self.addDCDWToUpdateList(doabRec)
 
     def importSingleOAIRecord(self, recordID):
-        urlParams = 'verb=GetRecord&metadataPrefix=marcxml&identifier=oai:doab-books:{}'.format(recordID)
+        urlParams = 'verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:{}'.format(recordID)
         doabURL = '{}{}'.format(os.environ['DOAB_OAI_URL'], urlParams)
 
         doabResponse = requests.get(doabURL, timeout=30, verify=False)
 
         if doabResponse.status_code == 200:
             content = BytesIO(doabResponse.content)
-            marcRecord = parse_xml_to_array(content)[0]
+            oaidcRecord = etree.parse(content)
 
             try:
-                self.parseDOABRecord(marcRecord)
+                self.parseDOABRecord(oaidcRecord)
             except DOABError as e:
                 print('ERROR', e)
     
@@ -94,9 +101,9 @@ class DOABProcess(CoreProcess):
                 recordsProcessed += 100
                 continue
             
-            marcReader = parse_xml_to_array(oaiFile)
-
-            for record in marcReader:
+            oaidcRecords = etree.parse(oaiFile)
+            
+            for record in oaidcRecords.xpath('//oai_dc:dc', namespaces=self.OAI_NAMESPACES):
                 if record is None: continue
 
                 try:
@@ -112,7 +119,7 @@ class DOABProcess(CoreProcess):
     def getResumptionToken(self, oaiFile):
             try:
                 oaiXML = etree.parse(oaiFile)
-                return oaiXML.find('.//{}resumptionToken'.format(self.OAI_NS)).text
+                return oaiXML.find('.//resumptionToken', namespaces=self.ROOT_NAMESPACE).text
             except AttributeError:
                 return None
 
@@ -125,9 +132,9 @@ class DOABProcess(CoreProcess):
         elif fullOrPartial is False:
             if not startTimestamp:
                 startTimestamp = (datetime.utcnow() - timedelta(hours=24)).strftime('%Y-%m-%d')
-            urlParams = '{}&metadataPrefix=marcxml&from={}'.format(urlParams, startTimestamp)
+            urlParams = '{}&metadataPrefix=oai_dc&from={}'.format(urlParams, startTimestamp)
         else:
-            urlParams = '{}&metadataPrefix=marcxml'.format(urlParams)
+            urlParams = '{}&metadataPrefix=oai_dc'.format(urlParams)
 
         doabURL = '{}{}'.format(doabURL, urlParams)
             

@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 2021-04-12 -- v0.5.5
+### Fixed
+- Added deadlock handling to batch commit method
+- Skip record from classify that have already been processed
+- Handle closed channel in rabbitMQ manager
+- Move Record status update to standard batch query and prevent stale data
+- Handle `None` values in array of author names
+- Update DOAB ingest process to consume OAI_DC records
+
 ## 2021-04-09 -- v0.5.4
 ### Fixed
 - Typo in edition detail parsing method

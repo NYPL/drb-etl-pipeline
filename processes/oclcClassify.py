@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from lxml import etree
 import os
 
 from .core import CoreProcess
@@ -30,6 +31,8 @@ class ClassifyProcess(CoreProcess):
         self.createRabbitConnection()
         self.createOrConnectQueue(self.rabbitQueue, self.rabbitRoute)
 
+        self.classifiedRecords = {}
+
     def runProcess(self):
         if self.process == 'daily':
             self.classifyRecords()
@@ -39,6 +42,7 @@ class ClassifyProcess(CoreProcess):
             self.classifyRecords(startDateTime=self.ingestPeriod)
 
         self.saveRecords()
+        self.updateClassifiedRecordsStatus()
         self.commitChanges()
     
     def classifyRecords(self, full=False, startDateTime=None):
@@ -55,16 +59,21 @@ class ClassifyProcess(CoreProcess):
         for rec in self.windowedQuery(Record, baseQuery, windowSize=windowSize):
             self.frbrizeRecord(rec)
 
-            self.session.query(Record)\
-                .filter(Record.id == rec.id)\
-                .update({'cluster_status': False, 'frbr_status': 'complete'}, synchronize_session='fetch')
+            # Update Record with status
+            rec.cluster_status = False
+            rec.frbr_status = 'complete'
+            self.classifiedRecords[rec.id] = rec
 
             if self.checkIncrementerRedis('oclcCatalog', 'API'):
                 logger.warning('Exceeding max requests to OCLC catalog, breaking')
                 break
 
-            if len(self.records) >= 100:
-                self.saveRecords()
+            if len(self.classifiedRecords) >= windowSize:
+                self.updateClassifiedRecordsStatus()
+                self.classifiedRecords = {}
+
+    def updateClassifiedRecordsStatus(self):
+        self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
     def frbrizeRecord(self, record):
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
@@ -72,7 +81,7 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 author, *_ = tuple(record.authors[0].split('|'))
-            except IndexError:
+            except (IndexError, TypeError):
                 author = None
 
             # Check if this identifier has been queried in the past 24 hours
@@ -92,17 +101,25 @@ class ClassifyProcess(CoreProcess):
             iden=identifier, idenType=idType, author=author, title=title
         )
 
-        for classifyResult in classifier.getClassifyResponse():
-            self.createClassifyDCDWRecord(classifyResult, identifier, idType)
+        for classifyXML in classifier.getClassifyResponse():
+            if self.checkIfClassifyWorkFetched(classifyXML) is True:
+                logger.debug('Skipping Duplicate Classify Record')
+                continue
+
+            classifier.checkAndFetchAdditionalEditions(classifyXML)
+
+            self.createClassifyDCDWRecord(
+                classifyXML, classifier.addlIds, identifier, idType
+            )
     
-    def createClassifyDCDWRecord(self, classifyResult, identifier, idType):
-        classifyXML, additionalOCLCs = classifyResult
+    def createClassifyDCDWRecord(self, classifyXML, additionalOCLCs, identifier, idType):
         classifyRec = ClassifyMapping(
             classifyXML,
             {'oclc': 'http://classify.oclc.org'},
             {},
             (identifier, idType)
         )
+
         classifyRec.applyMapping()
 
         classifyRec.extendIdentifiers(additionalOCLCs)
@@ -124,3 +141,10 @@ class ClassifyProcess(CoreProcess):
         self.sendMessageToQueue(
             self.rabbitQueue, self.rabbitRoute, {'oclcNo': oclcNo, 'owiNo': owiNo}
         )
+
+    def checkIfClassifyWorkFetched(self, classifyXML):
+        workOWI = classifyXML.find(
+            './/work', namespaces=ClassifyManager.NAMESPACE
+        ).attrib['owi']
+
+        return self.checkSetRedis('classifyWork', workOWI, 'owi')

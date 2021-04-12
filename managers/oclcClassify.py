@@ -46,6 +46,8 @@ class ClassifyManager:
         self.author = ClassifyManager.cleanStr(author) if author else None
         self.start = start
 
+        self.addlIds = []
+
     def getClassifyResponse(self):
         self.generateQueryURL()
         self.execQuery()
@@ -155,12 +157,7 @@ class ClassifyManager:
         elif responseCode == 2:
             print('Got Single Work, parsing work and edition data')
 
-            # Check for additional available editions and add if available
-            additionalIdentifiers = []
-            if self.additionalEditionsAvailable(parseXML):
-                self.fetchAdditionalIdentifiers(additionalIdentifiers)
-
-            return [(parseXML, additionalIdentifiers)]
+            return [parseXML]
         elif responseCode == 4:
             print('Got Multiwork response, iterate through works to get details')
             works = parseXML.findall('.//work', namespaces=self.NAMESPACE)
@@ -206,10 +203,11 @@ class ClassifyManager:
         
         return True
 
-    def additionalEditionsAvailable(self, classifyXML):
-        return True if len(classifyXML.findall('.//oclc:edition', namespaces=self.NAMESPACE)) >= 500 else False
+    def checkAndFetchAdditionalEditions(self, classifyXML):
+        if len(classifyXML.findall('.//oclc:edition', namespaces=self.NAMESPACE)) >= 500:
+            self.fetchAdditionalIdentifiers()
 
-    def fetchAdditionalIdentifiers(self, additionalIdentifiers):
+    def fetchAdditionalIdentifiers(self):
         xpathNamespace = dict(list(filter(lambda x: x[0] is not None, self.NAMESPACE.items())))
 
         while True:
@@ -226,7 +224,7 @@ class ClassifyManager:
             if len(oclcNos) < 1:
                 break
 
-            additionalIdentifiers.extend(['{}|oclc'.format(oclc) for oclc in oclcNos])
+            self.addlIds.extend(['{}|oclc'.format(oclc) for oclc in oclcNos])
 
     @staticmethod
     def getStrLang(string):
