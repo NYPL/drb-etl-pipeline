@@ -56,7 +56,6 @@ class ClassifyProcess(CoreProcess):
         for rec in self.windowedQuery(Record, baseQuery, windowSize=windowSize):
             self.frbrizeRecord(rec)
 
-
             # Update Record with status
             rec.cluster_status = False
             rec.frbr_status = 'complete'
