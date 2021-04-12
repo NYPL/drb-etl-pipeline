@@ -96,7 +96,7 @@ class DOABProcess(CoreProcess):
             oaiFile = self.downloadOAIRecords(fullOrPartial, startTimestamp, resumptionToken=resumptionToken)
 
             resumptionToken = self.getResumptionToken(oaiFile)
-            print(resumptionToken)
+
             if recordsProcessed < self.ingestOffset:
                 recordsProcessed += 100
                 continue
