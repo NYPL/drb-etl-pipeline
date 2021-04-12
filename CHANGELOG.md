@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.5.5
+## 2021-04-12 -- v0.5.5
 ### Fixed
 - Added deadlock handling to batch commit method
 - Skip record from classify that have already been processed
