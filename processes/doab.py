@@ -11,6 +11,8 @@ from managers import DOABLinkManager
 
 
 class DOABProcess(CoreProcess):
+    ROOT_NAMESPACE = {None: 'http://www.openarchives.org/OAI/2.0/'}
+
     OAI_NAMESPACES = {
         'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
         'dc': 'http://purl.org/dc/elements/1.1/',
@@ -61,8 +63,6 @@ class DOABProcess(CoreProcess):
         
         linkManager.parseLinks()
 
-        print(doabRec.record.has_part)
-
         for manifest in linkManager.manifests:
             manifestPath, manifestJSON = manifest
             self.createManifestInS3(manifestPath, manifestJSON)
@@ -96,7 +96,7 @@ class DOABProcess(CoreProcess):
             oaiFile = self.downloadOAIRecords(fullOrPartial, startTimestamp, resumptionToken=resumptionToken)
 
             resumptionToken = self.getResumptionToken(oaiFile)
-
+            print(resumptionToken)
             if recordsProcessed < self.ingestOffset:
                 recordsProcessed += 100
                 continue
@@ -119,7 +119,7 @@ class DOABProcess(CoreProcess):
     def getResumptionToken(self, oaiFile):
             try:
                 oaiXML = etree.parse(oaiFile)
-                return oaiXML.find('.//resumptionToken', namespaces=self.OAI_NAMESPACES).text
+                return oaiXML.find('.//resumptionToken', namespaces=self.ROOT_NAMESPACE).text
             except AttributeError:
                 return None
 

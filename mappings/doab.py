@@ -27,7 +27,7 @@ class DOABMapping(XMLMapping):
                     './datacite:contributor/text()',
                     './datacite:contributor/@type'
                 ],
-                '{0}||{1}'
+                '{0}|||{1}'
             )],
             'title': ('./datacite:title/text()', '{0}'),
             'is_part_of': [('./dc:relation/text()', '{0}||series')],
@@ -85,21 +85,20 @@ class DOABMapping(XMLMapping):
         if self.record.source_id is None or len(self.record.identifiers) < 1:
             self.raiseMappingError('Malformed DOAB record')
 
-        print(self.record.title, self.record.source_id)
-
     def parseIdentifiers(self):
         outIDs = []
 
         for iden in self.record.identifiers:
-            if iden[:4] == 'http':
-                doabDOIGroup = re.search(self.DOI_REGEX, iden)
+            value, auth = iden.split('|')
+
+            if value[:4] == 'http':
+                doabDOIGroup = re.search(self.DOI_REGEX, value)
 
                 if doabDOIGroup:
-                    self.record.source_id = doabDOIGroup.group(1)
-
-                continue
-
-            value, auth = iden.split('|')
+                    value = doabDOIGroup.group(1)
+                    self.record.source_id = value
+                else:
+                    continue
 
             outIDs.append('{}|{}'.format(value, auth.lower()))
 
@@ -115,7 +114,7 @@ class DOABMapping(XMLMapping):
 
             outRights.append('|'.join(rightsData))
 
-        return [outRights]
+        return outRights
 
     def parseLinks(self):
         outLinks = []
