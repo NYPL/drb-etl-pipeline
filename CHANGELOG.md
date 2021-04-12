@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## unreleased -- v0.5.5
+### Fixed
+- Added deadlock handling to batch commit method
+- Skip record from classify that have already been processed
+- Handle closed channel in rabbitMQ manager
+- Move Record status update to standard batch query
+- Handle `None` values in array of author names
+
+
 ## 2021-04-09 -- v0.5.4
 ### Fixed
 - Typo in edition detail parsing method

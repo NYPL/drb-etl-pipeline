@@ -169,29 +169,11 @@ class TestClassifyManager:
 
     def test_parseXMLResponse_status_2(self, testInstance, testXMLResponse, mocker):
         testInstance.rawXML = testXMLResponse(2, '<data id="test"/>')
-        mockAvailableEditions = mocker.patch.object(ClassifyManager, 'additionalEditionsAvailable')
-        mockAvailableEditions.return_value = False
 
-        testResponse = testInstance.parseXMLResponse()
-        testXML, testIdentifiers = testResponse[0]
+        testXML = testInstance.parseXMLResponse()[0]
 
         assert testXML.find('.//response', namespaces=ClassifyManager.NAMESPACE).get('code') == '2'
         assert testXML.find('.//data', namespaces=ClassifyManager.NAMESPACE).get('id') == 'test'
-        assert testIdentifiers == []
-
-    def test_parseXMLResponse_status_2_additional_ids(self, testInstance, testXMLResponse, mocker):
-        testInstance.rawXML = testXMLResponse(2, '<data id="test"/>')
-        mockAvailableEditions = mocker.patch.object(ClassifyManager, 'additionalEditionsAvailable')
-        mockAvailableEditions.return_value = True
-        mockFetchEditionIds = mocker.patch.object(ClassifyManager, 'fetchAdditionalIdentifiers')
-
-        testResponse = testInstance.parseXMLResponse()
-        testXML, testIdentifiers = testResponse[0]
-
-        assert testXML.find('.//response', namespaces=ClassifyManager.NAMESPACE).get('code') == '2'
-        assert testXML.find('.//data', namespaces=ClassifyManager.NAMESPACE).get('id') == 'test'
-        assert testIdentifiers == []
-        mockFetchEditionIds.assert_called_once_with([])
 
     def test_parseXMLResponse_status_4(self, testInstance, testXMLResponse, mocker):
         workXML = '''
@@ -225,19 +207,27 @@ class TestClassifyManager:
         with pytest.raises(ClassifyError):
             testInstance.parseXMLResponse()
 
-    def test_addintionalEditionsAvailable_true(self, testInstance, testXMLResponse):
+    def test_checkAndFetchAdditionalEditions_true(self, testInstance, testXMLResponse, mocker):
         editionElements = ''.join('<oclc:edition>{}</oclc:edition>'.format(i) for i in range(501))
         xmlDoc = testXMLResponse(2, editionElements) 
 
-        assert testInstance.additionalEditionsAvailable(etree.fromstring(xmlDoc.encode('utf-8'))) is True
+        mockFetch = mocker.patch.object(ClassifyManager, 'fetchAdditionalIdentifiers')
 
-    def test_addintionalEditionsAvailable_false(self, testInstance, testXMLResponse):
-        editionElements = ''.join('<oclc:edition>{}</oclc:edition>'.format(i) for i in range(400))
+        testInstance.checkAndFetchAdditionalEditions(etree.fromstring(xmlDoc.encode('utf-8')))
+
+        mockFetch.assert_called_once()
+
+    def test_checkAndFetchAdditionalEditions_false(self, testInstance, testXMLResponse, mocker):
+        editionElements = ''.join('<oclc:edition>{}</oclc:edition>'.format(i) for i in range(100))
         xmlDoc = testXMLResponse(2, editionElements) 
 
-        assert testInstance.additionalEditionsAvailable(etree.fromstring(xmlDoc.encode('utf-8'))) is False
+        mockFetch = mocker.patch.object(ClassifyManager, 'fetchAdditionalIdentifiers')
 
-    def test_fetchAdditionalIdentifiers(self, testInstance, testXMLResponse, mocker):
+        testInstance.checkAndFetchAdditionalEditions(etree.fromstring(xmlDoc.encode('utf-8')))
+
+        mockFetch.assert_not_called()
+
+    def test_fetchAdditionalIdentifiers(self, testInstance, mocker):
         mockXML = mocker.MagicMock()
         mockEtree = mocker.patch('managers.oclcClassify.etree')
         mockEtree.fromstring.return_value = mockXML
@@ -247,11 +237,10 @@ class TestClassifyManager:
         mockGenerate = mocker.patch.object(ClassifyManager, 'generateQueryURL')
         mockExecute = mocker.patch.object(ClassifyManager, 'execQuery')
 
-        testIdentifiers = []
         testInstance.rawXML = '<data>test</data>'
-        testInstance.fetchAdditionalIdentifiers(testIdentifiers)
+        testInstance.fetchAdditionalIdentifiers()
 
-        assert testIdentifiers == ['{}|oclc'.format(i) for i in range(25)]
+        assert testInstance.addlIds == ['{}|oclc'.format(i) for i in range(25)]
         mockGenerate.assert_has_calls([mocker.call(), mocker.call()])
         mockExecute.assert_has_calls([mocker.call(), mocker.call()])
 
