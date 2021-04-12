@@ -56,9 +56,11 @@ class ClassifyProcess(CoreProcess):
         for rec in self.windowedQuery(Record, baseQuery, windowSize=windowSize):
             self.frbrizeRecord(rec)
 
-            self.session.query(Record)\
-                .filter(Record.id == rec.id)\
-                .update({'cluster_status': False, 'frbr_status': 'complete'}, synchronize_session='fetch')
+
+            # Update Record with status
+            rec.cluster_status = False
+            rec.frbr_status = 'complete'
+            self.records.add(rec)
 
             if self.checkIncrementerRedis('oclcCatalog', 'API'):
                 logger.warning('Exceeding max requests to OCLC catalog, breaking')
@@ -70,7 +72,7 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 author, *_ = tuple(record.authors[0].split('|'))
-            except IndexError:
+            except (IndexError, TypeError):
                 author = None
 
             # Check if this identifier has been queried in the past 24 hours
