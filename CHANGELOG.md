@@ -5,7 +5,7 @@
 - Added deadlock handling to batch commit method
 - Skip record from classify that have already been processed
 - Handle closed channel in rabbitMQ manager
-- Move Record status update to standard batch query
+- Move Record status update to standard batch query and prevent stale data
 - Handle `None` values in array of author names
 - Update DOAB ingest process to consume OAI_DC records
 

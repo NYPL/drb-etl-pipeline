@@ -31,6 +31,8 @@ class ClassifyProcess(CoreProcess):
         self.createRabbitConnection()
         self.createOrConnectQueue(self.rabbitQueue, self.rabbitRoute)
 
+        self.classifiedRecords = {}
+
     def runProcess(self):
         if self.process == 'daily':
             self.classifyRecords()
@@ -40,6 +42,7 @@ class ClassifyProcess(CoreProcess):
             self.classifyRecords(startDateTime=self.ingestPeriod)
 
         self.saveRecords()
+        self.updateClassifiedRecordsStatus()
         self.commitChanges()
     
     def classifyRecords(self, full=False, startDateTime=None):
@@ -59,11 +62,18 @@ class ClassifyProcess(CoreProcess):
             # Update Record with status
             rec.cluster_status = False
             rec.frbr_status = 'complete'
-            self.records.add(rec)
+            self.classifiedRecords[rec.id] = rec
 
             if self.checkIncrementerRedis('oclcCatalog', 'API'):
                 logger.warning('Exceeding max requests to OCLC catalog, breaking')
                 break
+
+            if len(self.classifiedRecords) >= windowSize:
+                self.updateClassifiedRecordsStatus()
+                self.classifiedRecords = {}
+
+    def updateClassifiedRecordsStatus(self):
+        self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
     def frbrizeRecord(self, record):
         for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
