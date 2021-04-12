@@ -105,16 +105,14 @@ class DOABMapping(XMLMapping):
         return outIDs
 
     def parseRights(self):
-        outRights = []
-
         for rightsObj in self.record.rights:
             rightsData = [d.strip() for d in list(rightsObj.split('|'))]
 
             if rightsData[1] == '': continue
 
-            outRights.append('|'.join(rightsData))
+            return '|'.join(rightsData)
 
-        return outRights
+        return None
 
     def parseLinks(self):
         outLinks = []

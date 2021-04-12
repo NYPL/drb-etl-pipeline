@@ -172,7 +172,7 @@ class SFRRecordManager:
 
         # Publishers
         if rec.publisher:
-            editionData['publishers'].extend(rec.publisher)
+            editionData['publishers'].update(rec.publisher)
         
         # Publication_place
         editionData['publication_place'][rec.spatial] += 1

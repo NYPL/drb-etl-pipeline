@@ -187,6 +187,8 @@ class KMeansManager:
     
     @classmethod
     def getPublishers(cls, publishers):
+        if not publishers or len(publishers) < 1: return ''
+
         pubs = []
         for pub in publishers:
             if not pub: continue 

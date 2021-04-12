@@ -72,7 +72,7 @@ class TestDOABMapping:
     def test_parseRights(self, testMapping):
         cleanRights = testMapping.parseRights()
 
-        assert cleanRights == ['doab|license||statement|']
+        assert cleanRights == 'doab|license||statement|'
 
     def test_parseLinks(self, testMapping):
         cleanLinks = testMapping.parseLinks()
