@@ -23,6 +23,7 @@ class TestOCLCClassifyProcess:
         class TestClassifyProcess(ClassifyProcess):
             def __init__(self, *args):
                 self.records = set()
+                self.classifiedRecords = {}
                 self.ingestLimit = None
                 self.rabbitQueue = os.environ['OCLC_QUEUE']
                 self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']
@@ -42,6 +43,16 @@ class TestOCLCClassifyProcess:
         return constructResponse
 
     @pytest.fixture
+    def runProcessMocks(self, mocker):
+        return mocker.patch.multiple(
+            ClassifyProcess,
+            classifyRecords=mocker.DEFAULT,
+            saveRecords=mocker.DEFAULT,
+            commitChanges=mocker.DEFAULT,
+            updateClassifiedRecordsStatus=mocker.DEFAULT
+        )
+
+    @pytest.fixture
     def testRecord(self, mocker):
         mockRecord = mocker.MagicMock(name='testRecord')
         mockRecord.identifiers = ['1|test']
@@ -50,42 +61,29 @@ class TestOCLCClassifyProcess:
 
         return mockRecord
 
-    def test_runProcess_daily(self, testInstance, mocker):
-        mockReceive = mocker.patch.object(ClassifyProcess, 'classifyRecords')
-        mockSave = mocker.patch.object(ClassifyProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(ClassifyProcess, 'commitChanges')
-
+    def test_runProcess_daily(self, testInstance, runProcessMocks):
         testInstance.process = 'daily'
         testInstance.runProcess()
 
-        mockReceive.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        for _, mockedMethod in runProcessMocks.items():
+            mockedMethod.assert_called_once()
 
-    def test_runProcess_complete(self, testInstance, mocker):
-        mockReceive = mocker.patch.object(ClassifyProcess, 'classifyRecords')
-        mockSave = mocker.patch.object(ClassifyProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(ClassifyProcess, 'commitChanges')
-
+    def test_runProcess_complete(self, testInstance, runProcessMocks):
         testInstance.process = 'complete'
         testInstance.runProcess()
 
-        mockReceive.assert_called_once_with(full=True)
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        runProcessMocks['classifyRecords'].assert_called_once_with(full=True)
+        for _, mockedMethod in runProcessMocks.items():
+            mockedMethod.assert_called_once()
 
-    def test_runProcess_custom(self, testInstance, mocker):
-        mockReceive = mocker.patch.object(ClassifyProcess, 'classifyRecords')
-        mockSave = mocker.patch.object(ClassifyProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(ClassifyProcess, 'commitChanges')
-
+    def test_runProcess_custom(self, testInstance, runProcessMocks):
         testInstance.process = 'custom'
         testInstance.ingestPeriod = 'testDate'
         testInstance.runProcess()
 
-        mockReceive.assert_called_once_with(startDateTime='testDate')
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        runProcessMocks['classifyRecords'].assert_called_once_with(startDateTime='testDate')
+        for _, mockedMethod in runProcessMocks.items():
+            mockedMethod.assert_called_once()
 
     def test_classifyRecords_not_full(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
@@ -102,10 +100,13 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 100
 
+        mockUpdateClassified = mocker.patch.object(ClassifyProcess, 'updateClassifiedRecordsStatus')
+
         testInstance.classifyRecords()
 
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
+        mockUpdateClassified.assert_called_once()
 
     def test_classifyRecords_custom_range(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
@@ -123,12 +124,15 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 100
 
+        mockUpdateClassified = mocker.patch.object(ClassifyProcess, 'updateClassifiedRecordsStatus')
+
         testInstance.classifyRecords(startDateTime='testDate')
 
         mockDatetime.utcnow.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
+        mockUpdateClassified.assert_called_once()
 
     def test_classifyRecords_full(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
@@ -145,12 +149,15 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 50 + [True]
 
+        mockUpdateClassified = mocker.patch.object(ClassifyProcess, 'updateClassifiedRecordsStatus')
+
         testInstance.classifyRecords(full=True)
 
         mockDatetime.utcnow.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords[:50]])
+        mockUpdateClassified.assert_not_called()
 
     def test_classifyRecords_full_batch(self, testInstance, mocker):
         mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
@@ -167,12 +174,23 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 100
 
+        mockUpdateClassified = mocker.patch.object(ClassifyProcess, 'updateClassifiedRecordsStatus')
+
         testInstance.ingestLimit = 100
         testInstance.classifyRecords(full=True)
 
         mockDatetime.utcnow.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
+        mockUpdateClassified.assert_called_once()
+
+    def test_updateClassifiedRecordsStatus(self, testInstance, mocker):
+        mockBulkSave = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
+
+        testInstance.classifiedRecords = {1: 'rec1', 2: 'rec2', 3: 'rec3'}
+        testInstance.updateClassifiedRecordsStatus()
+
+        mockBulkSave.assert_called_once_with(['rec1', 'rec2', 'rec3'])
 
     def test_frbrizeRecord_success_valid_author(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyManager, 'getQueryableIdentifiers')
