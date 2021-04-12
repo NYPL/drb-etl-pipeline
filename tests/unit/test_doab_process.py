@@ -110,18 +110,18 @@ class TestDOABProcess:
         mockGet = mocker.patch.object(requests, 'get')
         mockGet.return_value = mockResponse
 
-        mockParseXML = mocker.patch('processes.doab.parse_xml_to_array')
-        mockParseXML.return_value = ['mockMARCRecord']
+        mockEtree = mocker.patch('processes.doab.etree')
+        mockEtree.parse.return_value = 'mockOAIRecord'
 
         mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
 
         testProcess.importSingleOAIRecord(1)
 
         mockGet.assert_called_once_with(
-            'test_doab_urlverb=GetRecord&metadataPrefix=marcxml&identifier=oai:doab-books:1',
+            'test_doab_urlverb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
             timeout=30, verify=False
         )
-        mockParseRecord.assert_called_once_with('mockMARCRecord')
+        mockParseRecord.assert_called_once_with('mockOAIRecord')
 
     def test_importSingleOAIRecord_doab_error(self, testProcess, mocker):
         mockResponse = mocker.MagicMock()
@@ -130,8 +130,8 @@ class TestDOABProcess:
         mockGet = mocker.patch.object(requests, 'get')
         mockGet.return_value = mockResponse
 
-        mockParseXML = mocker.patch('processes.doab.parse_xml_to_array')
-        mockParseXML.return_value = ['mockMARCRecord']
+        mockEtree = mocker.patch('processes.doab.etree')
+        mockEtree.parse.return_value = 'mockOAIRecord'
 
         mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
         mockParseRecord.side_effect = DOABError('test')
@@ -139,10 +139,10 @@ class TestDOABProcess:
         testProcess.importSingleOAIRecord(1)
 
         mockGet.assert_called_once_with(
-            'test_doab_urlverb=GetRecord&metadataPrefix=marcxml&identifier=oai:doab-books:1',
+            'test_doab_urlverb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
             timeout=30, verify=False
         )
-        mockParseRecord.assert_called_once_with('mockMARCRecord')
+        mockParseRecord.assert_called_once_with('mockOAIRecord')
 
     def test_importSingleOAIRecord_request_error(self, testProcess, mocker):
         mockResponse = mocker.MagicMock()
@@ -151,17 +151,17 @@ class TestDOABProcess:
         mockGet = mocker.patch.object(requests, 'get')
         mockGet.return_value = mockResponse
 
-        mockParseXML = mocker.patch('processes.doab.parse_xml_to_array')
+        mockEtree = mocker.patch('processes.doab.etree')
         mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
 
         testProcess.importSingleOAIRecord(1)
 
         mockGet.assert_called_once_with(
-            'test_doab_urlverb=GetRecord&metadataPrefix=marcxml&identifier=oai:doab-books:1',
+            'test_doab_urlverb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
             timeout=30, verify=False
         )
-        mockParseXML.assert_not_called
-        mockParseRecord.assert_not_called
+        mockEtree.parse.assert_not_called()
+        mockParseRecord.assert_not_called()
 
     def test_importOAIRecords(self, testProcess, mocker):
         testProcess.ingestOffset = 100
@@ -174,8 +174,10 @@ class TestDOABProcess:
         processMocks['downloadOAIRecords'].side_effect = ['mock1', 'mock2', 'mock3']
         processMocks['getResumptionToken'].side_effect = ['res1', 'res2', None]
 
-        mockParser = mocker.patch('processes.doab.parse_xml_to_array')
-        mockParser.side_effect = [['rec1', 'rec2', 'rec3'], ['rec4']]
+        mockElement = mocker.MagicMock(name='etreeElement')
+        mockElement.xpath.side_effect = [['rec1', 'rec2', 'rec3'], ['rec4']]
+        mockEtree = mocker.patch('processes.doab.etree')
+        mockEtree.parse.return_value = mockElement
 
         processMocks['parseDOABRecord'].side_effect = [None, DOABError('test'), None, None]
 
@@ -186,7 +188,7 @@ class TestDOABProcess:
             mocker.call(False, None, resumptionToken='res1'),
             mocker.call(False, None, resumptionToken='res2')
         ])
-        mockParser.assert_has_calls([mocker.call('mock2'), mocker.call('mock3')])
+        mockEtree.parse.assert_has_calls([mocker.call('mock2'), mocker.call('mock3')])
         processMocks['parseDOABRecord'].assert_has_calls([
             mocker.call('rec1'), mocker.call('rec2'), mocker.call('rec3'), mocker.call('rec4')
         ])
@@ -204,7 +206,7 @@ class TestDOABProcess:
 
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
-            'test_doab_urlverb=ListRecords&metadataPrefix=marcxml',
+            'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc',
             stream=True, timeout=30, verify=False
         )
 
@@ -216,7 +218,7 @@ class TestDOABProcess:
 
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
-            'test_doab_urlverb=ListRecords&metadataPrefix=marcxml&from=1900-01-01',
+            'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc&from=1900-01-01',
             stream=True, timeout=30, verify=False
         )
 
@@ -225,7 +227,7 @@ class TestDOABProcess:
 
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
-            'test_doab_urlverb=ListRecords&metadataPrefix=marcxml&from=2020-01-01',
+            'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc&from=2020-01-01',
             stream=True, timeout=30, verify=False
         )
 
@@ -270,9 +272,9 @@ class TestDOABProcess:
 
         testProcess.parseDOABRecord('testMARC')
 
-        mockMapper.assert_called_once_with('testMARC', {})
-        mockMapping.applyMapping.assert_called_once
-        mockManager.parseLinks.assert_called_once
+        mockMapper.assert_called_once_with('testMARC', testProcess.OAI_NAMESPACES, {})
+        mockMapping.applyMapping.assert_called_once()
+        mockManager.parseLinks.assert_called_once()
         processMocks['createManifestInS3'].assert_called_once_with('pdfPath', 'pdfJSON')
         processMocks['sendFileToProcessingQueue'].assert_called_once_with('epubURI', 'epubPath')
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)

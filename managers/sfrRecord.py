@@ -180,10 +180,8 @@ class SFRRecordManager:
         # Contributors
         itemContributors = set()
         for contrib in rec.contributors:
-            try:
-                _, _, _, role = tuple(contrib.split('|'))
-            except ValueError:
-                _, role = tuple(contrib.split('|'))
+            role = tuple(contrib.split('|'))[-1]
+
             if role in ['publisher', 'manufacturer', 'distributor', 'printer']:
                 editionData['contributors'].add(contrib)
             elif role in ['provider', 'repository', 'digitizer', 'responsible']:
@@ -399,7 +397,7 @@ class SFRRecordManager:
     def saveItem(self, item):
         links = item.pop('links', [])
         identifiers = item.pop('identifiers', [])
-        rights = item.pop('rights', None)
+        rights = item.pop('rights', [])
         newItem = Item(**item)
 
         # Set Links
@@ -414,7 +412,7 @@ class SFRRecordManager:
 
         # Set Rights
         newItem.rights = SFRRecordManager.setPipeDelimitedData(
-            [rights],
+            rights if isinstance(rights, list) else [rights],
             ['source', 'license', 'rights_reason', 'rights_statement', 'rights_date'],
             Rights,
             dParser=lambda x: dict(list(filter(lambda y: y[1] != '', x.items())))
@@ -471,9 +469,9 @@ class SFRRecordManager:
 
         for agent in agents:
             agentParts = agent.split('|')
-            if len(agentParts) < len(fields):
+
+            while len(agentParts) < len(fields):
                 agentParts.insert(1, '')
-                agentParts.insert(2, '')
 
             rec = dict(zip(fields, agentParts))
             recKey = re.sub(r'[.,:\(\)]+', '', rec['name'].lower())

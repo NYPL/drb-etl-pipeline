@@ -40,7 +40,9 @@ class AbstractParser(ABC):
 
         manifest.addChapter(sourceURI, self.record.title)
 
-        manifest.links['self'] = {'href': manifestURI, 'type': 'application/webpub+json'}
+        manifest.links.append(
+            {'rel': 'self', 'href': manifestURI, 'type': 'application/webpub+json'}
+        )
 
         return manifest.toJson()
 
