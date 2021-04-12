@@ -47,7 +47,7 @@ class TestAbstractParser:
         assert testParser.createLinks() == [('http://testURI', None ,'testType', None, None)]
 
     def test_generateManifest(self, testParser, mocker):
-        mockManifest = mocker.MagicMock(links={})
+        mockManifest = mocker.MagicMock(links=[])
         mockManifest.toJson.return_value = 'jsonManifest'
 
         mockManifestManager = mocker.patch('managers.parsers.abstractParser.WebpubManifest')
@@ -56,7 +56,7 @@ class TestAbstractParser:
         testManifest = testParser.generateManifest('sourceURI', 'manifestURI')
 
         assert testManifest == 'jsonManifest'
-        assert mockManifest.links == {'self': {'href': 'manifestURI', 'type': 'application/webpub+json'}}
+        assert mockManifest.links == [{'rel': 'self', 'href': 'manifestURI', 'type': 'application/webpub+json'}]
         mockManifestManager.assert_called_once_with('sourceURI', 'application/pdf')
         mockManifest.addMetadata.assert_called_once_with(testParser.record)
         mockManifest.addChapter.assert_called_once_with('sourceURI', 'testRecord')
