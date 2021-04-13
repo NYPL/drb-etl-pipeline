@@ -4,6 +4,7 @@
 ## Fixed
 - Ensure that multiple publishers are read from Records
 - Add `work_uuid` to edition responses
+- Fix typo in work UUID fetching
 
 ## 2021-04-12 -- v0.5.5
 ### Fixed
