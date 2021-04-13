@@ -94,6 +94,7 @@ class APIUtils():
     def formatEdition(cls, edition, records=None):
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
+        editionDict['work_uuid'] = edition.work.uuid
         editionDict['publication_date'] = edition.publication_date.year if edition.publication_date else None
         editionDict['links'] = [
             {'link_id': l.id, 'mediaType': l.media_type, 'url': l.url}
@@ -142,7 +143,7 @@ class APIUtils():
         
         outRecord['authors'] = cls.formatPipeDelimitedData(record.authors, ['name', 'viaf', 'lcnaf', 'primary'])
         outRecord['contributors'] = cls.formatPipeDelimitedData(record.contributors, ['name', 'viaf', 'lcnaf', 'rolse'])
-        outRecord['publishers'] = [cls.formatPipeDelimitedData(record.publisher, ['name', 'viaf', 'lcnaf'])]
+        outRecord['publishers'] = cls.formatPipeDelimitedData(record.publisher, ['name', 'viaf', 'lcnaf'])
         outRecord['dates'] = cls.formatPipeDelimitedData(record.dates, ['date', 'type'])
         outRecord['languages'] = cls.formatPipeDelimitedData(record.languages, ['language', 'iso_2', 'iso_3'])
         outRecord['identifiers'] = cls.formatPipeDelimitedData(record.identifiers, ['identifier', 'authority'])

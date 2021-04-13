@@ -89,6 +89,7 @@ class TestAPIUtils:
     def testEdition(self, MockDBObject, testItem, mocker):
         return MockDBObject(
             id='ed1',
+            work_uuid='uuid1',
             publication_date=mocker.MagicMock(year=2000),
             items=[testItem],
             links=[mocker.MagicMock(id='co1', media_type='image/png', url='testCover')]
@@ -214,6 +215,7 @@ class TestAPIUtils:
     def test_formatEdition_no_records(self, testEdition):
         formattedEdition = APIUtils.formatEdition(testEdition)
 
+        assert formattedEdition['work_uuid'] == 'uuid1'
         assert formattedEdition['edition_id'] == 'ed1'
         assert formattedEdition['publication_date'] == 2000
         assert formattedEdition['links'][0]['link_id'] == 'co1'
