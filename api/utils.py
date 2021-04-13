@@ -94,7 +94,7 @@ class APIUtils():
     def formatEdition(cls, edition, records=None):
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
-        editionDict['work_uuid'] = edition.work.uuid
+        editionDict['work_uuid'] = edition.work_uuid
         editionDict['publication_date'] = edition.publication_date.year if edition.publication_date else None
         editionDict['links'] = [
             {'link_id': l.id, 'mediaType': l.media_type, 'url': l.url}
