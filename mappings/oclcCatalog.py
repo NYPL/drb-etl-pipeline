@@ -40,7 +40,7 @@ class CatalogMapping(XMLMapping):
                     '//oclc:datafield[@tag=\'110\']/oclc:subfield[@code=\'b\']/text()',
                 ], '{0} {1}||true')
             ],
-            'publisher': ('//oclc:datafield[@tag=\'260\']/oclc:subfield[@code=\'b\']/text()', '{0}||'),
+            'publisher': [('//oclc:datafield[@tag=\'260\']/oclc:subfield[@code=\'b\']/text()', '{0}||')],
             'identifiers': [
                 ('//oclc:controlfield[@tag=\'001\']/text()', '{0}|oclc'),
                 ('//oclc:datafield[@tag=\'010\']/oclc:subfield[@code=\'a\']/text()', '{0}|lccn'),

@@ -61,7 +61,7 @@ class HathiMapping(CSVMapping):
             self.record.dates.pop(0)
             pubDateExtract = ''
         publisher = pubDate.replace(pubDateExtract, '').split('|')[0].strip('[], .;')
-        self.record.publisher = '{}||'.format(publisher)
+        self.record.publisher = ['{}||'.format(publisher)]
 
         # Parse contributers into full names
         self.record.contributors = self.record.contributors or []

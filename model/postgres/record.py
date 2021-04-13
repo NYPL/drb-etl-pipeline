@@ -31,7 +31,7 @@ class Record(Base, Core):
     date_submitted = Column(DateTime) # dc:dateSubmitted, Non-Repeating
     requires = Column(ARRAY(Unicode, dimensions=1)) # dc:requires, Repeating, Format "value|type"
     spatial = Column(Unicode) # dc:spatial, Non-Repeating
-    publisher = Column(Unicode) # dc:publisher, Repeating, Format "name|viaf|lcnaf"
+    publisher = Column(ARRAY(Unicode, dimensions=1)) # dc:publisher, Repeating, Format "name|viaf|lcnaf"
     has_version = Column(Unicode) # dc:hasVersion, Non-Repeating, Format "string|edition_no"
     table_of_contents = Column(Unicode) # dc:tableOfContents, Non-Repeating
     extent = Column(Unicode) # dc:extent, Non-Repeating

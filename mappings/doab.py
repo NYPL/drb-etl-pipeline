@@ -31,7 +31,7 @@ class DOABMapping(XMLMapping):
             )],
             'title': ('./datacite:title/text()', '{0}'),
             'is_part_of': [('./dc:relation/text()', '{0}||series')],
-            'publisher': ('./dc:publisher/text()', '{0}||'),
+            'publisher': [('./dc:publisher/text()', '{0}||')],
             'spatial': ('./oapen:placepublication/text()', '{0}'),
             'dates': [
                 (
@@ -105,16 +105,14 @@ class DOABMapping(XMLMapping):
         return outIDs
 
     def parseRights(self):
-        outRights = []
-
         for rightsObj in self.record.rights:
             rightsData = [d.strip() for d in list(rightsObj.split('|'))]
 
             if rightsData[1] == '': continue
 
-            outRights.append('|'.join(rightsData))
+            return '|'.join(rightsData)
 
-        return outRights
+        return None
 
     def parseLinks(self):
         outLinks = []

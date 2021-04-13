@@ -60,7 +60,7 @@ class TestHathingMapping:
         assert testMapping.record.source_id == '1|hathi'
         assert testMapping.record.identifiers == ['1|hathi', '2|test', '3|test', '4|test']
         assert testMapping.record.dates == ['1900|publication_date', '2000 [other]|copyright_date']
-        assert testMapping.record.publisher == 'Test Publisher||'
+        assert testMapping.record.publisher == ['Test Publisher||']
         assert testMapping.record.contributors == ['Contributor|test']
         assert testMapping.record.rights == 'hathitrust|test|Test Reason|Test License|'
         assert testMapping.record.has_part == [
@@ -77,5 +77,5 @@ class TestHathingMapping:
         testMapping.applyFormatting()
 
         assert testMapping.record.dates == []
-        assert testMapping.record.publisher == '||'
+        assert testMapping.record.publisher == ['||']
         

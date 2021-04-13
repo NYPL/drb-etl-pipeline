@@ -22,7 +22,7 @@ class TestSFRRecordManager:
             has_version='testVersion',
             identifiers=['1|test', '2|isbn', '3|owi'],
             authors=['Test Author'],
-            publisher='Test Publisher',
+            publisher=['Test Publisher'],
             spatial='Test Publication Place',
             contributors=['Contrib 1|printer', 'Contrib 2|||provider', 'Contrib 3|||translator'],
             subjects=['Subject 1', 'Subject 2', 'Subject 3'],

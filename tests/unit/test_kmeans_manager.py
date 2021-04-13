@@ -246,18 +246,18 @@ class TestKMeansModel(object):
         outYear = KMeansManager.getPubDateObject(['test|date'])
         assert outYear == {}
 
-    def test_getPublisher_clean(self, mocker):
-        outPublisher = KMeansManager.getPublisher('Test|||')
+    def test_getPublishers_clean(self, mocker):
+        outPublisher = KMeansManager.getPublishers(['Test|||', 'Other|||'])
 
-        assert outPublisher == 'test'
+        assert outPublisher == 'test, other'
     
-    def test_getPublisher_stripped(self, mocker):
-        outPublisher = KMeansManager.getPublisher('Test Second [].||viaf|')
+    def test_getPublishers_stripped(self, mocker):
+        outPublisher = KMeansManager.getPublishers(['Test Second [].||viaf|'])
 
         assert outPublisher == 'test second'
     
-    def test_getPublisher_none(self, mocker):
-        outPublisher = KMeansManager.getPublisher(None)
+    def test_getPublishers_none(self, mocker):
+        outPublisher = KMeansManager.getPublishers(None)
 
         assert outPublisher == ''
 

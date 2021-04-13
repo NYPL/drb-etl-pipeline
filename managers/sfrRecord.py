@@ -168,11 +168,12 @@ class SFRRecordManager:
         editionData['identifiers'].update(rec.identifiers)
         
         # Authors
-        workData['authors'].update(rec.authors)
+        if rec.authors:
+            workData['authors'].update(rec.authors)
 
         # Publishers
         if rec.publisher:
-            editionData['publishers'].add(rec.publisher)
+            editionData['publishers'].update(rec.publisher)
         
         # Publication_place
         editionData['publication_place'][rec.spatial] += 1

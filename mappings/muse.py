@@ -27,7 +27,7 @@ class MUSEMapping(MARCMapping):
                 ('240', '{a} {k}') # Uniform Title
             ],
             'has_version': ('250', '{a} {b}|'),
-            'publisher': ('264', '{b}||'),
+            'publisher': [('264', '{b}||')],
             'spatial': ('264', '{a}'),
             'dates': [
                 ('264', '{c}|publication_date')

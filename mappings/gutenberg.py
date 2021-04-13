@@ -12,7 +12,7 @@ class GutenbergMapping(XMLMapping):
         return {
             'title': ('//dcterms:title/text()', '{0}'),
             'alternative': ('//dcterms:alternative/text()', '{0}'),
-            'publisher': ('//dcterms:publisher/text()', '{0}||'),
+            'publisher': [('//dcterms:publisher/text()', '{0}||')],
             'rights': (
                 ['//dcterms:rights/text()', '*/cc:license/@rdf:resource'], 'gutenberg|{1}||{0}|'
             ),
