@@ -160,13 +160,19 @@ class APIUtils():
 
     @classmethod
     def formatLinkOutput(cls, link):
+        linkItem = dict(link.items[0])
+        linkItem['item_id'] = link.items[0].id
+
+        linkEdition = dict(link.items[0].edition)
+        linkEdition['edition_id'] = link.items[0].edition.id
+        linkEdition['work_uuid'] = link.items[0].edition.work.uuid
+        linkEdition['publication_date'] = link.items[0].edition.publication_date.year if link.items[0].edition.publication_date else None
+
         linkDict = dict(link)
         linkDict['link_id'] = link.id
         linkDict['work'] = dict(link.items[0].edition.work)
-        linkDict['work']['editions'] = [dict(link.items[0].edition)]
-        linkDict['work']['editions'][0]['edition_id'] = link.items[0].edition.id
-        linkDict['work']['editions'][0]['items'] = [dict(link.items[0])]
-        linkDict['work']['editions'][0]['items'][0]['item_id'] = link.items[0].id
+        linkDict['work']['editions'] = [linkEdition]
+        linkDict['work']['editions'][0]['items'] = [linkItem]
 
         return linkDict
 
