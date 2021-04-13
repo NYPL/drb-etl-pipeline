@@ -89,7 +89,7 @@ class TestAPIUtils:
     def testEdition(self, MockDBObject, testItem, mocker):
         return MockDBObject(
             id='ed1',
-            work_uuid='uuid1',
+            work=mocker.MagicMock(uuid='uuid1'),
             publication_date=mocker.MagicMock(year=2000),
             items=[testItem],
             links=[mocker.MagicMock(id='co1', media_type='image/png', url='testCover')]
