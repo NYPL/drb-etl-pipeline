@@ -1,11 +1,16 @@
 # CHANGELOG
 
 ## unreleased -- v0.5.6
+### Added
+- Added `date_created` and `date_modified` indexes to the `records` table
 ## Fixed
 - Ensure that multiple publishers are read from Records
 - Add `work_uuid` to edition responses
 - Fix typo in work UUID fetching
 - Format `publication_date` in Link endpoint response
+- Remove `verify=False` from GET requests
+- Handle malformed author and identifiers in DOAB process
+
 
 ## 2021-04-12 -- v0.5.5
 ### Fixed
