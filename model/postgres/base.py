@@ -10,13 +10,15 @@ class Core(object):
     date_updated field for all database tables."""
     date_created = Column(
         DateTime,
-        default=datetime.utcnow()
+        default=datetime.utcnow(),
+        index=True
     )
 
     date_modified = Column(
         DateTime,
         default=datetime.utcnow(),
-        onupdate=datetime.utcnow()
+        onupdate=datetime.utcnow(),
+        index=True
     )
 
     def __iter__(self):

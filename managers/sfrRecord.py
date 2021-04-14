@@ -469,6 +469,8 @@ class SFRRecordManager:
         outAgents = {}
 
         for agent in agents:
+            if agent is None: continue
+
             agentParts = agent.split('|')
 
             while len(agentParts) < len(fields):

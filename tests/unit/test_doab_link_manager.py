@@ -89,7 +89,7 @@ class TestDOABLinkManager:
 
         assert testURI == 'testURI'
         assert testType == 'text/html'
-        mockHead.assert_called_once_with('testURI', allow_redirects=False, verify=False, timeout=15)
+        mockHead.assert_called_once_with('testURI', allow_redirects=False, timeout=15)
 
     def test_findFinalURI_error(self, mocker):
         mockHead = mocker.patch.object(requests, 'head')
@@ -115,6 +115,6 @@ class TestDOABLinkManager:
         assert testURI == 'sourceURI'
         assert testType == 'application/test'
         mockHead.assert_has_calls([
-            mocker.call('testURI', allow_redirects=False, verify=False, timeout=15),
-            mocker.call('sourceURI', allow_redirects=False, verify=False, timeout=15)
+            mocker.call('testURI', allow_redirects=False, timeout=15),
+            mocker.call('sourceURI', allow_redirects=False, timeout=15)
         ])
