@@ -77,7 +77,7 @@ class DOABProcess(CoreProcess):
         urlParams = 'verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:{}'.format(recordID)
         doabURL = '{}{}'.format(os.environ['DOAB_OAI_URL'], urlParams)
 
-        doabResponse = requests.get(doabURL, timeout=30, verify=False)
+        doabResponse = requests.get(doabURL, timeout=30)
 
         if doabResponse.status_code == 200:
             content = BytesIO(doabResponse.content)
@@ -138,7 +138,7 @@ class DOABProcess(CoreProcess):
 
         doabURL = '{}{}'.format(doabURL, urlParams)
             
-        doabResponse = requests.get(doabURL, stream=True, timeout=30, verify=False)
+        doabResponse = requests.get(doabURL, stream=True, timeout=30)
 
         if doabResponse.status_code == 200:
             content = bytes()

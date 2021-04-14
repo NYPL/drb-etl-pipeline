@@ -69,6 +69,7 @@ class ClassifyProcess(CoreProcess):
                 break
 
             if len(self.classifiedRecords) >= windowSize:
+                logger.debug('Storing classified records')
                 self.updateClassifiedRecordsStatus()
                 self.classifiedRecords = {}
 
@@ -103,7 +104,7 @@ class ClassifyProcess(CoreProcess):
 
         for classifyXML in classifier.getClassifyResponse():
             if self.checkIfClassifyWorkFetched(classifyXML) is True:
-                logger.debug('Skipping Duplicate Classify Record')
+                logger.info('Skipping Duplicate Classify Record {} ({}:{})'.format(title, identifier, idType))
                 continue
 
             classifier.checkAndFetchAdditionalEditions(classifyXML)

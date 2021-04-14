@@ -119,7 +119,7 @@ class TestDOABProcess:
 
         mockGet.assert_called_once_with(
             'test_doab_urlverb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
-            timeout=30, verify=False
+            timeout=30
         )
         mockParseRecord.assert_called_once_with('mockOAIRecord')
 
@@ -140,7 +140,7 @@ class TestDOABProcess:
 
         mockGet.assert_called_once_with(
             'test_doab_urlverb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
-            timeout=30, verify=False
+            timeout=30
         )
         mockParseRecord.assert_called_once_with('mockOAIRecord')
 
@@ -158,7 +158,7 @@ class TestDOABProcess:
 
         mockGet.assert_called_once_with(
             'test_doab_urlverb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
-            timeout=30, verify=False
+            timeout=30
         )
         mockEtree.parse.assert_not_called()
         mockParseRecord.assert_not_called()
@@ -207,7 +207,7 @@ class TestDOABProcess:
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
             'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc',
-            stream=True, timeout=30, verify=False
+            stream=True, timeout=30
         )
 
     def test_downloadOAIRecords_daily(self, testProcess, mockOAIQuery, mocker):
@@ -219,7 +219,7 @@ class TestDOABProcess:
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
             'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc&from=1900-01-01',
-            stream=True, timeout=30, verify=False
+            stream=True, timeout=30
         )
 
     def test_downloadOAIRecords_custom(self, testProcess, mockOAIQuery):
@@ -228,7 +228,7 @@ class TestDOABProcess:
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
             'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc&from=2020-01-01',
-            stream=True, timeout=30, verify=False
+            stream=True, timeout=30
         )
 
     def test_downloadOAIRecords_error(self, testProcess, mockOAIQuery, mocker):
@@ -245,7 +245,7 @@ class TestDOABProcess:
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
             'test_doab_urlverb=ListRecords&resumptionToken=testRes',
-            stream=True, timeout=30, verify=False
+            stream=True, timeout=30
         )
 
     def test_parseDOABRecord_success(self, testProcess, mocker):

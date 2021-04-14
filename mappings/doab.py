@@ -89,7 +89,10 @@ class DOABMapping(XMLMapping):
         outIDs = []
 
         for iden in self.record.identifiers:
-            value, auth = iden.split('|')
+            try:
+                value, auth = iden.split('|')
+            except ValueError:
+                continue
 
             if value[:4] == 'http':
                 doabDOIGroup = re.search(self.DOI_REGEX, value)
