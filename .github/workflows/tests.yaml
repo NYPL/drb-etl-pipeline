@@ -3,6 +3,8 @@ name: ETL_Pipeline_Tests
 on: 
   pull_request:
     actions: [ opened ]
+  schedule:
+    - cron:  '0 0 * * 1'
 
 jobs:
   changelog:
