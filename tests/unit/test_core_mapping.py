@@ -57,13 +57,27 @@ class TestCoreMapping:
         ]
         testMapping.record = mockRecord
 
-        mockExisting = mocker.MagicMock()
-        mockExisting.uuid = 'uuid2'
-        mockExisting.frb_status = 'complete'
+        mockExisting = mocker.MagicMock(uuid='uuid2', source='test', frbr_status='complete')
 
         testMapping.updateExisting(mockExisting)
 
         assert mockExisting.uuid == 'uuid2'
         assert mockExisting.title == 'Test Title'
         assert mockExisting.frbr_status == 'to_do'
+        assert mockExisting.cluster_status == False
+
+    def test_updateExisting_oclc(self, testMapping, mocker):
+        mockRecord = mocker.MagicMock()
+        mockRecord.__iter__.return_value = [
+            ('uuid', 'uuid1'), ('title', 'Test Title')
+        ]
+        testMapping.record = mockRecord
+
+        mockExisting = mocker.MagicMock(uuid='uuid2', source='oclcClassify', frbr_status='complete')
+
+        testMapping.updateExisting(mockExisting)
+
+        assert mockExisting.uuid == 'uuid2'
+        assert mockExisting.title == 'Test Title'
+        assert mockExisting.frbr_status == 'complete'
         assert mockExisting.cluster_status == False
