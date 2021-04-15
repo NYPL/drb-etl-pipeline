@@ -10,6 +10,7 @@
 - Format `publication_date` in Link endpoint response
 - Remove `verify=False` from GET requests
 - Handle malformed author and identifiers in DOAB process
+- Improved Classification process performance
 
 
 ## 2021-04-12 -- v0.5.5
