@@ -3,6 +3,7 @@
 ## unreleased -- v0.5.6
 ### Added
 - Added `date_created` and `date_modified` indexes to the `records` table
+- Scheduled tests.yaml to run every Monday 12 AM EST
 ## Fixed
 - Ensure that multiple publishers are read from Records
 - Add `work_uuid` to edition responses
