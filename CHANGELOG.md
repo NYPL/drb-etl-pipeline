@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.5.6
+## 2021-04-15 -- v0.5.6
 ### Added
 - Added `date_created` and `date_modified` indexes to the `records` table
 ## Fixed
