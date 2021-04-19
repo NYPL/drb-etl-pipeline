@@ -40,7 +40,8 @@ class TestElasticClient:
             subjectQuery=mocker.DEFAULT,
             authorityQuery=mocker.DEFAULT,
             addFilterClausesAndAggregations=mocker.DEFAULT,
-            addSortClause=mocker.DEFAULT
+            addSortClause=mocker.DEFAULT,
+            escapeSearchQuery=mocker.DEFAULT
         )
 
     def test_createSearch(self, testInstance, mocker):
@@ -54,6 +55,7 @@ class TestElasticClient:
 
     def test_searchQuery_keyword_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
+        searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['titleQuery'].return_value = 'titleQuery'
         searchMocks['authorQuery'].return_value = 'authorQuery'
@@ -77,9 +79,10 @@ class TestElasticClient:
             mocker.call('bool', should=['titleQuery', 'authorQuery', 'subjectQuery']),
             mocker.call('bool', must=['testQuery1', 'testQuery2'])
         ])
-        searchMocks['titleQuery'].assert_has_calls([mocker.call('test'), mocker.call('test2')])
-        searchMocks['authorQuery'].assert_has_calls([mocker.call('test'), mocker.call('test2')])
-        searchMocks['subjectQuery'].assert_has_calls([mocker.call('test'), mocker.call('test2')])
+        searchMocks['escapeSearchQuery'].assert_has_calls([mocker.call('test'), mocker.call('test2')])
+        searchMocks['titleQuery'].assert_has_calls([mocker.call('escapedQuery'), mocker.call('escapedQuery')])
+        searchMocks['authorQuery'].assert_has_calls([mocker.call('escapedQuery'), mocker.call('escapedQuery')])
+        searchMocks['subjectQuery'].assert_has_calls([mocker.call('escapedQuery'), mocker.call('escapedQuery')])
         searchMocks['authorityQuery'].assert_not_called()
 
         mockSearch.query.assert_called_once_with('searchClauses')
@@ -91,6 +94,7 @@ class TestElasticClient:
 
     def test_searchQuery_title_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
+        searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['titleQuery'].return_value = 'titleQuery'
         searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
@@ -106,10 +110,11 @@ class TestElasticClient:
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
         mockQuery.assert_called_once_with('bool', must=['titleQuery'])
-        searchMocks['titleQuery'].assert_called_once_with('test')
-        searchMocks['authorQuery'].assert_not_called
-        searchMocks['subjectQuery'].assert_not_called
-        searchMocks['authorityQuery'].assert_not_called
+        searchMocks['escapeSearchQuery'].assert_called_once_with('test')
+        searchMocks['titleQuery'].assert_called_once_with('escapedQuery')
+        searchMocks['authorQuery'].assert_not_called()
+        searchMocks['subjectQuery'].assert_not_called()
+        searchMocks['authorityQuery'].assert_not_called()
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
@@ -120,6 +125,7 @@ class TestElasticClient:
 
     def test_searchQuery_author_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
+        searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['authorQuery'].return_value = 'authorQuery'
         searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
@@ -135,10 +141,11 @@ class TestElasticClient:
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
         mockQuery.assert_called_once_with('bool', must=['authorQuery'])
-        searchMocks['titleQuery'].assert_not_called
-        searchMocks['authorQuery'].assert_called_once_with('test')
-        searchMocks['subjectQuery'].assert_not_called
-        searchMocks['authorityQuery'].assert_not_called
+        searchMocks['escapeSearchQuery'].assert_called_once_with('test')
+        searchMocks['titleQuery'].assert_not_called()
+        searchMocks['authorQuery'].assert_called_once_with('escapedQuery')
+        searchMocks['subjectQuery'].assert_not_called()
+        searchMocks['authorityQuery'].assert_not_called()
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
@@ -149,6 +156,7 @@ class TestElasticClient:
 
     def test_searchQuery_subject_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
+        searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['subjectQuery'].return_value = 'subjectQuery'
         searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
@@ -164,10 +172,11 @@ class TestElasticClient:
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
         mockQuery.assert_called_once_with('bool', must=['subjectQuery'])
-        searchMocks['titleQuery'].assert_not_called
-        searchMocks['authorQuery'].assert_not_called
-        searchMocks['subjectQuery'].assert_called_once_with('test')
-        searchMocks['authorityQuery'].assert_not_called
+        searchMocks['escapeSearchQuery'].assert_called_once_with('test')
+        searchMocks['titleQuery'].assert_not_called()
+        searchMocks['authorQuery'].assert_not_called()
+        searchMocks['subjectQuery'].assert_called_once_with('escapedQuery')
+        searchMocks['authorityQuery'].assert_not_called()
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
@@ -178,6 +187,7 @@ class TestElasticClient:
 
     def test_searchQuery_authority_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
+        searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['authorityQuery'].return_value = 'authorityQuery'
         searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
@@ -193,10 +203,11 @@ class TestElasticClient:
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
         mockQuery.assert_called_once_with('bool', must=['authorityQuery'])
-        searchMocks['titleQuery'].assert_not_called
-        searchMocks['authorQuery'].assert_not_called
-        searchMocks['subjectQuery'].assert_not_called
-        searchMocks['authorityQuery'].assert_called_once_with('viaf', 'test')
+        searchMocks['escapeSearchQuery'].assert_called_once_with('test')
+        searchMocks['titleQuery'].assert_not_called()
+        searchMocks['authorQuery'].assert_not_called()
+        searchMocks['subjectQuery'].assert_not_called()
+        searchMocks['authorityQuery'].assert_called_once_with('viaf', 'escapedQuery')
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
@@ -207,6 +218,7 @@ class TestElasticClient:
 
     def test_searchQuery_generic_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
+        searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
         searchMocks['addSortClause'].return_value = mockSearch
@@ -220,14 +232,15 @@ class TestElasticClient:
 
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
+        searchMocks['escapeSearchQuery'].assert_called_once_with('test')
         mockQuery.assert_has_calls([
-            mocker.call('match', other='test'),
+            mocker.call('match', other='escapedQuery'),
             mocker.call('bool', must=['genericQuery'])
         ])
-        searchMocks['titleQuery'].assert_not_called
-        searchMocks['authorQuery'].assert_not_called
-        searchMocks['subjectQuery'].assert_not_called
-        searchMocks['authorityQuery'].assert_not_called
+        searchMocks['titleQuery'].assert_not_called()
+        searchMocks['authorQuery'].assert_not_called()
+        searchMocks['subjectQuery'].assert_not_called()
+        searchMocks['authorityQuery'].assert_not_called()
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
@@ -238,6 +251,7 @@ class TestElasticClient:
 
     def test_searchQuery_multi_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
+        searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['authorityQuery'].return_value = 'authorityQuery'
         searchMocks['titleQuery'].return_value = 'titleQuery'
@@ -255,17 +269,23 @@ class TestElasticClient:
 
         assert queryResult == 'searchResult'
         searchMocks['getFromSize'].assert_called_once_with(0, 10)
+        searchMocks['escapeSearchQuery'].assert_has_calls([mocker.call('testTitle'), mocker.call('test')])
         mockQuery.assert_called_once_with('bool', must=['titleQuery', 'authorityQuery'])
-
-        searchMocks['titleQuery'].assert_called_once_with('testTitle')
-        searchMocks['authorQuery'].assert_not_called
-        searchMocks['subjectQuery'].assert_not_called
-        searchMocks['authorityQuery'].assert_called_once_with('lcnaf', 'test')
+        searchMocks['titleQuery'].assert_called_once_with('escapedQuery')
+        searchMocks['authorQuery'].assert_not_called()
+        searchMocks['subjectQuery'].assert_not_called()
+        searchMocks['authorityQuery'].assert_called_once_with('lcnaf', 'escapedQuery')
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
         searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
         searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
+
+    def test_escapeSearchQuery_changed(self):
+        assert ElasticClient.escapeSearchQuery('[test]+a:thing!') == '\[test\]\+a\:thing\!'
+
+    def test_escapeSearchQuery_unchanged(self):
+        assert ElasticClient.escapeSearchQuery('a simple query') == 'a simple query'
 
     def test_titleQuery(self):
         testQueryES = ElasticClient.titleQuery('testTitle')
@@ -276,6 +296,7 @@ class TestElasticClient:
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions'
         assert testQuery['bool']['should'][1]['nested']['query']['query_string']['query'] == 'testTitle'
         assert testQuery['bool']['should'][1]['nested']['query']['query_string']['fields'] == ['editions.title']
+        assert testQuery['bool']['should'][1]['nested']['query']['query_string']['default_operator'] == 'and'
 
     def test_authorQuery(self):
         testQueryES = ElasticClient.authorQuery('testAuthor')

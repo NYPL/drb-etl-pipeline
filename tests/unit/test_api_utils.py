@@ -108,16 +108,26 @@ class TestAPIUtils:
         assert testParams == {'test1': 1, 'test2': 2}
 
     def test_extractParamPairs(self):
-        testPairs = APIUtils.extractParamPairs('test', {'test': ['test:value', 'bareValue']})
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:value', 'bareValue']})
 
-        assert testPairs[0] == ('test', 'value')
+        assert testPairs[0] == ('title', 'value')
         assert testPairs[1] == ('test', 'bareValue')
 
     def test_extractParamPairs_comma_delimited(self):
-        testPairs = APIUtils.extractParamPairs('test', {'test': ['test:value,bareValue']})
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:value,bareValue']})
 
-        assert testPairs[0] == ('test', 'value')
+        assert testPairs[0] == ('title', 'value')
         assert testPairs[1] == ('test', 'bareValue')
+
+    def test_extractParamPairs_semantic_semicolon(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:A Book: A Title']})
+
+        assert testPairs[0] == ('title', 'A Book: A Title')
+
+    def test_extractParamPairs_semicolon_no_field(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['A Book: A Title']})
+
+        assert testPairs[0] == ('test', 'A Book: A Title')
 
     def test_formatAggregationResult(self, testAggregationResp):
         testAggregations = APIUtils.formatAggregationResult(testAggregationResp)
