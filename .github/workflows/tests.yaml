@@ -38,6 +38,9 @@ jobs:
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
           pip install allure-pytest
+      - name: GREP allure
+        run: |
+          grep allure
       - name: Run test suite
         run: |
           make allure-test
