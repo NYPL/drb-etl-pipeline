@@ -1,9 +1,15 @@
 # CHANGELOG
 
+## unreleased -- v0.5.7
+### Fixed
+- Escape special characters in search queries
+- Handle colons in the body of search queries
+
+
 ## 2021-04-15 -- v0.5.6
 ### Added
 - Added `date_created` and `date_modified` indexes to the `records` table
-## Fixed
+### Fixed
 - Ensure that multiple publishers are read from Records
 - Add `work_uuid` to edition responses
 - Fix typo in work UUID fetching
