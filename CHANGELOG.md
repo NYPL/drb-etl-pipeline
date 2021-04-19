@@ -1,6 +1,12 @@
 # CHANGELOG
 
-## unreleased -- v0.5.6
+## unreleased -- v0.5.7
+### Fixed
+- Escape special characters in search queries
+- Handle colons in the body of search queries
+
+
+## 2021-04-15 -- v0.5.6
 ### Added
 - Added `date_created` and `date_modified` indexes to the `records` table
 - Scheduled tests.yaml to run every Monday 12 AM EST
@@ -11,6 +17,7 @@
 - Format `publication_date` in Link endpoint response
 - Remove `verify=False` from GET requests
 - Handle malformed author and identifiers in DOAB process
+- Improved Classification process performance
 
 
 ## 2021-04-12 -- v0.5.5

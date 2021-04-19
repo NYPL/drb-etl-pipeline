@@ -35,8 +35,9 @@ class Core(AbstractMapping):
             if attr == 'uuid': continue
             setattr(existing, attr, value)
         
-        existing.frbr_status = 'to_do'
         existing.cluster_status = False
+        if existing.source not in ['oclcClassify', 'oclcCatalog']:
+            existing.frbr_status = 'to_do'
 
     def raiseMappingError(self, message):
         raise MappingError(message)

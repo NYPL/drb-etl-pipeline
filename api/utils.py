@@ -4,18 +4,30 @@ from math import ceil
 import re
 
 class APIUtils():
+    QUERY_TERMS = [
+        'keyword', 'title', 'author', 'subject', 'date', 'startYear',
+        'endYear', 'language', 'format', 'showAll'
+    ]
+
     @staticmethod
     def normalizeQueryParams(params):
         paramDict = params.to_dict(flat=False)
         return {k: v for k, v in paramDict.items()}
 
-    @staticmethod
-    def extractParamPairs(param, pairs):
+    @classmethod
+    def extractParamPairs(cls, param, pairs):
         outPairs = []
 
         for pairStr in pairs.get(param, []):
             for pair in pairStr.split(','):
-                pairSet = tuple(pair.split(':')) if len(pair.split(':')) > 1 else (param, pair)
+
+                pairElements = pair.split(':')
+
+                if len(pairElements) == 1 or pairElements[0] not in cls.QUERY_TERMS:
+                    pairSet = (param, pair)
+                else:
+                    pairSet = (pairElements[0], ':'.join(pairElements[1:]))
+
                 outPairs.append(pairSet)
 
         return outPairs

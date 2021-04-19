@@ -47,7 +47,7 @@ class ClassifyProcess(CoreProcess):
     
     def classifyRecords(self, full=False, startDateTime=None):
         baseQuery = self.session.query(Record)\
-            .filter(Record.source != 'oclcClassify')\
+            .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')\
             .filter(Record.frbr_status == 'to_do')
 
         if full is False:
@@ -139,6 +139,7 @@ class ClassifyProcess(CoreProcess):
                 self.setIncrementerRedis('oclcCatalog', 'API')
     
     def sendCatalogLookupMessage(self, oclcNo, owiNo):
+        logger.debug('Sending OCLC# {} to queue'.format(oclcNo))
         self.sendMessageToQueue(
             self.rabbitQueue, self.rabbitRoute, {'oclcNo': oclcNo, 'owiNo': owiNo}
         )

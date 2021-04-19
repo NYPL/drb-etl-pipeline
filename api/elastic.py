@@ -1,4 +1,5 @@
 import os
+import re
 
 from elasticsearch_dsl import Search, Q, A
 
@@ -36,24 +37,26 @@ class ElasticClient():
 
         searchClauses = []
         for field, query in params['query']:
+            escapedQuery = self.escapeSearchQuery(query)
+
             if field is None or field in ['keyword', 'query']:
                 searchClauses.append(Q('bool',
                     should=[
-                        ElasticClient.titleQuery(query),
-                        ElasticClient.authorQuery(query),
-                        ElasticClient.subjectQuery(query)
+                        ElasticClient.titleQuery(escapedQuery),
+                        ElasticClient.authorQuery(escapedQuery),
+                        ElasticClient.subjectQuery(escapedQuery)
                     ]
                 ))
             elif field == 'title':
-                searchClauses.append(ElasticClient.titleQuery(query))
+                searchClauses.append(ElasticClient.titleQuery(escapedQuery))
             elif field == 'author':
-                searchClauses.append(ElasticClient.authorQuery(query))
+                searchClauses.append(ElasticClient.authorQuery(escapedQuery))
             elif field == 'subject':
-                searchClauses.append(ElasticClient.subjectQuery(query))
+                searchClauses.append(ElasticClient.subjectQuery(escapedQuery))
             elif field == 'viaf' or field == 'lcnaf':
-                searchClauses.append(ElasticClient.authorityQuery(field, query))
+                searchClauses.append(ElasticClient.authorityQuery(field, escapedQuery))
             else:
-                searchClauses.append(Q('match', **{field: query}))
+                searchClauses.append(Q('match', **{field: escapedQuery}))
 
         coreSearch = search.query(Q('bool', must=searchClauses))[startPos:endPos]
 
@@ -62,6 +65,10 @@ class ElasticClient():
         coreSearch = ElasticClient.addSortClause(coreSearch, params['sort'])
 
         return coreSearch.execute()
+
+    @staticmethod
+    def escapeSearchQuery(query):
+        return re.sub(r'[\+\-\&\|\!\(\)\[\]\{\}\^\~\?\:\\]{1}', '\\\\\g<0>', query)
 
     def languageQuery(self, workTotals):
         search = self.createSearch()
@@ -80,19 +87,19 @@ class ElasticClient():
     def titleQuery(cls, titleText):
         return Q('bool',
             should=[
-                Q('query_string', query=titleText, fields=['title', 'alt_titles']),
-                Q('nested', path='editions', query=Q('query_string', query=titleText, fields=['editions.title']))
+                Q('query_string', query=titleText, fields=['title', 'alt_titles'], default_operator='and'),
+                Q('nested', path='editions', query=Q('query_string', query=titleText, fields=['editions.title'], default_operator='and'))
             ]
         )
 
     @classmethod
     def authorQuery(cls, authorText):
         workAgentQuery = Q('bool',
-            must=[Q('query_string', query=authorText, fields=['agents.name'])],
+            must=[Q('query_string', query=authorText, fields=['agents.name'], default_operator='and')],
             must_not=[Q('terms', agents__roles=cls.ROLE_BLOCKLIST)]
         )
         editionAgentQuery = Q('bool',
-            must=[Q('query_string', query=authorText, fields=['editions.agents.name'])],
+            must=[Q('query_string', query=authorText, fields=['editions.agents.name'], default_operator='and')],
             must_not=[Q('terms', editions__agents__roles=cls.ROLE_BLOCKLIST)]
         )
 
@@ -117,7 +124,7 @@ class ElasticClient():
 
     @classmethod
     def subjectQuery(cls, subjectText):
-        return Q('nested', path='subjects', query=Q('query_string', query=subjectText, fields=['subjects.heading']))
+        return Q('nested', path='subjects', query=Q('query_string', query=subjectText, fields=['subjects.heading'], default_operator='and'))
     
     @staticmethod
     def getFromSize(page, perPage):

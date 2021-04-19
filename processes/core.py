@@ -38,6 +38,7 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
     
     def windowedQuery(self, table, query, windowSize=100):
         singleEntity = query.is_single_entity
+        query = query.add_column(table.date_modified).order_by(table.date_modified)
         query = query.add_column(table.id).order_by(table.id)
 
         lastID = None
