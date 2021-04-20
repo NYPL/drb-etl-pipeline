@@ -40,4 +40,7 @@ jobs:
           pip install allure-pytest
       - name: Run test suite
         run: |
-          pytest --alluredir=/tmp/my_allure_results
+          pytest --alluredir=/tmp/allure_results
+      - name: Generate Allure Report
+        run: |
+          allure serve /tmp/allure_results
