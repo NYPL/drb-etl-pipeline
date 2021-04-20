@@ -44,7 +44,7 @@ jobs:
       - name: Check for allure results
         run: |
           ls
-          cd allure_results
+          cd allure/allure-results
       - name: Check for allure command
         run: |
           python -m allure --version
