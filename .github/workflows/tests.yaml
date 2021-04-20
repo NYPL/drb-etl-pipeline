@@ -41,6 +41,3 @@ jobs:
       - name: Run test suite
         run: |
           pytest --alluredir=/tmp/my_allure_results
-      - name: Generate Allure Report
-        run: |
-          allure serve /tmp/my_allure_results
