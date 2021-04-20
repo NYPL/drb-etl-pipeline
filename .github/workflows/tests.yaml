@@ -43,8 +43,8 @@ jobs:
           python -m pytest --alluredir=./allure/allure-results ./tests
       - name: Check for allure results
         run: |
-          ls
           cd allure/allure-results
+          ls
       - name: Check for allure command
         run: |
           python -m allure --version
