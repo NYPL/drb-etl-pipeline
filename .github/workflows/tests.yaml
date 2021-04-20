@@ -48,6 +48,13 @@ jobs:
       - name: Check for allure command
         run: |
           python -m allure --version
+      - name: Get Allure history
+        uses: actions/checkout@v2
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
       - name: Generate allure report
         uses: simple-elf/allure-report-action@master
         if: always()
