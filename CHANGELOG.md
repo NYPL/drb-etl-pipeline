@@ -4,6 +4,7 @@
 ### Fixed
 - Escape special characters in search queries
 - Handle colons in the body of search queries
+- Add deadlock handling in `ClusterProcess`
 
 
 ## 2021-04-15 -- v0.5.6

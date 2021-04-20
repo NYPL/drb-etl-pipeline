@@ -137,7 +137,7 @@ class TestSFRClusterProcess:
             clusterMatchedRecords=mocker.DEFAULT,
             createWorkFromEditions=mocker.DEFAULT,
             indexWorkInElasticSearch=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT
+            updateMatchedRecordsStatus=mocker.DEFAULT
         )
         clusterMocks['findAllMatchingRecords'].return_value = ['3|test']
         clusterMocks['clusterMatchedRecords'].return_value = (['ed1', 'ed2'], ['inst1', 'inst2', 'inst3'])
@@ -157,8 +157,7 @@ class TestSFRClusterProcess:
         )
         clusterMocks['indexWorkInElasticSearch'].assert_called_once_with('testDBWork')
         mockSession.flush.assert_called_once()
-        mockSession.query.assert_called_once()
-        clusterMocks['commitChanges'].assert_called_once()
+        clusterMocks['updateMatchedRecordsStatus'].assert_called_once_with(['3|test'])
 
     def test_clusterRecord_wo_matching_records(self, testInstance, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(ClusterProcess,
@@ -167,7 +166,7 @@ class TestSFRClusterProcess:
             clusterMatchedRecords=mocker.DEFAULT,
             createWorkFromEditions=mocker.DEFAULT,
             indexWorkInElasticSearch=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT
+            updateMatchedRecordsStatus=mocker.DEFAULT
         )
         clusterMocks['findAllMatchingRecords'].return_value = []
         clusterMocks['clusterMatchedRecords'].return_value = (['ed1'], ['inst1'])
@@ -185,8 +184,22 @@ class TestSFRClusterProcess:
         clusterMocks['createWorkFromEditions'].assert_called_once_with(['ed1'], ['inst1'])
         clusterMocks['indexWorkInElasticSearch'].assert_called_once_with('testDBWork')
         mockSession.flush.assert_called_once()
-        mockSession.query.assert_called_once()
-        clusterMocks['commitChanges'].assert_called_once()
+        clusterMocks['updateMatchedRecordsStatus'].assert_called_once_with([1])
+
+    def test_updateMatchedRecordsStatus(self, testInstance, mocker):
+        mockBulkSave = mocker.patch.object(ClusterProcess, 'bulkSaveObjects')
+
+        mockRecord = mocker.MagicMock()
+        mockSession = mocker.MagicMock()
+        mockSession.query().filter().all.return_value = [mockRecord]
+        testInstance.session = mockSession
+
+        testInstance.updateMatchedRecordsStatus([1])
+
+        assert mockRecord.cluster_status == True
+        assert mockRecord.frbr_status == 'complete'
+        mockSession.query().filter().all.assert_called_once()
+        mockBulkSave.assert_called_once_with([mockRecord])
 
     def test_clusterMatchedRecords(self, testInstance, mocker):
         mockMLModel = mocker.MagicMock()
