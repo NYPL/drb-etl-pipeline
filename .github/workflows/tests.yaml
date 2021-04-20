@@ -40,7 +40,7 @@ jobs:
           pip install allure-pytest
       - name: Run test suite
         run: |
-          python -m pytest --alluredir=/my_allure_results ./tests
+          python -m pytest --alluredir=./my_allure_results ./tests
       - name: Check for allure results
         run: |
           ls
