@@ -48,3 +48,6 @@ jobs:
       - name: Check for allure command
         run: |
           python -m allure --version
+      - name: Generate allure report
+        run: |
+          python -m allure --version
