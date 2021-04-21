@@ -7,4 +7,4 @@ test:
 	python -m pytest --cov-report term-missing --cov=. tests/
 
 allure-test:
-	pytest --alluredir=/drb-etl-pipeline/allure-results/ ./tests
+	python -m pytest --alluredir=./allure/allure-results ./tests

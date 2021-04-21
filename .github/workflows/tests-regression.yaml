@@ -40,15 +40,7 @@ jobs:
           pip install allure-pytest
       - name: Run test suite
         run: |
-          python -m pytest --alluredir=./allure/allure-results ./tests
-      - name: Check for allure results
-        run: |
-          cd allure/allure-results
-          ls
-          cd ../..
-      - name: Check for allure command
-        run: |
-          python -m allure --version
+          make allure-test
       - name: Get Allure history
         uses: actions/checkout@v2
         if: always()
