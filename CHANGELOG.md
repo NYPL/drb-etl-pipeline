@@ -8,7 +8,7 @@
 - Scheduled tests-regression.yaml to run every Monday 12 AM EST
 - Renamed tests.yaml as "tests-unit.yaml"
 - Remove changelog job from tests-regression.yaml
-- PLACEHOLDER
+- Fix allure-test command to include correct path
 
 
 ## 2021-04-15 -- v0.5.6
