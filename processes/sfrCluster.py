@@ -61,12 +61,8 @@ class ClusterProcess(CoreProcess):
 
         matchedIDs = self.findAllMatchingRecords(rec.identifiers)
 
-        filterParams = None
         if len(matchedIDs) < 1:
-            filterParams = Record.uuid == rec.uuid
             matchedIDs = [rec.id]
-        else:
-            filterParams = Record.id.in_(matchedIDs)
 
         clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
         dbWork = self.createWorkFromEditions(clusteredEditions, instances)
@@ -74,14 +70,18 @@ class ClusterProcess(CoreProcess):
 
         self.indexWorkInElasticSearch(dbWork)
 
-        self.session.query(Record)\
-            .filter(filterParams)\
-            .update(
-                {'cluster_status': True, 'frbr_status': 'complete'},
-                synchronize_session='fetch'
-            )
+        self.updateMatchedRecordsStatus(matchedIDs)
 
-        self.commitChanges()
+    def updateMatchedRecordsStatus(self, matchedIDs):
+        updatedRecords = []
+
+        for rec in self.session.query(Record).filter(Record.id.in_(matchedIDs)).all():
+            rec.cluster_status = True
+            rec.frbr_status = 'complete'
+            
+            updatedRecords.append(rec)
+
+        self.bulkSaveObjects(updatedRecords)
 
     def clusterMatchedRecords(self, recIDs):
         records = self.session.query(Record).filter(Record.id.in_(recIDs)).all()
