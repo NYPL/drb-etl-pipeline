@@ -39,8 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
-          pip install allure-pytest
-      - name: Run test suite
+      - name: Run test suite with Allure
         run: |
           make allure-test
       - name: Get Allure history
