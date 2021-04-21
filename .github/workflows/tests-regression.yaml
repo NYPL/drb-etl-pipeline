@@ -51,6 +51,7 @@ jobs:
           allure_history: allure-history
       - name: find folders
         run: | 
+          pwd
           ls
       - name: debug allure-results
         run: |
