@@ -5,3 +5,6 @@ help:
 
 test: 
 	python -m pytest --cov-report term-missing --cov=. tests/
+
+allure-test:
+	python -m pytest --alluredir=./allure/allure-results ./tests

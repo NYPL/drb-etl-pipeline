@@ -5,12 +5,15 @@
 - Escape special characters in search queries
 - Handle colons in the body of search queries
 - Add deadlock handling in `ClusterProcess`
+- Scheduled tests-regression.yaml to run every Monday 12 AM EST
+- Renamed tests.yaml as "tests-unit.yaml"
 
 
 ## 2021-04-15 -- v0.5.6
 ### Added
 - Added `date_created` and `date_modified` indexes to the `records` table
-### Fixed
+- Scheduled tests.yaml to run every Monday 12 AM EST
+## Fixed
 - Ensure that multiple publishers are read from Records
 - Add `work_uuid` to edition responses
 - Fix typo in work UUID fetching
