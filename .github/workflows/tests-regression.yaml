@@ -53,9 +53,9 @@ jobs:
         run: | 
           pwd
           ls
-      - name: debug allure-results
+      - name: see home directory
         run: |
-          cd ..
+          cd ~
           ls
       - name: Deploy report to Github Pages
         if: always()
