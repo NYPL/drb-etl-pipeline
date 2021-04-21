@@ -53,6 +53,10 @@ jobs:
         run: | 
           pwd
           ls
+      - name: look into tests
+        run: |
+          cd tests
+          ls
       - name: Deploy report to Github Pages
         if: always()
         uses: peaceiris/actions-gh-pages@v2
