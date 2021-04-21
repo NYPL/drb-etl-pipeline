@@ -52,9 +52,9 @@ jobs:
       - name: find folders
         run: | 
           ls
-      - name: debug build
+      - name: debug allure-results
         run: |
-          cd build
+          cd allure-results
           ls
           cd ..
       - name: Deploy report to Github Pages
