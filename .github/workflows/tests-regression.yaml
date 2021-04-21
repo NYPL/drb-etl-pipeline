@@ -55,9 +55,8 @@ jobs:
           ls
       - name: debug allure-results
         run: |
-          cd allure-results
-          ls
           cd ..
+          ls
       - name: Deploy report to Github Pages
         if: always()
         uses: peaceiris/actions-gh-pages@v2
