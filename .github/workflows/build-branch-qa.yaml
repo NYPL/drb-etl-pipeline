@@ -67,13 +67,14 @@ jobs:
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         env:
           BRANCH_NAME: ${{ github.head_ref }}
-        run: aws ecs create-service \
-          --cluster sfr-pipeline-qa \
-          --service-name $BRANCH_NAME-qa \
-          --task-definition sfr-pipeline-testing \
-          --desired-count 1 \
-          --launch-type FARGATE \
-          --network-configuration awsvpcConfiguration={subnets=[subnet-42f2e16f,subnet-6b1edc23],securityGroups=[sg-016cf234aebd31f7d],assignPublicIp=ENABLED}
+        run: | 
+          aws ecs create-service \
+            --cluster sfr-pipeline-qa \
+            --service-name $BRANCH_NAME-qa \
+            --task-definition sfr-pipeline-testing \
+            --desired-count 1 \
+            --launch-type FARGATE \
+            --network-configuration awsvpcConfiguration={subnets=[subnet-42f2e16f,subnet-6b1edc23],securityGroups=[sg-016cf234aebd31f7d],assignPublicIp=ENABLED}
 
       - name: Get ARN of branch QA task
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
