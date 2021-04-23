@@ -4,7 +4,7 @@ name: Publish Branch
 on:
   pull_request:
     branches: [main]
-    types: [opened]
+    types: [opened, reopened, synchronize]
 
 jobs:
   publish_qa:
