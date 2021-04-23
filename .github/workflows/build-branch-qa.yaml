@@ -41,6 +41,7 @@ jobs:
         run: |
           taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --family sfr-pipeline-testing | jq '.taskArns[0]')
           existingtask=$(if [[ "$taskarn" != "null" ]]; then echo true; else echo false; fi)
+          echo $existingtask
           echo "::set-output name=existingtask::$existingtask"
 
       - name: Force update of existing task with new container
@@ -59,7 +60,7 @@ jobs:
           image: ${{ steps.build-image.outputs.image }}
 
       - name: Deploy task definition to ECS
-        if: ${{ steps.task-present-check.outputs.existing-task-arn == null }}
+        if: ${{ steps.task-present-check.outputs.existingtask == false }}
         run: aws ecs register-task-definition --cli-input-json file://task-definition.json
 
       - name: Create new service in ECS cluster
