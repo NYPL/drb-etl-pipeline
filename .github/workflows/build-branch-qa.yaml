@@ -38,16 +38,19 @@ jobs:
 
       - name: Check if task and service already exists
         id: task-present-check
-        run: echo "::set-output name=existing-task-arn::aws ecs list-tasks --cluster sfr-pipeline-qa --family sfr-pipeline-testing | jq '.taskArns[0]'"
+        run: |
+          taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --family sfr-pipeline-testing | jq '.taskArns[0]')
+          existingtask=$(if [[ "$taskarn" != "null" ]]; then echo true; else echo false; fi)
+          echo "::set-output name=existingtask::$existingtask"
 
       - name: Force update of existing task with new container
-        if: ${{ steps.task-present-check.outputs.existing-task-arn != null }}
+        if: ${{ steps.task-present-check.outputs.existingtask == true }}
         env:
           BRANCH_NAME: ${{ github.head_ref }}
         run: aws ecs update-service --cluster sfr-pipeline-qa --service $BRANCH_NAME-qa --force-new-deployment
  
       - name: Populate task definition for API container
-        if: ${{ steps.task-present-check.outputs.existing-task-arn == null }}
+        if: ${{ steps.task-present-check.outputs.existingtask == false }}
         id: render-api-container
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
@@ -60,7 +63,7 @@ jobs:
         run: aws ecs register-task-definition --cli-input-json file://task-definition.json
 
       - name: Create new service in ECS cluster
-        if: ${{ steps.task-present-check.outputs.existing-task-arn == null }}
+        if: ${{ steps.task-present-check.outputs.existingtask == false }}
         env:
           BRANCH_NAME: ${{ github.head_ref }}
         run: aws ecs create-service \
@@ -72,17 +75,17 @@ jobs:
           --network-configuration awsvpcConfiguration={subnets=[subnet-42f2e16f,subnet-6b1edc23],securityGroups=[sg-016cf234aebd31f7d],assignPublicIp=ENABLED}
 
       - name: Get ARN of branch QA task
-        if: ${{ steps.task-present-check.outputs.existing-task-arn == null }}
+        if: ${{ steps.task-present-check.outputs.existingtask == false }}
         id: get-task-arn
         run: echo "::set-output name=task-arn::aws ecs list-tasks --cluster sfr-pipeline-qa --family sfr-pipeline-testing | jq '.taskArns[0]'"
 
       - name: Get deployed URL for service
-        if: ${{ steps.task-present-check.outputs.existing-task-arn == null }}
+        if: ${{ steps.task-present-check.outputs.existingtask == false }}
         id: get-task-ip
         run: echo "::set-output name=task-ip::aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.task-arn }} | jq '.tasks[0].attachments[0].details[4].value'
 
       - name: Add Task IP as comment to PR
-        if: ${{ steps.task-present-check.outputs.existing-task-arn == null }}
+        if: ${{ steps.task-present-check.outputs.existingtask == false }}
         uses: peter-evans/create-or-update-comment@v1
         with:
           body: |
