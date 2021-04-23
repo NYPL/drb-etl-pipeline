@@ -2,6 +2,8 @@
     "family": "sfr-pipeline-testing",
     "executionRoleArn": "ecsTaskExecutionRole",
     "networkMode": "awsvpc",
+    "cpu": 512,
+    "memory": 1024,
     "containerDefinitions": [
         {
             "name": "sfr-api",
