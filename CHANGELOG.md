@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## unreleased -- v0.5.7
+### Added
+- Per-branch QA deployments
 ### Fixed
 - Escape special characters in search queries
 - Handle colons in the body of search queries
