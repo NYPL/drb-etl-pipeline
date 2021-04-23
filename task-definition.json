@@ -1,7 +1,7 @@
 {
     "family": "sfr-pipeline-testing",
     "executionRoleArn": "ecsTaskExecutionRole",
-    "networkMode": "FARGATE",
+    "networkMode": "awsvpc",
     "containerDefinitions": [
         {
             "name": "sfr-api",
