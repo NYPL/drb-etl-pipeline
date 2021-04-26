@@ -1,0 +1,80 @@
+{
+    "family": "sfr-pipeline-testing",
+    "executionRoleArn": "ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "cpu": "512",
+    "memory": "1024",
+    "containerDefinitions": [
+        {
+            "name": "sfr-api",
+            "image": "946183545209.dkr.ecr.us-east-1.amazonaws.com/sfr_ingest_pipeline:latest",
+            "memory": 256,
+            "portMappings": [
+                {
+                    "containerPort": 80
+                }
+            ],
+            "essential": true,
+            "command": [
+                "--process", "APIProcess",
+                "--environment", "qa"
+            ],
+            "environment": [
+                {
+                    "name": "ENVIRONMENT",
+                    "value": "qa"
+                },
+                {
+                    "name": "ELASTICSEARCH_HOST",
+                    "value": "https://vpc-sfr-search-api-production-tom4zg45o45pfomgtasgskvx4e.us-east-1.es.amazonaws.com"
+                },
+                {
+                    "name": "ELASTICSEARCH_INDEX",
+                    "value": "drb_dcdw_qa"
+                }
+
+            ],
+            "secrets": [
+                {
+                    "name": "POSTGRES_USER",
+                    "valueFrom": "arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/postgres/user"
+                },
+                {
+                    "name": "POSTGRES_PSWD",
+                    "valueFrom": "arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/postgres/pswd"
+                }
+            ]
+        },
+        {
+            "name": "sfr-webapp",
+            "image": "946183545209.dkr.ecr.us-east-1.amazonaws.com/sfr-front-end:latest",
+            "memory": 256,
+            "portMappings": [
+                {
+                    "containerPort": 3000
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "APP_ENV",
+                    "value": "qa"
+                },
+                {
+                    "name": "API_URL",
+                    "value": "127.0.0.1"
+                }
+
+            ]
+        }
+    ],
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "tags": [
+        {
+            "key": "project",
+            "value": "sfr"
+        }
+    ]
+}
