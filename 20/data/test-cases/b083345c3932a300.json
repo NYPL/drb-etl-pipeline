@@ -1,0 +1,163 @@
+{
+  "uid" : "b083345c3932a300",
+  "name" : "test_checkSetRedis_key_not_found",
+  "fullName" : "tests.unit.test_redis_manager.TestRedisManager#test_checkSetRedis_key_not_found",
+  "historyId" : "fd39b35c71879f407eeb4934d1350a5a",
+  "time" : {
+    "start" : 1619466947147,
+    "stop" : 1619466947149,
+    "duration" : 2
+  },
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "beforeStages" : [ {
+    "name" : "testInstance",
+    "time" : {
+      "start" : 1619466947147,
+      "stop" : 1619466947147,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "mocker",
+    "time" : {
+      "start" : 1619466947146,
+      "stop" : 1619466947146,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1619466931611,
+      "stop" : 1619466931611,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "afterStages" : [ {
+    "name" : "mocker::0",
+    "time" : {
+      "start" : 1619466947150,
+      "stop" : 1619466947151,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "parentSuite",
+    "value" : "tests.unit"
+  }, {
+    "name" : "suite",
+    "value" : "test_redis_manager"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestRedisManager"
+  }, {
+    "name" : "host",
+    "value" : "fv-az133-125"
+  }, {
+    "name" : "thread",
+    "value" : "3314-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "tests.unit.test_redis_manager"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "history" : {
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 0,
+        "skipped" : 0,
+        "passed" : 5,
+        "unknown" : 0,
+        "total" : 5
+      },
+      "items" : [ {
+        "uid" : "e659ea3e0eecd38d",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/19//#testresult/e659ea3e0eecd38d",
+        "status" : "passed",
+        "time" : {
+          "start" : 1619396584630,
+          "stop" : 1619396584632,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "50d1e2b153c289cf",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/18//#testresult/50d1e2b153c289cf",
+        "status" : "passed",
+        "time" : {
+          "start" : 1619118198033,
+          "stop" : 1619118198034,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "2ccc9c286e9ab8ea",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/17//#testresult/2ccc9c286e9ab8ea",
+        "status" : "passed",
+        "time" : {
+          "start" : 1619049104134,
+          "stop" : 1619049104136,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "27b489da97ee8f2d",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/16//#testresult/27b489da97ee8f2d",
+        "status" : "passed",
+        "time" : {
+          "start" : 1619048775508,
+          "stop" : 1619048775510,
+          "duration" : 2
+        }
+      } ]
+    },
+    "tags" : [ ]
+  },
+  "source" : "b083345c3932a300.json",
+  "parameterValues" : [ ]
+}
