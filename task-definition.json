@@ -39,19 +39,11 @@
                     "name": "POSTGRES_USER",
                     "valueFrom": "arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/postgres/user"
                 },
-		{
-		    "name": "POSTGRES_PSWD",
-		    "valueFrom": "arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/postgres/pswd"
-		}
-            ],
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-		    "awslogs-group": "ECSLogGroup-sfr-pipeline-qa",
-		    "awslogs-region": "us-east-1",
-		    "awslogs-stream-prefix": "sfr-api"
+                {
+                    "name": "POSTGRES_PSWD",
+                    "valueFrom": "arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/postgres/pswd"
                 }
-            }
+            ]
         },
         {
             "name": "sfr-webapp",
@@ -68,20 +60,12 @@
                     "name": "APP_ENV",
                     "value": "qa"
                 },
-		{
-		    "name": "API_URL",
-		    "value": "127.0.0.1"
-		}
-
-            ],
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-		    "awslogs-group": "ECSLogGroup-sfr-pipeline-qa",
-		    "awslogs-region": "us-east-1",
-		    "awslogs-stream-prefix": "sfr-webapp"
+                {
+                    "name": "API_URL",
+                    "value": "127.0.0.1"
                 }
-            }
+
+            ]
         }
     ],
     "requiresCompatibilities": [
