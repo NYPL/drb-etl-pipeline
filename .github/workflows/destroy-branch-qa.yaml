@@ -19,7 +19,7 @@ jobs:
 
       - name: Delete Service from ECS cluster
         run: |
-          aws ecs create-service \
+          aws ecs delete-service \
             --cluster sfr-pipeline-qa \
             --service-name $BRANCH_NAME-qa \
             --force
