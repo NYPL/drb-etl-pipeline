@@ -79,12 +79,16 @@ jobs:
       - name: Get ARN of branch QA task
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         id: get-task-arn
-        run: echo "::set-output name=task-arn::aws ecs list-tasks --cluster sfr-pipeline-qa --family sfr-pipeline-testing | jq '.taskArns[0]'"
+        run: |
+          taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --family sfr-pipeline-testing | jq '.taskArns[0]')
+          echo "::set-output name=taskarn::$taskarn"
 
       - name: Get deployed URL for service
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         id: get-task-ip
-        run: echo "::set-output name=task-ip::aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.task-arn }} | jq '.tasks[0].attachments[0].details[4].value'
+        run: |
+          taskip=$(task-ip::aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.taskarn }} | jq '.tasks[0].attachments[0].details[4].value')
+          echo "::set-output name=taskip::$taskip"
 
       - name: Add Task IP as comment to PR
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
@@ -93,5 +97,5 @@ jobs:
           body: |
             This branch is deployed at the following locations:
 
-            [DRB Front End](${{ steps.get-task-ip.output.task-ip}}:3000)
-            [DRB API](${{ steps.get-task-ip.output.task-ip}})
+            [DRB Front End](${{ steps.get-task-ip.output.taskip}}:3000)
+            [DRB API](${{ steps.get-task-ip.output.taskip}})
