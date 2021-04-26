@@ -95,7 +95,8 @@ jobs:
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         id: get-task-ip
         run: |
-          taskip=$(aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.taskarn }} | jq '.tasks[0].attachments[0].details[4].value')
+          tempip=$(aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.taskarn }} | jq '.tasks[0].attachments[0].details[4].value')
+          taskip=$(echo $tempip | tr -d '"')
           echo "IP: $taskip"
           echo "::set-output name=taskip::$taskip"
 
@@ -107,5 +108,5 @@ jobs:
           body: |
             This branch is deployed at the following locations:
 
-            [DRB Front End](${{ steps.get-task-ip.outputs.taskip}}:3000)
-            [DRB API](${{ steps.get-task-ip.outputs.taskip}})
+            [DRB Front End](http://${{ steps.get-task-ip.outputs.taskip }}:3000)
+            [DRB API](http://${{ steps.get-task-ip.outputs.taskip }})
