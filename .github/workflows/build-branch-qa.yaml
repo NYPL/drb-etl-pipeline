@@ -75,11 +75,21 @@ jobs:
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[subnet-42f2e16f,subnet-6b1edc23],securityGroups=[sg-016cf234aebd31f7d],assignPublicIp=ENABLED}"
 
+      - name: Wait for Service to become stable
+        if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          aws ecs wait services-stable \
+            --cluster sfr-pipeline-qa \
+            --services $BRANCH_NAME-qa
+
       - name: Get ARN of branch QA task
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         id: get-task-arn
         run: |
           taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --family sfr-pipeline-testing | jq '.taskArns[0]')
+          echo "ARN: $taskarn"
           echo "::set-output name=taskarn::$taskarn"
 
       - name: Get deployed URL for service
@@ -87,6 +97,7 @@ jobs:
         id: get-task-ip
         run: |
           taskip=$(aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.taskarn }} | jq '.tasks[0].attachments[0].details[4].value')
+          echo "IP: #taskip"
           echo "::set-output name=taskip::$taskip"
 
       - name: Add Task IP as comment to PR
