@@ -74,7 +74,7 @@ jobs:
             --task-definition sfr-pipeline-testing \
             --desired-count 1 \
             --launch-type FARGATE \
-            --network-configuration awsvpcConfiguration={subnets=[subnet-42f2e16f,subnet-6b1edc23],securityGroups=[sg-016cf234aebd31f7d],assignPublicIp=ENABLED}
+            --network-configuration "awsvpcConfiguration={subnets=[subnet-42f2e16f,subnet-6b1edc23],securityGroups=[sg-016cf234aebd31f7d],assignPublicIp=ENABLED}"
 
       - name: Get ARN of branch QA task
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
