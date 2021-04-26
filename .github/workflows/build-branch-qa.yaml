@@ -97,7 +97,6 @@ jobs:
         run: |
           tempip=$(aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.taskarn }} | jq '.tasks[0].attachments[0].details[4].value')
           taskip=$(echo $tempip | tr -d '"')
-          echo "IP: $taskip"
           echo "::set-output name=taskip::$taskip"
 
       - name: Add Task IP as comment to PR
