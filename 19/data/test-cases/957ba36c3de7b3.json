@@ -1,0 +1,169 @@
+{
+  "uid" : "957ba36c3de7b3",
+  "name" : "test_createMapping",
+  "fullName" : "tests.unit.test_muse_mapping.TestMUSEMapping#test_createMapping",
+  "historyId" : "40450f7c97fff2379a6ed60471e2dc32",
+  "time" : {
+    "start" : 1619396582721,
+    "stop" : 1619396582721,
+    "duration" : 0
+  },
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "beforeStages" : [ {
+    "name" : "testRecord",
+    "time" : {
+      "start" : 1619396582720,
+      "stop" : 1619396582721,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "mocker",
+    "time" : {
+      "start" : 1619396582720,
+      "stop" : 1619396582720,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1619396572417,
+      "stop" : 1619396572417,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "testMapping",
+    "time" : {
+      "start" : 1619396582721,
+      "stop" : 1619396582721,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "afterStages" : [ {
+    "name" : "mocker::0",
+    "time" : {
+      "start" : 1619396582722,
+      "stop" : 1619396582722,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "parentSuite",
+    "value" : "tests.unit"
+  }, {
+    "name" : "suite",
+    "value" : "test_muse_mapping"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestMUSEMapping"
+  }, {
+    "name" : "host",
+    "value" : "fv-az121-840"
+  }, {
+    "name" : "thread",
+    "value" : "3346-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "tests.unit.test_muse_mapping"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "history" : {
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 0,
+        "skipped" : 0,
+        "passed" : 4,
+        "unknown" : 0,
+        "total" : 4
+      },
+      "items" : [ {
+        "uid" : "6f9c86129aff788e",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/18//#testresult/6f9c86129aff788e",
+        "status" : "passed",
+        "time" : {
+          "start" : 1619118196063,
+          "stop" : 1619118196063,
+          "duration" : 0
+        }
+      }, {
+        "uid" : "90d4b5737e1edaa4",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/17//#testresult/90d4b5737e1edaa4",
+        "status" : "passed",
+        "time" : {
+          "start" : 1619049101852,
+          "stop" : 1619049101852,
+          "duration" : 0
+        }
+      }, {
+        "uid" : "8112759281c1c42",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/16//#testresult/8112759281c1c42",
+        "status" : "passed",
+        "time" : {
+          "start" : 1619048773149,
+          "stop" : 1619048773150,
+          "duration" : 1
+        }
+      } ]
+    },
+    "tags" : [ ]
+  },
+  "source" : "957ba36c3de7b3.json",
+  "parameterValues" : [ ]
+}
