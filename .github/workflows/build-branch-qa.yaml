@@ -1,5 +1,4 @@
-# On merge to development,
-# build a container and deploy to ECR
+# On feature branch build container and deploy to temporary ECS service
 name: Publish Branch
 on:
   pull_request:
@@ -87,13 +86,14 @@ jobs:
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         id: get-task-ip
         run: |
-          taskip=$(task-ip::aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.taskarn }} | jq '.tasks[0].attachments[0].details[4].value')
+          taskip=$(aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.taskarn }} | jq '.tasks[0].attachments[0].details[4].value')
           echo "::set-output name=taskip::$taskip"
 
       - name: Add Task IP as comment to PR
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         uses: peter-evans/create-or-update-comment@v1
         with:
+          issue-number: ${{ github.event.number }}
           body: |
             This branch is deployed at the following locations:
 
