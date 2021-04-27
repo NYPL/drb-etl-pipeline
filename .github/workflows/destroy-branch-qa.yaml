@@ -18,6 +18,8 @@ jobs:
           aws-region: us-east-1
 
       - name: Delete Service from ECS cluster
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
         run: |
           aws ecs delete-service \
             --cluster sfr-pipeline-qa \

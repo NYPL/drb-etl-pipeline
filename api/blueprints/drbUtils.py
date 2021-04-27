@@ -28,9 +28,12 @@ def languageCounts():
 @utils.route('/counts', methods=['GET'])
 def totalCounts():
     dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
 
     totalResult = dbClient.fetchRowCounts()
 
     totalsSummary = APIUtils.formatTotals(totalResult)
+
+    dbClient.closeSession()
 
     return APIUtils.formatResponseObject(200, 'totalCounts', totalsSummary)

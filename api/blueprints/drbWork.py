@@ -12,6 +12,7 @@ def workFetch(uuid):
     logger.info('Fetching Work {}'.format(uuid))
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
 
     searchParams = APIUtils.normalizeQueryParams(request.args)
     showAll = searchParams.get('showAll', ['true'])[0].lower() != 'false'
@@ -19,18 +20,14 @@ def workFetch(uuid):
     work = dbClient.fetchSingleWork(uuid)
 
     if work:
-        logger.debug('Work Fetch 200 on /work/{}'.format(uuid))
-
-        return APIUtils.formatResponseObject(
-            200,
-            'singleWork',
-            APIUtils.formatWorkOutput(work, None, showAll=showAll)
-        )
+        statusCode = 200
+        responseBody = APIUtils.formatWorkOutput(work, None, showAll=showAll) 
     else:
-        logger.warning('Work Fetch 404 on /work/{}'.format(uuid))
+        statusCode = 404
+        responseBody = {'message': 'Unable to locate work with UUID {}'.format(uuid)} 
 
-        return APIUtils.formatResponseObject(
-            404,
-            'singleWork',
-            {'message': 'Unable to locate work with UUID {}'.format(uuid)}
-        )
+    logger.warning('Work Fetch {} on /work/{}'.format(statusCode, uuid))
+
+    dbClient.closeSession()
+
+    return APIUtils.formatResponseObject(statusCode, 'singleWork', responseBody)
