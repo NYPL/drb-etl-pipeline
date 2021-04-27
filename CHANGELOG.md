@@ -11,6 +11,7 @@
 - Renamed tests.yaml as "tests-unit.yaml"
 - Remove changelog job from tests-regression.yaml
 - Fix allure-test command to include correct path
+- Remove lingering sessions after query completion
 
 
 ## 2021-04-15 -- v0.5.6

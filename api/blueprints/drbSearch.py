@@ -12,6 +12,7 @@ search = Blueprint('search', __name__, url_prefix='/search')
 def standardQuery():
     esClient = ElasticClient(current_app.config['ES_CLIENT'])
     dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
 
     searchParams = APIUtils.normalizeQueryParams(request.args)
 
@@ -54,5 +55,7 @@ def standardQuery():
     }
 
     logger.debug('Search Query 200 on /search')
+
+    dbClient.closeSession()
 
     return APIUtils.formatResponseObject(200, 'searchResponse', dataBlock)

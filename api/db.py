@@ -9,13 +9,17 @@ class DBClient():
     def __init__(self, engine):
         self.engine = engine
 
+    def createSession(self):
+        self.session = sessionmaker(bind=self.engine)()
+
+    def closeSession(self):
+        self.session.close()
+
     def fetchSearchedWorks(self, ids):
         uuids = [i[0] for i in ids]
         editionIds = list(set(APIUtils.flatten([i[1] for i in ids])))
 
-        session = sessionmaker(bind=self.engine)()
-
-        return session.query(Work)\
+        return self.session.query(Work)\
             .join(Edition)\
             .options(
                 joinedload(Work.editions, Edition.links),
@@ -27,9 +31,7 @@ class DBClient():
             .all()
 
     def fetchSingleWork(self, uuid):
-        session = sessionmaker(bind=self.engine)()
-
-        return session.query(Work)\
+        return self.session.query(Work)\
             .options(
                 joinedload(Work.editions),
                 joinedload(Work.editions, Edition.rights),
@@ -39,9 +41,7 @@ class DBClient():
             .filter(Work.uuid == uuid).first()
 
     def fetchSingleEdition(self, editionID, showAll=False):
-        session = sessionmaker(bind=self.engine)()
-
-        return session.query(Edition)\
+        return self.session.query(Edition)\
             .options(
                 joinedload(Edition.links),
                 joinedload(Edition.items),
@@ -51,18 +51,12 @@ class DBClient():
             .filter(Edition.id == editionID).first()
 
     def fetchSingleLink(self, linkID):
-        session = sessionmaker(bind=self.engine)()
-
-        return session.query(Link).filter(Link.id == linkID).first()
+        return self.session.query(Link).filter(Link.id == linkID).first()
 
     def fetchRecordsByUUID(self, uuids):
-        session = sessionmaker(bind=self.engine)()
-
-        return session.query(Record).filter(Record.uuid.in_(uuids)).all()
+        return self.session.query(Record).filter(Record.uuid.in_(uuids)).all()
 
     def fetchRowCounts(self):
-        session = sessionmaker(bind=self.engine)()
-
         countQuery = text("""SELECT relname AS table, reltuples AS row_count
             FROM pg_class c JOIN pg_namespace n ON (n.oid = c.relnamespace)
             WHERE nspname NOT IN ('pg_catalog', 'information_schema')
@@ -70,15 +64,13 @@ class DBClient():
             AND relname IN ('records', 'works', 'editions', 'items', 'links')
         """)
 
-        return session.execute(countQuery)
+        return self.session.execute(countQuery)
 
     def fetchNewWorks(self, page=0, size=50):
-        session = sessionmaker(bind=self.engine)()
-
         offset = page * size
 
         createdSince = datetime.utcnow() - timedelta(days=1)
 
-        baseQuery = session.query(Work).filter(Work.date_created >= createdSince)
+        baseQuery = self.session.query(Work).filter(Work.date_created >= createdSince)
 
         return (baseQuery.count(), baseQuery.offset(offset).limit(size).all())
