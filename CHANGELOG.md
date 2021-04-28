@@ -2,7 +2,7 @@
 
 ## unreleased -- v0.5.7
 ### Added
-- Per-branch QA deployments
+- Per-branch QA deployments on feature branches
 ### Fixed
 - Escape special characters in search queries
 - Handle colons in the body of search queries
