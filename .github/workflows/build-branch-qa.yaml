@@ -40,8 +40,8 @@ jobs:
         env:
           BRANCH_NAME: ${{ github.head_ref }}
         run: |
-          taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --service-name $BRANCH_NAME-qa | jq '.taskArns[0]')
-          existingtask=$(if [[ "$taskarn" != "null" ]]; then echo true; else echo false; fi)
+          taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --service-name $BRANCH_NAME-qa | jq '.taskArns[0]' || true)
+          existingtask=$(if [[ "$taskarn" != "" ]]; then echo true; else echo false; fi)
           echo "::set-output name=existingtask::$existingtask"
 
       - name: Force update of existing task with new container
