@@ -77,7 +77,9 @@ To set up a Kubernetes cluster with these secrets copy the `manifests/secrets-ex
 
 ## Deployment
 
-This application can be deployed to any kubernetes cluster with the provided `production.yaml` manifest. However, in production the application does have additional dependencies, specifically external PostgreSQL and ElasticSearch database/index. This is to easy the work of maintaining persistent data instances in production, which is possible within kubernetes but is more complex, especially with the need to maintain and validate backups. These must be configured and placed in the production config file.
+This application is delpoyed via Github Actions to an ECS cluster. Opening a PR will give a temporary testing/QA environment (the IP address for the environment is added as a comment to the PR), which is torn down on merge. Once merged into QA changes are deployed to [the DRB QA Instance](http://drb-api-qa.nypl.org)
+
+Production delpoyments are to be made when releases are cut against `main` (Implementation TK)
 
 ## TODO
 
@@ -88,12 +90,12 @@ This application can be deployed to any kubernetes cluster with the provided `pr
   - ~~DOAB~~
   - ~~Project MUSE~~
   - MET Exhibition Catalogs
-- Add centralized logging process
+- ~~Add centralized logging process~~
 - Add commenting/documentation strings
 - Generate C4 diagrams for application
 - ~~Integrate ePub processor into standard processing flow~~
 - ~~Add cover fetching process~~
 - Create test suite, including:
-  - Unit tests for all components
+  - ~~Unit tests for all components~~
   - Functional tests for each process
   - Integration tests for the full cluster
