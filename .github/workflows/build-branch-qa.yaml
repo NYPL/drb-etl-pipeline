@@ -2,7 +2,7 @@
 name: Publish Branch
 on:
   pull_request:
-    branches: [main]
+    branches: [development]
     types: [opened, reopened, synchronize]
 
 jobs:
@@ -77,7 +77,6 @@ jobs:
             --network-configuration "awsvpcConfiguration={subnets=[subnet-42f2e16f,subnet-6b1edc23],securityGroups=[sg-016cf234aebd31f7d],assignPublicIp=ENABLED}"
 
       - name: Wait for Service to become stable
-        if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         env:
           BRANCH_NAME: ${{ github.head_ref }}
         run: |
@@ -86,27 +85,31 @@ jobs:
             --services $BRANCH_NAME-qa
 
       - name: Get ARN of branch QA task
-        if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         id: get-task-arn
         run: |
           taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --family sfr-pipeline-testing | jq '.taskArns[0]')
           echo "::set-output name=taskarn::$taskarn"
 
-      - name: Get deployed URL for service
-        if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
-        id: get-task-ip
+      - name: Get deployed ENI for service
+        id: get-task-eni
         run: |
-          tempip=$(aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.taskarn }} | jq '.tasks[0].attachments[0].details[4].value')
+          tempeni=$(aws ecs describe-tasks --cluster sfr-pipeline-qa --tasks ${{ steps.get-task-arn.outputs.taskarn }} | jq '.tasks[0].attachments[0].details[1].value')
+          taskeni=$(echo $tempeni | tr -d '"')
+          echo "::set-output name=taskeni::$taskeni"
+
+      - name: Get Public IP address for service
+        id: get-public-ip
+        run: |
+          tempip=$(aws ec2 describe-network-interfaces --network-interface-ids ${{ steps.get-task-eni.outputs.taskeni }} | jq '.NetworkInterfaces[0].Association.PublicIp')
           taskip=$(echo $tempip | tr -d '"')
           echo "::set-output name=taskip::$taskip"
 
       - name: Add Task IP as comment to PR
-        if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
         uses: peter-evans/create-or-update-comment@v1
         with:
           issue-number: ${{ github.event.number }}
           body: |
             This branch is deployed at the following locations:
 
-            [DRB Front End](http://${{ steps.get-task-ip.outputs.taskip }}:3000)
-            [DRB API](http://${{ steps.get-task-ip.outputs.taskip }})
+            [DRB Front End](http://${{ steps.get-public-ip.outputs.taskip }}:3000)
+            [DRB API](http://${{ steps.get-public-ip.outputs.taskip }})
