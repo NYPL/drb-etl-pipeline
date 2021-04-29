@@ -61,7 +61,7 @@ jobs:
 
       - name: Deploy task definition to ECS
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
-        run: aws ecs register-task-definition --cli-input-json file://task-definition.json
+        run: aws ecs register-task-definition --cli-input-json ${{ steps.render-api-container.outputs.task-definition }}
 
       - name: Create new service in ECS cluster
         if: ${{ steps.task-present-check.outputs.existingtask == 'false' }}
