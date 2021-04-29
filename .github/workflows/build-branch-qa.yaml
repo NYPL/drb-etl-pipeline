@@ -29,11 +29,11 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: sfr_ingest_pipeline
-          IMAGE_TAG: ${{ github.sha }}
+          BRANCH_NAME: ${{ github.head_ref }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$BRANCH_NAME .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$BRANCH_NAME
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$BRANCH_NAME"
 
       - name: Check if task and service already exists
         id: task-present-check
@@ -89,7 +89,7 @@ jobs:
         env:
           BRANCH_NAME: ${{ github.head_ref }}
         run: |
-          taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --service $BRANCH_NAME | jq '.taskArns[0]')
+          taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --service $BRANCH_NAME-qa | jq '.taskArns[0]')
           echo "::set-output name=taskarn::$taskarn"
 
       - name: Get deployed ENI for service
