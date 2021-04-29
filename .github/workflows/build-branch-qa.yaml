@@ -2,7 +2,7 @@
 name: Publish Branch
 on:
   pull_request:
-    branches: [development]
+    branches: [main]
     types: [opened, reopened, synchronize]
 
 jobs:
