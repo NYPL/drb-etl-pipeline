@@ -86,8 +86,10 @@ jobs:
 
       - name: Get ARN of branch QA task
         id: get-task-arn
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
         run: |
-          taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --family sfr-pipeline-testing | jq '.taskArns[0]')
+          taskarn=$(aws ecs list-tasks --cluster sfr-pipeline-qa --service $BRANCH_NAME | jq '.taskArns[0]')
           echo "::set-output name=taskarn::$taskarn"
 
       - name: Get deployed ENI for service
