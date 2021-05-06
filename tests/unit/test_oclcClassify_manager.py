@@ -67,13 +67,12 @@ class TestClassifyManager:
         mockGenerators['generateIdentifierURL'].assert_not_called
         mockGenerators['generateAuthorTitleURL'].assert_called_once
     
-    def test_generateQueryURL_wo_query_options(self, testInstance, mockGenerators):
+    def test_generateQueryURL_wo_query_options(self, testInstance):
         testInstance.identifier = None
         testInstance.title = None
-        testInstance.generateQueryURL()
 
-        mockGenerators['generateIdentifierURL'].assert_not_called
-        mockGenerators['generateAuthorTitleURL'].assert_not_called
+        with pytest.raises(ClassifyError):
+            testInstance.generateQueryURL()
 
     def test_cleanStr(self):
         assert ClassifyManager.cleanStr('hello\n line\r') == 'hello line'
@@ -121,6 +120,7 @@ class TestClassifyManager:
         mockRequest.get.return_value = mockResponse
 
         mockResponse.status_code = 500
+        mockResponse.raise_for_status.side_effect = Exception
 
         with pytest.raises(Exception):
             testInstance.query = 'testQuery'

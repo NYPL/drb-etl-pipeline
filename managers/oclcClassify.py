@@ -63,6 +63,7 @@ class ClassifyManager:
             self.generateAuthorTitleURL()
         else:
             print('Cannot Classify work without identifier or title/author')
+            raise ClassifyError('Record lacks identifier or title/author pair')
 
     @staticmethod
     def cleanStr(string):
@@ -113,9 +114,8 @@ class ClassifyManager:
             Classify response.
         """
         classifyResp = requests.get(self.query)
-        if classifyResp.status_code != 200:
-            print('OCLC Classify Request failed')
-            raise Exception
+
+        classifyResp.raise_for_status()
 
         self.rawXML = classifyResp.text
     
