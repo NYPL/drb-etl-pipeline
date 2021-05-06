@@ -1,19 +1,23 @@
 from datetime import datetime, timedelta
 import json
-import mimetypes
 import os
-import re
 from time import strptime
 import requests
 
 from .core import CoreProcess
-from mappings.gutenberg import GutenbergMapping
+from mappings.core import MappingError
+from mappings.met import METMapping
+from managers import WebpubManifest
 
 
 class METProcess(CoreProcess):
-    # The format for this query is documented here: https://help.oclc.org/Metadata_Services/CONTENTdm/Advanced_website_customization/API_Reference/CONTENTdm_API/CONTENTdm_Server_API_Functions_-_dmwebservices
-    LIST_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmQuery/p15324coll10/CISOSEARCHALL/title!dmmodified!dmcreated/dmmodified/{}/{}/1/0/0/00/0/json'
+    MET_ROOT_URL = 'https://libmma.contentdm.oclc.org/digital'
+
+    # The documentatino for these API queries is here: https://help.oclc.org/Metadata_Services/CONTENTdm/Advanced_website_customization/API_Reference/CONTENTdm_API/CONTENTdm_Server_API_Functions_-_dmwebservices
+    LIST_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmQuery/p15324coll10/CISOSEARCHALL/title!dmmodified!dmcreated!rights/dmmodified/{}/{}/1/0/0/00/0/json'
     DETAIL_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmGetItemInfo/p15324coll10/{}/json'
+    COMPOUND_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmGetCompoundObjectInfo/p15324coll10/{}/json'
+    IMAGE_QUERY = 'https://libmma.contentdm.oclc.org/digital/api/singleitem/collection/p15324coll10/id/{}'
 
     def __init__(self, *args):
         super(METProcess, self).__init__(*args[:4])
@@ -30,11 +34,12 @@ class METProcess(CoreProcess):
         # Connect to file processing queue
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
-        # self.createRabbitConnection()
-        # self.createOrConnectQueue(self.fileQueue, self.fileRoute)
+        self.createRabbitConnection()
+        self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
         # S3 Configuration
         self.s3Bucket = os.environ['FILE_BUCKET']
+        self.createS3Client()
 
     def runProcess(self):
         self.setStartTime()
@@ -66,65 +71,63 @@ class METProcess(CoreProcess):
             if len(batchRecords) < 0 or currentPosition >= self.ingestLimit: break
 
             currentPosition += pageSize
-            break
 
     def processMetBatch(self, metRecords):
         for record in metRecords:
 
-            if self.startTimestamp \
-                and strptime(record['dmmodified'], '%Y-%m-%d') >= self.startTimestamp:
+            if (
+                self.startTimestamp \
+                and strptime(record['dmmodified'], '%Y-%m-%d') >= self.startTimestamp
+            ) \
+            or record['rights'] == 'copyrighted':
                 continue
 
             detailQuery = self.DETAIL_QUERY.format(record['pointer'])
             metDetail = self.queryMetAPI(detailQuery)
 
-            print(metDetail)
+            if metDetail['rights'] == 'copyrighted': continue
+
+            try:
+                metRec = METMapping(metDetail)
+                metRec.applyMapping()
+            except MappingError as e:
+                raise METError(e.message)
+
+            self.storePDFManifest(metRec.record)
+            self.addCoverAndStoreInS3(metRec.record, record['filetype'])
             
-            # self.addDCDWToUpdateList(gutenbergRec)
+            self.addDCDWToUpdateList(metRec)
 
-    def storeEpubsInS3(self, gutenbergRec):
-        for i, epubItem in enumerate(gutenbergRec.record.has_part):
-            pos, gutenbergURL, source, mediaType, flagStr = epubItem.split('|')
+    def addCoverAndStoreInS3(self, record, filetype):
+        recordID = record.identifiers[0].split('|')[0]
 
-            epubIDParts = re.search(r'\/([0-9]+).epub.([a-z]+)$', gutenbergURL)
-            gutenbergID = epubIDParts.group(1)
-            gutenbergType = epubIDParts.group(2)
+        coverPath = self.setCoverPath(filetype, recordID)
 
-            flags = json.loads(flagStr)
+        sourceURL = '{}/{}'.format(self.MET_ROOT_URL, coverPath)
 
-            if flags['download'] is True:
-                bucketLocation = 'epubs/{}/{}_{}.epub'.format(source, gutenbergID, gutenbergType)
-            else:
-                bucketLocation = 'epubs/{}/{}_{}/META-INF/content.xml'.format(source, gutenbergID, gutenbergType)
-                mediaType = 'application/epub+xml'
+        bucketLocation = 'covers/met/{}.jpg'.format(recordID)
 
-            s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
+        s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
 
-            gutenbergRec.record.has_part[i] = '|'.join([pos, s3URL, source, mediaType, flagStr])
+        record.has_part.append(
+            '|'.join(['', s3URL, 'met', 'image/jpeg', json.dumps({'cover': True})])
+        )
 
-            if flags['download'] is True:
-                self.sendFileToProcessingQueue(gutenbergURL, bucketLocation)
+        self.sendFileToProcessingQueue(sourceURL, bucketLocation)
 
-    def addCoverAndStoreInS3(self, gutenbergRec, yamlData):
-        for coverData in yamlData['covers']:
-            if coverData['cover_type'] == 'generated': continue
+    def setCoverPath(self, filetype, recordID):
+        if filetype == 'cpd':
+            compoundQuery = self.COMPOUND_QUERY.format(recordID)
+            compoundObject = self.queryMetAPI(compoundQuery)
 
-            mimeType, _ = mimetypes.guess_type(coverData['image_path'])
-            gutenbergID = yamlData['identifiers']['gutenberg']
+            coverID = compoundObject['page'][0]['pageptr']
 
-            fileExt = re.search(r'(\.[a-zA-Z0-9]+)$', coverData['image_path']).group(1)
-            bucketLocation = 'covers/gutenberg/{}{}'.format(gutenbergID, fileExt)
+            imageQuery = self.IMAGE_QUERY.format(coverID)
+            imageObject = self.queryMetAPI(imageQuery)
 
-            s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
-
-            gutenbergRec.record.has_part.append(
-                '|'.join(['', s3URL, 'gutenberg', mimeType, json.dumps({'cover': True})])
-            )
-
-            sourceRoot = yamlData['url'].replace('ebooks', 'files')
-            sourceURL = '{}/{}'.format(sourceRoot, coverData['image_path'])
-
-            self.sendFileToProcessingQueue(sourceURL, bucketLocation)
+            return imageObject['imageUri']
+        else:
+            return 'api/singleitem/image/pdf/p15324coll10/{}/default.png'.format(recordID)
 
     def sendFileToProcessingQueue(self, fileURL, s3Location):
         s3Message = {
@@ -135,10 +138,52 @@ class METProcess(CoreProcess):
         }
         self.sendMessageToQueue(self.fileQueue, self.fileRoute, s3Message)
 
+    def storePDFManifest(self, record):
+        for link in record.has_part:
+            itemNo, uri, source, mediaType, flags = link.split('|')
+
+            if mediaType == 'application/pdf':
+                recordID = record.identifiers[0].split('|')[0]
+
+                manifestPath = 'manifests/{}/{}.json'.format(source, recordID)
+                manifestURI = 'https://{}.s3.amazonaws.com/{}'.format(
+                    self.s3Bucket, manifestPath
+                )
+
+                manifestJSON = self.generateManifest(record, uri, manifestURI)
+
+                self.createManifestInS3(manifestPath, manifestJSON)
+
+                linkString = '|'.join([itemNo, manifestURI, source, 'application/webpub+json', flags])
+                record.has_part.insert(0, linkString)
+
+                break
+
+    def createManifestInS3(self, manifestPath, manifestJSON):
+        self.putObjectInBucket(manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket)
+
     @staticmethod
-    def queryMetAPI(query):
-        response = requests.get(query, timeout=30)
+    def generateManifest(record, sourceURI, manifestURI):
+        manifest = WebpubManifest(sourceURI, 'application/pdf')
+
+        manifest.addMetadata(record)
+
+        manifest.addChapter(sourceURI, record.title)
+
+        manifest.links.append(
+            {'rel': 'self', 'href': manifestURI, 'type': 'application/webpub+json'}
+        )
+
+        return manifest.toJson()
+
+    @staticmethod
+    def queryMetAPI(query, method='GET'):
+        response = requests.request(method, query, timeout=30)
 
         response.raise_for_status()
 
-        return response.json()
+        if method == 'HEAD': return response.status_code
+        else: return response.json()
+
+
+class METError(Exception): pass
