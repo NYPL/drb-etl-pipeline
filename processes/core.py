@@ -59,7 +59,7 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
             lastID = queryChunk[-1][-1]
 
             for row in queryChunk:
-                yield row[0] if singleEntity else row[0:-1]
+                yield row[0] if singleEntity else row[0:-2]
     
     def saveRecords(self):
         self.bulkSaveObjects(self.records)
