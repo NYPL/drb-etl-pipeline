@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta
 import json
 import os
-from time import strptime
 import requests
 
 from .core import CoreProcess
 from mappings.core import MappingError
 from mappings.met import METMapping
 from managers import WebpubManifest
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class METProcess(CoreProcess):
@@ -57,7 +59,7 @@ class METProcess(CoreProcess):
     
     def importDCRecords(self):
         currentPosition = self.ingestOffset
-        pageSize = 10
+        pageSize = 50
 
         while True:
             batchQuery = self.LIST_QUERY.format(pageSize, currentPosition)
@@ -68,35 +70,38 @@ class METProcess(CoreProcess):
 
             self.processMetBatch(batchRecords)
 
-            if len(batchRecords) < 0 or currentPosition >= self.ingestLimit: break
+            if len(batchRecords) < 1 or currentPosition >= self.ingestLimit: break
 
             currentPosition += pageSize
 
     def processMetBatch(self, metRecords):
         for record in metRecords:
-
             if (
                 self.startTimestamp \
-                and strptime(record['dmmodified'], '%Y-%m-%d') >= self.startTimestamp
+                and datetime.strptime(record['dmmodified'], '%Y-%m-%d') >= self.startTimestamp
             ) \
             or record['rights'] == 'copyrighted':
                 continue
 
-            detailQuery = self.DETAIL_QUERY.format(record['pointer'])
-            metDetail = self.queryMetAPI(detailQuery)
-
-            if metDetail['rights'] == 'copyrighted': continue
-
             try:
-                metRec = METMapping(metDetail)
-                metRec.applyMapping()
-            except MappingError as e:
-                raise METError(e.message)
+                self.processMetRecord(record)
+            except METError:
+                logger.warning('Unable to process MET record {}'.format(record['pointer']))
 
-            self.storePDFManifest(metRec.record)
-            self.addCoverAndStoreInS3(metRec.record, record['filetype'])
-            
-            self.addDCDWToUpdateList(metRec)
+    def processMetRecord(self, record):
+        detailQuery = self.DETAIL_QUERY.format(record['pointer'])
+        metDetail = self.queryMetAPI(detailQuery)
+
+        try:
+            metRec = METMapping(metDetail)
+            metRec.applyMapping()
+        except MappingError as e:
+            raise METError(e.message)
+
+        self.storePDFManifest(metRec.record)
+        self.addCoverAndStoreInS3(metRec.record, record['filetype'])
+        
+        self.addDCDWToUpdateList(metRec)
 
     def addCoverAndStoreInS3(self, record, filetype):
         recordID = record.identifiers[0].split('|')[0]
@@ -105,12 +110,14 @@ class METProcess(CoreProcess):
 
         sourceURL = '{}/{}'.format(self.MET_ROOT_URL, coverPath)
 
-        bucketLocation = 'covers/met/{}.jpg'.format(recordID)
+        bucketLocation = 'covers/met/{}.{}'.format(recordID, sourceURL[-3:])
 
         s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
 
+        fileType = 'image/jpeg' if sourceURL[-3:] == 'jpg' else 'image/png'
+
         record.has_part.append(
-            '|'.join(['', s3URL, 'met', 'image/jpeg', json.dumps({'cover': True})])
+            '|'.join(['', s3URL, 'met', fileType, json.dumps({'cover': True})])
         )
 
         self.sendFileToProcessingQueue(sourceURL, bucketLocation)
@@ -178,6 +185,8 @@ class METProcess(CoreProcess):
 
     @staticmethod
     def queryMetAPI(query, method='GET'):
+        method = method.upper()
+
         response = requests.request(method, query, timeout=30)
 
         response.raise_for_status()

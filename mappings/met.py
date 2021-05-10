@@ -59,5 +59,5 @@ class METMapping(JSONMapping):
         # Set PDF download link
         pdfURL = self.PDF_LINK.format(self.source['dmrecord'])
         self.record.has_part.append(
-            '|'.join(['1', pdfURL, 'met', 'application/pdf', '{{}}'])
+            '|'.join(['1', pdfURL, 'met', 'application/pdf', '{}'])
         )
