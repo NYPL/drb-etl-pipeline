@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.5.7
+## 2021-05-11 -- v0.5.7
 ### Added
 - MET Publication Ingest Process
 - Per-branch QA deployments on feature branches
