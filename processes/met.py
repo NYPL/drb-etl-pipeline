@@ -99,7 +99,11 @@ class METProcess(CoreProcess):
             raise METError(e.message)
 
         self.storePDFManifest(metRec.record)
-        self.addCoverAndStoreInS3(metRec.record, record['filetype'])
+
+        try:
+            self.addCoverAndStoreInS3(metRec.record, record['filetype'])
+        except METError as e:
+            logger.warning('Unable to fetch cover ({})'.format(e))
         
         self.addDCDWToUpdateList(metRec)
 
@@ -127,7 +131,11 @@ class METProcess(CoreProcess):
             compoundQuery = self.COMPOUND_QUERY.format(recordID)
             compoundObject = self.queryMetAPI(compoundQuery)
 
-            coverID = compoundObject['page'][0]['pageptr']
+            try:
+                coverID = compoundObject['page'][0]['pageptr']
+            except KeyError:
+                logger.debug('Compound record {} missing page mapping'.format(recordID))
+                raise METError('Unable to fetch page structure for record')
 
             imageQuery = self.IMAGE_QUERY.format(coverID)
             imageObject = self.queryMetAPI(imageQuery)
