@@ -42,7 +42,7 @@ class ClassifyManager:
     def __init__(self, iden=None, idenType=None, title=None, author=None, start=0):
         self.identifier = iden
         self.identifierType = idenType
-        self.title = ClassifyManager.cleanStr(title)
+        self.title = ClassifyManager.cleanStr(title) if title else None
         self.author = ClassifyManager.cleanStr(author) if author else None
         self.start = start
 

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import json
 import os
 import requests
+from requests.exceptions import HTTPError, ConnectionError
 
 from .core import CoreProcess
 from mappings.core import MappingError
@@ -89,14 +90,15 @@ class METProcess(CoreProcess):
                 logger.warning('Unable to process MET record {}'.format(record['pointer']))
 
     def processMetRecord(self, record):
-        detailQuery = self.DETAIL_QUERY.format(record['pointer'])
-        metDetail = self.queryMetAPI(detailQuery)
-
         try:
+            detailQuery = self.DETAIL_QUERY.format(record['pointer'])
+            metDetail = self.queryMetAPI(detailQuery)
+
             metRec = METMapping(metDetail)
             metRec.applyMapping()
-        except MappingError as e:
-            raise METError(e.message)
+        except (MappingError, HTTPError, ConnectionError) as e:
+            logger.debug(e)
+            raise METError('Unable to process MET record')
 
         self.storePDFManifest(metRec.record)
 
@@ -128,17 +130,17 @@ class METProcess(CoreProcess):
 
     def setCoverPath(self, filetype, recordID):
         if filetype == 'cpd':
-            compoundQuery = self.COMPOUND_QUERY.format(recordID)
-            compoundObject = self.queryMetAPI(compoundQuery)
-
             try:
-                coverID = compoundObject['page'][0]['pageptr']
-            except KeyError:
-                logger.debug('Compound record {} missing page mapping'.format(recordID))
-                raise METError('Unable to fetch page structure for record')
+                compoundQuery = self.COMPOUND_QUERY.format(recordID)
+                compoundObject = self.queryMetAPI(compoundQuery)
 
-            imageQuery = self.IMAGE_QUERY.format(coverID)
-            imageObject = self.queryMetAPI(imageQuery)
+                coverID = compoundObject['page'][0]['pageptr']
+
+                imageQuery = self.IMAGE_QUERY.format(coverID)
+                imageObject = self.queryMetAPI(imageQuery)
+            except (KeyError, HTTPError):
+                logger.debug('Unable to parse compound structure for {}'.format(recordID))
+                raise METError('Unable to fetch page structure for record')
 
             return imageObject['imageUri']
         else:
