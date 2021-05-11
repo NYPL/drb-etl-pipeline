@@ -2,6 +2,7 @@
 
 ## unreleased -- v0.5.7
 ### Added
+- MET Publication Ingest Process
 - Per-branch QA deployments on feature branches
 ### Fixed
 - Escape special characters in search queries
