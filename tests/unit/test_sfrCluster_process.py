@@ -1,4 +1,5 @@
 import datetime
+from processes.sfrCluster import ClusterError
 import pytest
 
 from tests.helper import TestHelpers
@@ -112,23 +113,28 @@ class TestSFRClusterProcess:
     def test_clusterRecords_full(self, testInstance, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'clusterRecord')
         mockClose = mocker.patch.object(ClusterProcess, 'closeConnection')
+        mockUpdate = mocker.patch.object(ClusterProcess, 'updateMatchedRecordsStatus')
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
         mockDatetime = mocker.spy(datetime, 'datetime')
 
         mockSession.query().filter().filter.return_value = mockQuery
-        mockQuery.first.side_effect = ['rec1', 'rec2', None]
+        mockQueryResponses = [mocker.MagicMock(id=1), mocker.MagicMock(id=2), None]
+        mockQuery.first.side_effect = mockQueryResponses
+
+        mockCluster.side_effect = [None, ClusterError]
 
         testInstance.clusterRecords(full=True)
 
-        mockSession.query.filter.filter.assert_called_once
-        mockDatetime.utcnow.assert_not_called
-        mockDatetime.timedelta.assert_not_called
-        mockQuery.filter.assert_not_called
+        mockSession.query().filter().filter.assert_called_once()
+        mockDatetime.utcnow.assert_not_called()
+        mockDatetime.timedelta.assert_not_called()
+        mockQuery.filter.assert_not_called()
         assert mockQuery.first.call_count == 3
-        mockCluster.assert_has_calls([mocker.call('rec1'), mocker.call('rec2')])
-        mockClose.assert_called_once
+        mockCluster.assert_has_calls(mockQuery[:1])
+        mockUpdate.assert_called_once_with([2])
+        mockClose.assert_called_once()
 
     def test_clusterRecord_w_matching_records(self, testInstance, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(ClusterProcess,
@@ -302,3 +308,10 @@ class TestSFRClusterProcess:
     def test_formatIdenArray(self):
         assert ClusterProcess.formatIdenArray(['{test}|test', 'multi,test|test'])\
             == '{"{test}|test","multi,test|test"}'
+
+    def test_tokenizeTitle_success(self):
+        assert ClusterProcess.tokenizeTitle('A Test Title') == set(['test', 'title'])
+
+    def test_tokenizeTitle_error(self):
+        with pytest.raises(ClusterError):
+            ClusterProcess.tokenizeTitle(None)
