@@ -382,7 +382,7 @@ class TestElasticClient:
 
         assert sortResult == 'sortQuery'
         mockQuery.sort.assert_called_once_with(
-            {'publication_date': {'order': 'DESC', 'nested': {'path': 'editions'}}},
+            {'editions.publication_date': {'order': 'DESC', 'nested': {'path': 'editions'}}},
             {'uuid': 'asc'}
         )
     

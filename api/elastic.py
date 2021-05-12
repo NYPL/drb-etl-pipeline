@@ -152,7 +152,7 @@ class ElasticClient():
                 })
             elif sort == 'date':
                 sortValues.append({
-                    'publication_date': {
+                    'editions.publication_date': {
                         'order': sortDir,
                         'nested': {'path': 'editions'}
                     }
