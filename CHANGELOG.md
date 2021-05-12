@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.5.8
+### Fixed
+- Handling of records without titles in clustering process
+
 ## 2021-05-11 -- v0.5.7
 ### Added
 - MET Publication Ingest Process
