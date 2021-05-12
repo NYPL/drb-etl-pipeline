@@ -19,8 +19,7 @@ class APIUtils():
         outPairs = []
 
         for pairStr in pairs.get(param, []):
-            for pair in pairStr.split(','):
-
+            for pair in re.split(r',(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)', pairStr):
                 pairElements = pair.split(':')
 
                 if len(pairElements) == 1 or pairElements[0] not in cls.QUERY_TERMS:

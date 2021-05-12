@@ -119,6 +119,13 @@ class TestAPIUtils:
         assert testPairs[0] == ('title', 'value')
         assert testPairs[1] == ('test', 'bareValue')
 
+    def test_extractParamPairs_comma_delimited_quotes(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:value,author:"Test, Author",other']})
+
+        assert testPairs[0] == ('title', 'value')
+        assert testPairs[1] == ('author', '"Test, Author"')
+        assert testPairs[2] == ('test', 'other')
+
     def test_extractParamPairs_semantic_semicolon(self):
         testPairs = APIUtils.extractParamPairs('test', {'test': ['title:A Book: A Title']})
 

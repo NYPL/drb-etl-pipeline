@@ -3,6 +3,7 @@
 ## unreleased -- v0.5.8
 ### Fixed
 - Handling of records without titles in clustering process
+- Don't split queries on commas within quotation marks
 
 ## 2021-05-11 -- v0.5.7
 ### Added
