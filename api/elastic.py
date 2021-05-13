@@ -26,6 +26,8 @@ class ElasticClient():
 
     def __init__(self, esClient):
         self.client = esClient
+        
+        self.dateSort = None
     
     def createSearch(self):
         return Search(using=self.client, index=os.environ['ELASTICSEARCH_INDEX'])
@@ -60,9 +62,10 @@ class ElasticClient():
 
         coreSearch = search.query(Q('bool', must=searchClauses))[startPos:endPos]
 
-        coreSearch = ElasticClient.addFilterClausesAndAggregations(coreSearch, params['filter'], 3)
+        coreSearch = self.addSortClause(coreSearch, params['sort'])
 
-        coreSearch = ElasticClient.addSortClause(coreSearch, params['sort'])
+        coreSearch = self.addFilterClausesAndAggregations(coreSearch, params['filter'], 3)
+
 
         return coreSearch.execute()
 
@@ -132,8 +135,7 @@ class ElasticClient():
         endPos = startPos + perPage
         return startPos, endPos
 
-    @staticmethod
-    def addSortClause(query, sortParams):
+    def addSortClause(self, query, sortParams):
         sortValues = []
         for sort, direction in sortParams:
             sortDir = direction or 'ASC'
@@ -151,19 +153,20 @@ class ElasticClient():
                     }
                 })
             elif sort == 'date':
-                sortValues.append({
+                self.dateSort = {
                     'editions.publication_date': {
                         'order': sortDir,
                         'nested': {'path': 'editions'}
                     }
-                })
+                }
+
+                sortValues.append(self.dateSort)
 
         sortValues.append({'uuid': 'asc'})
         
         return query.sort(*sortValues)
     
-    @classmethod
-    def addFilterClausesAndAggregations(cls, query, filterParams, innerHits):
+    def addFilterClausesAndAggregations(self, query, filterParams, innerHits):
         dateFilters = list(filter(lambda x: 'year' in x[0].lower(), filterParams))
         languageFilters = list(filter(lambda x: x[0] == 'language', filterParams))
         formatFilters = list(filter(lambda x: x[0] == 'format', filterParams))
@@ -196,7 +199,7 @@ class ElasticClient():
         appliedFilters = list(filter(None, [dateFilter, formatFilter, displayFilter]))
         aggregationFilters = list(filter(None, [dateAggregation, formatAggregation, displayAggregation]))
 
-        query = ElasticClient.applyFilters(query, languageFilters, appliedFilters, size=innerHits)
+        query = self.applyFilters(query, languageFilters, appliedFilters, size=innerHits)
         ElasticClient.applyAggregations(query, aggregationFilters)
 
         return query
@@ -212,23 +215,27 @@ class ElasticClient():
 
         return filterRange
 
-    @staticmethod
-    def applyFilters(query, languageFilters, appliedFilters, size=100):
+    def applyFilters(self, query, languageFilters, appliedFilters, size=100):
+        innerHitsClause = {'size': size}
+
+        if self.dateSort:
+            innerHitsClause['sort'] = self.dateSort
+
         if len(languageFilters) > 0:
             filters = []
             for i, language in enumerate(languageFilters):
                 langFilter = Q('nested', path='editions.languages', query=Q('term', editions__languages__language=language[1]))
                 filterSet = appliedFilters + [langFilter]
                 if i == 0:
-                    filters.append(Q('nested', path='editions', inner_hits={'size': size}, query=Q('bool', must=filterSet)))
+                    filters.append(Q('nested', path='editions', inner_hits=innerHitsClause, query=Q('bool', must=filterSet)))
                 else:
                     filters.append(Q('nested', path='editions', query=Q('bool', must=filterSet)))
             
             query = query.query('bool', must=filters)
         elif len(appliedFilters) > 0:
-            query = query.query('nested', path='editions', inner_hits={'size': size}, query=Q('bool', must=appliedFilters))
+            query = query.query('nested', path='editions', inner_hits=innerHitsClause, query=Q('bool', must=appliedFilters))
         else:
-            query = query.query('nested', path='editions', inner_hits={'size': size}, query=Q('match_all'))
+            query = query.query('nested', path='editions', inner_hits=innerHitsClause, query=Q('match_all'))
 
         return query
 
