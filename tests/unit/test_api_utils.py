@@ -136,6 +136,17 @@ class TestAPIUtils:
 
         assert testPairs[0] == ('test', 'A Book: A Title')
 
+    def test_extractParamPairs_dangling_quotation(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['"A Title']})
+
+        assert testPairs[0] == ('test', 'A Title')
+
+    def test_extractParamPairs_dangling_quotation_multiple(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['"A Title",keyword:"other']})
+
+        assert testPairs[0] == ('test', '"A Title"')
+        assert testPairs[1] == ('keyword', 'other')
+
     def test_formatAggregationResult(self, testAggregationResp):
         testAggregations = APIUtils.formatAggregationResult(testAggregationResp)
 
