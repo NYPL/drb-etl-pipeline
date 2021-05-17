@@ -214,6 +214,20 @@ class TestAPIUtils:
         assert len(testWorkDict['editions']) == 0
         assert testWorkDict['edition_count'] == 1
 
+    def test_formatWork_ordered_editions(self, testWork, mocker):
+        testWork.editions = [mocker.MagicMock(id=1), mocker.MagicMock(id=2)]
+
+        mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
+        mockFormatEdition.side_effect = [
+            {'edition_id': 'ed1', 'items': ['it1']},
+            {'edition_id': 'ed2', 'items': ['it2']}
+        ]
+
+        testWorkDict = APIUtils.formatWork(testWork, [2, 1], True)
+
+        assert testWorkDict['editions'][0]['edition_id'] == 'ed2'
+        assert testWorkDict['editions'][1]['edition_id'] == 'ed1'
+
     def test_formatEditionOputput(self, mocker):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
         mockFormatEdition.return_value = 'testEdition'
