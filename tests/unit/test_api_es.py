@@ -24,7 +24,8 @@ class TestElasticClient:
     @pytest.fixture
     def mockSearch(self, mocker):
         mockSearch = mocker.MagicMock(name='mockSearch')
-        mockSearch.query.return_value = [mockSearch]
+        mockSearch.query.return_value = mockSearch
+        mockSearch.__getitem__.return_value = mockSearch
         mockSearch.execute.return_value = 'searchResult'
 
         return mockSearch
@@ -39,8 +40,9 @@ class TestElasticClient:
             authorQuery=mocker.DEFAULT,
             subjectQuery=mocker.DEFAULT,
             authorityQuery=mocker.DEFAULT,
-            addFilterClausesAndAggregations=mocker.DEFAULT,
+            createFilterClausesAndAggregations=mocker.DEFAULT,
             addSortClause=mocker.DEFAULT,
+            addFiltersAndAggregations=mocker.DEFAULT,
             escapeSearchQuery=mocker.DEFAULT
         )
 
@@ -60,7 +62,7 @@ class TestElasticClient:
         searchMocks['titleQuery'].return_value = 'titleQuery'
         searchMocks['authorQuery'].return_value = 'authorQuery'
         searchMocks['subjectQuery'].return_value = 'subjectQuery'
-        searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
+        searchMocks['createFilterClausesAndAggregations'].return_value = mockSearch
         searchMocks['addSortClause'].return_value = mockSearch
 
         mockQuery = mocker.patch('api.elastic.Q')
@@ -87,8 +89,9 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
-        searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
+        searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
+        searchMocks['addSortClause'].assert_called_once_with(['sort'])
+        searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
 
         mockSearch.execute.assert_called_once()
 
@@ -97,7 +100,7 @@ class TestElasticClient:
         searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['titleQuery'].return_value = 'titleQuery'
-        searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
+        searchMocks['createFilterClausesAndAggregations'].return_value = mockSearch
         searchMocks['addSortClause'].return_value = mockSearch
 
         mockQuery = mocker.patch('api.elastic.Q')
@@ -118,17 +121,18 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
-        searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
+        searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
+        searchMocks['addSortClause'].assert_called_once_with(['sort'])
+        searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
 
-        mockSearch.execute.assert_called_once
+        mockSearch.execute.assert_called_once()
 
     def test_searchQuery_author_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
         searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['authorQuery'].return_value = 'authorQuery'
-        searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
+        searchMocks['createFilterClausesAndAggregations'].return_value = mockSearch
         searchMocks['addSortClause'].return_value = mockSearch
 
         mockQuery = mocker.patch('api.elastic.Q')
@@ -149,17 +153,18 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
-        searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
+        searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
+        searchMocks['addSortClause'].assert_called_once_with(['sort'])
+        searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
 
-        mockSearch.execute.assert_called_once
+        mockSearch.execute.assert_called_once()
 
     def test_searchQuery_subject_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
         searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['subjectQuery'].return_value = 'subjectQuery'
-        searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
+        searchMocks['createFilterClausesAndAggregations'].return_value = mockSearch
         searchMocks['addSortClause'].return_value = mockSearch
 
         mockQuery = mocker.patch('api.elastic.Q')
@@ -180,17 +185,18 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
-        searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
+        searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
+        searchMocks['addSortClause'].assert_called_once_with(['sort'])
+        searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
 
-        mockSearch.execute.assert_called_once
+        mockSearch.execute.assert_called_once()
 
     def test_searchQuery_authority_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
         searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['authorityQuery'].return_value = 'authorityQuery'
-        searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
+        searchMocks['createFilterClausesAndAggregations'].return_value = mockSearch
         searchMocks['addSortClause'].return_value = mockSearch
 
         mockQuery = mocker.patch('api.elastic.Q')
@@ -211,16 +217,17 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
-        searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
+        searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
+        searchMocks['addSortClause'].assert_called_once_with(['sort'])
+        searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
 
-        mockSearch.execute.assert_called_once
+        mockSearch.execute.assert_called_once()
 
     def test_searchQuery_generic_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
         searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['getFromSize'].return_value = (0, 10)
-        searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
+        searchMocks['createFilterClausesAndAggregations'].return_value = mockSearch
         searchMocks['addSortClause'].return_value = mockSearch
 
         mockQuery = mocker.patch('api.elastic.Q')
@@ -244,10 +251,11 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
-        searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
+        searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
+        searchMocks['addSortClause'].assert_called_once_with(['sort'])
+        searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
 
-        mockSearch.execute.assert_called_once
+        mockSearch.execute.assert_called_once()
 
     def test_searchQuery_multi_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
@@ -255,7 +263,7 @@ class TestElasticClient:
         searchMocks['getFromSize'].return_value = (0, 10)
         searchMocks['authorityQuery'].return_value = 'authorityQuery'
         searchMocks['titleQuery'].return_value = 'titleQuery'
-        searchMocks['addFilterClausesAndAggregations'].return_value = mockSearch
+        searchMocks['createFilterClausesAndAggregations'].return_value = mockSearch
         searchMocks['addSortClause'].return_value = mockSearch
 
         mockQuery = mocker.patch('api.elastic.Q')
@@ -278,8 +286,11 @@ class TestElasticClient:
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
-        searchMocks['addFilterClausesAndAggregations'].assert_called_once_with([mockSearch], ['filter'], 3)
-        searchMocks['addSortClause'].assert_called_once_with(mockSearch, ['sort'])
+        searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
+        searchMocks['addSortClause'].assert_called_once_with(['sort'])
+        searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
+        
+        mockSearch.execute.assert_called_once()
 
     def test_escapeSearchQuery_changed(self):
         assert ElasticClient.escapeSearchQuery('[test]+a:thing!') == '\[test\]\+a\:thing\!'
@@ -339,97 +350,132 @@ class TestElasticClient:
         assert startPosition == 0
         assert endPosition == 20
     
-    def test_addSortClause_title_w_direction(self, mocker):
+    def test_addSortClause_title_w_direction(self, testInstance, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.sort.return_value = 'sortQuery'
 
-        sortResult = ElasticClient.addSortClause(mockQuery, [('title', 'DESC')])
+        testInstance.query = mockQuery
+        testInstance.addSortClause([('title', 'DESC')])
 
-        assert sortResult == 'sortQuery'
+        assert testInstance.query == 'sortQuery'
         mockQuery.sort.assert_called_once_with(
             {'sort_title': {'order': 'DESC'}}, {'uuid': 'asc'}
         )
     
-    def test_addSortClause_title_wo_direction(self, mocker):
+    def test_addSortClause_title_wo_direction(self, testInstance, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.sort.return_value = 'sortQuery'
 
-        sortResult = ElasticClient.addSortClause(mockQuery, [('title', None)])
+        testInstance.query = mockQuery
+        testInstance.addSortClause([('title', None)])
 
-        assert sortResult == 'sortQuery'
+        assert testInstance.query == 'sortQuery'
         mockQuery.sort.assert_called_once_with(
             {'sort_title': {'order': 'ASC'}}, {'uuid': 'asc'}
 
         )
     
-    def test_addSortClause_author(self, mocker):
+    def test_addSortClause_author(self, testInstance, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.sort.return_value = 'sortQuery'
 
-        sortResult = ElasticClient.addSortClause(mockQuery, [('author', 'ASC')])
+        testInstance.query = mockQuery
+        testInstance.addSortClause([('author', 'ASC')])
 
-        assert sortResult == 'sortQuery'
+        assert testInstance.query == 'sortQuery'
         mockQuery.sort.assert_called_once_with(
             {'agents.sort_name': {'order': 'ASC', 'nested': {'path': 'agents', 'filter': {'terms': {'agents.roles': ['author']}}, 'max_children': 1}}},
             {'uuid': 'asc'}
         )
     
-    def test_addSortClause_date(self, mocker):
+    def test_addSortClause_date_w_filters(self, testInstance, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.sort.return_value = 'sortQuery'
 
-        sortResult = ElasticClient.addSortClause(mockQuery, [('date', 'DESC')])
+        mockFilter = mocker.MagicMock()
+        mockFilter.to_dict.return_value = 'testFilter'
 
-        assert sortResult == 'sortQuery'
+        testInstance.appliedFilters = [mockFilter]
+        testInstance.languageFilters = []
+
+        testInstance.query = mockQuery
+        testInstance.addSortClause([('date', 'DESC')])
+
+        assert testInstance.query == 'sortQuery'
         mockQuery.sort.assert_called_once_with(
-            {'editions.publication_date': {'order': 'DESC', 'nested': {'path': 'editions'}}},
+            {
+                'editions.publication_date': {
+                    'order': 'DESC',
+                    'nested': {
+                        'path': 'editions',
+                        'filter': {'bool': {'must': ['testFilter']}}
+                    }
+                }
+            },
             {'uuid': 'asc'}
         )
     
-    def test_addSortClause_root_sort_only(self, mocker):
+    def test_addSortClause_date_w_filters_and_language(self, testInstance, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.sort.return_value = 'sortQuery'
 
-        sortResult = ElasticClient.addSortClause(mockQuery, [])
+        mockFilter = mocker.MagicMock()
+        mockFilter.to_dict.side_effect = ['testFilter', 'testLangFilter']
 
-        assert sortResult == 'sortQuery'
+        testInstance.appliedFilters = [mockFilter]
+        testInstance.languageFilters = [mockFilter]
+
+        testInstance.query = mockQuery
+        testInstance.addSortClause([('date', 'DESC')])
+
+        assert testInstance.query == 'sortQuery'
+        mockQuery.sort.assert_called_once_with(
+            {
+                'editions.publication_date': {
+                    'order': 'DESC',
+                    'nested': {
+                        'path': 'editions',
+                        'filter': {'bool': {'must': ['testFilter', 'testLangFilter']}}
+                    }
+                }
+            },
+            {'uuid': 'asc'}
+        )
+    
+    def test_addSortClause_root_sort_only(self, testInstance, mocker):
+        mockQuery = mocker.MagicMock()
+        mockQuery.sort.return_value = 'sortQuery'
+
+        testInstance.query = mockQuery
+        testInstance.addSortClause([])
+
+        assert testInstance.query == 'sortQuery'
         mockQuery.sort.assert_called_once_with({'uuid': 'asc'})
 
-    def test_addFilterClausesAndAggregations_default(self, mocker):
+    def test_createFilterClausesAndAggregations_default(self, testInstance, mocker):
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.return_value = 'formatFilter'
         mockAgg = mocker.patch('api.elastic.A')
         mockAgg.return_value = 'formatAggregation'
 
-        mockSearch = mocker.MagicMock()
-
-        mockApply = mocker.patch.object(ElasticClient, 'applyFilters')
-        mockApply.return_value = mockSearch
-        mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
-
-        ElasticClient.addFilterClausesAndAggregations(mockSearch, [], 1)
+        testInstance.createFilterClausesAndAggregations([])
 
         mockQuery.assert_called_once_with('exists', field='editions.formats')
         mockAgg.assert_called_once_with('filter', exists={'field': 'editions.formats'})
 
-        mockApply.assert_called_once_with(mockSearch, [], ['formatFilter'], size=1)
-        mockApplyAggs.assert_called_once_with(mockSearch, ['formatAggregation'])
+        assert testInstance.appliedFilters == ['formatFilter']
+        assert testInstance.aggregationFilters == ['formatAggregation']
 
-    def test_addFilterClausesAndAggregations_w_date(self, mocker):
+    def test_createFilterClausesAndAggregations_w_date(self, testInstance, mocker):
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.side_effect = ['dateFilter', 'formatFilter']
         mockAgg = mocker.patch('api.elastic.A')
         mockAgg.side_effect = ['dateAggregation', 'formatAggregation']
 
-        mockSearch = mocker.MagicMock()
-
         mockGenerateRange = mocker.patch.object(ElasticClient, 'generateDateRange')
         mockGenerateRange.return_value = 'testRange'
-        mockApply = mocker.patch.object(ElasticClient, 'applyFilters')
-        mockApply.return_value = mockSearch
-        mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
 
-        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('startYear', 1900)], 1)
+        testInstance.createFilterClausesAndAggregations([('startYear', 1900)])
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
@@ -440,22 +486,16 @@ class TestElasticClient:
             mocker.call('filter', range={'editions.publication_date': 'testRange'})
         ])
 
-        mockApply.assert_called_once_with(mockSearch, [], ['formatFilter', 'dateFilter'], size=1)
-        mockApplyAggs.assert_called_once_with(mockSearch, ['formatAggregation', 'dateAggregation'])
+        assert testInstance.appliedFilters == ['formatFilter', 'dateFilter']
+        assert testInstance.aggregationFilters == ['formatAggregation', 'dateAggregation']
 
-    def test_addFilterClausesAndAggregations_w_format(self, mocker):
+    def test_createFilterClausesAndAggregations_w_format(self, testInstance, mocker):
         mockQuery = mocker.patch('api.elastic.Q')
         mockQuery.side_effect = ['displayFilter', 'formatFilter']
         mockAgg = mocker.patch('api.elastic.A')
         mockAgg.side_effect = ['displayAggregation', 'formatAggregation']
 
-        mockSearch = mocker.MagicMock()
-
-        mockApply = mocker.patch.object(ElasticClient, 'applyFilters')
-        mockApply.return_value = mockSearch
-        mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
-
-        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('format', 'pdf'), ('format', 'html_edd')], 1)
+        testInstance.createFilterClausesAndAggregations([('format', 'pdf'), ('format', 'html_edd')])
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
@@ -466,48 +506,39 @@ class TestElasticClient:
             mocker.call('filter', terms={'editions.formats': ['application/pdf', 'application/html+edd']})
         ])
 
-        mockApply.assert_called_once_with(mockSearch, [], ['formatFilter', 'displayFilter'], size=1)
-        mockApplyAggs.assert_called_once_with(mockSearch, ['formatAggregation', 'displayAggregation'])
+        assert testInstance.appliedFilters == ['formatFilter', 'displayFilter']
+        assert testInstance.aggregationFilters == ['formatAggregation', 'displayAggregation']
 
-    def test_addFilterClausesAndAggregations_w_format_error(self):
+    def test_createFilterClausesAndAggregations_w_format_error(self, testInstance):
         with pytest.raises(ElasticClientError):
-            ElasticClient.addFilterClausesAndAggregations('testQuery', [('format', 'test')], 1)
+            testInstance.createFilterClausesAndAggregations([('format', 'test')])
 
-    def test_addFilterClausesAndAggregations_w_language(self, mocker):
+    def test_createFilterClausesAndAggregations_w_language(self, testInstance, mocker):
         mockQuery = mocker.patch('api.elastic.Q')
-        mockQuery.side_effect = ['displayFilter']
+        mockQuery.side_effect = ['displayFilter', 'innerLang', 'languageFilter']
         mockAgg = mocker.patch('api.elastic.A')
         mockAgg.side_effect = ['displayAggregation']
 
-        mockSearch = mocker.MagicMock()
-
-        mockApply = mocker.patch.object(ElasticClient, 'applyFilters')
-        mockApply.return_value = mockSearch
-        mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
-
-        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('language', 'Test1')], 1)
+        testInstance.createFilterClausesAndAggregations([('language', 'Test1')])
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
+            mocker.call('term', editions__languages__language='Test1'),
+            mocker.call('nested', path='editions.languages', query='innerLang')
         ])
         mockAgg.assert_has_calls([
             mocker.call('filter', exists={'field': 'editions.formats'}),
         ])
 
-        mockApply.assert_called_once_with(mockSearch, [('language', 'Test1')], ['displayFilter'], size=1)
-        mockApplyAggs.assert_called_once_with(mockSearch, ['displayAggregation'])
+        assert testInstance.languageFilters == ['languageFilter']
+        assert testInstance.appliedFilters == ['displayFilter']
+        assert testInstance.aggregationFilters == ['displayAggregation']
 
-    def test_addFilterClausesAndAggregations_no_filters(self, mocker):
+    def test_createFilterClausesAndAggregations_no_filters(self, testInstance, mocker):
         mockQuery = mocker.patch('api.elastic.Q')
         mockAgg = mocker.patch('api.elastic.A')
 
-        mockSearch = mocker.MagicMock()
-
-        mockApply = mocker.patch.object(ElasticClient, 'applyFilters')
-        mockApply.return_value = mockSearch
-        mockApplyAggs = mocker.patch.object(ElasticClient, 'applyAggregations')
-
-        ElasticClient.addFilterClausesAndAggregations(mockSearch, [('showAll', 'true')], 1)
+        testInstance.createFilterClausesAndAggregations([('showAll', 'true')])
 
         mockQuery.assert_has_calls([
             mocker.call('exists', field='editions.formats'),
@@ -516,8 +547,17 @@ class TestElasticClient:
             mocker.call('filter', exists={'field': 'editions.formats'}),
         ])
 
-        mockApply.assert_called_once_with(mockSearch, [], [], size=1)
-        mockApplyAggs.assert_called_once_with(mockSearch, [])
+        assert testInstance.appliedFilters == []
+        assert testInstance.aggregationFilters == []
+
+    def test_addFiltersAndAggregations(self, testInstance, mocker):
+        mockFilters = mocker.patch.object(ElasticClient, 'applyFilters')
+        mockAggregations = mocker.patch.object(ElasticClient, 'applyAggregations')
+
+        testInstance.addFiltersAndAggregations(1)
+
+        mockFilters.assert_called_once_with(size=1)
+        mockAggregations.assert_called_once()
 
     def test_geneateDateRange_start_end(self):
         testRange = ElasticClient.generateDateRange([('startYear', 1900), ('endYear', 2000)])
@@ -537,78 +577,88 @@ class TestElasticClient:
         assert testRange['lte'] == 2000
         assert 'gte' not in testRange.keys()
 
-    def test_applyFilters_no_language_filters(self, mocker):
-        mockQuery = mocker.MagicMock()
-        mockQuery.query.return_value = mockQuery
+    def test_applyFilters_no_language_filters(self, testInstance, mocker):
         mockClause = mocker.patch('api.elastic.Q')
         mockClause.return_value = 'filterQuery'
 
-        testQuery = ElasticClient.applyFilters(mockQuery, [], ['filter1', 'filter2'])
+        mockQuery = mocker.MagicMock()
+        mockQuery.query.return_value = mockQuery
+        testInstance.query = mockQuery
+        testInstance.dateSort = None
+        testInstance.appliedFilters = ['filter1', 'filter2']
+        testInstance.languageFilters = []
 
-        assert testQuery == mockQuery
+        testInstance.applyFilters()
+
         mockClause.assert_called_once_with('bool', must=['filter1', 'filter2'])
-        mockQuery.query.assert_called_once_with(
+        testInstance.query.query.assert_called_once_with(
             'nested', path='editions', inner_hits={'size': 100}, query='filterQuery'
         )
 
-    def test_applyFilters_language_filter_only(self, mocker):
-        mockQuery = mocker.MagicMock()
-        mockQuery.query.return_value = mockQuery
+    def test_applyFilters_language_filter_only(self, testInstance, mocker):
         mockClause = mocker.patch('api.elastic.Q')
         mockClause.side_effect = [
-            'Lang1Q', 'Lang1Bool', 'Lang1Filter', 'Lang1Nested',
-            'Lang2Q', 'Lang2Bool', 'Lang2Filter', 'Lang2Nested'
+            'Lang1Filter', 'Lang1Nested', 'Lang2Filter', 'Lang2Nested'
         ]
 
-        testQuery = ElasticClient.applyFilters(mockQuery, [('language', 'Test1'), ('langauge', 'Test2')], [])
+        mockQuery = mocker.MagicMock()
+        mockQuery.query.return_value = mockQuery
+        testInstance.query = mockQuery
+        testInstance.dateSort = None
+        testInstance.appliedFilters = []
+        testInstance.languageFilters = ['Lang1', 'Lang2']
 
-        assert testQuery == mockQuery
+        testInstance.applyFilters()
+
         mockClause.assert_has_calls([
-            mocker.call('term', editions__languages__language='Test1'),
-            mocker.call('nested', path='editions.languages', query='Lang1Q'),
-            mocker.call('bool', must=['Lang1Bool']),
+            mocker.call('bool', must=['Lang1']),
             mocker.call('nested', path='editions', inner_hits={'size': 100}, query='Lang1Filter'),
-            mocker.call('term', editions__languages__language='Test2'),
-            mocker.call('nested', path='editions.languages', query='Lang2Q'),
-            mocker.call('bool', must=['Lang2Bool']),
+            mocker.call('bool', must=['Lang2']),
             mocker.call('nested', path='editions', query='Lang2Filter')
         ])
         mockQuery.query.assert_called_once_with('bool', must=['Lang1Nested', 'Lang2Nested'])
 
-    def test_applyFilters_language_and_other_filters(self, mocker):
+    def test_applyFilters_language_and_other_filters(self, testInstance, mocker):
+        mockClause = mocker.patch('api.elastic.Q')
+        mockClause.side_effect = ['Lang1Filter', 'Lang1Nested']
+
         mockQuery = mocker.MagicMock()
         mockQuery.query.return_value = mockQuery
-        mockClause = mocker.patch('api.elastic.Q')
-        mockClause.side_effect = [
-            'Lang1Q', 'Lang1Bool', 'Lang1Filter', 'Lang1Nested',
-        ]
+        testInstance.query = mockQuery
+        testInstance.dateSort = None
+        testInstance.appliedFilters = ['formatFilter']
+        testInstance.languageFilters = ['Lang1']
 
-        testQuery = ElasticClient.applyFilters(mockQuery, [('language', 'Test1'), ], ['formatFilter'])
+        testInstance.applyFilters()
 
-        assert testQuery == mockQuery
         mockClause.assert_has_calls([
-            mocker.call('term', editions__languages__language='Test1'),
-            mocker.call('nested', path='editions.languages', query='Lang1Q'),
-            mocker.call('bool', must=['formatFilter', 'Lang1Bool']),
+            mocker.call('bool', must=['formatFilter', 'Lang1']),
             mocker.call('nested', path='editions', inner_hits={'size': 100}, query='Lang1Filter'),
         ])
         mockQuery.query.assert_called_once_with('bool', must=['Lang1Nested'])
 
-    def test_applyFilters_no_filters(self, mocker):
-        mockQuery = mocker.MagicMock()
-        mockQuery.query.return_value = mockQuery
+    def test_applyFilters_no_filters_date_ort(self, testInstance, mocker):
         mockClause = mocker.patch('api.elastic.Q')
         mockClause.return_value = 'filterQuery'
 
-        testQuery = ElasticClient.applyFilters(mockQuery, [], [])
+        mockQuery = mocker.MagicMock()
+        mockQuery.query.return_value = mockQuery
+        testInstance.query = mockQuery
+        testInstance.dateSort = {'editions.publication_date': {'test': 'value', 'nested': 'toDelete'}}
+        testInstance.appliedFilters = []
+        testInstance.languageFilters = []
 
-        assert testQuery == mockQuery
+        testInstance.applyFilters()
+
         mockClause.assert_called_once_with('match_all')
         mockQuery.query.assert_called_once_with(
-            'nested', path='editions', inner_hits={'size': 100}, query='filterQuery'
+            'nested',
+            path='editions',
+            inner_hits={'size': 100, 'sort': {'editions.publication_date': {'test': 'value'}}},
+            query='filterQuery'
         )
 
-    def test_applyAggregations(self, mocker):
+    def test_applyAggregations(self, testInstance, mocker):
         mockAgg = mocker.patch('api.elastic.A')
         mockAgg.return_value = 'baseAgg'
         mockRoot = mocker.MagicMock()
@@ -616,7 +666,9 @@ class TestElasticClient:
         mockQuery.aggs.bucket.return_value = mockRoot
         mockRoot.bucket.return_value = mockRoot
 
-        ElasticClient.applyAggregations(mockQuery, ['testAgg'])
+        testInstance.query = mockQuery
+        testInstance.appliedAggregations = ['testAgg']
+        testInstance.applyAggregations()
 
         mockAgg.assert_called_once_with('nested', path='editions')
         mockQuery.aggs.bucket.assert_called_once_with('editions', 'baseAgg')
