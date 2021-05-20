@@ -10,6 +10,15 @@ class APIUtils():
         'endYear', 'language', 'format', 'showAll'
     ]
 
+    FORMAT_CROSSWALK = {
+        'epub_zip': 'application/epub+zip',
+        'epub_xml': 'application/epub+xml',
+        'html': 'text/html',
+        'html_edd': 'application/html+edd',
+        'pdf': 'application/pdf',
+        'webpub_json': 'application/webpub+json'
+    }
+
     @staticmethod
     def normalizeQueryParams(params):
         paramDict = params.to_dict(flat=False)
@@ -66,7 +75,7 @@ class APIUtils():
         }
 
     @classmethod
-    def formatWorkOutput(cls, works, identifiers, showAll=True):
+    def formatWorkOutput(cls, works, identifiers, showAll=True, formats=None):
         if isinstance(works, list):
             outWorks = []
             workDict = {str(work.uuid): work for work in works}
@@ -76,14 +85,14 @@ class APIUtils():
 
                 if work is None: continue
 
-                outWorks.append(cls.formatWork(work, editionIds, showAll))
+                outWorks.append(cls.formatWork(work, editionIds, showAll, formats=formats))
             
             return outWorks
         else:
             return cls.formatWork(works, None, showAll)
 
     @classmethod
-    def formatWork(cls, work, editionIds, showAll):
+    def formatWork(cls, work, editionIds, showAll, formats=None):
         workDict = dict(work)
         workDict['edition_count'] = len(work.editions)
 
@@ -93,7 +102,7 @@ class APIUtils():
             if editionIds and edition.id not in editionIds:
                 continue
             
-            editionDict = cls.formatEdition(edition)
+            editionDict = cls.formatEdition(edition, formats=formats)
 
             if showAll is True or (showAll is False and len(editionDict['items']) > 0):
                 orderedEds[edition.id] = editionDict
@@ -107,7 +116,7 @@ class APIUtils():
         return cls.formatEdition(edition, records)
 
     @classmethod
-    def formatEdition(cls, edition, records=None):
+    def formatEdition(cls, edition, records=None, formats=None):
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
         editionDict['work_uuid'] = edition.work.uuid
@@ -123,10 +132,11 @@ class APIUtils():
             itemDict['item_id'] = item.id
             itemDict['location'] = item.physical_location['name'] if item.physical_location else None
 
-            itemDict['links'] = [
+            itemDict['links'] = list(filter(None, [
                 {'link_id': l.id, 'mediaType': l.media_type, 'url': l.url}
+                if not formats or l.media_type in formats else None
                 for l in item.links
-            ]
+            ]))
 
             itemDict['rights'] = [
                 {'source': r.source, 'license': r.license, 'rightsStatement': r.rights_statement}

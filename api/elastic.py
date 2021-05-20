@@ -1,8 +1,10 @@
 from copy import deepcopy
+from elasticsearch_dsl import Search, Q, A
 import os
 import re
 
-from elasticsearch_dsl import Search, Q, A
+from .utils import APIUtils
+
 
 class ElasticClient():
     ROLE_BLOCKLIST = ['arl', 'binder', 'binding designer', 'book designer',
@@ -15,15 +17,6 @@ class ElasticClient():
         'publishing director', 'retager', 'secretary', 'sponsor', 'stereotyper',
         'thesis advisor', 'transcriber', 'typographer', 'woodcutter',
     ]
-
-    FORMAT_CROSSWALK = {
-        'epub_zip': 'application/epub+zip',
-        'epub_xml': 'application/epub+xml',
-        'html': 'text/html',
-        'html_edd': 'application/html+edd',
-        'pdf': 'application/pdf',
-        'webpub_json': 'application/webpub+json'
-    }
 
     def __init__(self, esClient):
         self.client = esClient
@@ -207,7 +200,7 @@ class ElasticClient():
             formats = []
             for format in formatFilters:
                 try:
-                    formats.append(self.FORMAT_CROSSWALK[format[1]])
+                    formats.append(APIUtils.FORMAT_CROSSWALK[format[1]])
                 except KeyError:
                     raise ElasticClientError('Invalid format filter {} received'.format(format[1]))
 

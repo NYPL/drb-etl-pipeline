@@ -41,6 +41,11 @@ def standardQuery():
         for r in searchResult.hits
     ]
 
+    filteredFormats = [
+        APIUtils.FORMAT_CROSSWALK[f[1]]
+        for f in list(filter(lambda x: x[0] == 'format', terms['filter']))
+    ]
+
     logger.info('Executing DB Query for {} editions'.format(len(resultIds)))
 
     works = dbClient.fetchSearchedWorks(resultIds)
@@ -49,7 +54,7 @@ def standardQuery():
 
     dataBlock = {
         'totalWorks': searchResult.hits.total,
-        'works': APIUtils.formatWorkOutput(works, resultIds),
+        'works': APIUtils.formatWorkOutput(works, resultIds, formats=filteredFormats),
         'paging': paging,
         'facets': facets
     }
