@@ -42,8 +42,8 @@ def standardQuery():
     ]
 
     filteredFormats = [
-        APIUtils.FORMAT_CROSSWALK[f[1]]
-        for f in list(filter(lambda x: x[0] == 'format', terms['filter']))
+        mediaType for f in list(filter(lambda x: x[0] == 'format', terms['filter']))
+        for mediaType in APIUtils.FORMAT_CROSSWALK[f[1]]
     ]
 
     logger.info('Executing DB Query for {} editions'.format(len(resultIds)))

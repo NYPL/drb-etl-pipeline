@@ -290,6 +290,7 @@ class TestAPIUtils:
 
         formattedEdition = APIUtils.formatEdition(testEdition, formats=['application/test'])
 
+        assert len(formattedEdition['items']) == 1
         assert len(formattedEdition['items'][0]['links']) == 1
         assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
 

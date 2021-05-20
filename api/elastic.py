@@ -200,7 +200,7 @@ class ElasticClient():
             formats = []
             for format in formatFilters:
                 try:
-                    formats.append(APIUtils.FORMAT_CROSSWALK[format[1]])
+                    formats.extend(APIUtils.FORMAT_CROSSWALK[format[1]])
                 except KeyError:
                     raise ElasticClientError('Invalid format filter {} received'.format(format[1]))
 

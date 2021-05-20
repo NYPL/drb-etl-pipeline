@@ -11,12 +11,12 @@ class APIUtils():
     ]
 
     FORMAT_CROSSWALK = {
-        'epub_zip': 'application/epub+zip',
-        'epub_xml': 'application/epub+xml',
-        'html': 'text/html',
-        'html_edd': 'application/html+edd',
-        'pdf': 'application/pdf',
-        'webpub_json': 'application/webpub+json'
+        'epub_zip': ['application/epub+zip', 'application/epub+xml'],
+        'epub_xml': ['application/epub+zip', 'application/epub+xml'],
+        'html': ['text/html'],
+        'html_edd': ['application/html+edd'],
+        'pdf': ['application/pdf'],
+        'webpub_json': ['application/webpub+json']
     }
 
     @staticmethod
@@ -142,6 +142,8 @@ class APIUtils():
                 {'source': r.source, 'license': r.license, 'rightsStatement': r.rights_statement}
                 for r in item.rights
             ]
+
+            if len(itemDict['links']) < 1: continue
 
             editionDict['items'].append(itemDict)
 
