@@ -1,3 +1,4 @@
+from copy import deepcopy
 import os
 import re
 
@@ -26,6 +27,15 @@ class ElasticClient():
 
     def __init__(self, esClient):
         self.client = esClient
+        
+        self.query = None
+
+        self.dateSort = None
+
+        self.languageFilters = []
+        self.appliedFilters = []
+
+        self.appliedAggregations = []
     
     def createSearch(self):
         return Search(using=self.client, index=os.environ['ELASTICSEARCH_INDEX'])
@@ -58,13 +68,14 @@ class ElasticClient():
             else:
                 searchClauses.append(Q('match', **{field: escapedQuery}))
 
-        coreSearch = search.query(Q('bool', must=searchClauses))[startPos:endPos]
+        self.query = search.query(Q('bool', must=searchClauses))
 
-        coreSearch = ElasticClient.addFilterClausesAndAggregations(coreSearch, params['filter'], 3)
+        self.createFilterClausesAndAggregations(params['filter'])
 
-        coreSearch = ElasticClient.addSortClause(coreSearch, params['sort'])
+        self.addSortClause(params['sort'])
+        self.addFiltersAndAggregations(3)
 
-        return coreSearch.execute()
+        return self.query[startPos:endPos].execute()
 
     @staticmethod
     def escapeSearchQuery(query):
@@ -132,8 +143,7 @@ class ElasticClient():
         endPos = startPos + perPage
         return startPos, endPos
 
-    @staticmethod
-    def addSortClause(query, sortParams):
+    def addSortClause(self, sortParams):
         sortValues = []
         for sort, direction in sortParams:
             sortDir = direction or 'ASC'
@@ -151,19 +161,28 @@ class ElasticClient():
                     }
                 })
             elif sort == 'date':
-                sortValues.append({
-                    'publication_date': {
+                sortFilters = [f.to_dict() for f in self.appliedFilters]
+
+                if len(self.languageFilters) > 0:
+                    sortFilters.extend([l.to_dict() for l in self.languageFilters])
+
+                self.dateSort = {
+                    'editions.publication_date': {
                         'order': sortDir,
-                        'nested': {'path': 'editions'}
+                        'nested': {
+                            'path': 'editions',
+                            'filter': {'bool': {'must': sortFilters}}
+                        }
                     }
-                })
+                }
+
+                sortValues.append(self.dateSort)
 
         sortValues.append({'uuid': 'asc'})
         
-        return query.sort(*sortValues)
+        self.query = self.query.sort(*sortValues)
     
-    @classmethod
-    def addFilterClausesAndAggregations(cls, query, filterParams, innerHits):
+    def createFilterClausesAndAggregations(self, filterParams):
         dateFilters = list(filter(lambda x: 'year' in x[0].lower(), filterParams))
         languageFilters = list(filter(lambda x: x[0] == 'language', filterParams))
         formatFilters = list(filter(lambda x: x[0] == 'format', filterParams))
@@ -172,6 +191,12 @@ class ElasticClient():
         dateFilter, dateAggregation = (None, None)
         formatFilter, formatAggregation = (None, None)
         displayFilter, displayAggregation = (Q('exists', field='editions.formats'),A('filter', **{'exists': {'field': 'editions.formats'}}))
+
+        if len(languageFilters) > 0:
+            self.languageFilters = [
+                Q('nested', path='editions.languages', query=Q('term', editions__languages__language=language[1]))
+                for language in languageFilters
+            ]
 
         if len(dateFilters) > 0:
             dateRange = ElasticClient.generateDateRange(dateFilters)
@@ -182,7 +207,7 @@ class ElasticClient():
             formats = []
             for format in formatFilters:
                 try:
-                    formats.append(cls.FORMAT_CROSSWALK[format[1]])
+                    formats.append(self.FORMAT_CROSSWALK[format[1]])
                 except KeyError:
                     raise ElasticClientError('Invalid format filter {} received'.format(format[1]))
 
@@ -193,14 +218,13 @@ class ElasticClient():
             displayFilter = None
             displayAggregation = None
         
-        appliedFilters = list(filter(None, [dateFilter, formatFilter, displayFilter]))
-        aggregationFilters = list(filter(None, [dateAggregation, formatAggregation, displayAggregation]))
+        self.appliedFilters = list(filter(None, [dateFilter, formatFilter, displayFilter]))
+        self.aggregationFilters = list(filter(None, [dateAggregation, formatAggregation, displayAggregation]))
 
-        query = ElasticClient.applyFilters(query, languageFilters, appliedFilters, size=innerHits)
-        ElasticClient.applyAggregations(query, aggregationFilters)
+    def addFiltersAndAggregations(self, innerHits):
+        self.applyFilters(size=innerHits)
+        self.applyAggregations()
 
-        return query
-    
     @staticmethod
     def generateDateRange(dateFilters):
         filterRange = {}
@@ -212,32 +236,35 @@ class ElasticClient():
 
         return filterRange
 
-    @staticmethod
-    def applyFilters(query, languageFilters, appliedFilters, size=100):
-        if len(languageFilters) > 0:
+    def applyFilters(self, size=100):
+        innerHitsClause = {'size': size}
+
+        if self.dateSort:
+            innerHitSort = deepcopy(self.dateSort)
+            del innerHitSort['editions.publication_date']['nested']
+
+            innerHitsClause['sort'] = innerHitSort
+
+        if len(self.languageFilters) > 0:
             filters = []
-            for i, language in enumerate(languageFilters):
-                langFilter = Q('nested', path='editions.languages', query=Q('term', editions__languages__language=language[1]))
-                filterSet = appliedFilters + [langFilter]
+            for i, langFilter in enumerate(self.languageFilters):
+                filterSet = self.appliedFilters + [langFilter]
                 if i == 0:
-                    filters.append(Q('nested', path='editions', inner_hits={'size': size}, query=Q('bool', must=filterSet)))
+                    filters.append(Q('nested', path='editions', inner_hits=innerHitsClause, query=Q('bool', must=filterSet)))
                 else:
                     filters.append(Q('nested', path='editions', query=Q('bool', must=filterSet)))
             
-            query = query.query('bool', must=filters)
-        elif len(appliedFilters) > 0:
-            query = query.query('nested', path='editions', inner_hits={'size': size}, query=Q('bool', must=appliedFilters))
+            self.query = self.query.query('bool', must=filters)
+        elif len(self.appliedFilters) > 0:
+            self.query = self.query.query('nested', path='editions', inner_hits=innerHitsClause, query=Q('bool', must=self.appliedFilters))
         else:
-            query = query.query('nested', path='editions', inner_hits={'size': size}, query=Q('match_all'))
+            self.query = self.query.query('nested', path='editions', inner_hits=innerHitsClause, query=Q('match_all'))
 
-        return query
-
-    @staticmethod
-    def applyAggregations(query, aggFilters):
-        rootAgg = query.aggs.bucket('editions', A('nested', path='editions'))
+    def applyAggregations(self):
+        rootAgg = self.query.aggs.bucket('editions', A('nested', path='editions'))
 
         lastAgg = rootAgg
-        for i, agg in enumerate(aggFilters):
+        for i, agg in enumerate(self.appliedAggregations):
             currentAgg = 'edition_filter_{}'.format(i)
             lastAgg = lastAgg.bucket(currentAgg, agg)
         

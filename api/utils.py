@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import datetime
 from flask import jsonify
 from math import ceil
@@ -87,7 +88,8 @@ class APIUtils():
     def formatWork(cls, work, editionIds, showAll):
         workDict = dict(work)
         workDict['edition_count'] = len(work.editions)
-        workDict['editions'] = []
+
+        orderedEds = OrderedDict.fromkeys(editionIds) if editionIds else OrderedDict()
 
         for edition in work.editions:
             if editionIds and edition.id not in editionIds:
@@ -96,7 +98,9 @@ class APIUtils():
             editionDict = cls.formatEdition(edition)
 
             if showAll is True or (showAll is False and len(editionDict['items']) > 0):
-                workDict['editions'].append(editionDict)
+                orderedEds[edition.id] = editionDict
+
+        workDict['editions'] = list(filter(None, [e for _, e in orderedEds.items()]))
 
         return workDict
 
