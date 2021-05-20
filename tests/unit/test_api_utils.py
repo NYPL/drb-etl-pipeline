@@ -76,6 +76,10 @@ class TestAPIUtils:
         return MockDBObject(id='li1', media_type='application/test', url='testURI')
 
     @pytest.fixture
+    def testWebpubLink(self, MockDBObject):
+        return MockDBObject(id='li2', media_type='application/webpub+json', url='testURI')
+
+    @pytest.fixture
     def testRights(self, MockDBObject):
         return MockDBObject(id='ri1', source='test', license='testLicense', rights_statement='testStatement')
 
@@ -84,6 +88,10 @@ class TestAPIUtils:
         return MockDBObject(
             id='it1', links=[testLink], rights=[testRights], physical_location={'name': 'test'}
         )
+
+    @pytest.fixture
+    def testWebpubItem(self, MockDBObject, testWebpubLink):
+        return MockDBObject(id='it2', links=[testWebpubLink], rights=[], physical_location={})
 
     @pytest.fixture
     def testEdition(self, MockDBObject, testItem, mocker):
@@ -255,7 +263,7 @@ class TestAPIUtils:
         assert formattedEdition['items'][0]['rights'][0]['rightsStatement'] == 'testStatement'
         assert formattedEdition.get('instances', None) == None
 
-    def test_formatEdition_w_records(self, testEdition, testItem, mocker):
+    def test_formatEdition_w_records(self, testEdition, mocker):
         mockRecFormat = mocker.patch.object(APIUtils, 'formatRecord')
         mockRecFormat.side_effect = [1, 2]
 
@@ -277,6 +285,15 @@ class TestAPIUtils:
             mocker.call('rec1', {'testURI': testItemDict}),
             mocker.call('rec2', {'testURI': testItemDict})
         ])
+
+    def test_formatEdition_filter_webpubs_temp(self, testEdition, testWebpubItem):
+        testEdition.items.append(testWebpubItem)
+
+        formattedEdition = APIUtils.formatEdition(testEdition)
+
+        assert len(formattedEdition['items']) == 1
+        assert formattedEdition['items'][0]['item_id'] == 'it1'
+        assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
 
     def test_formatRecord(self, testRecord, mocker):
         testLinkItems = {
