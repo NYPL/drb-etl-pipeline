@@ -4,6 +4,7 @@
 ### Fixed
 - Handling of records without titles in clustering process
 - Correct path for sorting on `publication_date` in ElasticSearch
+- Temporarily block the display of webpub manifests in the API response
 
 ## 2021-05-11 -- v0.5.7
 ### Added
