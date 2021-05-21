@@ -4,7 +4,7 @@ LOG_LEVEL: info
 # POSTGRES CONNECTION DETAILS
 # POSTGRES_USER, POSTGRES_PSWD, POSTGRES_ADMIN_USER and POSTGRES_ADMIN_PSWD must be configured in secrets file 
 POSTGRES_HOST: sfr-new-metadata-production-cluster.cluster-cvy7z512hcjg.us-east-1.rds.amazonaws.com
-POSTGRES_NAME: dcdw_qa
+POSTGRES_NAME: dcdw_production
 POSTGRES_PORT: '5432'
 
 # REDIS CONFIGURATION
@@ -18,7 +18,7 @@ ELASTICSEARCH_TIMEOUT: '30'
 
 # RABBITMQ CONFIGURATION
 # RABBIT_USER and RABBIT_PSWD must be configured in secrets file
-RABBIT_HOST: qa.rmq.aws.nypl.org
+RABBIT_HOST: rmq.aws.nypl.org
 RABBIT_PORT: '5672'
 RABBIT_VIRTUAL_HOST: /sfr
 RABBIT_EXCHANGE: sfrIngestExchange
