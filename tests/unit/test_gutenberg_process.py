@@ -174,7 +174,7 @@ class TestGutenbergProcess:
         ])
         assert mockRecord.record.has_part == [
             '1|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/1_images.epub|gutenberg|application/epub+zip|{"download": true}',
-            '1|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/1_images/META-INF/content.xml|gutenberg|application/epub+xml|{"download": false}',
+            '1|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/1_images/META-INF/container.xml|gutenberg|application/epub+xml|{"download": false}',
             '2|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/2_noimages.epub|gutenberg|application/epub+zip|{"download": true}',
         ]
 
