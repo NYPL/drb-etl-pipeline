@@ -128,7 +128,7 @@ class TestGutenbergProcess:
         assert mockManager.resetBatch.call_count == 2
 
     def test_processGutenbergBatch(self, testInstance, mocker):
-        mockGutenbergRec = mocker.MagicMock(name='MockRecord')
+        mockGutenbergRec = mocker.MagicMock(name='MockRecord', record=mocker.MagicMock(source_id=1))
         mockGutenbergInit = mocker.patch('processes.gutenberg.GutenbergMapping')
         mockGutenbergInit.return_value = mockGutenbergRec
 
@@ -138,6 +138,8 @@ class TestGutenbergProcess:
             addCoverAndStoreInS3=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
+
+        processMocks['addCoverAndStoreInS3'].side_effect = [None, KeyError]
 
         testInstance.processGutenbergBatch([('rdf1', 'yaml1'), ('rdf2', 'yaml2')])
 
