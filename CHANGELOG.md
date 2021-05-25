@@ -6,6 +6,7 @@
 - Don't split queries on commas within quotation marks
 - Correct path for sorting on `publication_date` in ElasticSearch
 - Parsing of some Gutenberg and DOAB ePub files on ingest
+- Handle missing Gutenberg cover edge case
 
 ## 2021-05-11 -- v0.5.7
 ### Added
