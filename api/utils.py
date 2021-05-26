@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from datetime import datetime
 from flask import jsonify
 from math import ceil
@@ -19,8 +20,10 @@ class APIUtils():
         outPairs = []
 
         for pairStr in pairs.get(param, []):
-            for pair in pairStr.split(','):
+            if len(re.findall(r'"', pairStr)) % 2 != 0:
+                pairStr = ''.join(pairStr.rsplit('"', 1))
 
+            for pair in re.split(r',(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)', pairStr):
                 pairElements = pair.split(':')
 
                 if len(pairElements) == 1 or pairElements[0] not in cls.QUERY_TERMS:
@@ -85,7 +88,8 @@ class APIUtils():
     def formatWork(cls, work, editionIds, showAll):
         workDict = dict(work)
         workDict['edition_count'] = len(work.editions)
-        workDict['editions'] = []
+
+        orderedEds = OrderedDict.fromkeys(editionIds) if editionIds else OrderedDict()
 
         for edition in work.editions:
             if editionIds and edition.id not in editionIds:
@@ -94,7 +98,9 @@ class APIUtils():
             editionDict = cls.formatEdition(edition)
 
             if showAll is True or (showAll is False and len(editionDict['items']) > 0):
-                workDict['editions'].append(editionDict)
+                orderedEds[edition.id] = editionDict
+
+        workDict['editions'] = list(filter(None, [e for _, e in orderedEds.items()]))
 
         return workDict
 

@@ -50,7 +50,11 @@ class ClusterProcess(CoreProcess):
             if rec is None:
                 break
 
-            self.clusterRecord(rec)
+            try:
+                self.clusterRecord(rec)
+            except ClusterError:
+                logger.warning('Skipping record {}'.format(rec))
+                self.updateMatchedRecordsStatus([rec.id])
 
         self.closeConnection()
 
@@ -192,7 +196,11 @@ class ClusterProcess(CoreProcess):
 
     @staticmethod
     def tokenizeTitle(title):
-        lowerTitle = title.lower()
+        try:
+            lowerTitle = title.lower()
+        except AttributeError:
+            logger.error('Unable to parse record title')
+            raise ClusterError('Invalid title received')
 
         titleTokens = re.findall(r'(\w+)', lowerTitle)
 
@@ -209,3 +217,6 @@ class ClusterProcess(CoreProcess):
             idenStrings.append(idenStr)
         
         return '{{{}}}'.format(','.join(idenStrings))
+
+
+class ClusterError(Exception): pass

@@ -77,8 +77,15 @@ class ClassifyProcess(CoreProcess):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
     def frbrizeRecord(self, record):
-        for iden in ClassifyManager.getQueryableIdentifiers(record.identifiers):
-            identifier, idenType = tuple(iden.split('|'))
+        queryableIDs = ClassifyManager.getQueryableIdentifiers(record.identifiers)
+
+        if len(queryableIDs) < 1: queryableIDs = [None]
+
+        for iden in queryableIDs:
+            try:
+                identifier, idenType = tuple(iden.split('|'))
+            except AttributeError:
+                identifier, idenType = (None, None)
 
             try:
                 author, *_ = tuple(record.authors[0].split('|'))
@@ -87,7 +94,7 @@ class ClassifyProcess(CoreProcess):
 
             # Check if this identifier has been queried in the past 24 hours
             # Skip if it has already been looked up
-            if self.checkSetRedis('classify', identifier, idenType): continue
+            if identifier and self.checkSetRedis('classify', identifier, idenType): continue
 
             try:
                 self.classifyRecordByMetadata(

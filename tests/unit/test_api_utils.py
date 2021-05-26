@@ -119,6 +119,13 @@ class TestAPIUtils:
         assert testPairs[0] == ('title', 'value')
         assert testPairs[1] == ('test', 'bareValue')
 
+    def test_extractParamPairs_comma_delimited_quotes(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:value,author:"Test, Author",other']})
+
+        assert testPairs[0] == ('title', 'value')
+        assert testPairs[1] == ('author', '"Test, Author"')
+        assert testPairs[2] == ('test', 'other')
+
     def test_extractParamPairs_semantic_semicolon(self):
         testPairs = APIUtils.extractParamPairs('test', {'test': ['title:A Book: A Title']})
 
@@ -128,6 +135,17 @@ class TestAPIUtils:
         testPairs = APIUtils.extractParamPairs('test', {'test': ['A Book: A Title']})
 
         assert testPairs[0] == ('test', 'A Book: A Title')
+
+    def test_extractParamPairs_dangling_quotation(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['"A Title']})
+
+        assert testPairs[0] == ('test', 'A Title')
+
+    def test_extractParamPairs_dangling_quotation_multiple(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['"A Title",keyword:"other']})
+
+        assert testPairs[0] == ('test', '"A Title"')
+        assert testPairs[1] == ('keyword', 'other')
 
     def test_formatAggregationResult(self, testAggregationResp):
         testAggregations = APIUtils.formatAggregationResult(testAggregationResp)
@@ -213,6 +231,20 @@ class TestAPIUtils:
         assert testWorkDict['title'] == 'Test Title'
         assert len(testWorkDict['editions']) == 0
         assert testWorkDict['edition_count'] == 1
+
+    def test_formatWork_ordered_editions(self, testWork, mocker):
+        testWork.editions = [mocker.MagicMock(id=1), mocker.MagicMock(id=2)]
+
+        mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
+        mockFormatEdition.side_effect = [
+            {'edition_id': 'ed1', 'items': ['it1']},
+            {'edition_id': 'ed2', 'items': ['it2']}
+        ]
+
+        testWorkDict = APIUtils.formatWork(testWork, [2, 1], True)
+
+        assert testWorkDict['editions'][0]['edition_id'] == 'ed2'
+        assert testWorkDict['editions'][1]['edition_id'] == 'ed1'
 
     def test_formatEditionOputput(self, mocker):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')

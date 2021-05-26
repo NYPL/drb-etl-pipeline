@@ -238,6 +238,20 @@ class TestOCLCClassifyProcess:
         mockIdentifiers.assert_called_once_with(testRecord.identifiers)
         mockRedisCheck.assert_called_once_with('classify', '1', 'test')
         mockClassifyRec.assert_not_called
+
+    def test_frbrizeRecord_identifier_missing(self, testInstance, testRecord, mocker):
+        mockIdentifiers = mocker.patch.object(ClassifyManager, 'getQueryableIdentifiers')
+        mockIdentifiers.return_value = []
+
+        mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
+
+        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classifyRecordByMetadata')
+
+        testInstance.frbrizeRecord(testRecord)
+
+        mockIdentifiers.assert_called_once_with(testRecord.identifiers)
+        mockRedisCheck.assert_not_called()
+        mockClassifyRec.assert_called_once_with(None, None, 'Author, Test', 'Test Record')
         
     def test_classifyRecordByMetadata_success(self, testInstance, mocker):
         mockClassifier = mocker.patch('processes.oclcClassify.ClassifyManager')

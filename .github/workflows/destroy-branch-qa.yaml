@@ -1,0 +1,27 @@
+# On merge to main destroy temporary feature branch QA environment
+name: Destroy Branch Environment
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+
+jobs:
+  destroy_branch:
+    name: Remove temporary QA environment from ECS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials from QA account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Delete Service from ECS cluster
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
+        run: |
+          aws ecs delete-service \
+            --cluster sfr-pipeline-qa \
+            --service $BRANCH_NAME-qa \
+            --force

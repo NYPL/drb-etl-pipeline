@@ -110,7 +110,7 @@ class TestCoreProcess:
         mockQuery = mocker.MagicMock(is_single_entity=False)
         mockQuery.add_column().order_by.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
-        mockQuery.limit().all.side_effect = [[('rec1', 1), ('rec2', 2), ('rec3', 3)], None]
+        mockQuery.limit().all.side_effect = [[('rec1', 1, 1), ('rec2', 2, 2), ('rec3', 3, 3)], None]
 
         coreInstance.ingestLimit = None
         assert list(coreInstance.windowedQuery(mocker.MagicMock(id=1), mockQuery)) == [('rec1',), ('rec2',), ('rec3',)]

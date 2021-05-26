@@ -1,10 +1,20 @@
 # CHANGELOG
 
-## unreleased -- v0.5.8
+## unreleased -- v0.5.7
 ### Fixed
 - Add Slack notifications for automation regression tests
 
 ## unreleased -- v0.5.7
+- Handling of records without titles in clustering process
+- Don't split queries on commas within quotation marks
+- Correct path for sorting on `publication_date` in ElasticSearch
+- Parsing of some Gutenberg and DOAB ePub files on ingest
+- Handle missing Gutenberg cover edge case
+
+## 2021-05-11 -- v0.5.7
+### Added
+- MET Publication Ingest Process
+- Per-branch QA deployments on feature branches
 ### Fixed
 - Escape special characters in search queries
 - Handle colons in the body of search queries
@@ -13,6 +23,7 @@
 - Renamed tests.yaml as "tests-unit.yaml"
 - Remove changelog job from tests-regression.yaml
 - Fix allure-test command to include correct path
+- Remove lingering sessions after query completion
 
 
 ## 2021-04-15 -- v0.5.6

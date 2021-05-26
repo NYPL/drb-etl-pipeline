@@ -1,0 +1,82 @@
+# LOGGING
+LOG_LEVEL: info
+
+# POSTGRES CONNECTION DETAILS
+# POSTGRES_USER, POSTGRES_PSWD, POSTGRES_ADMIN_USER and POSTGRES_ADMIN_PSWD must be configured in secrets file 
+POSTGRES_HOST: sfr-new-metadata-production-cluster.cluster-cvy7z512hcjg.us-east-1.rds.amazonaws.com
+POSTGRES_NAME: dcdw_production
+POSTGRES_PORT: '5432'
+
+# REDIS CONFIGURATION
+# REDIS_HOST configured as part of ECS deployment
+REDIS_PORT: '6379'
+
+# ELASTICSEARCH CONFIGURATION
+# ELASTICSEARCH_INDEX, ELASTICSEARCH_HOST must be configured in secrets file
+ELASTICSEARCH_PORT: '443'
+ELASTICSEARCH_TIMEOUT: '30'
+
+# RABBITMQ CONFIGURATION
+# RABBIT_USER and RABBIT_PSWD must be configured in secrets file
+RABBIT_HOST: rmq.aws.nypl.org
+RABBIT_PORT: '5672'
+RABBIT_VIRTUAL_HOST: /sfr
+RABBIT_EXCHANGE: sfrIngestExchange
+OCLC_QUEUE: sfrOCLCCatalog
+OCLC_ROUTING_KEY: sfrOCLCCatalog
+FILE_QUEUE: sfrS3Files
+FILE_ROUTING_KEY: sfrS3Files
+
+# HATHITRUST CONFIGURATION
+# HATHI_API_KEY and HATHI_API_SECRET must be configured as secrets
+HATHI_DATAFILES: https://www.hathitrust.org/filebrowser/download/244651
+HATHI_API_ROOT: https://babel.hathitrust.org/cgi/htd
+
+# OCLC CONFIGURATION
+# OCLC_API_KEY must be configured in secrets file
+OCLC_QUERY_LIMIT: '390000'
+
+# AWS CONFIGURATION
+# AWS_ACCESS and AWS_SECRET must be configured in secrets file
+AWS_REGION: us-east-1
+FILE_BUCKET: drb-files-production
+
+# NYPL BIB REPLICA DB CONNECTION
+# NYPL_BIB_USER and NYPL_BIB_PSWD must be configured in secrets file
+NYPL_BIB_HOST: bib-service-production-rep.cvy7z512hcjg.us-east-1.rds.amazonaws.com
+NYPL_BIB_NAME: bib_service_production
+NYPL_BIB_PORT: '5432'
+
+# NYPL Location Code Lookup
+NYPL_LOCATIONS_BY_CODE: https://nypl-core-objects-mapping-qa.s3.amazonaws.com/by_sierra_location.json
+
+# NYPL API Credentials
+# API_CLIENT_ID and API_CLIENT_SECRET must be configured in secrets file
+NYPL_API_CLIENT_TOKEN_URL: https://isso.nypl.org/oauth/token
+
+# GITHUB API Credentials
+# GITHUB_API_KEY must be configured in secrets file
+GITHUB_API_ROOT: https://api.github.com/graphql
+
+# Bardo CCE API URL
+BARDO_CCE_API: http://sfr-bardo-copyright-development.us-east-1.elasticbeanstalk.com/search
+
+# Project MUSE MARC endpoint
+MUSE_MARC_URL: https://about.muse.jhu.edu/lib/metadata?format=marc&content=book&include=oa&filename=open_access_books&no_auth=1
+MUSE_CSV_URL: https://about.muse.jhu.edu/static/org/local/holdings/muse_book_metadata.csv
+
+# DOAB OAI-PMH endpoint
+DOAB_OAI_URL: https://directory.doabooks.org/oai/request?
+
+# Google Books API
+# GOOGLE_BOOKS_KEY must be configured as a secret
+
+# ContentCafe2 API
+# CONTENT_CAFE_USER and CONTENT_CAFE_PSWD must be configured as secrets
+
+# SmartSheet API
+# SMARTSHEET_API_TOKEN must be configured as a secret
+SMARTSHEET_SHEET_ID: '3683038090553220'
+
+# Default Cover Image for OPDS2 Feed
+DEFAULT_COVER_URL: https://drb-files-qa.s3.amazonaws.com/covers/default/defaultCover.png

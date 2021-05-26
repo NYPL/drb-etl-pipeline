@@ -31,6 +31,7 @@ def newPublications():
     pageSize = int(params.get('size', [25])[0])
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
 
     baseFeed = constructBaseFeed(request.full_path, 'New Publications: Digital Research Books', grouped=True)
 
@@ -39,6 +40,8 @@ def newPublications():
     addPagingOptions(baseFeed, request.full_path, pubCount, page=page+1, pageSize=pageSize)
 
     addPublications(baseFeed, newPubs, grouped=True)
+
+    dbClient.closeSession()
 
     return APIUtils.formatOPDS2Object(200, baseFeed)
 
@@ -61,6 +64,7 @@ def opdsSearch():
 
     esClient = ElasticClient(current_app.config['ES_CLIENT'])
     dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
 
     logger.info('Executing ES Query {}'.format(searchTerms))
 
@@ -81,6 +85,8 @@ def opdsSearch():
 
     addPublications(searchFeed, works, grouped=True)
 
+    dbClient.closeSession()
+
     return APIUtils.formatOPDS2Object(200, searchFeed)
 
 
@@ -89,6 +95,7 @@ def fetchPublication(uuid):
     logger.info('Returning OPDS2 publication for {}'.format(uuid))
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
 
     workRecord = dbClient.fetchSingleWork(uuid)
     
@@ -100,6 +107,8 @@ def fetchPublication(uuid):
     publication = createPublicationObject(workRecord, searchResult=False)
 
     publication.addLink({'rel': 'search', 'href': '/opds/search{?query,title,subject,author}', 'type': 'application/opds+json', 'templated': True})
+
+    dbClient.closeSession()
 
     return APIUtils.formatOPDS2Object(200, publication)
 
