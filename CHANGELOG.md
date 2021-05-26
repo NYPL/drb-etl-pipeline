@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.5.8
+### Fixed
+- Add Slack notifications for automation regression tests
+
 ## unreleased -- v0.5.7
 ### Fixed
 - Escape special characters in search queries
