@@ -1,7 +1,10 @@
 # CHANGELOG
 
-## unreleased -- v0.5.8
+## unreleased -- v0.5.7
 ### Fixed
+- Add Slack notifications for automation regression tests
+
+## unreleased -- v0.5.7
 - Handling of records without titles in clustering process
 - Don't split queries on commas within quotation marks
 - Correct path for sorting on `publication_date` in ElasticSearch
