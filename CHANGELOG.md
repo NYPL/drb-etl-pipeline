@@ -7,6 +7,7 @@
 - Correct path for sorting on `publication_date` in ElasticSearch
 - Parsing of some Gutenberg and DOAB ePub files on ingest
 - Handle missing Gutenberg cover edge case
+- Regression in filtering language aggregation buckets
 
 ## 2021-05-11 -- v0.5.7
 ### Added

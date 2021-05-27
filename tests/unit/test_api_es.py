@@ -464,7 +464,7 @@ class TestElasticClient:
         mockAgg.assert_called_once_with('filter', exists={'field': 'editions.formats'})
 
         assert testInstance.appliedFilters == ['formatFilter']
-        assert testInstance.aggregationFilters == ['formatAggregation']
+        assert testInstance.appliedAggregations == ['formatAggregation']
 
     def test_createFilterClausesAndAggregations_w_date(self, testInstance, mocker):
         mockQuery = mocker.patch('api.elastic.Q')
@@ -487,7 +487,7 @@ class TestElasticClient:
         ])
 
         assert testInstance.appliedFilters == ['formatFilter', 'dateFilter']
-        assert testInstance.aggregationFilters == ['formatAggregation', 'dateAggregation']
+        assert testInstance.appliedAggregations == ['formatAggregation', 'dateAggregation']
 
     def test_createFilterClausesAndAggregations_w_format(self, testInstance, mocker):
         mockQuery = mocker.patch('api.elastic.Q')
@@ -507,7 +507,7 @@ class TestElasticClient:
         ])
 
         assert testInstance.appliedFilters == ['formatFilter', 'displayFilter']
-        assert testInstance.aggregationFilters == ['formatAggregation', 'displayAggregation']
+        assert testInstance.appliedAggregations == ['formatAggregation', 'displayAggregation']
 
     def test_createFilterClausesAndAggregations_w_format_error(self, testInstance):
         with pytest.raises(ElasticClientError):
@@ -532,7 +532,7 @@ class TestElasticClient:
 
         assert testInstance.languageFilters == ['languageFilter']
         assert testInstance.appliedFilters == ['displayFilter']
-        assert testInstance.aggregationFilters == ['displayAggregation']
+        assert testInstance.appliedAggregations == ['displayAggregation']
 
     def test_createFilterClausesAndAggregations_no_filters(self, testInstance, mocker):
         mockQuery = mocker.patch('api.elastic.Q')
@@ -548,7 +548,7 @@ class TestElasticClient:
         ])
 
         assert testInstance.appliedFilters == []
-        assert testInstance.aggregationFilters == []
+        assert testInstance.appliedAggregations == []
 
     def test_addFiltersAndAggregations(self, testInstance, mocker):
         mockFilters = mocker.patch.object(ElasticClient, 'applyFilters')
