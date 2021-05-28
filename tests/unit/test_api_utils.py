@@ -76,6 +76,10 @@ class TestAPIUtils:
         return MockDBObject(id='li1', media_type='application/test', url='testURI')
 
     @pytest.fixture
+    def testFilterLink(self, MockDBObject):
+        return MockDBObject(id='li2', media_type='application/other', url='testURI')
+
+    @pytest.fixture
     def testRights(self, MockDBObject):
         return MockDBObject(id='ri1', source='test', license='testLicense', rights_statement='testStatement')
 
@@ -197,7 +201,8 @@ class TestAPIUtils:
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
         mockFormat.assert_has_calls([
-            mocker.call(testWorks[0], 1, True), mocker.call(testWorks[1], 2, True)
+            mocker.call(testWorks[0], 1, True, formats=None),
+            mocker.call(testWorks[1], 2, True, formats=None)
         ])
 
     def test_formatWork_showAll(self, testWork, mocker):
@@ -295,6 +300,17 @@ class TestAPIUtils:
             mocker.call('rec1', {'testURI': testItemDict}),
             mocker.call('rec2', {'testURI': testItemDict})
         ])
+
+    def test_formatEdition_w_format_filter(self, testEdition, testFilterLink, mocker):
+        testEdition.items[0].links.insert(0, testFilterLink)
+        mockRecFormat = mocker.patch.object(APIUtils, 'formatRecord')
+        mockRecFormat.side_effect = [1, 2]
+
+        formattedEdition = APIUtils.formatEdition(testEdition, formats=['application/test'])
+
+        assert len(formattedEdition['items']) == 1
+        assert len(formattedEdition['items'][0]['links']) == 1
+        assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
 
     def test_formatRecord(self, testRecord, mocker):
         testLinkItems = {
