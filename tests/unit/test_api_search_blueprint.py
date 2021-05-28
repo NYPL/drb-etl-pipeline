@@ -68,7 +68,7 @@ class TestSearchBlueprint:
         mockUtils['normalizeQueryParams'].return_value = queryParams
             
         mockUtils['extractParamPairs'].side_effect = [
-            ['testQueryTerms'], ['testSortTerms'], ['testFilterTerms'], ['testShowAll']
+            ['testQueryTerms'], ['testSortTerms'], [('format', 'html')], ['testShowAll']
         ]
         mockUtils['formatAggregationResult'].return_value = 'testFacets'
         mockUtils['formatPagingOptions'].return_value = 'testPaging'
@@ -101,16 +101,21 @@ class TestSearchBlueprint:
                 mocker.call('showAll', queryParams)
             ])
             mockES.searchQuery.assert_called_once_with(
-                {'query': ['testQueryTerms'], 'sort': ['testSortTerms'], 'filter': ['testFilterTerms', 'testShowAll']},
+                {'query': ['testQueryTerms'], 'sort': ['testSortTerms'], 'filter': [('format', 'html'), 'testShowAll']},
                 page=0, perPage=5
             )
-            mockDB.fetchSearchedWorks.assert_called_once_with([
+            testResultIds = [
                 ('uuid1', ['ed1', 'ed2']), ('uuid2', ['ed3']),
                 ('uuid3', ['ed4', 'ed5', 'ed6']), ('uuid4', ['ed7']), ('uuid5', ['ed8'])
-            ])
+            ]
+            mockDB.fetchSearchedWorks.assert_called_once_with(testResultIds)
             mockUtils['formatAggregationResult'].assert_called_once_with({'aggs': []})
             mockUtils['formatPagingOptions'].assert_called_once_with(1, 5, 5)
-            mockUtils['formatWorkOutput'].assert_called_once
+            mockUtils['formatWorkOutput'].assert_called_once_with(
+                ['work1', 'work2', 'work3', 'work4', 'work5'],
+                testResultIds,
+                formats=['text/html']
+            )
 
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'searchResponse',

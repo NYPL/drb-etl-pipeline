@@ -130,11 +130,11 @@ class TestS3Manager:
 
         mockPut = mocker.patch.object(S3Manager, 'putObjectInBucket')
 
-        testInstance.putExplodedEpubComponentsInBucket(b'testObj', 'testKey.epub', 'testBucket')
+        testInstance.putExplodedEpubComponentsInBucket(b'testObj', '10.10/testKey.epub', 'testBucket')
 
         mockPut.assert_has_calls([
-            mocker.call('compBytes1', 'testKey/comp1', 'testBucket'),
-            mocker.call('compBytes2', 'testKey/comp2', 'testBucket')
+            mocker.call('compBytes1', '10.10/testKey/comp1', 'testBucket'),
+            mocker.call('compBytes2', '10.10/testKey/comp2', 'testBucket')
         ])
 
     def test_getObjectFromBucket_success(self, testInstance, mocker):

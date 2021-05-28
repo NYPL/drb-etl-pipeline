@@ -63,7 +63,7 @@ class S3Manager:
             raise S3Error('Unable to store file in s3')
 
     def putExplodedEpubComponentsInBucket(self, obj, objKey, bucket):
-        keyRoot = objKey.split('.')[0] 
+        keyRoot = '.'.join(objKey.split('.')[:-1]) 
 
         with ZipFile(BytesIO(obj), 'r') as epubZip:
             for component in epubZip.namelist():

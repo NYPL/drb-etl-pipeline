@@ -88,14 +88,17 @@ class HathiMapping(CSVMapping):
             'text/html',
             json.dumps({'reader': False, 'download': False, 'catalog': False})
         )
-        downloadLink = '{}|{}|{}|{}|{}'.format(
-            1,
-            'https://babel.hathitrust.org/cgi/imgsrv/download/pdf?id={}'.format(self.source[0]),
-            'hathitrust',
-            'application/pdf',
-            json.dumps({'reader': False, 'download': True, 'catalog': False})
-        ) 
-        self.record.has_part = [readOnlineLink, downloadLink]
+
+        self.record.has_part = [readOnlineLink]
+
+        if self.source[23].lower() != 'google':
+            self.record.has_part.append('{}|{}|{}|{}|{}'.format(
+                1,
+                'https://babel.hathitrust.org/cgi/imgsrv/download/pdf?id={}'.format(self.source[0]),
+                'hathitrust',
+                'application/pdf',
+                json.dumps({'reader': False, 'download': True, 'catalog': False})
+            )) 
 
         # Parse spatial (pub place) codes
         self.record.spatial = self.record.spatial or ''

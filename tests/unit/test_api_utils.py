@@ -127,6 +127,13 @@ class TestAPIUtils:
         assert testPairs[0] == ('title', 'value')
         assert testPairs[1] == ('test', 'bareValue')
 
+    def test_extractParamPairs_comma_delimited_quotes(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:value,author:"Test, Author",other']})
+
+        assert testPairs[0] == ('title', 'value')
+        assert testPairs[1] == ('author', '"Test, Author"')
+        assert testPairs[2] == ('test', 'other')
+
     def test_extractParamPairs_semantic_semicolon(self):
         testPairs = APIUtils.extractParamPairs('test', {'test': ['title:A Book: A Title']})
 
@@ -136,6 +143,17 @@ class TestAPIUtils:
         testPairs = APIUtils.extractParamPairs('test', {'test': ['A Book: A Title']})
 
         assert testPairs[0] == ('test', 'A Book: A Title')
+
+    def test_extractParamPairs_dangling_quotation(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['"A Title']})
+
+        assert testPairs[0] == ('test', 'A Title')
+
+    def test_extractParamPairs_dangling_quotation_multiple(self):
+        testPairs = APIUtils.extractParamPairs('test', {'test': ['"A Title",keyword:"other']})
+
+        assert testPairs[0] == ('test', '"A Title"')
+        assert testPairs[1] == ('keyword', 'other')
 
     def test_formatAggregationResult(self, testAggregationResp):
         testAggregations = APIUtils.formatAggregationResult(testAggregationResp)
@@ -187,7 +205,8 @@ class TestAPIUtils:
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
         mockFormat.assert_has_calls([
-            mocker.call(testWorks[0], 1, True), mocker.call(testWorks[1], 2, True)
+            mocker.call(testWorks[0], 1, True, formats=None),
+            mocker.call(testWorks[1], 2, True, formats=None)
         ])
 
     def test_formatWork_showAll(self, testWork, mocker):
@@ -286,6 +305,7 @@ class TestAPIUtils:
             mocker.call('rec2', {'testURI': testItemDict})
         ])
 
+<<<<<<< HEAD
     def test_formatEdition_filter_webpubs_temp(self, testEdition, testWebpubItem):
         testEdition.items.append(testWebpubItem)
 
@@ -294,6 +314,18 @@ class TestAPIUtils:
         assert len(formattedEdition['items']) == 1
         assert formattedEdition['items'][0]['item_id'] == 'it1'
         assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
+=======
+    def test_formatEdition_w_format_filter(self, testEdition, testFilterLink, mocker):
+        testEdition.items[0].links.insert(0, testFilterLink)
+        mockRecFormat = mocker.patch.object(APIUtils, 'formatRecord')
+        mockRecFormat.side_effect = [1, 2]
+
+        formattedEdition = APIUtils.formatEdition(testEdition, formats=['application/test'])
+
+        assert len(formattedEdition['items']) == 1
+        assert len(formattedEdition['items'][0]['links']) == 1
+        assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
+>>>>>>> main
 
     def test_formatRecord(self, testRecord, mocker):
         testLinkItems = {

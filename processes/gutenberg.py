@@ -7,6 +7,9 @@ import re
 from .core import CoreProcess
 from managers import GutenbergManager
 from mappings.gutenberg import GutenbergMapping
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class GutenbergProcess(CoreProcess):
@@ -93,8 +96,8 @@ class GutenbergProcess(CoreProcess):
 
             try:
                 self.addCoverAndStoreInS3(gutenbergRec, gutenbergYAML)
-            except AttributeError:
-                print('Unable to store cover for {}'.format(gutenbergRec.source_id))
+            except (KeyError, AttributeError):
+                logger.warning('Unable to store cover for {}'.format(gutenbergRec.record.source_id))
             
             self.addDCDWToUpdateList(gutenbergRec)
 
@@ -111,7 +114,7 @@ class GutenbergProcess(CoreProcess):
             if flags['download'] is True:
                 bucketLocation = 'epubs/{}/{}_{}.epub'.format(source, gutenbergID, gutenbergType)
             else:
-                bucketLocation = 'epubs/{}/{}_{}/META-INF/content.xml'.format(source, gutenbergID, gutenbergType)
+                bucketLocation = 'epubs/{}/{}_{}/META-INF/container.xml'.format(source, gutenbergID, gutenbergType)
                 mediaType = 'application/epub+xml'
 
             s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
