@@ -11,7 +11,11 @@
 - Filter non-matching links when format filter is applied
 - Parsing of some Gutenberg and DOAB ePub files on ingest
 - Handle missing Gutenberg cover edge case
+<<<<<<< HEAD
+- Regression in filtering language aggregation buckets
+=======
 - Enforce Google Books PDF download exclusion
+>>>>>>> main
 
 ## 2021-05-11 -- v0.5.7
 ### Added

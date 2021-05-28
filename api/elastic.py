@@ -183,7 +183,7 @@ class ElasticClient():
 
         dateFilter, dateAggregation = (None, None)
         formatFilter, formatAggregation = (None, None)
-        displayFilter, displayAggregation = (Q('exists', field='editions.formats'),A('filter', **{'exists': {'field': 'editions.formats'}}))
+        displayFilter, displayAggregation = (Q('exists', field='editions.formats'), A('filter', **{'exists': {'field': 'editions.formats'}}))
 
         if len(languageFilters) > 0:
             self.languageFilters = [
@@ -212,7 +212,7 @@ class ElasticClient():
             displayAggregation = None
         
         self.appliedFilters = list(filter(None, [dateFilter, formatFilter, displayFilter]))
-        self.aggregationFilters = list(filter(None, [dateAggregation, formatAggregation, displayAggregation]))
+        self.appliedAggregations = list(filter(None, [dateAggregation, formatAggregation, displayAggregation]))
 
     def addFiltersAndAggregations(self, innerHits):
         self.applyFilters(size=innerHits)
