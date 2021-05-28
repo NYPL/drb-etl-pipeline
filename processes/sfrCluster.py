@@ -5,7 +5,7 @@ from sqlalchemy.exc import DataError
 
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
-from model import Record
+from model import Record, Work
 from logger import createLog
 
 logger = createLog(__name__)
@@ -109,6 +109,7 @@ class ClusterProcess(CoreProcess):
 
         deletedRecordUUIDs = recordManager.mergeRecords()
         self.deleteWorkRecords(deletedRecordUUIDs)
+        self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid.in_(deletedRecordUUIDs)))
 
         return recordManager.work
     

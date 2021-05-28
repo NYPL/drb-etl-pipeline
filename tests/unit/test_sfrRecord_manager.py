@@ -71,32 +71,23 @@ class TestSFRRecordManager:
             mocker.MagicMock(identifiers=['id3'], items=secondEdItems, dcdw_uuids=['uuid4'])
         ]
         testInstance.work.identifiers = ['wo1', 'wo2', 'wo3']
+        testInstance.work.uuid = 1
 
-        testWork = mocker.MagicMock(id='wo1', uuid='uuid1')
-
-        matchingEditions = [
-            mocker.MagicMock(work_id=1, id='ed1', work=testWork, dcdw_uuids=['uuid1']),
-            mocker.MagicMock(work_id=1, id='ed2', work=testWork, dcdw_uuids=['uuid2']),
-            mocker.MagicMock(work_id=1, id='ed3', work=testWork, dcdw_uuids=['uuid3'])
+        matchingWorks = [
+            mocker.MagicMock(uuid=2, date_created='2020-01-01'),
+            mocker.MagicMock(uuid=3, date_created='2019-01-01'),
+            mocker.MagicMock(uuid=4, date_created='2018-01-01'),
         ]
-        testInstance.session.query().filter().all.return_value = matchingEditions
-        testInstance.session.merge.return_value = testInstance.work
+        testInstance.session.query().join().filter().filter().all.return_value = matchingWorks
 
         testUUIDsToDelete = testInstance.mergeRecords()
 
-        assert testUUIDsToDelete == set(['uuid1'])
+        assert testUUIDsToDelete == [4, 3, 2]
+        assert testInstance.work.uuid == 1
+        assert testInstance.work.date_created == '2018-01-01'
 
-        assert testInstance.work.id == 1
-        assert testInstance.work.identifiers == ['work1']
-        assert testInstance.work.editions[0].id == 'ed1'
-        assert testInstance.work.editions[1].identifiers == ['newEd3']
-        assert testInstance.work.editions[0].items[0].identifiers == ['item1']
-        assert testInstance.work.editions[1].items[1].links == ['url4']
-
-        testInstance.session.query().filter().all.assert_called_once()
-        testInstance.session.delete.assert_called_once_with(testWork)
-
-        testInstance.session.merge.assert_called_once_with(testInstance.work)
+        testInstance.session.query().join().filter().filter().all.assert_called_once()
+        testInstance.session.add.assert_called_once_with(testInstance.work)
 
     def test_dedupeIdentifiers(self, testInstance, mocker):
         testExistingIDs = {}

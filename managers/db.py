@@ -85,6 +85,13 @@ class DBManager:
             else:
                 logger.warning('Already retried batch, dropping')
 
+    def deleteRecordsByQuery(self, query):
+        try:
+            query.delete()
+        except OperationalError as oprErr:
+            logger.error('Deadlock in database layer, retry batch')
+            logger.debug(oprErr)
+
     @staticmethod
     def decryptEnvVar(envVar):
         encrypted = os.environ.get(envVar, None)
