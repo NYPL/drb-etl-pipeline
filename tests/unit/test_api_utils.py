@@ -305,7 +305,6 @@ class TestAPIUtils:
             mocker.call('rec2', {'testURI': testItemDict})
         ])
 
-<<<<<<< HEAD
     def test_formatEdition_filter_webpubs_temp(self, testEdition, testWebpubItem):
         testEdition.items.append(testWebpubItem)
 
@@ -314,18 +313,6 @@ class TestAPIUtils:
         assert len(formattedEdition['items']) == 1
         assert formattedEdition['items'][0]['item_id'] == 'it1'
         assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
-=======
-    def test_formatEdition_w_format_filter(self, testEdition, testFilterLink, mocker):
-        testEdition.items[0].links.insert(0, testFilterLink)
-        mockRecFormat = mocker.patch.object(APIUtils, 'formatRecord')
-        mockRecFormat.side_effect = [1, 2]
-
-        formattedEdition = APIUtils.formatEdition(testEdition, formats=['application/test'])
-
-        assert len(formattedEdition['items']) == 1
-        assert len(formattedEdition['items'][0]['links']) == 1
-        assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
->>>>>>> main
 
     def test_formatRecord(self, testRecord, mocker):
         testLinkItems = {
