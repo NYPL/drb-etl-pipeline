@@ -54,3 +54,11 @@ jobs:
           PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PUBLISH_BRANCH: gh-pages
           PUBLISH_DIR: allure-history
+      - name: DRB Pipeline Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env: 
+          SLACK_CHANNEL: test_reports
+          SLACK_MESSAGE: 'https://nypl.github.io/drb-etl-pipeline'
+          SLACK_TITLE: DRB Pipeline Test Results
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_USERNAME: drbpipeBot

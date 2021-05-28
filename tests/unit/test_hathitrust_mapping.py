@@ -52,7 +52,8 @@ class TestHathingMapping:
 
     def test_applyFormatting(self, testMapping, testRecord_standard):
         testMapping.record = testRecord_standard
-        testMapping.source = ['recordID']
+        testMapping.source = [''] * 24
+        testMapping.source[0] = 'recordID'
 
         testMapping.applyFormatting()
 
@@ -72,10 +73,22 @@ class TestHathingMapping:
     def test_applyFormatting_no_pub_date(self, testMapping, testRecord_standard):
         testRecord_standard.dates = ['|publication_date']
         testMapping.record = testRecord_standard
-        testMapping.source = ['recordID']
+        testMapping.source = [''] * 24
 
         testMapping.applyFormatting()
 
         assert testMapping.record.dates == []
         assert testMapping.record.publisher == ['||']
-        
+
+    def test_applyFormatting_google(self, testMapping, testRecord_standard):
+        testMapping.record = testRecord_standard
+        testMapping.source = [''] * 24
+        testMapping.source[0] = 'recordID'
+        testMapping.source[23] = 'Google'
+
+        testMapping.applyFormatting()
+
+        assert len(testMapping.record.has_part) == 1
+        assert testMapping.record.has_part == [
+            '1|https://babel.hathitrust.org/cgi/pt?id=recordID|hathitrust|text/html|{"reader": false, "download": false, "catalog": false}'
+        ]
