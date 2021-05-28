@@ -243,14 +243,21 @@ class TestSFRClusterProcess:
         mockManagerInst = mocker.patch('processes.sfrCluster.SFRRecordManager')
         mockManagerInst.return_value = mockRecManager
 
-        testInstance.session = 'testSession'
+        mockDeleteElastic = mocker.patch.object(ClusterProcess, 'deleteWorkRecords')
+        mockDeletePostgres = mocker.patch.object(ClusterProcess, 'deleteRecordsByQuery')
+
+        mockSession = mocker.MagicMock()
+        testInstance.session = mockSession
         testWork = testInstance.createWorkFromEditions('testEditions', 'testInstances')
 
         assert testWork == 'testWork'
-        mockManagerInst.assert_called_once_with('testSession', {})
+        mockManagerInst.assert_called_once_with(mockSession, {})
         mockRecManager.buildWork.assert_called_once_with('testInstances', 'testEditions')
         mockRecManager.saveWork.assert_called_once_with('testWorkData')
         mockRecManager.mergeRecords.assert_called_once()
+        mockDeleteElastic.assert_called_once()
+        mockDeletePostgres.assert_called_once()
+        mockSession.query().filter.assert_called_once()
 
     def test_queryIdens_success(self, testInstance, mocker):
         mockGetBatches = mocker.patch.object(ClusterProcess, 'getRecordBatches')

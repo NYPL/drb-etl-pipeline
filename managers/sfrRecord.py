@@ -7,6 +7,9 @@ import re
 from uuid import uuid4
 
 from model import Work, Edition, Item, Identifier, Link, Rights
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class SFRRecordManager:
@@ -23,31 +26,22 @@ class SFRRecordManager:
 
     def mergeRecords(self):
         existingIDs = {}
-        uuidsToDelete = set()
 
         dcdwUUIDs = set()
         for edition in self.work.editions:
-            dcdwUUIDs.union(edition.dcdw_uuids)
+            dcdwUUIDs.update(edition.dcdw_uuids)
 
         matchedEditions = defaultdict(list)
-        for matchedEdition in self.session.query(Edition)\
+        matchedWorks = []
+        for matchedWork in self.session.query(Work)\
+            .join(Edition)\
+            .filter(Work.uuid != self.work.uuid)\
             .filter(Edition.dcdw_uuids.overlap(list(dcdwUUIDs))).all():
-            for matchedUUID in matchedEdition.dcdw_uuids:
-                matchedEditions[matchedUUID].append(matchedEdition)
+            matchedWorks.append((matchedWork.uuid, matchedWork.date_created))
+
+        matchedWorks.sort(key=lambda x: x[1])
 
         for edition in self.work.editions:
-            existingEditions = []
-            for dcdwUUID in edition.dcdw_uuids:
-                existingEditions.extend(matchedEditions.get(dcdwUUID, []))
-
-            if len(existingEditions) > 0:
-                useEdition = existingEditions[0]
-                self.work.id = useEdition.work_id
-                edition.id = useEdition.id
-                for otherEd in existingEditions[1:]:
-                    self.session.delete(otherEd.work)
-                    uuidsToDelete.add(otherEd.work.uuid)
-                
             edition.identifiers = self.dedupeIdentifiers(edition.identifiers, existingIDs)
 
             for item in edition.items:
@@ -56,9 +50,11 @@ class SFRRecordManager:
 
         self.work.identifiers = self.dedupeIdentifiers(self.work.identifiers, existingIDs)
 
-        self.work = self.session.merge(self.work)
+        self.work.date_created = matchedWorks[0][1]
 
-        return uuidsToDelete
+        self.session.add(self.work)
+
+        return [w[0] for w in matchedWorks]
 
     def dedupeIdentifiers(self, identifiers, existingIDs):
         queryGroups = defaultdict(list)
