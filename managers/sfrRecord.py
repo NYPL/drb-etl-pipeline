@@ -31,7 +31,6 @@ class SFRRecordManager:
         for edition in self.work.editions:
             dcdwUUIDs.update(edition.dcdw_uuids)
 
-        matchedEditions = defaultdict(list)
         matchedWorks = []
         for matchedWork in self.session.query(Work)\
             .join(Edition)\
@@ -50,7 +49,8 @@ class SFRRecordManager:
 
         self.work.identifiers = self.dedupeIdentifiers(self.work.identifiers, existingIDs)
 
-        self.work.date_created = matchedWorks[0][1]
+        if len(matchedWorks) > 0:
+            self.work.date_created = matchedWorks[0][1]
 
         self.session.add(self.work)
 
