@@ -140,6 +140,12 @@ class APIUtils():
                 for l in item.links
             ]))
 
+            # TEMPORARY: Remove application/webpub+json files
+            # while new reader is under development. Remove any items that have
+            # no links as a result
+            itemDict['links'] = list(filter(lambda x: x['mediaType'] != 'application/webpub+json', itemDict['links']))
+            if len(itemDict['links']) < 1: continue
+
             itemDict['rights'] = [
                 {'source': r.source, 'license': r.license, 'rightsStatement': r.rights_statement}
                 for r in item.rights

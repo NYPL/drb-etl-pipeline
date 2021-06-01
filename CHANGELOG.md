@@ -8,6 +8,7 @@
 - Handling of records without titles in clustering process
 - Don't split queries on commas within quotation marks
 - Correct path for sorting on `publication_date` in ElasticSearch
+- Temporarily block the display of webpub manifests in the API response
 - Filter non-matching links when format filter is applied
 - Parsing of some Gutenberg and DOAB ePub files on ingest
 - Handle missing Gutenberg cover edge case
