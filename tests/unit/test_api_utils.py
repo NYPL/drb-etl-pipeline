@@ -257,7 +257,7 @@ class TestAPIUtils:
 
         assert APIUtils.formatEditionOutput(1, records='testRecords', showAll=True) == 'testEdition'
 
-        mockFormatEdition.assert_called_once_with(1, 'testRecords')
+        mockFormatEdition.assert_called_once_with(1, 'testRecords', showAll=True)
 
     def test_formatEdition_no_records(self, testEdition):
         formattedEdition = APIUtils.formatEdition(testEdition)
@@ -278,13 +278,14 @@ class TestAPIUtils:
         assert formattedEdition['items'][0]['rights'][0]['rightsStatement'] == 'testStatement'
         assert formattedEdition.get('instances', None) == None
 
-    def test_formatEdition_w_records(self, testEdition, testItem, mocker):
+    def test_formatEdition_w_records(self, testEdition, mocker):
         mockRecFormat = mocker.patch.object(APIUtils, 'formatRecord')
-        mockRecFormat.side_effect = [1, 2]
+        mockRecFormat.side_effect = [{'id': 1, 'items': []}, {'id': 2, 'items': ['it1']}]
 
-        formattedEdition = APIUtils.formatEdition(testEdition, ['rec1', 'rec2'])
+        formattedEdition = APIUtils.formatEdition(testEdition, ['rec1', 'rec2'], showAll=True)
 
-        assert formattedEdition['instances'] == [1, 2]
+        assert len(formattedEdition['instances']) == 1
+        assert formattedEdition['instances'][0]['id'] == 2
         assert formattedEdition.get('items', None) == None
 
         testItemDict = {

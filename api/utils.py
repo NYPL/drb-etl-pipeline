@@ -115,10 +115,10 @@ class APIUtils():
 
     @classmethod
     def formatEditionOutput(cls, edition, records=None, showAll=False):
-        return cls.formatEdition(edition, records)
+        return cls.formatEdition(edition, records, showAll=showAll)
 
     @classmethod
-    def formatEdition(cls, edition, records=None, formats=None):
+    def formatEdition(cls, edition, records=None, formats=None, showAll=False):
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
         editionDict['work_uuid'] = edition.work.uuid
@@ -154,7 +154,15 @@ class APIUtils():
             for item in editionDict['items']:
                 for link in item['links']:
                     itemsByLink[link['url']] = item
-            editionDict['instances'] = [cls.formatRecord(rec, itemsByLink) for rec in records]
+            
+            editionDict['instances'] = []
+            for rec in records:
+                formattedRec = cls.formatRecord(rec, itemsByLink)
+
+                if showAll and len(formattedRec['items']) < 1:
+                    continue
+
+                editionDict['instances'].append(formattedRec)
 
             del editionDict['items']
 
