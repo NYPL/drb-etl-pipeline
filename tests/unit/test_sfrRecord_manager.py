@@ -79,6 +79,7 @@ class TestSFRRecordManager:
             mocker.MagicMock(uuid=4, date_created='2018-01-01'),
         ]
         testInstance.session.query().join().filter().filter().all.return_value = matchingWorks
+        testInstance.session.merge.return_value = testInstance.work
 
         testUUIDsToDelete = testInstance.mergeRecords()
 
@@ -87,7 +88,7 @@ class TestSFRRecordManager:
         assert testInstance.work.date_created == '2018-01-01'
 
         testInstance.session.query().join().filter().filter().all.assert_called_once()
-        testInstance.session.add.assert_called_once_with(testInstance.work)
+        testInstance.session.merge.assert_called_once_with(testInstance.work)
 
     def test_dedupeIdentifiers(self, testInstance, mocker):
         testExistingIDs = {}
