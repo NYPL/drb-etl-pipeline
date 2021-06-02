@@ -68,7 +68,7 @@ class TestAPIUtils:
             dates=['date1', 'date2'],
             languages=['lang1'],
             identifiers=['id1', 'id2', 'id3'],
-            has_part=['1|url1|', '2|url2|']
+            has_part=['1|url1|', '2|url2|', '3|url3|']
         )
 
     @pytest.fixture

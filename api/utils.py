@@ -190,7 +190,9 @@ class APIUtils():
         for hasPart in record.has_part:
             _, url, *_ = hasPart.split('|')
             urlItem = itemsByLink.get(re.sub(r'https?:\/\/', '', url), None)
-            recordItems[urlItem['item_id']] = urlItem
+            
+            if urlItem:
+                recordItems[urlItem['item_id']] = urlItem
         
         outRecord['items'] = [item for _, item in recordItems.items()]
 
