@@ -1,10 +1,7 @@
 # CHANGELOG
 
-## unreleased -- v0.5.7
-### Fixed
-- Add Slack notifications for automation regression tests
 
-## unreleased -- v0.5.7
+## 2021-06-02 -- v0.6.0
 - Handling of records without titles in clustering process
 - Don't split queries on commas within quotation marks
 - Correct path for sorting on `publication_date` in ElasticSearch
@@ -12,11 +9,9 @@
 - Filter non-matching links when format filter is applied
 - Parsing of some Gutenberg and DOAB ePub files on ingest
 - Handle missing Gutenberg cover edge case
-<<<<<<< HEAD
+- Add Slack notifications for automation regression tests
 - Regression in filtering language aggregation buckets
-=======
 - Enforce Google Books PDF download exclusion
->>>>>>> main
 
 ## 2021-05-11 -- v0.5.7
 ### Added
