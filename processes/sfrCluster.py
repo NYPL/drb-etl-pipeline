@@ -5,7 +5,7 @@ from sqlalchemy.exc import DataError
 
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
-from model import Record, Work
+from model import Record, Work, Edition
 from logger import createLog
 
 logger = createLog(__name__)
@@ -65,8 +65,7 @@ class ClusterProcess(CoreProcess):
 
         matchedIDs = self.findAllMatchingRecords(rec.identifiers)
 
-        if len(matchedIDs) < 1:
-            matchedIDs = [rec.id]
+        matchedIDs.append(rec.id)
 
         clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
         dbWork = self.createWorkFromEditions(clusteredEditions, instances)
@@ -108,8 +107,13 @@ class ClusterProcess(CoreProcess):
         recordManager.saveWork(workData)
 
         deletedRecordUUIDs = recordManager.mergeRecords()
+
         self.deleteWorkRecords(deletedRecordUUIDs)
-        self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid.in_(deletedRecordUUIDs)))
+
+        for uuid in deletedRecordUUIDs:
+            work = self.session.query(Work).filter(Work.uuid == uuid).one()
+            self.deleteRecordsByQuery(self.session.query(Edition).filter(Edition.id.in_([e.id for e in work.editions])))
+            self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid == uuid))
 
         return recordManager.work
     

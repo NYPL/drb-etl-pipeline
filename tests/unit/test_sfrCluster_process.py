@@ -157,13 +157,13 @@ class TestSFRClusterProcess:
         clusterMocks['tokenizeTitle'].assert_called_once_with('Test')
         assert testInstance.matchTitleTokens == set(['test', 'title'])
         clusterMocks['findAllMatchingRecords'].assert_called_once_with(['1|test'])
-        clusterMocks['clusterMatchedRecords'].assert_called_once_with(['3|test'])
+        clusterMocks['clusterMatchedRecords'].assert_called_once_with(['3|test', 1])
         clusterMocks['createWorkFromEditions'].assert_called_once_with(
             ['ed1', 'ed2'], ['inst1', 'inst2', 'inst3']
         )
         clusterMocks['indexWorkInElasticSearch'].assert_called_once_with('testDBWork')
         mockSession.flush.assert_called_once()
-        clusterMocks['updateMatchedRecordsStatus'].assert_called_once_with(['3|test'])
+        clusterMocks['updateMatchedRecordsStatus'].assert_called_once_with(['3|test', 1])
 
     def test_clusterRecord_wo_matching_records(self, testInstance, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(ClusterProcess,
@@ -240,6 +240,7 @@ class TestSFRClusterProcess:
         mockRecManager = mocker.MagicMock()
         mockRecManager.buildWork.return_value = 'testWorkData'
         mockRecManager.work = 'testWork'
+        mockRecManager.mergeRecords.return_value = ['uuid1', 'uuid2']
         mockManagerInst = mocker.patch('processes.sfrCluster.SFRRecordManager')
         mockManagerInst.return_value = mockRecManager
 
@@ -256,8 +257,8 @@ class TestSFRClusterProcess:
         mockRecManager.saveWork.assert_called_once_with('testWorkData')
         mockRecManager.mergeRecords.assert_called_once()
         mockDeleteElastic.assert_called_once()
-        mockDeletePostgres.assert_called_once()
-        mockSession.query().filter.assert_called_once()
+        assert mockDeletePostgres.call_count == 4
+        assert mockSession.query().filter().one.call_count == 2
 
     def test_queryIdens_success(self, testInstance, mocker):
         mockGetBatches = mocker.patch.object(ClusterProcess, 'getRecordBatches')
