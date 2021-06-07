@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.6.1
+## 2021-06-07 -- v0.6.1
 ### Fixed
 - Loading bug for edition detail pages
 - Apply `showAll` filter when present in edition detail API requests
