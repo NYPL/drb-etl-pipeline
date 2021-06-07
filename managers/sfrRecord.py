@@ -52,7 +52,7 @@ class SFRRecordManager:
         if len(matchedWorks) > 0:
             self.work.date_created = matchedWorks[0][1]
 
-        self.session.add(self.work)
+        self.work = self.session.merge(self.work)
 
         return [w[0] for w in matchedWorks]
 
