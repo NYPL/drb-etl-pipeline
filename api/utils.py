@@ -165,7 +165,7 @@ class APIUtils():
             for rec in records:
                 formattedRec = cls.formatRecord(rec, itemsByLink)
 
-                if showAll and len(formattedRec['items']) < 1:
+                if showAll is False and len(formattedRec['items']) < 1:
                     continue
 
                 editionDict['instances'].append(formattedRec)
