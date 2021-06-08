@@ -286,7 +286,7 @@ class TestAPIUtils:
         mockRecFormat = mocker.patch.object(APIUtils, 'formatRecord')
         mockRecFormat.side_effect = [{'id': 1, 'items': []}, {'id': 2, 'items': ['it1']}]
 
-        formattedEdition = APIUtils.formatEdition(testEdition, ['rec1', 'rec2'], showAll=True)
+        formattedEdition = APIUtils.formatEdition(testEdition, ['rec1', 'rec2'], showAll=False)
 
         assert len(formattedEdition['instances']) == 1
         assert formattedEdition['instances'][0]['id'] == 2

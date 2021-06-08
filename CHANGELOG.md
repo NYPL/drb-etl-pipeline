@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.6.2
+### Fixed
+- Correct reversed boolean logic with `showAll` filter
+
 ## 2021-06-07 -- v0.6.1
 ### Fixed
 - Loading bug for edition detail pages
