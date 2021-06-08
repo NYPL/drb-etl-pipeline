@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.6.2
+## 2021-06-08 -- v0.6.2
 ### Fixed
 - Correct reversed boolean logic with `showAll` filter
 
