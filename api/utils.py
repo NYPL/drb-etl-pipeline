@@ -32,15 +32,26 @@ class APIUtils():
             if len(re.findall(r'"', pairStr)) % 2 != 0:
                 pairStr = ''.join(pairStr.rsplit('"', 1))
 
-            for pair in re.split(r',(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)', pairStr):
-                pairElements = pair.split(':')
+            # Regex to split query string on field terms
+            queryTermRegex = ',*({}):'.format('|'.join(cls.QUERY_TERMS))\
+                .encode('unicode-escape').decode()
+
+            pairs = list(filter(lambda x: x != '', re.split(queryTermRegex, pairStr)))
+
+            i = 0 
+            while True:
+                pairElements = pairs[i:i+2]
 
                 if len(pairElements) == 1 or pairElements[0] not in cls.QUERY_TERMS:
-                    pairSet = (param, pair)
+                    pairSet = (param, pairs[i])
+                    i += 1
                 else:
                     pairSet = (pairElements[0], ':'.join(pairElements[1:]))
+                    i += 2
 
                 outPairs.append(pairSet)
+
+                if i >= len(pairs): break
 
         return outPairs
 
