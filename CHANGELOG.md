@@ -3,6 +3,7 @@
 ## 2021-06-08 -- v0.6.2
 ### Fixed
 - Correct reversed boolean logic with `showAll` filter
+- Improve search query parsing for multi-field search and commas
 
 ## 2021-06-07 -- v0.6.1
 ### Fixed
