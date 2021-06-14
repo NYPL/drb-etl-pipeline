@@ -1,9 +1,13 @@
 from copy import deepcopy
 from elasticsearch_dsl import Search, Q, A
+from hashlib import sha1
 import os
 import re
 
 from .utils import APIUtils
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class ElasticClient():
@@ -18,8 +22,12 @@ class ElasticClient():
         'thesis advisor', 'transcriber', 'typographer', 'woodcutter',
     ]
 
-    def __init__(self, esClient):
+    def __init__(self, esClient, redisClient):
+        self.environment = os.environ['ENVIRONMENT']
+        self.esIndex = os.environ['ELASTICSEARCH_INDEX']
+
         self.client = esClient
+        self.redis = redisClient
         
         self.query = None
 
@@ -31,10 +39,14 @@ class ElasticClient():
         self.appliedAggregations = []
     
     def createSearch(self):
-        return Search(using=self.client, index=os.environ['ELASTICSEARCH_INDEX'])
+        return Search(using=self.client, index=self.esIndex)
 
     def searchQuery(self, params, page=0, perPage=10):
-        startPos, endPos = ElasticClient.getFromSize(page, perPage)
+        self.generateSearchQuery(params)
+
+        return self.executeSearchQuery(params, page, perPage)
+
+    def generateSearchQuery(self, params):
         search = self.createSearch()
         search.source(['uuid', 'editions'])
 
@@ -68,7 +80,76 @@ class ElasticClient():
         self.addSortClause(params['sort'])
         self.addFiltersAndAggregations(3)
 
-        return self.query[startPos:endPos].execute()
+    def executeSearchQuery(self, params, page, perPage):
+        startPos, endPos = ElasticClient.getFromSize(page, perPage)
+
+        queryHash = self.generateQueryHash(params, startPos)
+
+        searchFromStr = self.getPageResultCache(queryHash) if startPos > 0 else None
+
+        if searchFromStr:
+            logger.info('Found cached search page: {}'.format(searchFromStr))
+            searchFrom = list(searchFromStr.decode().split('|'))
+            res = self.query.extra(search_after=searchFrom)[0:perPage].execute()
+        elif startPos > 1000:
+            self.query = self.query.source(False)
+
+            pagingEnd = 1000
+            iteration = 1
+            while True:
+                pagingResult = self.query[0:pagingEnd].execute()
+                lastSort = list(pagingResult.hits[-1].meta.sort)
+
+                self.query = self.query.extra(search_after=lastSort)
+
+                if pagingEnd < 1000:
+                    self.query = self.query.source(True)
+                    res = self.query[0:perPage].execute()
+                    break
+                elif startPos - (pagingEnd * iteration) < 1000:
+                    pagingEnd = startPos % 1000
+
+                iteration += 1 
+        else:
+            res = self.query[startPos:endPos].execute()
+        
+        lastSort = list(res.hits[-1].meta.sort)
+
+        if not searchFromStr:
+            self.setPageResultCache(queryHash, lastSort)
+
+        return res
+
+    def setPageResultCache(self, cacheKey, sort):
+        self.redis.set(
+            '{}/queryPaging/{}'.format(self.environment, cacheKey),
+            '|'.join(sort),
+            ex=60*60*24
+        )
+
+    def getPageResultCache(self, cacheKey):
+        return self.redis.get('{}/queryPaging/{}'.format(self.environment, cacheKey))
+
+    @classmethod
+    def generateQueryHash(cls, params, startPos):
+        hashDict = deepcopy(params)
+        hashDict['position'] = startPos
+
+        hashableDict = cls.makeDictHashable(hashDict)
+
+        hasher = sha1()
+        hasher.update(repr(hashableDict).encode())
+
+        return hasher.hexdigest()
+
+    @classmethod
+    def makeDictHashable(cls, object):
+        if isinstance(object, dict):
+            return tuple(sorted((k, cls.makeDictHashable(v)) for k, v in object.items()))
+        elif isinstance(object, (list, tuple, set)):
+            return tuple([cls.makeDictHashable(sub) for sub in object])
+        
+        return object
 
     @staticmethod
     def escapeSearchQuery(query):
