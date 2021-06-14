@@ -102,7 +102,10 @@ class APIUtils():
             
             return outWorks
         else:
-            return cls.formatWork(works, None, showAll)
+            formattedWork =  cls.formatWork(works, None, showAll)
+            formattedWork['editions'].sort(key=lambda x: x['publication_date'] if x['publication_date'] else 9999)
+
+            return formattedWork
 
     @classmethod
     def formatWork(cls, work, editionIds, showAll, formats=None):

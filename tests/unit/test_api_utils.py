@@ -187,11 +187,20 @@ class TestAPIUtils:
 
     def test_formatWorkOutput_single_work(self, mocker):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
-        mockFormat.return_value = 'formattedWork'
+        mockFormat.return_value = {
+            'uuid': 1,
+            'editions': [
+                {'id': 'ed1', 'publication_date': None},
+                {'id': 'ed2', 'publication_date': 2000},
+                {'id': 'ed3', 'publication_date': 1900}
+            ]
+        }
 
         outWork = APIUtils.formatWorkOutput('testWork', None)
 
-        assert outWork == 'formattedWork'
+        assert outWork['uuid'] == 1
+        assert outWork['editions'][0]['id'] == 'ed3'
+        assert outWork['editions'][2]['id'] == 'ed1'
         mockFormat.assert_called_once_with('testWork', None, True)
 
     def test_formatWorkOutput_multiple_works(self, mocker):

@@ -1,9 +1,14 @@
 # CHANGELOG
 
+## unreleased -- v0.6.3
+### Fixed
+- Order edition records in ascending date order in work detail pages
+
 ## 2021-06-08 -- v0.6.2
 ### Fixed
 - Correct reversed boolean logic with `showAll` filter
 - Improve search query parsing for multi-field search and commas
+- Replaced author blocklist with allowlist for search queries
 
 ## 2021-06-07 -- v0.6.1
 ### Fixed
