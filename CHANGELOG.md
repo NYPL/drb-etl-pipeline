@@ -1,8 +1,9 @@
 # CHANGELOG
 
-## unreleased -- v0.6.3
+## 2021-06-15 -- v0.6.3
 ### Fixed
 - Order edition records in ascending date order in work detail pages
+- Replace author search blocklist with allowlist
 
 ## 2021-06-08 -- v0.6.2
 ### Fixed
