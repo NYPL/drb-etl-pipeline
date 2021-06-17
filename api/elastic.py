@@ -32,6 +32,7 @@ class ElasticClient():
         self.query = None
 
         self.dateSort = None
+        self.sortReversed = False
 
         self.languageFilters = []
         self.appliedFilters = []
@@ -91,25 +92,14 @@ class ElasticClient():
             logger.info('Found cached search page: {}'.format(searchFromStr))
             searchFrom = list(searchFromStr.decode().split('|'))
             res = self.query.extra(search_after=searchFrom)[0:perPage].execute()
-        elif startPos > 1000:
-            self.query = self.query.source(False)
-
-            pagingEnd = 1000
-            iteration = 1
-            while True:
-                pagingResult = self.query[0:pagingEnd].execute()
-                lastSort = list(pagingResult.hits[-1].meta.sort)
-
-                self.query = self.query.extra(search_after=lastSort)
-
-                if pagingEnd < 1000:
-                    self.query = self.query.source(True)
-                    res = self.query[0:perPage].execute()
-                    break
-                elif startPos - (pagingEnd * iteration) < 1000:
-                    pagingEnd = startPos % 1000
-
-                iteration += 1 
+        elif startPos > 5000:
+            totalCount = self.query.count()
+            if totalCount - startPos < 10000:
+                logger.debug('Executing Reversed Search')
+                res = self.executeReversedQuery(params, totalCount, startPos, perPage)
+            else:
+                logger.debug('Executing Deep Pagination Search')
+                res = self.executeDeepQuery(startPos, perPage)
         else:
             res = self.query[startPos:endPos].execute()
         
@@ -119,6 +109,35 @@ class ElasticClient():
             self.setPageResultCache(queryHash, lastSort)
 
         return res
+
+    def executeReversedQuery(self, params, totalCount, startPos, perPage):
+        self.sortReversed = True
+        self.query = self.query.sort() # Clear existing sort
+        self.addSortClause(params['sort'], reverse=True)
+
+        revEndPos = totalCount - startPos
+        revStartPos = revEndPos - perPage
+
+        return self.query[revStartPos:revEndPos].execute()
+
+    def executeDeepQuery(self, startPos, perPage):
+        self.query = self.query.source(False)
+
+        pagingEnd = 5000
+        iteration = 1
+        while True:
+            pagingResult = self.query[0:pagingEnd].execute()
+            lastSort = list(pagingResult.hits[-1].meta.sort)
+
+            self.query = self.query.extra(search_after=lastSort)
+
+            if pagingEnd < 5000:
+                self.query = self.query.source(True)
+                return self.query[0:perPage].execute()
+            elif startPos - (pagingEnd * iteration) < 5000:
+                pagingEnd = startPos % 5000
+
+            iteration += 1 
 
     def setPageResultCache(self, cacheKey, sort):
         self.redis.set(
@@ -217,10 +236,12 @@ class ElasticClient():
         endPos = startPos + perPage
         return startPos, endPos
 
-    def addSortClause(self, sortParams):
+    def addSortClause(self, sortParams, reverse=False):
         sortValues = []
         for sort, direction in sortParams:
-            sortDir = direction or 'ASC'
+            sortDir = direction.lower() if direction else 'asc' 
+            if reverse is True: sortDir = 'desc' if sortDir == 'asc' else 'asc'
+
             if sort == 'title':
                 sortValues.append({'sort_title': {'order': sortDir}})
             elif sort == 'author':
@@ -252,7 +273,7 @@ class ElasticClient():
 
                 sortValues.append(self.dateSort)
 
-        sortValues.append({'uuid': 'asc'})
+        sortValues.append({'uuid': 'asc' if reverse is False else 'desc'})
         
         self.query = self.query.sort(*sortValues)
     
