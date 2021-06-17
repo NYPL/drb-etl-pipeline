@@ -10,7 +10,7 @@ search = Blueprint('search', __name__, url_prefix='/search')
 
 @search.route('/', methods=['GET'])
 def standardQuery():
-    esClient = ElasticClient(current_app.config['ES_CLIENT'])
+    esClient = ElasticClient()
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
 

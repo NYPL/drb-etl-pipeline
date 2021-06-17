@@ -15,11 +15,11 @@ logger = createLog(__name__)
 
 
 class FlaskAPI:
-    def __init__(self, client, dbEngine):
+    def __init__(self, dbEngine):
         self.app = Flask(__name__)
         CORS(self.app)
         Swagger(self.app, template=json.load(open('swagger.v4.json', 'r')))
-        self.app.config['ES_CLIENT'] = client
+
         self.app.config['DB_CLIENT'] = dbEngine
 
         self.app.register_blueprint(info)
