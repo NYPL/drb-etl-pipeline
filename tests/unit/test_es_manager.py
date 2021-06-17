@@ -1,4 +1,4 @@
-from elasticsearch.exceptions import ConnectionError
+from elasticsearch.exceptions import ConflictError
 import pytest
 
 from managers import ElasticsearchManager
@@ -74,3 +74,15 @@ class TestElasticsearchManager:
         ])
 
         assert mockResp.delete.call_count == 3
+
+    def test_deleteWorkRecords_error(self, testInstance, mocker):
+        mockResp = mocker.MagicMock(name='testQuery')
+        mockSearchObj = mocker.MagicMock(name='searchObject')
+        mockSearch = mocker.patch('managers.elasticsearch.Search')
+        mockSearch.return_value = mockSearchObj
+        mockSearchObj.query.return_value = mockResp
+
+        mockResp.delete.side_effect = [ConflictError] * 3
+
+        with pytest.raises(ConflictError):
+            testInstance.deleteWorkRecords(['uuid1'])

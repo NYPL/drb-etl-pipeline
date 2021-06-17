@@ -1,15 +1,13 @@
 import os
 
-from elasticsearch import Elasticsearch
-from elasticsearch.exceptions import (
-    ConnectionError,
-    TransportError,
-    ConflictError
-)
+from elasticsearch.exceptions import ConflictError
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl import connections, Search, Index
 
 from model import ESWork
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class ElasticsearchManager:
@@ -36,7 +34,21 @@ class ElasticsearchManager:
             logger.info('ElasticSearch index {} already exists'.format(self.index))
     
     def deleteWorkRecords(self, uuids):
-        for uuid in uuids:
-            workSearch = Search(index=self.index).query('match', uuid=uuid)
-            workSearch.delete()
+        i = 0
+        retries = 0
+        while i < len(uuids):
+            try:
+                print(uuids[i], i, retries)
+                workSearch = Search(index=self.index).query('match', uuid=uuids[i])
+                workSearch.delete()
+
+                i += 1
+                retries = 0
+            except ConflictError as e:
+                if retries >= 2: 
+                    logger.error('Unable to delete work {}'.format(uuids[i]))
+                    raise e
+
+                logger.warning('Unable to delete work {}. Retrying'.format(uuids[i]))
+                retries += 1
     
