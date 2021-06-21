@@ -62,7 +62,7 @@ def opdsSearch():
     if params.get('showAll', None):
         searchTerms['filter'].append(('showAll', params['showAll'][0]))
 
-    esClient = ElasticClient(current_app.config['ES_CLIENT'])
+    esClient = ElasticClient()
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
 
