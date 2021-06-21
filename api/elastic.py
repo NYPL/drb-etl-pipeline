@@ -112,7 +112,7 @@ class ElasticClient():
         self.addSortClause(params['sort'], reverse=True)
 
         revEndPos = totalCount - startPos
-        revStartPos = revEndPos - perPage
+        revStartPos = revEndPos - perPage if revEndPos > 10 else 0
 
         return self.query[revStartPos:revEndPos].execute()
 
