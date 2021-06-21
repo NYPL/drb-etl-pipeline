@@ -123,7 +123,6 @@ class TestSearchBlueprint:
 
     def test_standardQuery_elastic_error(self, mockUtils, mocker):
         flaskApp = Flask('test')
-        flaskApp.config['ES_CLIENT'] = 'testESClient'
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
 
         mockES = mocker.MagicMock()

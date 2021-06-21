@@ -19,7 +19,6 @@ class TestEditionBlueprint:
     def testApp(self):
         flaskApp = Flask('test')
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
-        flaskApp.config['ES_CLIENT'] = 'testESClient'
 
         return flaskApp
 
@@ -39,7 +38,7 @@ class TestEditionBlueprint:
             testAPIResponse = languageCounts()
 
             assert testAPIResponse == 'languageListResponse'
-            mockESClient.assert_called_once_with('testESClient')
+            mockESClient.assert_called_once()
 
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockES.languageQuery.assert_called_once_with(True)
