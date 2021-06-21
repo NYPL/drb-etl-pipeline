@@ -6,8 +6,8 @@ import re
 
 class APIUtils():
     QUERY_TERMS = [
-        'keyword', 'title', 'author', 'subject', 'date', 'startYear',
-        'endYear', 'language', 'format', 'showAll'
+        'keyword', 'title', 'author', 'subject', 'viaf', 'lcnaf',
+        'date', 'startYear', 'endYear', 'language', 'format', 'showAll'
     ]
 
     FORMAT_CROSSWALK = {

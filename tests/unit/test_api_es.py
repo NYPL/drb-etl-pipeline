@@ -19,6 +19,7 @@ class TestElasticClient:
             def __init__(self):
                 self.client = mocker.MagicMock()
                 self.esIndex = 'test_es_index'
+                self.environment = 'test'
 
         return MockElasticClient()
 
@@ -358,6 +359,56 @@ class TestElasticClient:
         assert testInstance.sortReversed == True
 
         searchMocks['addSortClause'].assert_called_once_with('test', reverse=True)
+
+    def test_executeDeepQuery(self, testInstance, mockSearch, mocker):
+        mockSearch.extra.return_value = mockSearch
+        mockSearch.source.return_value = mockSearch
+        testInstance.query = mockSearch
+
+        testResult = testInstance.executeDeepQuery(7500, 10)
+
+        assert testResult._extract_mock_name() == 'mockRes'
+        mockSearch.extra.assert_has_calls([
+            mocker.call(search_after=['testSort']), mocker.call(search_after=['testSort'])
+        ])
+        mockSearch.source.assert_has_calls([
+            mocker.call(False), mocker.call(True)
+        ])
+
+    def test_setPageResultCache(self, testInstance, mocker):
+        testInstance.redis = mocker.MagicMock()
+
+        testInstance.setPageResultCache('testCacheKey', ['Test', 'Sort'])
+
+        testInstance.redis.set.assert_called_once_with(
+            'test/queryPaging/testCacheKey', 'Test|Sort', ex=86400
+        )
+
+    def test_getPageResultCache(self, testInstance, mocker):
+        testInstance.redis = mocker.MagicMock()
+
+        testInstance.getPageResultCache('testCacheKey')
+
+        testInstance.redis.get('test/queryPaging/testCacheKey')
+
+    def test_generateQueryHash(self, mocker):
+        mockMakeHashable = mocker.patch.object(ElasticClient, 'makeDictHashable')
+        mockMakeHashable.return_value = 'testHashDict'
+
+        assert ElasticClient.generateQueryHash({}, 1) == '1711934bfb75c5942d7683190e93b7efc5d89274'
+
+    def test_makeDictHashable(self, mocker):
+        testHashable = ElasticClient.makeDictHashable({
+            'test': 'string',
+            'test2': ['an', 'array', {'of': 'objects'}],
+            'alttest': {'nested': 'object'}
+        })
+
+        testHashable == (
+            ('alttest', (('nested', 'object'),)),
+            ('test', 'string'),
+            ('test2', ('an', 'array', (('of', 'objects'),)))
+        )
 
     def test_escapeSearchQuery_changed(self):
         assert ElasticClient.escapeSearchQuery('[test]+a:thing!') == '\[test\]\+a\:thing\!'
