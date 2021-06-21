@@ -17,9 +17,7 @@ class ElasticClient():
         'writer of supplementary textual content'
     ]
 
-    def __init__(self, esClient):
-        self.client = esClient
-        
+    def __init__(self):
         self.query = None
 
         self.dateSort = None
@@ -30,7 +28,7 @@ class ElasticClient():
         self.appliedAggregations = []
     
     def createSearch(self):
-        return Search(using=self.client, index=os.environ['ELASTICSEARCH_INDEX'])
+        return Search(index=os.environ['ELASTICSEARCH_INDEX'])
 
     def searchQuery(self, params, page=0, perPage=10):
         startPos, endPos = ElasticClient.getFromSize(page, perPage)

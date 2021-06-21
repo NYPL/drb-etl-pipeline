@@ -11,7 +11,7 @@ class APIProcess(CoreProcess):
 
         self.createElasticConnection()
         self.generateEngine()
-        self.api = FlaskAPI(self.client, self.engine)
+        self.api = FlaskAPI(self.engine)
 
     def runProcess(self):
         logger.info('Starting API...')

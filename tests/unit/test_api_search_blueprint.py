@@ -53,7 +53,6 @@ class TestSearchBlueprint:
     
     def test_standardQuery(self, mockUtils, mockHits, mocker):
         flaskApp = Flask('test')
-        flaskApp.config['ES_CLIENT'] = 'testESClient'
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
 
         mockES = mocker.MagicMock()
@@ -90,7 +89,7 @@ class TestSearchBlueprint:
             testAPIResponse = standardQuery()
 
             assert testAPIResponse == 'mockAPIResponse'
-            mockESClient.assert_called_once_with('testESClient')
+            mockESClient.assert_called_once()
             mockDBClient.assert_called_once_with('testDBClient')
 
             mockUtils['normalizeQueryParams'].assert_called_once

@@ -14,10 +14,10 @@ class TestElasticClient:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testInstance(self, mocker):
+    def testInstance(self):
         class MockElasticClient(ElasticClient):
             def __init__(self):
-                self.client = mocker.MagicMock()
+                pass
 
         return MockElasticClient()
 
@@ -53,7 +53,7 @@ class TestElasticClient:
         searchClient = testInstance.createSearch()
 
         assert searchClient == 'searchClient'
-        mockSearch.assert_called_once_with(using=testInstance.client, index='test_es_index')
+        mockSearch.assert_called_once_with(index='test_es_index')
 
     def test_searchQuery_keyword_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
