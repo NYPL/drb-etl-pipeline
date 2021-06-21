@@ -3,6 +3,7 @@
 ## unreleased -- v0.6.4
 ### Fixed
 - Improved ElasticSearch connection in local client
+- Fixed VIAF/LCNAF parsing in clustering step
 
 ## 2021-06-15 -- v0.6.3
 ### Fixed

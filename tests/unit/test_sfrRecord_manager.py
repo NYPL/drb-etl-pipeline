@@ -132,31 +132,31 @@ class TestSFRRecordManager:
         assert set([l.id for l in testLinks]) == set(['item1', None])
 
     def test_buildEditionStructure(self, testInstance, mocker):
-        mockRecords = [
-            mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2'), mocker.MagicMock(uuid='uuid3')
-        ]
+        mockRecords = [mocker.MagicMock(uuid='uuid{}'.format(i)) for i in range(1, 7)]
 
-        testEditions = testInstance.buildEditionStructure(
-            mockRecords, [(1900, ['uuid1', 'uuid2', 'uuid4']), (2000, ['uuid3', 'uuid5'])]
+        testEditions, testWorkInstances = testInstance.buildEditionStructure(
+            mockRecords, [(1900, ['uuid1', 'uuid2', 'uuid3']), (2000, ['uuid4', 'uuid5'])]
         )
 
         assert testEditions[0][0] == 1900
-        assert testEditions[0][1] == mockRecords[:2]
+        assert testEditions[0][1] == mockRecords[:3]
         assert testEditions[1][0] == 2000
-        assert testEditions[1][1] == mockRecords[2:]
+        assert testEditions[1][1] == mockRecords[3:5]
+        assert testWorkInstances == set([mockRecords[5]])
 
     def test_buildWork(self, testInstance, mocker):
         managerMocks = mocker.patch.multiple(
             SFRRecordManager,
             buildEditionStructure=mocker.DEFAULT,
             createEmptyWorkRecord=mocker.DEFAULT,
+            addWorkInstanceMetadata=mocker.DEFAULT,
             buildEdition=mocker.DEFAULT
         )
 
-        managerMocks['buildEditionStructure'].return_value = [
-            (1900, ['instance1', 'instance2']),
-            (2000, ['instance3', 'instance4', 'instance5'])
-        ]
+        managerMocks['buildEditionStructure'].return_value = (
+            [(1900, ['instance1', 'instance2']), (2000, ['instance3', 'instance4', 'instance5'])],
+            ['workInst1', 'workInst2']
+        )
         managerMocks['createEmptyWorkRecord'].return_value = 'testWorkData'
         
         testWorkData = testInstance.buildWork('testRecords', 'testEditions')
@@ -164,11 +164,24 @@ class TestSFRRecordManager:
         assert testWorkData == 'testWorkData'
         
         managerMocks['buildEditionStructure'].assert_called_once_with('testRecords', 'testEditions')
-        managerMocks['createEmptyWorkRecord'].assert_called_once
+        managerMocks['createEmptyWorkRecord'].assert_called_once()
+        managerMocks['addWorkInstanceMetadata'].assert_has_calls([
+            mocker.call('testWorkData', 'workInst1'), mocker.call('testWorkData', 'workInst2')
+        ])
         managerMocks['buildEdition'].assert_has_calls([
             mocker.call('testWorkData', 1900, ['instance1', 'instance2']),
             mocker.call('testWorkData', 2000, ['instance3', 'instance4', 'instance5']),
         ])
+
+    def test_addWorkInstanceMetadata(self, testInstance, testDCDWRecord):
+        testWork = SFRRecordManager.createEmptyWorkRecord()
+
+        testInstance.addWorkInstanceMetadata(testWork, testDCDWRecord)
+
+        assert list(testWork['title'].elements()) == ['Test Title']
+        assert testWork['identifiers'] == set(['1|test', '2|isbn', '3|owi'])
+        assert list(testWork['authors']) == ['Test Author']
+        assert testWork['subjects'] == set(['Subject 1', 'Subject 2', 'Subject 3'])
 
     def test_buildEdition(self, testInstance, mocker):
         mockEmptyEdition = mocker.patch.object(SFRRecordManager, 'createEmptyEditionRecord')

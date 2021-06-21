@@ -104,25 +104,43 @@ class SFRRecordManager:
         return list(cleanLinks)
 
     def buildEditionStructure(self, records, editions):
+        recordDict = {r.uuid: r for r in records}
+
         editionRecs = [] 
+        workRecs = set(records)
 
         for editionTuple in editions:
             edYear, recs = editionTuple
-            editionRecs.append((edYear, list(filter(None, [
-                r if r.uuid in recs else None for r in records
-            ]))))
-        
-        return editionRecs
+            edRecs = [recordDict[rec] for rec in recs]
+            editionRecs.append((edYear, edRecs))
+
+            workRecs = workRecs - set(edRecs)
+
+        return editionRecs, workRecs
 
     def buildWork(self, records, editions):
-        editionRecs = self.buildEditionStructure(records, editions)
+        editionRecs, workRecs = self.buildEditionStructure(records, editions)
         
         workData = SFRRecordManager.createEmptyWorkRecord()
+
+        for workInstance in workRecs:
+            self.addWorkInstanceMetadata(workData, workInstance)
         
         for pubYear, instances in editionRecs:
             self.buildEdition(workData, pubYear, instances)
         
         return workData
+
+    def addWorkInstanceMetadata(self, workData, rec):
+        workData['title'][rec.title] += 1
+
+        workData['identifiers'].update(rec.identifiers)
+
+        if rec.authors:
+            workData['authors'].update(rec.authors)
+
+        if rec.subjects:
+            workData['subjects'].update(rec.subjects)
     
     def buildEdition(self, workData, pubYear, instances):
         editionData = SFRRecordManager.createEmptyEditionRecord()
@@ -477,7 +495,7 @@ class SFRRecordManager:
 
             if rec['name'] == '' and rec['viaf'] == '' and rec['lcnaf'] == '':
                 continue
-            
+
             existingMatch = False
             for oaKey, oa in outAgents.items():
                 for checkField in ['viaf', 'lcnaf']:
