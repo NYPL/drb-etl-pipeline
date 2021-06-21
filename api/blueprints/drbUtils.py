@@ -12,7 +12,7 @@ utils = Blueprint('utils', __name__, url_prefix='/utils')
 
 @utils.route('/languages', methods=['GET'])
 def languageCounts():
-    esClient = ElasticClient(current_app.config['ES_CLIENT'])
+    esClient = ElasticClient()
 
     reqParams = APIUtils.normalizeQueryParams(request.args)
     workCounts = reqParams.get('totals', ['true'])[0].lower() != 'false'

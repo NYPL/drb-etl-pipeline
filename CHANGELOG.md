@@ -1,12 +1,19 @@
 # CHANGELOG
 
-## unreleased -- v0.6.3
+## unreleased -- v0.6.4
+### Fixed
+- Improved ElasticSearch connection in local client
+- Fixed VIAF/LCNAF parsing in clustering step
+
+## 2021-06-15 -- v0.6.3
 ### Fixed
 - Order edition records in ascending date order in work detail pages
+- Replace author search blocklist with allowlist
 
 ## 2021-06-08 -- v0.6.2
 ### Fixed
 - Correct reversed boolean logic with `showAll` filter
+- Replaced author blocklist with allowlist for search queries
 
 ## 2021-06-07 -- v0.6.1
 ### Fixed

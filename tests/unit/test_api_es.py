@@ -14,10 +14,9 @@ class TestElasticClient:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testInstance(self, mocker):
+    def testInstance(self):
         class MockElasticClient(ElasticClient):
             def __init__(self):
-                self.client = mocker.MagicMock()
                 self.esIndex = 'test_es_index'
                 self.environment = 'test'
 
@@ -62,7 +61,7 @@ class TestElasticClient:
         searchClient = testInstance.createSearch()
 
         assert searchClient == 'searchClient'
-        mockSearch.assert_called_once_with(using=testInstance.client, index='test_es_index')
+        mockSearch.assert_called_once_with(index='test_es_index')
 
     def test_searchQuery(self, testInstance, mocker):
         mockGenerate = mocker.patch.object(ElasticClient, 'generateSearchQuery')
@@ -434,11 +433,11 @@ class TestElasticClient:
         assert testQuery['bool']['should'][0]['nested']['path'] == 'agents'
         assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['query_string']['query'] == 'testAuthor'
         assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['query_string']['fields'] == ['agents.name']
-        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must_not'][0]['terms']['agents.roles'] == ElasticClient.ROLE_BLOCKLIST
+        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][1]['terms']['agents.roles'] == ElasticClient.ROLE_ALLOWLIST
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions.agents'
         assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['query_string']['query'] == 'testAuthor'
         assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['query_string']['fields'] == ['editions.agents.name']
-        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must_not'][0]['terms']['editions.agents.roles'] == ElasticClient.ROLE_BLOCKLIST
+        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][1]['terms']['editions.agents.roles'] == ElasticClient.ROLE_ALLOWLIST
 
     def test_authorityQuery(self):
         testQueryES = ElasticClient.authorityQuery('testAuth', 'testID')

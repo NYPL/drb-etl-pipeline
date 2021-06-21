@@ -18,7 +18,7 @@ class APIProcess(CoreProcess):
         # Redis Connection
         self.createRedisClient()
 
-        self.api = FlaskAPI(self.client, self.engine, self.redisClient)
+        self.api = FlaskAPI(self.engine, self.redisClient)
 
     def runProcess(self):
         logger.info('Starting API...')

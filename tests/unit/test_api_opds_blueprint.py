@@ -112,7 +112,6 @@ class TestOPDSBlueprint:
 
     def test_opdsSearch(self, mockUtils, opdsMocks, mockHits, mocker):
         flaskApp = Flask('test')
-        flaskApp.config['ES_CLIENT'] = 'testESClient'
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
 
         mockES = mocker.MagicMock()
@@ -143,7 +142,7 @@ class TestOPDSBlueprint:
         with flaskApp.test_request_context('/search'):
             assert opdsSearch() == 'mockOPDSResponse'
 
-            mockESClient.assert_called_once_with('testESClient')
+            mockESClient.assert_called_once()
             mockDBClient.assert_called_once_with('testDBClient')
 
             mockUtils['normalizeQueryParams'].assert_called_once()

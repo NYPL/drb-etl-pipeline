@@ -11,26 +11,22 @@ logger = createLog(__name__)
 
 
 class ElasticClient():
-    ROLE_BLOCKLIST = ['arl', 'binder', 'binding designer', 'book designer',
-        'book producer', 'bookseller', 'collector', 'consultant', 'contractor',
-        'corrector', 'dedicatee', 'donor', 'copyright holder', 'court reporter',
-        'electrotyper', 'engineer', 'engraver', 'expert', 'former owner', 'funder',
-        'honoree', 'host institution', 'imprint', 'inscriber', 'other', 'patron',
-        'performer', 'presenter', 'producer', 'production company', 'publisher',
-        'printer', 'printer of plates', 'printmaker', 'proofreader',
-        'publishing director', 'retager', 'secretary', 'sponsor', 'stereotyper',
-        'thesis advisor', 'transcriber', 'typographer', 'woodcutter',
+    ROLE_ALLOWLIST = [
+        'author of afterwor, colophon, etc.', 'author of dialog',
+        'author of introduction, etc.', 'author', 'colorist', 'composer',
+        'compiler', 'creator', 'contributor', 'editor', 'film director',
+        'film producer', 'illustrator', 'illuminator', 'interviewer',
+        'interviewee', 'lyricist', 'translator', 'videographer',
+        'writer of introduction', 'writer of preface',
+        'writer of supplementary textual content'
     ]
 
-    def __init__(self, esClient, redisClient):
+    def __init__(self, redisClient):
         self.environment = os.environ['ENVIRONMENT']
         self.esIndex = os.environ['ELASTICSEARCH_INDEX']
 
-        self.client = esClient
         self.redis = redisClient
         
-        self.query = None
-
         self.dateSort = None
         self.sortReversed = False
 
@@ -40,7 +36,7 @@ class ElasticClient():
         self.appliedAggregations = []
     
     def createSearch(self):
-        return Search(using=self.client, index=self.esIndex)
+        return Search(index=os.environ['ELASTICSEARCH_INDEX'])
 
     def searchQuery(self, params, page=0, perPage=10):
         self.generateSearchQuery(params)
@@ -199,12 +195,16 @@ class ElasticClient():
     @classmethod
     def authorQuery(cls, authorText):
         workAgentQuery = Q('bool',
-            must=[Q('query_string', query=authorText, fields=['agents.name'], default_operator='and')],
-            must_not=[Q('terms', agents__roles=cls.ROLE_BLOCKLIST)]
+            must=[
+                Q('query_string', query=authorText, fields=['agents.name'], default_operator='and'),
+                Q('terms', agents__roles=cls.ROLE_ALLOWLIST)
+            ]
         )
         editionAgentQuery = Q('bool',
-            must=[Q('query_string', query=authorText, fields=['editions.agents.name'], default_operator='and')],
-            must_not=[Q('terms', editions__agents__roles=cls.ROLE_BLOCKLIST)]
+            must=[
+                Q('query_string', query=authorText, fields=['editions.agents.name'], default_operator='and'),
+                Q('terms', editions__agents__roles=cls.ROLE_ALLOWLIST)
+            ]
         )
 
         return Q('bool',
