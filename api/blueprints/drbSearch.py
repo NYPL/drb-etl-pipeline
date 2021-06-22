@@ -10,7 +10,7 @@ search = Blueprint('search', __name__, url_prefix='/search')
 
 @search.route('/', methods=['GET'])
 def standardQuery():
-    esClient = ElasticClient()
+    esClient = ElasticClient(current_app.config['REDIS_CLIENT'])
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
 
@@ -40,6 +40,9 @@ def standardQuery():
         (r.uuid, [e.edition_id for e in r.meta.inner_hits.editions.hits])
         for r in searchResult.hits
     ]
+
+    if esClient.sortReversed is True:
+        resultIds = [r for r in reversed(resultIds)]
 
     filteredFormats = [
         mediaType for f in list(filter(lambda x: x[0] == 'format', terms['filter']))

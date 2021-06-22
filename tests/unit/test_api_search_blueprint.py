@@ -54,6 +54,7 @@ class TestSearchBlueprint:
     def test_standardQuery(self, mockUtils, mockHits, mocker):
         flaskApp = Flask('test')
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
+        flaskApp.config['REDIS_CLIENT'] = 'testRedisClient'
 
         mockES = mocker.MagicMock()
         mockESClient = mocker.patch('api.blueprints.drbSearch.ElasticClient')
@@ -89,7 +90,7 @@ class TestSearchBlueprint:
             testAPIResponse = standardQuery()
 
             assert testAPIResponse == 'mockAPIResponse'
-            mockESClient.assert_called_once()
+            mockESClient.assert_called_once_with('testRedisClient')
             mockDBClient.assert_called_once_with('testDBClient')
 
             mockUtils['normalizeQueryParams'].assert_called_once
@@ -124,6 +125,7 @@ class TestSearchBlueprint:
     def test_standardQuery_elastic_error(self, mockUtils, mocker):
         flaskApp = Flask('test')
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
+        flaskApp.config['REDIS_CLIENT'] = 'testRedisClient'
 
         mockES = mocker.MagicMock()
         mockESClient = mocker.patch('api.blueprints.drbSearch.ElasticClient')

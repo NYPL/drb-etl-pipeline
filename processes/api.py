@@ -9,9 +9,16 @@ class APIProcess(CoreProcess):
     def __init__(self, *args):
         super(APIProcess, self).__init__(*args[:4])
 
+        # ElasticSearch Connection
         self.createElasticConnection()
+
+        # Generate PostgreSQL engine
         self.generateEngine()
-        self.api = FlaskAPI(self.engine)
+
+        # Redis Connection
+        self.createRedisClient()
+
+        self.api = FlaskAPI(self.engine, self.redisClient)
 
     def runProcess(self):
         logger.info('Starting API...')
