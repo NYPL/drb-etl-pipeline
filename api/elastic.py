@@ -99,10 +99,13 @@ class ElasticClient():
         else:
             res = self.query[startPos:endPos].execute()
         
-        lastSort = list(res.hits[-1].meta.sort)
 
         if not searchFromStr:
-            self.setPageResultCache(queryHash, lastSort)
+            try:
+                lastSort = list(res.hits[-1].meta.sort)
+                self.setPageResultCache(queryHash, lastSort)
+            except IndexError:
+                logger.debug('Empty result set, skipping paging cache')
 
         return res
 

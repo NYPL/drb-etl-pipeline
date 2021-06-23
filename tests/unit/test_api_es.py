@@ -291,6 +291,25 @@ class TestElasticClient:
         searchMocks['getPageResultCache'].assert_not_called()
         searchMocks['setPageResultCache'].assert_called_once_with('testHash', ['testSort'])
 
+    def test_executeSearchQuery_no_results(self, testInstance, mockSearch, searchMocks, mocker):
+        searchMocks['getFromSize'].return_value = (0, 10)
+        searchMocks['generateQueryHash'].return_value = 'testHash'
+        searchMocks['getPageResultCache'].return_value = None
+
+        mockEmptyRes = mocker.MagicMock(name='mockRes', hits=[])
+        mockSearch.execute.return_value = mockEmptyRes
+
+        testInstance.query = mockSearch
+
+        testResult = testInstance.executeSearchQuery({}, 0, 10)
+
+        assert testResult._extract_mock_name() == 'mockRes'
+
+        searchMocks['getFromSize'].assert_called_once_with(0, 10)
+        searchMocks['generateQueryHash'].assert_called_once_with({}, 0)
+        searchMocks['getPageResultCache'].assert_not_called()
+        searchMocks['setPageResultCache'].assert_not_called()
+
     def test_executeSearchQuery_cached(self, testInstance, mockSearch, searchMocks):
         searchMocks['getFromSize'].return_value = (10, 20)
         searchMocks['generateQueryHash'].return_value = 'testHash'
