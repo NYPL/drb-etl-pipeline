@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.6.4
+## 2021-06-23 -- v0.6.4
 ### Added
 - Added deep paging options for result sets larger than 10,000 records
 ### Fixed
