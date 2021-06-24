@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.6.6
+### Fixed
+- Default sorting options
+
 ## 2021-06-24 -- v0.6.5
 ### Fixed
 - Handling of empty result sets from ElasticSearch
