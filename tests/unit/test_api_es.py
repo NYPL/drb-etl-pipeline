@@ -439,7 +439,7 @@ class TestElasticClient:
         testQuery = testQueryES.to_dict()
 
         assert testQuery['bool']['should'][0]['query_string']['query'] == 'testTitle'
-        assert testQuery['bool']['should'][0]['query_string']['fields'] == ['title', 'alt_titles']
+        assert testQuery['bool']['should'][0]['query_string']['fields'] == ['title^3', 'alt_titles']
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions'
         assert testQuery['bool']['should'][1]['nested']['query']['query_string']['query'] == 'testTitle'
         assert testQuery['bool']['should'][1]['nested']['query']['query_string']['fields'] == ['editions.title']
@@ -451,7 +451,7 @@ class TestElasticClient:
 
         assert testQuery['bool']['should'][0]['nested']['path'] == 'agents'
         assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['query_string']['query'] == 'testAuthor'
-        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['query_string']['fields'] == ['agents.name']
+        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['query_string']['fields'] == ['agents.name^2']
         assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][1]['terms']['agents.roles'] == ElasticClient.ROLE_ALLOWLIST
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions.agents'
         assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['query_string']['query'] == 'testAuthor'
@@ -586,7 +586,7 @@ class TestElasticClient:
         testInstance.addSortClause([])
 
         assert testInstance.query == 'sortQuery'
-        mockQuery.sort.assert_called_once_with({'uuid': 'asc'})
+        mockQuery.sort.assert_called_once_with({'_score': 'desc'}, {'uuid': 'asc'})
 
     def test_addSortClause_reverse_true(self, testInstance, mocker):
         mockQuery = mocker.MagicMock()
