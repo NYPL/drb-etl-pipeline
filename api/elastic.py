@@ -99,9 +99,6 @@ class ElasticClient():
         else:
             res = self.query[startPos:endPos].execute()
         
-        for r in res.hits:
-            print(r.meta.score, r.title)
-
         if not searchFromStr:
             try:
                 lastSort = list(res.hits[-1].meta.sort)
@@ -141,7 +138,6 @@ class ElasticClient():
             iteration += 1 
 
     def setPageResultCache(self, cacheKey, sort):
-        print(sort)
         self.redis.set(
             '{}/queryPaging/{}'.format(self.environment, cacheKey),
             '|'.join([str(s) for s in sort]),
