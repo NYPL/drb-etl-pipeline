@@ -19,6 +19,7 @@ class TestEditionBlueprint:
     def testApp(self):
         flaskApp = Flask('test')
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
+        flaskApp.config['REDIS_CLIENT'] = 'testRedisClient'
 
         return flaskApp
 
@@ -38,7 +39,7 @@ class TestEditionBlueprint:
             testAPIResponse = languageCounts()
 
             assert testAPIResponse == 'languageListResponse'
-            mockESClient.assert_called_once()
+            mockESClient.assert_called_once_with('testRedisClient')
 
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockES.languageQuery.assert_called_once_with(True)

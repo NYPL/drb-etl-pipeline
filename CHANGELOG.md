@@ -3,6 +3,7 @@
 ## unreleased -- v0.6.6
 ### Fixed
 - Default sorting options
+- Added Redis client to `utils/languages` endpoint to resolve error
 
 ## 2021-06-24 -- v0.6.5
 ### Fixed

@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, current_app, request
+from flask import Blueprint, current_app, request
 
 from ..db import DBClient
 from ..elastic import ElasticClient
@@ -12,7 +12,7 @@ utils = Blueprint('utils', __name__, url_prefix='/utils')
 
 @utils.route('/languages', methods=['GET'])
 def languageCounts():
-    esClient = ElasticClient()
+    esClient = ElasticClient(current_app.config['REDIS_CLIENT'])
 
     reqParams = APIUtils.normalizeQueryParams(request.args)
     workCounts = reqParams.get('totals', ['true'])[0].lower() != 'false'
