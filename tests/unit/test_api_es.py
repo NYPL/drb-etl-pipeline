@@ -429,7 +429,7 @@ class TestElasticClient:
         )
 
     def test_escapeSearchQuery_changed(self):
-        assert ElasticClient.escapeSearchQuery('[test]+a:thing!') == '\[test\]\+a\:thing\!'
+        assert ElasticClient.escapeSearchQuery('/[test]+a:thing!') == '\/\[test\]\+a\:thing\!'
 
     def test_escapeSearchQuery_unchanged(self):
         assert ElasticClient.escapeSearchQuery('a simple query') == 'a simple query'
