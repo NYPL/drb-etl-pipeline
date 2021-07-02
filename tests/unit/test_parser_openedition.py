@@ -85,6 +85,7 @@ class TestOpenEditionParser:
         testLinks = testParser.createEpubLink('sourceURI', 'application/epub+xml', {'reader': True})
 
         assert testLinks == [
+            ('testRoot/epubs/doab/pub_1/manifest.json', {'reader': True}, 'application/webpub+json', None, None),
             ('testRoot/epubs/doab/pub_1/META-INF/container.xml', {'reader': True}, 'application/epub+xml', None, None),
             ('testRoot/epubs/doab/pub_1.epub', {'download': True}, 'application/epub+zip', None, ('epubs/doab/pub_1.epub', 'sourceURI'))
         ]

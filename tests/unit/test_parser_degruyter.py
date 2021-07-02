@@ -93,6 +93,7 @@ class TestDeGruyterParser:
         testLinks = testParser.generateEpubLinks('testRoot/', 'epubSourceURI')
 
         assert testLinks == [
+            ('testRoot/epubs/degruyter/1/manifest.json', {'reader': True}, 'application/webpub+json', None, None),
             ('testRoot/epubs/degruyter/1/META-INF/container.xml', {'reader': True}, 'application/epub+xml', None, None),
             ('testRoot/epubs/degruyter/1.epub', {'download': True}, 'application/epub+zip', None, ('epubs/degruyter/1.epub', 'epubSourceURI'))
         ]
