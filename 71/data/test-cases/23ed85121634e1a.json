@@ -1,0 +1,229 @@
+{
+  "uid" : "23ed85121634e1a",
+  "name" : "test_addSortClause_reverse_true",
+  "fullName" : "tests.unit.test_api_es.TestElasticClient#test_addSortClause_reverse_true",
+  "historyId" : "71264265a3fe54f3e6fff2dc214e6aad",
+  "time" : {
+    "start" : 1625443808889,
+    "stop" : 1625443808891,
+    "duration" : 2
+  },
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "beforeStages" : [ {
+    "name" : "mocker",
+    "time" : {
+      "start" : 1625443808889,
+      "stop" : 1625443808889,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "xunit_setup_class_fixture_TestElasticClient",
+    "time" : {
+      "start" : 1625443808708,
+      "stop" : 1625443808708,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "testInstance",
+    "time" : {
+      "start" : 1625443808889,
+      "stop" : 1625443808889,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1625443808631,
+      "stop" : 1625443808631,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "afterStages" : [ {
+    "name" : "mocker::0",
+    "time" : {
+      "start" : 1625443808891,
+      "stop" : 1625443808891,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "xunit_setup_class_fixture_TestElasticClient::0",
+    "time" : {
+      "start" : 1625443808940,
+      "stop" : 1625443808940,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "parentSuite",
+    "value" : "tests.unit"
+  }, {
+    "name" : "suite",
+    "value" : "test_api_es"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestElasticClient"
+  }, {
+    "name" : "host",
+    "value" : "fv-az224-399"
+  }, {
+    "name" : "thread",
+    "value" : "3278-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "tests.unit.test_api_es"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "history" : {
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 0,
+        "skipped" : 0,
+        "passed" : 9,
+        "unknown" : 0,
+        "total" : 9
+      },
+      "items" : [ {
+        "uid" : "209cb9e7cea03e99",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/70//#testresult/209cb9e7cea03e99",
+        "status" : "passed",
+        "time" : {
+          "start" : 1625148557078,
+          "stop" : 1625148557079,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "47b88c4ddbe5f1a9",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/69//#testresult/47b88c4ddbe5f1a9",
+        "status" : "passed",
+        "time" : {
+          "start" : 1625078680538,
+          "stop" : 1625078680539,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "d78873b086ad3a2f",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/68//#testresult/d78873b086ad3a2f",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624839080532,
+          "stop" : 1624839080532,
+          "duration" : 0
+        }
+      }, {
+        "uid" : "841a8ecb3193d5c6",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/67//#testresult/841a8ecb3193d5c6",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624546001201,
+          "stop" : 1624546001202,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "43b305052342bfb8",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/66//#testresult/43b305052342bfb8",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624479448926,
+          "stop" : 1624479448927,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "709c80cd426daa5f",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/65//#testresult/709c80cd426daa5f",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624460432643,
+          "stop" : 1624460432644,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "9c9d5e5cee1cd5b0",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/64//#testresult/9c9d5e5cee1cd5b0",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624369095674,
+          "stop" : 1624369095675,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "727aade99f2ae17e",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/63//#testresult/727aade99f2ae17e",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624367377517,
+          "stop" : 1624367377518,
+          "duration" : 1
+        }
+      } ]
+    },
+    "tags" : [ ]
+  },
+  "source" : "23ed85121634e1a.json",
+  "parameterValues" : [ ]
+}
