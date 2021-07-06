@@ -99,7 +99,6 @@ class ElasticClient():
         else:
             res = self.query[startPos:endPos].execute()
         
-
         if not searchFromStr:
             try:
                 lastSort = list(res.hits[-1].meta.sort)
@@ -141,7 +140,7 @@ class ElasticClient():
     def setPageResultCache(self, cacheKey, sort):
         self.redis.set(
             '{}/queryPaging/{}'.format(self.environment, cacheKey),
-            '|'.join(sort),
+            '|'.join([str(s) for s in sort]),
             ex=60*60*24
         )
 
@@ -171,7 +170,7 @@ class ElasticClient():
 
     @staticmethod
     def escapeSearchQuery(query):
-        return re.sub(r'[\+\-\&\|\!\(\)\[\]\{\}\^\~\?\:\\]{1}', '\\\\\g<0>', query)
+        return re.sub(r'[\+\-\&\|\!\(\)\[\]\{\}\^\~\?\:\\\/]{1}', '\\\\\g<0>', query)
 
     def languageQuery(self, workTotals):
         search = self.createSearch()
@@ -190,7 +189,7 @@ class ElasticClient():
     def titleQuery(cls, titleText):
         return Q('bool',
             should=[
-                Q('query_string', query=titleText, fields=['title', 'alt_titles'], default_operator='and'),
+                Q('query_string', query=titleText, fields=['title^3', 'alt_titles'], default_operator='and'),
                 Q('nested', path='editions', query=Q('query_string', query=titleText, fields=['editions.title'], default_operator='and'))
             ]
         )
@@ -199,7 +198,7 @@ class ElasticClient():
     def authorQuery(cls, authorText):
         workAgentQuery = Q('bool',
             must=[
-                Q('query_string', query=authorText, fields=['agents.name'], default_operator='and'),
+                Q('query_string', query=authorText, fields=['agents.name^2'], default_operator='and'),
                 Q('terms', agents__roles=cls.ROLE_ALLOWLIST)
             ]
         )
@@ -275,6 +274,9 @@ class ElasticClient():
                 }
 
                 sortValues.append(self.dateSort)
+
+        if len(sortValues) < 1:
+            sortValues.append({'_score': 'desc'})
 
         sortValues.append({'uuid': 'asc' if reverse is False else 'desc'})
         
