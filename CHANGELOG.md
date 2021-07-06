@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.7.0
+### Added
+- Creation of Webpub Manifests for all ingested ePub files
+
 ## 2021-07-01 -- v0.6.6
 ### Fixed
 - Default sorting options
