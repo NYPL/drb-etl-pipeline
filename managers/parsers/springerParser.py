@@ -94,16 +94,24 @@ class SpringerParser(AbstractParser):
 
         if SpringerParser.checkAvailability(ePubSourceURI) is False: return []
 
+        uriCode = self.code.replace('.', '-')
+
         ePubDownloadPath = 'epubs/springer/{}_{}.epub'.format(
-            self.code.replace('.', '-'), self.uriIdentifier
+            uriCode, self.uriIdentifier
         )
         ePubDownloadURI = '{}{}'.format(s3Root, ePubDownloadPath)
         ePubReadPath = 'epubs/springer/{}_{}/META-INF/container.xml'.format(
-            self.code.replace('.', '-'), self.uriIdentifier
+            uriCode, self.uriIdentifier
         )
         ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
 
+        webpubReadPath = 'epubs/springer/{}_{}/manifest.json'.format(
+            uriCode, self.uriIdentifier
+        )
+        webpubReadURI = '{}{}'.format(s3Root, webpubReadPath)
+
         return [
+            (webpubReadURI, {'reader': True}, 'application/webpub+json', None, None),
             (ePubReadURI, {'reader': True}, 'application/epub+zip', None, None),
             (ePubDownloadURI, {'download': True}, 'application/epub+xml', None, (ePubDownloadPath, ePubSourceURI))
         ]

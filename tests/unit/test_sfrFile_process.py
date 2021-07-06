@@ -28,7 +28,7 @@ class TestS3Process:
         {
             "fileData": {
                 "fileURL": "testSourceURL",
-                "bucketPath": "testBucketPath"
+                "bucketPath": "testBucketPath.epub"
             }
         }
         """
@@ -79,6 +79,9 @@ class TestS3Process:
         mockGet = mocker.patch.object(S3Process, 'getFileContents')
         mockGet.return_value = 'testFileBytes'
 
+        mockGenerateWebpub = mocker.patch.object(S3Process, 'generateWebpub')
+        mockGenerateWebpub.return_value = 'testWebpubJson'
+
         S3Process.storeFilesInS3()
 
         assert mockRabbit.getMessageFromQueue.call_count == 5
@@ -88,7 +91,12 @@ class TestS3Process:
             mocker.call(30), mocker.call(60), mocker.call(90)
         ])
 
-        mockS3.putObjectInBucket.assert_called_once_with('testFileBytes', 'testBucketPath', 'test_aws_bucket')
+        mockGenerateWebpub.assert_called_once_with('test_conversion_url', 'testBucketPath', 'test_aws_bucket')
+
+        mockS3.putObjectInBucket.assert_has_calls([
+            mocker.call('testFileBytes', 'testBucketPath.epub', 'test_aws_bucket'),
+            mocker.call('testWebpubJson', 'testBucketPath/manifest.json', 'test_aws_bucket')
+        ])
         mockRabbit.acknowledgeMessageProcessed.assert_called_once_with('rabbitMQTag')
 
     def test_getFileContents_success(self, testInstance, mocker):
@@ -116,3 +124,32 @@ class TestS3Process:
 
         with pytest.raises(Exception):
             testInstance.getFileContents('testURL')
+
+    def test_generateWebpub_success(self, mocker):
+        mockGet = mocker.patch.object(requests, 'get')
+        mockResp = mocker.MagicMock(content='testWebpub')
+        mockGet.return_value = mockResp
+
+        testWebpub = S3Process.generateWebpub('converterURL', 'testRoot', 'testBucket')
+
+        assert testWebpub == 'testWebpub'
+
+        mockGet.assert_called_once_with(
+            'converterURL/api/https%3A%2F%2FtestBucket.s3.amazonaws.com%2FtestRoot%2FMETA-INF%2Fcontainer.xml',
+            timeout=15
+        )
+
+    def test_generateWebpub_error(self, mocker):
+        mockGet = mocker.patch.object(requests, 'get')
+        mockResp = mocker.MagicMock(content='testWebpub')
+        mockResp.raise_for_status.side_effect = Exception
+        mockGet.return_value = mockResp
+
+        testWebpub = S3Process.generateWebpub('converterURL', 'testRoot', 'testBucket')
+
+        assert testWebpub == None
+
+        mockGet.assert_called_once_with(
+            'converterURL/api/https%3A%2F%2FtestBucket.s3.amazonaws.com%2FtestRoot%2FMETA-INF%2Fcontainer.xml',
+            timeout=15
+        )

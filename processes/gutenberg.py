@@ -102,7 +102,8 @@ class GutenbergProcess(CoreProcess):
             self.addDCDWToUpdateList(gutenbergRec)
 
     def storeEpubsInS3(self, gutenbergRec):
-        for i, epubItem in enumerate(gutenbergRec.record.has_part):
+        newParts = []
+        for epubItem in gutenbergRec.record.has_part:
             pos, gutenbergURL, source, mediaType, flagStr = epubItem.split('|')
 
             epubIDParts = re.search(r'\/([0-9]+).epub.([a-z]+)$', gutenbergURL)
@@ -113,16 +114,32 @@ class GutenbergProcess(CoreProcess):
 
             if flags['download'] is True:
                 bucketLocation = 'epubs/{}/{}_{}.epub'.format(source, gutenbergID, gutenbergType)
-            else:
-                bucketLocation = 'epubs/{}/{}_{}/META-INF/container.xml'.format(source, gutenbergID, gutenbergType)
-                mediaType = 'application/epub+xml'
+                self.addNewPart(
+                    newParts, pos, source, flagStr, mediaType, bucketLocation
+                )
 
-            s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
-
-            gutenbergRec.record.has_part[i] = '|'.join([pos, s3URL, source, mediaType, flagStr])
-
-            if flags['download'] is True:
                 self.sendFileToProcessingQueue(gutenbergURL, bucketLocation)
+            else:
+                # Add link to ePub container.xml
+                self.addNewPart(
+                    newParts, pos, source, flagStr,
+                    'application/epub+xml',
+                    'epubs/{}/{}_{}/META-INF/container.xml'.format(source, gutenbergID, gutenbergType)
+                )
+
+                # Add link to webpub manifest
+                self.addNewPart(
+                    newParts, pos, source, flagStr,
+                    'application/webpub+json',
+                    'epubs/{}/{}_{}/manifest.json'.format(source, gutenbergID, gutenbergType)
+                )
+
+        gutenbergRec.record.has_part = newParts
+
+    def addNewPart(self, parts, pos, source, flagStr, mediaType, location):
+            s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, location)
+
+            parts.append('|'.join([pos, s3URL, source, mediaType, flagStr]))
 
     def addCoverAndStoreInS3(self, gutenbergRec, yamlData):
         for coverData in yamlData['covers']:

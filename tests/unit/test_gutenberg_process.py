@@ -167,6 +167,7 @@ class TestGutenbergProcess:
         ]
 
         mockSendToQueue = mocker.patch.object(GutenbergProcess, 'sendFileToProcessingQueue')
+        mockAddPart = mocker.patch.object(GutenbergProcess, 'addNewPart')
 
         testInstance.storeEpubsInS3(mockRecord)
 
@@ -174,11 +175,20 @@ class TestGutenbergProcess:
             mocker.call('gutenberg.org/ebook/1.epub.images', 'epubs/gutenberg/1_images.epub'),
             mocker.call('gutenberg.org/ebook/2.epub.noimages', 'epubs/gutenberg/2_noimages.epub')
         ])
-        assert mockRecord.record.has_part == [
-            '1|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/1_images.epub|gutenberg|application/epub+zip|{"download": true}',
-            '1|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/1_images/META-INF/container.xml|gutenberg|application/epub+xml|{"download": false}',
-            '2|https://test_aws_bucket.s3.amazonaws.com/epubs/gutenberg/2_noimages.epub|gutenberg|application/epub+zip|{"download": true}',
-        ]
+
+        mockAddPart.assert_has_calls([
+            mocker.call([], '1', 'gutenberg', '{"download": true}', 'application/epub+zip', 'epubs/gutenberg/1_images.epub'),
+            mocker.call([], '1', 'gutenberg', '{"download": false}', 'application/epub+xml', 'epubs/gutenberg/1_images/META-INF/container.xml'),
+            mocker.call([], '1', 'gutenberg', '{"download": false}', 'application/webpub+json', 'epubs/gutenberg/1_images/manifest.json'),
+            mocker.call([], '2', 'gutenberg', '{"download": true}', 'application/epub+zip', 'epubs/gutenberg/2_noimages.epub'),
+        ])
+
+    def test_addNewPart(self, testInstance):
+        testParts = []
+
+        testInstance.addNewPart(testParts, '1', 'test', '{}', 'application/test', 'epubs/test/1.epub')
+
+        assert testParts[0] == '1|https://test_aws_bucket.s3.amazonaws.com/epubs/test/1.epub|test|application/test|{}'
 
     def test_addCoverAndStoreInS3(self, testInstance, testMetadataYAML, mocker):
         mockRecord = mocker.MagicMock()

@@ -150,6 +150,7 @@ class TestSpringerParser:
         testLinks = testParser.createEPubLinks('testRoot/')
 
         assert testLinks == [
+            ('testRoot/epubs/springer/10-007_1/manifest.json', {'reader': True}, 'application/webpub+json', None, None),
             ('testRoot/epubs/springer/10-007_1/META-INF/container.xml', {'reader': True}, 'application/epub+zip', None, None),
             ('testRoot/epubs/springer/10-007_1.epub', {'download': True}, 'application/epub+xml', None, ('epubs/springer/10-007_1.epub', 'https://link.springer.com/download/epub/10.007/1.epub')),
         ]

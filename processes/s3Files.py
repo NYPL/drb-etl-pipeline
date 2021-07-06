@@ -3,10 +3,13 @@ from multiprocessing import Process
 import os
 import requests
 from time import sleep
+from urllib.parse import quote_plus
 
 from .core import CoreProcess
 from managers import S3Manager, RabbitMQManager
+from logger import createLog
 
+logger = createLog(__name__)
 
 class S3Process(CoreProcess):
     def __init__(self, *args):
@@ -33,6 +36,8 @@ class S3Process(CoreProcess):
 
         fileQueue = os.environ['FILE_QUEUE']
         fileRoute = os.environ['FILE_ROUTING_KEY']
+        epubConverterURL = os.environ['WEBPUB_CONVERSION_URL']
+
         rabbitManager = RabbitMQManager()
         rabbitManager.createRabbitConnection()
         rabbitManager.createOrConnectQueue(fileQueue, fileRoute)
@@ -57,14 +62,32 @@ class S3Process(CoreProcess):
             filePath = fileMeta['bucketPath']
 
             try:
-                print(fileURL)
+                logger.info('Storing {}'.format(fileURL))
                 epubB = S3Process.getFileContents(fileURL)
+
                 storageManager.putObjectInBucket(epubB, filePath, bucket)
+
+                if '.epub' in filePath:
+                    fileRoot = '.'.join(filePath.split('.')[:-1]) 
+
+                    webpubManifest = S3Process.generateWebpub(
+                        epubConverterURL, fileRoot, bucket
+                    )
+
+                    storageManager.putObjectInBucket(
+                        webpubManifest,
+                        '{}/manifest.json'.format(fileRoot),
+                        bucket
+                    )
+
                 rabbitManager.acknowledgeMessageProcessed(msgProps.delivery_tag)
-                print('Sending Tag {} for {}'.format(fileURL, msgProps.delivery_tag))
+
+                logger.info('Sending Tag {} for {}'.format(fileURL, msgProps.delivery_tag))
+
                 del epubB
             except Exception as e:
-                print(e)
+                logger.error('Unable to store file in S3')
+                logger.debug(e)
 
     @staticmethod
     def getFileContents(epubURL):
@@ -84,3 +107,21 @@ class S3Process(CoreProcess):
             return content
         
         raise Exception('Unable to fetch ePub file')
+
+    @staticmethod
+    def generateWebpub(converterRoot, fileRoot, bucket):
+        s3Path = 'https://{}.s3.amazonaws.com/{}/META-INF/container.xml'.format(
+            bucket, fileRoot
+        )
+
+        converterURL = '{}/api/{}'.format(converterRoot, quote_plus(s3Path))
+
+        try:
+            webpubResp = requests.get(converterURL, timeout=15)
+
+            webpubResp.raise_for_status()
+
+            return webpubResp.content
+        except Exception as e:
+            logger.warning('Unable to generate webpub')
+            logger.debug(e)

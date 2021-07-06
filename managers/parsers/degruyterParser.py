@@ -52,7 +52,11 @@ class DeGruyterParser(AbstractParser):
         ePubReadPath = 'epubs/degruyter/{}/META-INF/container.xml'.format(self.uriIdentifier)
         ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
 
+        webpubReadPath = 'epubs/degruyter/{}/manifest.json'.format(self.uriIdentifier)
+        webpubReadURI = '{}{}'.format(s3Root, webpubReadPath)
+
         return [
+            (webpubReadURI, {'reader': True}, 'application/webpub+json', None, None),
             (ePubReadURI, {'reader': True}, 'application/epub+xml', None, None),
             (ePubDownloadURI, {'download': True}, 'application/epub+zip', None, (ePubDownloadPath, ePubSourceURI)),
         ]

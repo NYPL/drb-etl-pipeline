@@ -51,7 +51,11 @@ class FrontierParser(AbstractParser):
         ePubReadPath = 'epubs/frontier/{}_{}/META-INF/container.xml'.format(self.uriIdentifier, filename)
         ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
 
+        webpubReadPath = 'epubs/frontier/{}_{}/manifest.json'.format(self.uriIdentifier, filename)
+        webpubReadURI = '{}{}'.format(s3Root, webpubReadPath)
+
         return [
+            (webpubReadURI, {'reader': True}, 'application/webpub+json', None, None),
             (ePubReadURI, {'reader': True}, 'application/epub+xml', None, None),
             (ePubDownloadURI, {'download': True}, 'application/epub+zip', None, (ePubDownloadPath, ePubSourceURI))
         ]

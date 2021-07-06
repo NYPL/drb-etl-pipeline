@@ -71,7 +71,11 @@ class OpenEditionParser(AbstractParser):
         ePubReadPath = 'epubs/doab/{}_{}/META-INF/container.xml'.format(self.publisher, self.uriIdentifier)
         ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
 
+        webpubReadPath = 'epubs/doab/{}_{}/manifest.json'.format(self.publisher, self.uriIdentifier)
+        webpubReadURI = '{}{}'.format(s3Root, webpubReadPath)
+
         return [
+            (webpubReadURI, bookFlags, 'application/webpub+json', None, None),
             (ePubReadURI, bookFlags, bookType, None, None),
             (ePubDownloadURI, {'download': True}, 'application/epub+zip', None, (ePubDownloadPath, bookURI))
         ]
