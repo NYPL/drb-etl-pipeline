@@ -53,6 +53,7 @@ class TestDefaultParser:
         testLinks = testParser.createLinks()
 
         assert testLinks == [
+            ('testRoot/epubs/testSource/1/manifest.json', {'reader': True}, 'application/webpub+json', None, None),
             ('testRoot/epubs/testSource/1/META-INF/container.xml', {'reader': True}, 'application/epub+xml', None, None),
             ('testRoot/epubs/testSource/1.epub', {'download': True}, 'application/epub+zip', None, ('epubs/testSource/1.epub', 'http://testURI'))
         ]
