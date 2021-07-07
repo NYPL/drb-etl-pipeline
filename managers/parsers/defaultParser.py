@@ -34,7 +34,11 @@ class DefaultParser(AbstractParser):
             ePubReadPath = 'epubs/{}/{}/META-INF/container.xml'.format(self.source, self.identifier)
             ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
 
+            webpubReadPath = 'epubs/{}/{}/manifest.json'.format(self.source, self.identifier)
+            webpubReadURI = '{}{}'.format(s3Root, webpubReadPath)
+
             return [
+                (webpubReadURI, {'reader': True}, 'application/webpub+json', None, None),
                 (ePubReadURI, {'reader': True}, 'application/epub+xml', None, None),
                 (ePubDownloadURI, {'download': True}, self.mediaType, None, (ePubDownloadPath, self.uri))
             ]
