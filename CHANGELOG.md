@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.7.0
+## 2021-07-12 -- v0.7.0
 ### Added
 - Creation of Webpub Manifests for all ingested ePub files
 
