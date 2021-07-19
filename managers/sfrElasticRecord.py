@@ -1,3 +1,5 @@
+from elasticsearch.exceptions import ConnectionTimeout
+
 from model import (
     ESWork,
     ESSubject,
@@ -28,8 +30,12 @@ class SFRElasticRecordManager:
 
         self.enhanceWork()
     
-    def saveWork(self):
-        self.work.save()
+    def saveWork(self, retries=0):
+        try:
+            self.work.save()
+        except ConnectionTimeout as e:
+            if retries >= 2: raise e
+            self.saveWork(retries=retries+1)
     
     def updateWork(self, data):
         for key, value in data.items():
