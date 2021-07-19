@@ -29,10 +29,10 @@ class CatalogProcess(CoreProcess):
     def receiveAndProcessMessages(self):
         attempts = 1
         while True:
-            msgProps, msgParams, msgBody = self.getMessageFromQueue(os.environ['OCLC_QUEUE'])
+            msgProps, _, msgBody = self.getMessageFromQueue(os.environ['OCLC_QUEUE'])
             if msgProps is None:
                 if attempts <= 3:
-                    sleep(30 * attempts)
+                    sleep(60 * attempts)
                     attempts += 1
                     continue
                 else:

@@ -54,7 +54,7 @@ class TestOCLCCatalogProcess:
         mockQueueGet.assert_called_with('test_oclc_queue')
 
         mockSleep.assert_has_calls([
-            mocker.call(30), mocker.call(60), mocker.call(90)
+            mocker.call(60), mocker.call(120), mocker.call(180)
         ])
 
         mockProcess.assert_called_once_with('oclc_record')

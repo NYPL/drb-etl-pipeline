@@ -1,3 +1,4 @@
+from elasticsearch.exceptions import ConnectionTimeout
 import pytest
 
 from managers import SFRElasticRecordManager
@@ -85,7 +86,22 @@ class TestSFRElasticRecordManager:
 
         testInstance.saveWork()
 
-        testInstance.work.save.assert_called_once
+        testInstance.work.save.assert_called_once()
+
+    def test_saveWork_single_timeout(self, testInstance, mocker):
+        testInstance.work = mocker.MagicMock()
+        testInstance.work.save.side_effect = [ConnectionTimeout, None]
+
+        testInstance.saveWork()
+
+        assert testInstance.work.save.call_count == 2
+
+    def test_saveWork_multi_timeout_raise(self, testInstance, mocker):
+        testInstance.work = mocker.MagicMock()
+        testInstance.work.save.side_effect = ConnectionTimeout
+
+        with pytest.raises(ConnectionTimeout):
+            testInstance.saveWork()
 
     def test_updateWork(self, testInstance, mocker):
         testInstance.work = mocker.MagicMock()

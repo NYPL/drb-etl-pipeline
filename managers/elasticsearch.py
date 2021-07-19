@@ -34,21 +34,21 @@ class ElasticsearchManager:
             logger.info('ElasticSearch index {} already exists'.format(self.index))
     
     def deleteWorkRecords(self, uuids):
-        i = 0
-        retries = 0
-        while i < len(uuids):
-            try:
-                print(uuids[i], i, retries)
-                workSearch = Search(index=self.index).query('match', uuid=uuids[i])
-                workSearch.delete()
+        for uuid in uuids:
+            retries = 0
 
-                i += 1
-                retries = 0
-            except ConflictError as e:
-                if retries >= 2: 
-                    logger.error('Unable to delete work {}'.format(uuids[i]))
-                    raise e
+            while True:
+                try:
+                    logger.debug('Deleting work {}'.format(uuid))
+                    workSearch = Search(index=self.index).query('match', uuid=uuid)
+                    workSearch.delete()
 
-                logger.warning('Unable to delete work {}. Retrying'.format(uuids[i]))
-                retries += 1
+                    break
+                except ConflictError as e:
+                    if retries >= 2: 
+                        logger.error('Unable to delete work {}'.format(uuid))
+                        raise e
+
+                    logger.warning('Unable to delete work {}. Retrying'.format(uuid))
+                    retries += 1
     

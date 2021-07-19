@@ -51,6 +51,7 @@ class SFRRecordManager:
 
         if len(matchedWorks) > 0:
             self.work.date_created = matchedWorks[0][1]
+            self.work.uuid = matchedWorks[0][0]
 
         self.work = self.session.merge(self.work)
 
