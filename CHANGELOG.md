@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## unreleased -- v0.7.1
+### Fixed
+- Extended wait time during OCLC Catalog process
+- Handled timeout error in ElasticSearch save operation during clustering
+
 ## 2021-07-12 -- v0.7.0
 ### Added
 - Creation of Webpub Manifests for all ingested ePub files
