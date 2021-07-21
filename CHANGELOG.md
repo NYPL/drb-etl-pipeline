@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.7.1
+## 2021-07-21 -- v0.7.1
 ### Fixed
 - Extended wait time during OCLC Catalog process
 - Handled timeout error in ElasticSearch save operation during clustering
