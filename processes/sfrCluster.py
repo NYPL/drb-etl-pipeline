@@ -37,7 +37,9 @@ class ClusterProcess(CoreProcess):
     def clusterRecords(self, full=False, startDateTime=None):
         baseQuery = self.session.query(Record)\
             .filter(Record.frbr_status == 'complete')\
-            .filter(Record.cluster_status == False)
+            .filter(Record.cluster_status == False)\
+            .filter(Record.source != 'oclcClassify')\
+            .filter(Record.source != 'oclcCatalog')
 
         if full is False:
             if not startDateTime:

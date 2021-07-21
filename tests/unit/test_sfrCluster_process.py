@@ -119,7 +119,7 @@ class TestSFRClusterProcess:
         testInstance.session = mockSession
         mockDatetime = mocker.spy(datetime, 'datetime')
 
-        mockSession.query().filter().filter.return_value = mockQuery
+        mockSession.query().filter().filter().filter().filter.return_value = mockQuery
         mockQueryResponses = [mocker.MagicMock(id=1), mocker.MagicMock(id=2), None]
         mockQuery.first.side_effect = mockQueryResponses
 
@@ -127,7 +127,7 @@ class TestSFRClusterProcess:
 
         testInstance.clusterRecords(full=True)
 
-        mockSession.query().filter().filter.assert_called_once()
+        mockSession.query().filter().filter().filter().filter.assert_called_once()
         mockDatetime.utcnow.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockQuery.filter.assert_not_called()
