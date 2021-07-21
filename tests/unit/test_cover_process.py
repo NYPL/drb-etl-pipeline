@@ -13,6 +13,7 @@ class TestCoverProcess:
             def __init__(self, *args):
                 self.fileBucket = 'test_aws_bucket'
                 self.batchSize = 3
+                self.runTime = datetime.datetime(1900, 1, 1)
 
         return TestCoverProcess()
 
@@ -79,10 +80,9 @@ class TestCoverProcess:
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
 
-        testStartDate = datetime.datetime(1900, 1, 1)
-        testQueryDate = testStartDate - datetime.timedelta(hours=24)
+        testQueryDate = testProcess.runTime - datetime.timedelta(hours=24)
         mockDatetime = mocker.patch('processes.covers.datetime')
-        mockDatetime.utcnow.return_value = testStartDate
+        mockDatetime.utcnow.return_value = testProcess.runTime
 
         testProcess.process = 'daily'
         testProcess.ingestPeriod = None
@@ -101,6 +101,8 @@ class TestCoverProcess:
         processMocks['searchForCover'].side_effect = ['manager1', None, 'manager2']
         processMocks['windowedQuery'].return_value = ['ed1', 'ed2', 'ed3']
 
+        testProcess.runTime = datetime.datetime.utcnow()
+
         testProcess.fetchEditionCovers('mockQuery')
 
         processMocks['searchForCover'].assert_has_calls([
@@ -109,6 +111,20 @@ class TestCoverProcess:
         processMocks['storeFoundCover'].assert_has_calls([
             mocker.call('manager1', 'ed1'), mocker.call('manager2', 'ed3')
         ])
+
+    def test_fetchEditionCovers_timeout(self, testProcess, mocker):
+        processMocks = mocker.patch.multiple(CoverProcess,
+            searchForCover=mocker.DEFAULT,
+            storeFoundCover=mocker.DEFAULT,
+            windowedQuery=mocker.DEFAULT
+        )
+        processMocks['searchForCover'].side_effect = ['manager1', None, 'manager2']
+        processMocks['windowedQuery'].return_value = ['ed1', 'ed2', 'ed3']
+
+        testProcess.fetchEditionCovers('mockQuery')
+
+        processMocks['searchForCover'].assert_called_once_with('ed1')
+        processMocks['storeFoundCover'].assert_called_once_with('manager1', 'ed1')
 
     def test_searchForCover_success(self, testProcess, mocker):
         mockIdentifierGet = mocker.patch.object(CoverProcess, 'getEditionIdentifiers')

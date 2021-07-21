@@ -4,6 +4,8 @@
 ### Fixed
 - Extended wait time during OCLC Catalog process
 - Handled timeout error in ElasticSearch save operation during clustering
+- Restricted record types read by the clustering process
+- Set max run time for cover process to 12 hours (for API limit purposes)
 
 ## 2021-07-12 -- v0.7.0
 ### Added
