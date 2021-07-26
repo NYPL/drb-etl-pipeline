@@ -1,4 +1,7 @@
-from flask import Blueprint, current_app, request
+from flask import Blueprint, current_app, request, Response
+from flask_cors import cross_origin
+import requests
+from urllib.parse import unquote_plus
 
 from ..db import DBClient
 from ..elastic import ElasticClient
@@ -37,3 +40,37 @@ def totalCounts():
     dbClient.closeSession()
 
     return APIUtils.formatResponseObject(200, 'totalCounts', totalsSummary)
+
+@utils.route('/proxy', methods=['GET', 'POST', 'PUT', 'HEAD'])
+@cross_origin(origins='http[s]?://.*nypl.org')
+def getProxyResponse():
+    proxyUrl = request.args.get('proxy_url')
+    cleanUrl = unquote_plus(proxyUrl)
+
+    while True:
+        headResp = requests.head(cleanUrl)
+
+        statusCode = headResp.status_code
+        if statusCode in [200, 204]:
+            break
+        elif statusCode in [301, 302, 303, 307, 308]:
+            cleanUrl = headResp.headers['Location']
+
+    resp = requests.request(
+        method=request.method,
+        url=cleanUrl,
+        headers={k: v for (k, v) in request.headers if k != 'Host'},
+        data=request.get_data(),
+        cookies=request.cookies,
+        allow_redirects=False
+    )
+
+    excludedHeaders = [
+        'content-encoding', 'content-length', 'transfer-encoding',
+        'x-frame-options', 'referrer-policy', 'access-control-allow-origin'
+    ]
+
+    headers = [(k, v) for (k, v) in resp.headers.items() if k.lower() not in excludedHeaders]
+
+    proxyResp = Response(resp.content, resp.status_code, headers)
+    return proxyResp
