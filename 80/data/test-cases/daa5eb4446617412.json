@@ -1,0 +1,359 @@
+{
+  "uid" : "daa5eb4446617412",
+  "name" : "test_downloadRecordUpdates_failure",
+  "fullName" : "tests.unit.test_muse_process.TestMUSEProcess#test_downloadRecordUpdates_failure",
+  "historyId" : "88802af6f702c3ff23fc119f0b3a1dc6",
+  "time" : {
+    "start" : 1627258277980,
+    "stop" : 1627258277981,
+    "duration" : 1
+  },
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "beforeStages" : [ {
+    "name" : "mocker",
+    "time" : {
+      "start" : 1627258277979,
+      "stop" : 1627258277979,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "xunit_setup_class_fixture_TestMUSEProcess",
+    "time" : {
+      "start" : 1627258277928,
+      "stop" : 1627258277929,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "testProcess",
+    "time" : {
+      "start" : 1627258277979,
+      "stop" : 1627258277979,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1627258267416,
+      "stop" : 1627258267416,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "testStage" : {
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ {
+      "uid" : "7db0b6ee58d40fc1",
+      "name" : "log",
+      "source" : "7db0b6ee58d40fc1.txt",
+      "type" : "text/plain",
+      "size" : 67
+    }, {
+      "uid" : "df1c4fa9ff3f6d49",
+      "name" : "stderr",
+      "source" : "df1c4fa9ff3f6d49.txt",
+      "type" : "text/plain",
+      "size" : 82
+    } ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 2,
+    "shouldDisplayMessage" : false,
+    "hasContent" : true
+  },
+  "afterStages" : [ {
+    "name" : "mocker::0",
+    "time" : {
+      "start" : 1627258277982,
+      "stop" : 1627258277982,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "xunit_setup_class_fixture_TestMUSEProcess::0",
+    "time" : {
+      "start" : 1627258278076,
+      "stop" : 1627258278076,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "parentSuite",
+    "value" : "tests.unit"
+  }, {
+    "name" : "suite",
+    "value" : "test_muse_process"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestMUSEProcess"
+  }, {
+    "name" : "host",
+    "value" : "fv-az93-604"
+  }, {
+    "name" : "thread",
+    "value" : "3285-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "tests.unit.test_muse_process"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "history" : {
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 0,
+        "skipped" : 0,
+        "passed" : 65,
+        "unknown" : 0,
+        "total" : 65
+      },
+      "items" : [ {
+        "uid" : "7a182a2c44924670",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/79//#testresult/7a182a2c44924670",
+        "status" : "passed",
+        "time" : {
+          "start" : 1626901420336,
+          "stop" : 1626901420338,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "593a7b3d93703db0",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/78//#testresult/593a7b3d93703db0",
+        "status" : "passed",
+        "time" : {
+          "start" : 1626879694189,
+          "stop" : 1626879694191,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "e0dae1a7595f537b",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/77//#testresult/e0dae1a7595f537b",
+        "status" : "passed",
+        "time" : {
+          "start" : 1626727603308,
+          "stop" : 1626727603310,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "9f0a8e682cf5b45",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/76//#testresult/9f0a8e682cf5b45",
+        "status" : "passed",
+        "time" : {
+          "start" : 1626653447298,
+          "stop" : 1626653447300,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "69c608b6c3db0023",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/75//#testresult/69c608b6c3db0023",
+        "status" : "passed",
+        "time" : {
+          "start" : 1626120968795,
+          "stop" : 1626120968796,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "d3f99109c007bedf",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/74//#testresult/d3f99109c007bedf",
+        "status" : "passed",
+        "time" : {
+          "start" : 1626048691452,
+          "stop" : 1626048691454,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "34fae6a54c4cf276",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/73//#testresult/34fae6a54c4cf276",
+        "status" : "passed",
+        "time" : {
+          "start" : 1625691008029,
+          "stop" : 1625691008030,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "6f80ce27701764d8",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/72//#testresult/6f80ce27701764d8",
+        "status" : "passed",
+        "time" : {
+          "start" : 1625590573019,
+          "stop" : 1625590573021,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "37c38b891473014a",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/71//#testresult/37c38b891473014a",
+        "status" : "passed",
+        "time" : {
+          "start" : 1625443817140,
+          "stop" : 1625443817141,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "893a73af60fb7c0b",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/70//#testresult/893a73af60fb7c0b",
+        "status" : "passed",
+        "time" : {
+          "start" : 1625148570037,
+          "stop" : 1625148570039,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "2280fad7ae0a18cc",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/69//#testresult/2280fad7ae0a18cc",
+        "status" : "passed",
+        "time" : {
+          "start" : 1625078690650,
+          "stop" : 1625078690652,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "30374e3565e6ee0b",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/68//#testresult/30374e3565e6ee0b",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624839091421,
+          "stop" : 1624839091422,
+          "duration" : 1
+        }
+      }, {
+        "uid" : "e3e92cf9ef0b61bb",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/67//#testresult/e3e92cf9ef0b61bb",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624546013486,
+          "stop" : 1624546013490,
+          "duration" : 4
+        }
+      }, {
+        "uid" : "7fd621ca8b2d187",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/66//#testresult/7fd621ca8b2d187",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624479458830,
+          "stop" : 1624479458833,
+          "duration" : 3
+        }
+      }, {
+        "uid" : "dd9feb941abe0699",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/65//#testresult/dd9feb941abe0699",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624460447857,
+          "stop" : 1624460447859,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "a61fb7e6de1c2049",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/64//#testresult/a61fb7e6de1c2049",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624369106289,
+          "stop" : 1624369106291,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "bae0b1e3e2e6ff79",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/63//#testresult/bae0b1e3e2e6ff79",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624367390582,
+          "stop" : 1624367390584,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "9866cebb186fe969",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/62//#testresult/9866cebb186fe969",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624296349136,
+          "stop" : 1624296349138,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "22bf79ceb5d03027",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/61//#testresult/22bf79ceb5d03027",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624295468029,
+          "stop" : 1624295468031,
+          "duration" : 2
+        }
+      }, {
+        "uid" : "e50305cf0b7650f8",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/60//#testresult/e50305cf0b7650f8",
+        "status" : "passed",
+        "time" : {
+          "start" : 1624285897424,
+          "stop" : 1624285897426,
+          "duration" : 2
+        }
+      } ]
+    },
+    "tags" : [ ]
+  },
+  "source" : "daa5eb4446617412.json",
+  "parameterValues" : [ ]
+}
