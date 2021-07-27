@@ -42,7 +42,7 @@ def totalCounts():
     return APIUtils.formatResponseObject(200, 'totalCounts', totalsSummary)
 
 @utils.route('/proxy', methods=['GET', 'POST', 'PUT', 'HEAD'])
-# @cross_origin(origins='http[s]?://.*nypl.org')
+@cross_origin(origins='http[s]?://.*nypl.org')
 def getProxyResponse():
     proxyUrl = request.args.get('proxy_url')
     cleanUrl = unquote_plus(proxyUrl)
@@ -67,7 +67,9 @@ def getProxyResponse():
 
     excludedHeaders = [
         'content-encoding', 'content-length', 'transfer-encoding',
-        'x-frame-options', 'referrer-policy', 'access-control-allow-origin'
+        'x-frame-options', 'referrer-policy', 'access-control-allow-origin',
+        'connection', 'keep-alive', 'public', 'proxy-authenticate',
+        'upgrade'
     ]
 
     headers = [(k, v) for (k, v) in resp.headers.items() if k.lower() not in excludedHeaders]
