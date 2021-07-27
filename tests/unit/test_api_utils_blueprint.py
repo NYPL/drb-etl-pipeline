@@ -1,7 +1,8 @@
-from flask import Flask
+from flask import Flask, Response
 import pytest
+import requests
 
-from api.blueprints.drbUtils import languageCounts, totalCounts
+from api.blueprints.drbUtils import languageCounts, totalCounts, getProxyResponse
 from api.utils import APIUtils
 
 class TestEditionBlueprint:
@@ -69,3 +70,49 @@ class TestEditionBlueprint:
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'totalCounts', 'testTotalSummary'
             )
+
+    def test_getProxyResponse_direct_success(self, testApp, mocker):
+        mockHead = mocker.patch.object(requests, 'head')
+        mockHead.return_value = mocker.MagicMock(status_code=200)
+
+        mockReq = mocker.patch.object(requests, 'request')
+        mockReq.return_value = mocker.MagicMock(
+            status_code=200,
+            headers={'Content-Encoding': 'block', 'Media-Type': 'allow'},
+            content='Test Content'
+        )
+        with testApp.test_request_context('/?proxy_url=testURL'):
+            testAPIResponse = getProxyResponse()
+
+            assert isinstance(testAPIResponse, Response)
+            assert testAPIResponse.status_code == 200
+            assert testAPIResponse.response == [b'Test Content']
+            assert testAPIResponse.headers['Media-Type'] == 'allow'
+
+            mockHead.assert_called_once_with('testURL')
+            mockReq.assert_called_once()
+
+    def test_getProxyResponse_redirect_success(self, testApp, mocker):
+        mockHead = mocker.patch.object(requests, 'head')
+        mockHead.side_effect = [
+            mocker.MagicMock(status_code=301, headers={'Location': 'redirectURL'}),
+            mocker.MagicMock(status_code=200)
+        ]
+
+        mockReq = mocker.patch.object(requests, 'request')
+        mockReq.return_value = mocker.MagicMock(
+            status_code=200,
+            headers={'Content-Encoding': 'block', 'Media-Type': 'allow'},
+            content='Test Content'
+        )
+
+        with testApp.test_request_context('/?proxy_url=testURL'):
+            testAPIResponse = getProxyResponse()
+
+            assert isinstance(testAPIResponse, Response)
+            assert testAPIResponse.status_code == 200
+            assert testAPIResponse.response == [b'Test Content']
+            assert testAPIResponse.headers['Media-Type'] == 'allow'
+
+            mockHead.assert_has_calls([mocker.call('testURL'), mocker.call('redirectURL')])
+            mockReq.assert_called_once()
