@@ -282,6 +282,40 @@
                 }
             }
         },
+        "/utils/proxy": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "v4 Proxy Resource",
+                "description": "Provides a proxy service for use with the NYPL Web reader",
+                "parameters": [
+                    {
+                        "name": "proxy_url",
+                        "in": "query",
+                        "description": "Provide a URL-encoded resource to proxy",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The proxied resource",
+                        "type": "string"
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/utils/counts": {
             "get": {
                 "tags": ["digital-research-books"],
