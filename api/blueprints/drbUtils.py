@@ -48,7 +48,7 @@ def getProxyResponse():
     cleanUrl = unquote_plus(proxyUrl)
 
     while True:
-        headResp = requests.head(cleanUrl)
+        headResp = requests.head(cleanUrl, headers={'User-agent': 'Mozilla/5.0'})
 
         statusCode = headResp.status_code
         if statusCode in [200, 204]:

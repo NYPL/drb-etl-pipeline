@@ -89,7 +89,7 @@ class TestEditionBlueprint:
             assert testAPIResponse.response == [b'Test Content']
             assert testAPIResponse.headers['Media-Type'] == 'allow'
 
-            mockHead.assert_called_once_with('testURL')
+            mockHead.assert_called_once_with('testURL', headers={'User-agent': 'Mozilla/5.0'})
             mockReq.assert_called_once()
 
     def test_getProxyResponse_redirect_success(self, testApp, mocker):
@@ -114,5 +114,8 @@ class TestEditionBlueprint:
             assert testAPIResponse.response == [b'Test Content']
             assert testAPIResponse.headers['Media-Type'] == 'allow'
 
-            mockHead.assert_has_calls([mocker.call('testURL'), mocker.call('redirectURL')])
+            mockHead.assert_has_calls([
+                mocker.call('testURL', headers={'User-agent': 'Mozilla/5.0'}),
+                mocker.call('redirectURL', headers={'User-agent': 'Mozilla/5.0'})]
+            )
             mockReq.assert_called_once()
