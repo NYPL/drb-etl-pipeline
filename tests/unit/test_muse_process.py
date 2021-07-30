@@ -269,7 +269,7 @@ class TestMUSEProcess:
 
         mockLoad.assert_called_once_with('testLink')
         mockManifestConstructor.assert_called_once_with('testLink', 'testType')
-        mockManifest.addMetadata.assert_called_once_with('testRecord')
+        mockManifest.addMetadata.assert_called_once_with('testRecord', conformsTo='test_profile_uri')
 
         mockManifest.addSection.assert_has_calls([
             mocker.call('Part One. Reading Reading Historically', ''),

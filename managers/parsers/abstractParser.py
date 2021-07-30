@@ -4,6 +4,7 @@ import re
 
 from managers.webpubManifest import WebpubManifest
 
+
 class AbstractParser(ABC):
     TIMEOUT = 15
 
@@ -36,13 +37,17 @@ class AbstractParser(ABC):
     def generateManifest(self, sourceURI, manifestURI):
         manifest = WebpubManifest(sourceURI, 'application/pdf')
 
-        manifest.addMetadata(self.record)
+        manifest.addMetadata(
+            self.record, conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+        )
 
         manifest.addChapter(sourceURI, self.record.title)
 
-        manifest.links.append(
-            {'rel': 'self', 'href': manifestURI, 'type': 'application/webpub+json'}
-        )
+        manifest.links.append({
+            'rel': 'self',
+            'href': manifestURI,
+            'type': 'application/webpub+json'
+        })
 
         return manifest.toJson()
 

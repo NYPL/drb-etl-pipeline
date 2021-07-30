@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import csv
 from datetime import datetime, timedelta
-from io import BytesIO, StringIO
+from io import BytesIO
 import json
 import os
 from pymarc import MARCReader
@@ -38,22 +38,29 @@ class MUSEProcess(CoreProcess):
 
         self.saveRecords()
         self.commitChanges()
-    
+
     def parseMuseRecord(self, marcRec):
         museRec = MUSEMapping(marcRec)
         museRec.applyMapping()
 
-        # Use the available source link to create a PDF manifest file and store in S3
-        _, museLink, _, museType, _ = list(museRec.record.has_part[0].split('|'))
-        webpubManifest = self.constructWebpubManifest(museLink, museType, museRec.record)
+        # Use the available source link to create a PDF manifest file and
+        # store in S3
+        _, museLink, _, museType, _ = list(
+            museRec.record.has_part[0].split('|')
+        )
+        webpubManifest = self.constructWebpubManifest(
+            museLink, museType, museRec.record
+        )
 
-        s3URL = self.createManifestInS3(webpubManifest, museRec.record.source_id)
+        s3URL = self.createManifestInS3(
+            webpubManifest, museRec.record.source_id
+        )
         museRec.addHasPartLink(
             s3URL, 'application/webpub+json',
             json.dumps({'reader': True, 'download': False, 'catalog': False})
         )
         self.addDCDWToUpdateList(museRec)
-    
+
     def importMARCRecords(self, full=False, startTimestamp=None):
         self.downloadRecordUpdates()
 
@@ -69,7 +76,8 @@ class MUSEProcess(CoreProcess):
         marcReader = MARCReader(museFile)
 
         for record in marcReader:
-            if startDateTime and self.recordToBeUpdated(record, startDateTime) is False:
+            if startDateTime \
+                    and self.recordToBeUpdated(record, startDateTime) is False:
                 continue
 
             try:
@@ -111,28 +119,37 @@ class MUSEProcess(CoreProcess):
             skipinitialspace=True,
         )
 
-        for _ in range(4): next(csvReader, None) # Skip 4 header rows
+        for _ in range(4):
+            next(csvReader, None)  # Skip 4 header rows
 
         self.updateDates = {}
         for row in csvReader:
             try:
-                self.updateDates[row[7]] = datetime.strptime(row[10], '%Y-%m-%d')
+                self.updateDates[row[7]] = \
+                    datetime.strptime(row[10], '%Y-%m-%d')
             except (IndexError, ValueError):
                 logger.warning('Unable to parse MUSE')
                 logger.debug(row)
 
     def recordToBeUpdated(self, record, startDate):
         recordURL = record.get_fields('856')[0]['u']
-        return self.updateDates.get(recordURL[:-1], datetime(1970, 1, 1)) >= startDate
+
+        updateDate = self.updateDates.get(recordURL[:-1], datetime(1970, 1, 1))
+
+        return updateDate >= startDate
 
     def constructWebpubManifest(self, museLink, museType, museRecord):
         try:
             museHTML = self.loadMusePage(museLink)
-        except Exception as e:
-            raise MUSEError('Unable to load record from link {}'.format(museLink))
+        except Exception:
+            raise MUSEError(
+                'Unable to load record from link {}'.format(museLink)
+            )
 
         pdfManifest = WebpubManifest(museLink, museType)
-        pdfManifest.addMetadata(museRecord)
+        pdfManifest.addMetadata(
+            museRecord, conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+        )
 
         museSoup = BeautifulSoup(museHTML, features='lxml')
 
@@ -154,16 +171,20 @@ class MUSEProcess(CoreProcess):
                     pdfManifest.closeSection()
 
                 pdfManifest.addChapter(
-                    '{}{}/pdf'.format(self.MUSE_ROOT_URL, titleItem.span.a.get('href')),
+                    '{}{}/pdf'.format(
+                        self.MUSE_ROOT_URL, titleItem.span.a.get('href')
+                    ),
                     titleItem.span.a.string,
                 )
-        
+
         pdfManifest.closeSection()
-        
+
         return pdfManifest
-    
+
     def loadMusePage(self, museLink):
-        museResponse = requests.get(museLink, timeout=15, headers={'User-agent': 'Mozilla/5.0'})
+        museResponse = requests.get(
+            museLink, timeout=15, headers={'User-agent': 'Mozilla/5.0'}
+        )
 
         if museResponse.status_code == 200:
             return museResponse.text
@@ -172,11 +193,19 @@ class MUSEProcess(CoreProcess):
 
     def createManifestInS3(self, webpubManifest, museID):
         bucketLocation = 'manifests/muse/{}.json'.format(museID)
-        s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
+        s3URL = 'https://{}.s3.amazonaws.com/{}'.format(
+            self.s3Bucket, bucketLocation
+        )
 
-        webpubManifest.links.append({'href': s3URL, 'type': 'application/webpub+json', 'rel': 'self'})
+        webpubManifest.links.append(
+            {'href': s3URL, 'type': 'application/webpub+json', 'rel': 'self'}
+        )
 
-        self.putObjectInBucket(webpubManifest.toJson().encode('utf-8'), bucketLocation, self.s3Bucket)
+        self.putObjectInBucket(
+            webpubManifest.toJson().encode('utf-8'),
+            bucketLocation,
+            self.s3Bucket
+        )
 
         return s3URL
 
