@@ -1,5 +1,6 @@
 from flask import Blueprint, current_app, request, Response
 from flask_cors import cross_origin
+import os
 import requests
 from urllib.parse import unquote_plus
 
@@ -42,7 +43,7 @@ def totalCounts():
     return APIUtils.formatResponseObject(200, 'totalCounts', totalsSummary)
 
 @utils.route('/proxy', methods=['GET', 'POST', 'PUT', 'HEAD'])
-@cross_origin(origins='http[s]?://.*nypl.org')
+@cross_origin(origins=os.environ.get('API_PROXY_CORS_ALLOWED', []))
 def getProxyResponse():
     proxyUrl = request.args.get('proxy_url')
     cleanUrl = unquote_plus(proxyUrl)

@@ -58,3 +58,6 @@ DOAB_OAI_URL: http://www.doabooks.org/oai?
 
 # ePub-to-Webpub Conversion Service
 WEBPUB_CONVERSION_URL: https://epub-to-webpub.vercel.app
+
+# Allowed sources of CORS requests to proxy endpoint
+API_PROXY_CORS_ALLOWED: '*'
