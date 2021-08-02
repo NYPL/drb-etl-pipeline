@@ -218,7 +218,7 @@ class TestMUSEProcess:
         assert testManifest == 'testJSON'
         assert mockManifest.links[0] == {'rel': 'self', 'href': 'manifestURI', 'type': 'application/webpub+json'}
 
-        mockManifest.addMetadata.assert_called_once_with(mockRecord)
+        mockManifest.addMetadata.assert_called_once_with(mockRecord, conformsTo='test_profile_uri')
         mockManifest.addChapter.assert_called_once_with('sourceURI', 'Test')
 
     def test_queryMetAPI_success_non_head(self, mocker):

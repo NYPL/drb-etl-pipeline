@@ -49,7 +49,8 @@ class TestHelpers:
         'DOAB_OAI_URL': 'test_doab_url',
         'SMARTSHEET_API_TOKEN': 'test_smartsheet_token',
         'SMARTSHEET_SHEET_ID': '1000',
-        'WEBPUB_CONVERSION_URL': 'test_conversion_url'
+        'WEBPUB_CONVERSION_URL': 'test_conversion_url',
+        'WEBPUB_PDF_PROFILE': 'test_profile_uri'
     }
 
     @classmethod
