@@ -14,6 +14,7 @@ logger = createLog(__name__)
 
 utils = Blueprint('utils', __name__, url_prefix='/utils')
 
+
 @utils.route('/languages', methods=['GET'])
 def languageCounts():
     esClient = ElasticClient(current_app.config['REDIS_CLIENT'])
@@ -23,11 +24,14 @@ def languageCounts():
 
     langResult = esClient.languageQuery(workCounts)
 
-    languageList = APIUtils.formatLanguages(langResult.aggregations, workCounts)
+    languageList = APIUtils.formatLanguages(
+        langResult.aggregations, workCounts
+    )
 
     logger.debug('Language list 200 OK on /utils/languages')
 
     return APIUtils.formatResponseObject(200, 'languageCounts', languageList)
+
 
 @utils.route('/counts', methods=['GET'])
 def totalCounts():
@@ -42,14 +46,17 @@ def totalCounts():
 
     return APIUtils.formatResponseObject(200, 'totalCounts', totalsSummary)
 
+
 @utils.route('/proxy', methods=['GET', 'POST', 'PUT', 'HEAD'])
-@cross_origin(origins=os.environ.get('API_PROXY_CORS_ALLOWED', []))
+@cross_origin(origins=os.environ.get('API_PROXY_CORS_ALLOWED', '*'))
 def getProxyResponse():
     proxyUrl = request.args.get('proxy_url')
     cleanUrl = unquote_plus(proxyUrl)
 
     while True:
-        headResp = requests.head(cleanUrl, headers={'User-agent': 'Mozilla/5.0'})
+        headResp = requests.head(
+            cleanUrl, headers={'User-agent': 'Mozilla/5.0'}
+        )
 
         statusCode = headResp.status_code
         if statusCode in [200, 204]:
@@ -73,7 +80,10 @@ def getProxyResponse():
         'upgrade'
     ]
 
-    headers = [(k, v) for (k, v) in resp.headers.items() if k.lower() not in excludedHeaders]
+    headers = [
+        (k, v) for (k, v) in resp.headers.items()
+        if k.lower() not in excludedHeaders
+    ]
 
     proxyResp = Response(resp.content, resp.status_code, headers)
     return proxyResp
