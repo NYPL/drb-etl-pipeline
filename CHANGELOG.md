@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.8.0
+## 2021-08-03 -- v0.8.0
 ### Added
 - New endpoint `utils/proxy` to allow for proxying of resources to webreader
 
