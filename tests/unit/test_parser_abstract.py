@@ -58,7 +58,7 @@ class TestAbstractParser:
         assert testManifest == 'jsonManifest'
         assert mockManifest.links == [{'rel': 'self', 'href': 'manifestURI', 'type': 'application/webpub+json'}]
         mockManifestManager.assert_called_once_with('sourceURI', 'application/pdf')
-        mockManifest.addMetadata.assert_called_once_with(testParser.record)
+        mockManifest.addMetadata.assert_called_once_with(testParser.record, conformsTo='test_profile_uri')
         mockManifest.addChapter.assert_called_once_with('sourceURI', 'testRecord')
         mockManifest.toJson.assert_called_once()
 

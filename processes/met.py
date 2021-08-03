@@ -56,8 +56,10 @@ class METProcess(CoreProcess):
             if not self.ingestPeriod:
                 self.startTimestamp = datetime.utcnow() - timedelta(days=1)
             else:
-                self.startTimestamp = datetime.strptime(self.ingestPeriod, '%Y-%m-%dT%H:%M:%S')
-    
+                self.startTimestamp = datetime.strptime(
+                    self.ingestPeriod, '%Y-%m-%dT%H:%M:%S'
+                )
+
     def importDCRecords(self):
         currentPosition = self.ingestOffset
         pageSize = 50
@@ -71,23 +73,26 @@ class METProcess(CoreProcess):
 
             self.processMetBatch(batchRecords)
 
-            if len(batchRecords) < 1 or currentPosition >= self.ingestLimit: break
+            if len(batchRecords) < 1 or currentPosition >= self.ingestLimit:
+                break
 
             currentPosition += pageSize
 
     def processMetBatch(self, metRecords):
         for record in metRecords:
             if (
-                self.startTimestamp \
-                and datetime.strptime(record['dmmodified'], '%Y-%m-%d') >= self.startTimestamp
-            ) \
-            or record['rights'] == 'copyrighted':
+                self.startTimestamp
+                and datetime.strptime(record['dmmodified'], '%Y-%m-%d')
+                >= self.startTimestamp
+            ) or record['rights'] == 'copyrighted':
                 continue
 
             try:
                 self.processMetRecord(record)
             except METError:
-                logger.warning('Unable to process MET record {}'.format(record['pointer']))
+                logger.warning('Unable to process MET record {}'.format(
+                    record['pointer'])
+                )
 
     def processMetRecord(self, record):
         try:
@@ -106,7 +111,7 @@ class METProcess(CoreProcess):
             self.addCoverAndStoreInS3(metRec.record, record['filetype'])
         except METError as e:
             logger.warning('Unable to fetch cover ({})'.format(e))
-        
+
         self.addDCDWToUpdateList(metRec)
 
     def addCoverAndStoreInS3(self, record, filetype):
@@ -118,7 +123,9 @@ class METProcess(CoreProcess):
 
         bucketLocation = 'covers/met/{}.{}'.format(recordID, sourceURL[-3:])
 
-        s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, bucketLocation)
+        s3URL = 'https://{}.s3.amazonaws.com/{}'.format(
+            self.s3Bucket, bucketLocation
+        )
 
         fileType = 'image/jpeg' if sourceURL[-3:] == 'jpg' else 'image/png'
 
@@ -139,7 +146,11 @@ class METProcess(CoreProcess):
                 imageQuery = self.IMAGE_QUERY.format(coverID)
                 imageObject = self.queryMetAPI(imageQuery)
             except (KeyError, HTTPError):
-                logger.debug('Unable to parse compound structure for {}'.format(recordID))
+                logger.debug(
+                    'Unable to parse compound structure for {}'.format(
+                        recordID
+                    )
+                )
                 raise METError('Unable to fetch page structure for record')
 
             return imageObject['imageUri']
@@ -171,25 +182,38 @@ class METProcess(CoreProcess):
 
                 self.createManifestInS3(manifestPath, manifestJSON)
 
-                linkString = '|'.join([itemNo, manifestURI, source, 'application/webpub+json', flags])
+                linkString = '|'.join([
+                    itemNo,
+                    manifestURI,
+                    source,
+                    'application/webpub+json',
+                    flags
+                ])
                 record.has_part.insert(0, linkString)
 
                 break
 
     def createManifestInS3(self, manifestPath, manifestJSON):
-        self.putObjectInBucket(manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket)
+        self.putObjectInBucket(
+            manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket
+        )
 
     @staticmethod
     def generateManifest(record, sourceURI, manifestURI):
         manifest = WebpubManifest(sourceURI, 'application/pdf')
 
-        manifest.addMetadata(record)
+        manifest.addMetadata(
+            record,
+            conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+        )
 
         manifest.addChapter(sourceURI, record.title)
 
-        manifest.links.append(
-            {'rel': 'self', 'href': manifestURI, 'type': 'application/webpub+json'}
-        )
+        manifest.links.append({
+            'rel': 'self',
+            'href': manifestURI,
+            'type': 'application/webpub+json'
+        })
 
         return manifest.toJson()
 
@@ -201,8 +225,11 @@ class METProcess(CoreProcess):
 
         response.raise_for_status()
 
-        if method == 'HEAD': return response.status_code
-        else: return response.json()
+        if method == 'HEAD':
+            return response.status_code
+        else:
+            return response.json()
 
 
-class METError(Exception): pass
+class METError(Exception):
+    pass

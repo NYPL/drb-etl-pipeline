@@ -33,11 +33,12 @@ class TestPDFManifest:
         mockRecord.authors = ['Author 1|||true', 'Author 2|||false']
         mockRecord.identifiers = ['id1|test', 'id2|isbn']
 
-        testManifest.addMetadata(mockRecord)
+        testManifest.addMetadata(mockRecord, conformsTo='test_profile_uri')
 
         assert testManifest.metadata == {
             '@type': 'https://schema.org/Book', 'title': 'Test Record',
-            'author': 'Author 1', 'identifier': 'urn:isbn:id2'
+            'author': 'Author 1', 'identifier': 'urn:isbn:id2',
+            'conformsTo': 'test_profile_uri'
         }
 
     def test_addSection_no_existing(self, testManifest):
