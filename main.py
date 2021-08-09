@@ -17,6 +17,7 @@ def main(args):
     singleRecord = args.singleRecord
     limit = args.limit
     offset = args.offset
+    options = args.options
 
     logger.info('Staring Process {} in {}'.format(process, environment))
     logger.debug('Process Args Type: {}, Limit: {}, Offset: {}, Date: {}, File: {}, Record: {}'.format(
@@ -26,7 +27,9 @@ def main(args):
     availableProcesses = registerProcesses()
 
     procClass = availableProcesses[process]
-    processInstance = procClass(procType, customFile, startDate, singleRecord, limit, offset)
+    processInstance = procClass(
+        procType, customFile, startDate, singleRecord, limit, offset, options
+    )
     processInstance.runProcess()
 
 
@@ -54,6 +57,7 @@ def createArgParser():
                         help='Set start offset for current processed (for batched import process)')
     parser.add_argument('-r', '--singleRecord',
                         help='Single record ID for ingesting an individual record (only applicable for DOAB)')
+    parser.add_argument('options', nargs='*', help='Additional arguments')
     
     return parser
 
