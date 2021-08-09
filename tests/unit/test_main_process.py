@@ -1,5 +1,4 @@
 import inspect
-import os
 import pytest
 import sys
 import yaml
@@ -20,6 +19,7 @@ class TestMainProcess:
         mockArgs.singleRecord = 'testRecord'
         mockArgs.limit = 'testLimit'
         mockArgs.offset = 'testOffset'
+        mockArgs.options = ['opt1', 'opt2']
 
         return mockArgs
 
@@ -39,7 +39,10 @@ class TestMainProcess:
 
         main(processArgs)
 
-        mockProcess.assert_called_with('test', 'testFile', 'testDate', 'testRecord', 'testLimit', 'testOffset')
+        mockProcess.assert_called_with(
+            'test', 'testFile', 'testDate', 'testRecord', 'testLimit',
+            'testOffset', ['opt1', 'opt2']
+        )
         mockInstance.runProcess.assert_called_once
 
     def test_registerProcesses(self, mocker):
