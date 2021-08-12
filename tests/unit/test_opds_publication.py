@@ -193,7 +193,8 @@ class TestOPDSPublication:
             languages=[None, {'iso_3': 'tst'}, {'iso_3': 'oth'}],
             date_created='testCreated',
             date_modified='testModified',
-            items=[mocker.MagicMock(links=[mocker.MagicMock(url='testURL', media_type='testType')])]
+            items=[mocker.MagicMock(links=[mocker.MagicMock(url='testURL', media_type='testType')])],
+            work=mocker.MagicMock(authors=[{'name': 'Test Author'}])
         )
 
         pubMocks = mocker.patch.multiple(
@@ -211,6 +212,7 @@ class TestOPDSPublication:
             mocker.call('sortAs', 'test title'),
             mocker.call('subtitle', 'Test Sub'),
             mocker.call('alternate', ['alt1', 'alt2']),
+            mocker.call('creator', 'Test Author'),
             mocker.call('publisher', 'Test Pub, Other Pub'),
             mocker.call('published', 2000),
             mocker.call('locationCreated', 'Test Place'),
