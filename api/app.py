@@ -8,7 +8,9 @@ from sqlalchemy.exc import DataError
 from waitress import serve
 
 from logger import createLog
-from .blueprints import search, work, info, edition, utils, link, opds
+from .blueprints import (
+    search, work, info, edition, utils, link, opds, collection
+)
 from .utils import APIUtils
 
 logger = createLog(__name__)
@@ -30,6 +32,7 @@ class FlaskAPI:
         self.app.register_blueprint(utils)
         self.app.register_blueprint(link)
         self.app.register_blueprint(opds)
+        self.app.register_blueprint(collection)
 
     def run(self):
         if 'local' in os.environ['ENVIRONMENT']:
