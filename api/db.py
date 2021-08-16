@@ -88,13 +88,14 @@ class DBClient():
             .filter(Collection.uuid == uuid).first()
 
     def createCollection(
-        self, title, creator, description, workUUIDs=[], editionIDs=[]
+        self, title, creator, description, owner, workUUIDs=[], editionIDs=[]
     ):
         newCollection = Collection(
             uuid=uuid4(),
             title=title,
             creator=creator,
-            description=description
+            description=description,
+            owner=owner
         )
 
         collectionEditions = []
@@ -129,6 +130,7 @@ class DBClient():
 
         return newCollection
 
-    def deleteCollection(self, uuid):
+    def deleteCollection(self, uuid, owner):
         return self.session.query(Collection)\
+            .filter(Collection.owner == owner)\
             .filter(Collection.uuid == uuid).delete()

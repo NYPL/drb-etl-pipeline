@@ -1,10 +1,11 @@
 from flask import Flask
+import jwt
 import os
 import pytest
 
 from api.blueprints.drbCollection import (
     collectionCreate, collectionFetch, collectionDelete, constructSortMethod,
-    constructOPDSFeed
+    constructOPDSFeed, validateToken
 )
 from api.utils import APIUtils
 from api.opdsUtils import OPDSUtils
@@ -49,7 +50,16 @@ class TestCollectionBlueprint:
             'editionIDs': ['ed1', 'ed2', 'ed3']
         }
 
-        with testApp.test_request_context('/', json=testRequestBody):
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockDecode = mocker.patch.object(jwt, 'decode')
+        mockDecode.return_value = {'aud': 'testOwner'}
+
+        with testApp.test_request_context(
+            '/',
+            json=testRequestBody,
+            headers={'Authorization': 'Bearer testToken'}
+        ):
             testAPIResponse = collectionCreate()
 
             assert testAPIResponse == 'testOPDS2Object'
@@ -58,11 +68,17 @@ class TestCollectionBlueprint:
             mockDB.createSession.assert_called_once()
             mockDB.createCollection.assert_called_once_with(
                 'Test Collection', 'Test Creator', 'Test Description',
-                workUUIDs=['uuid1', 'uuid2'], editionIDs=['ed1', 'ed2', 'ed3']
+                'testOwner', workUUIDs=['uuid1', 'uuid2'],
+                editionIDs=['ed1', 'ed2', 'ed3']
             )
             mockDB.session.commit.assert_called_once()
 
             mockFeedConstruct.assert_called_once_with('testUUID', mockDB)
+
+            mockDecode.assert_called_once_with(
+                'testToken', 'test', algorithms=['RS256'],
+                options={'verify_aud': False}
+            )
 
             mockUtils['formatOPDS2Object'].assert_called_once_with(
                 201, 'testOPDS2Feed'
@@ -78,7 +94,16 @@ class TestCollectionBlueprint:
             'editionIDs': ['ed1', 'ed2', 'ed3']
         }
 
-        with testApp.test_request_context('/', json=testRequestBody):
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockDecode = mocker.patch.object(jwt, 'decode')
+        mockDecode.return_value = {'aud': 'testOwner'}
+
+        with testApp.test_request_context(
+            '/',
+            json=testRequestBody,
+            headers={'Authorization': 'Bearer testToken'}
+        ):
             testAPIResponse = collectionCreate()
 
             assert testAPIResponse == 'testErrorResponse'
@@ -129,14 +154,23 @@ class TestCollectionBlueprint:
 
         mockDB.deleteCollection.return_value = 1
 
-        with testApp.test_request_context('/'):
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockDecode = mocker.patch.object(jwt, 'decode')
+        mockDecode.return_value = {'aud': 'testOwner'}
+
+        with testApp.test_request_context(
+            '/', headers={'Authorization': 'Bearer testToken'}
+        ):
             testAPIResponse = collectionDelete('testUUID')
 
             assert testAPIResponse[0].status_code == 200
             assert testAPIResponse[0].json == {'message': 'Deleted testUUID'}
 
             mockDB.createSession.assert_called_once()
-            mockDB.deleteCollection.assert_called_once_with('testUUID')
+            mockDB.deleteCollection.assert_called_once_with(
+                'testUUID', 'testOwner'
+            )
             mockDB.session.commit.assert_called_once()
 
     def test_collectionDelete_error(self, testApp, mockUtils, mocker):
@@ -148,13 +182,22 @@ class TestCollectionBlueprint:
 
         mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
 
-        with testApp.test_request_context('/'):
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockDecode = mocker.patch.object(jwt, 'decode')
+        mockDecode.return_value = {'aud': 'testOwner'}
+
+        with testApp.test_request_context(
+            '/', headers={'Authorization': 'Bearer testToken'}
+        ):
             testAPIResponse = collectionDelete('testUUID')
 
             assert testAPIResponse == 'testErrorResponse'
 
             mockDB.createSession.assert_called_once()
-            mockDB.deleteCollection.assert_called_once_with('testUUID')
+            mockDB.deleteCollection.assert_called_once_with(
+                'testUUID', 'testOwner'
+            )
 
             mockUtils['formatResponseObject'].assert_called_once_with(
                 404,
@@ -270,3 +313,68 @@ class TestCollectionBlueprint:
             'fetchCollection',
             {'message': 'Unable to locate collection testUUID'}
         )
+
+    def test_validateToken_success(self, testApp, mocker):
+        mockFunc = mocker.MagicMock()
+
+        decoratedFunction = validateToken(mockFunc)
+
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockDecode = mocker.patch.object(jwt, 'decode')
+        mockDecode.return_value = {'aud': 'testOwner'}
+
+        with testApp.test_request_context(
+            '/', headers={'Authorization': 'Bearer testToken'}
+        ):
+            decoratedFunction()
+
+            mockDecode.assert_called_once_with(
+                'testToken', 'test', algorithms=['RS256'],
+                options={'verify_aud': False}
+            )
+
+            mockFunc.assert_called_once_with(user='testOwner')
+
+    def test_validateToken_error_no_header(self, testApp, mockUtils, mocker):
+        mockFunc = mocker.MagicMock()
+
+        decoratedFunction = validateToken(mockFunc)
+
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockUtils['formatResponseObject'].return_value = 'testError'
+
+        with testApp.test_request_context('/'):
+            testResponse = decoratedFunction()
+
+            assert testResponse == 'testError'
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                403, 'authenticationError',
+                {'message': 'Authorization Bearer token required'}
+            )
+
+    def test_validateToken_error_jwt(self, testApp, mockUtils, mocker):
+        mockFunc = mocker.MagicMock()
+
+        decoratedFunction = validateToken(mockFunc)
+
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockDecode = mocker.patch.object(jwt, 'decode')
+        mockDecode.side_effect = jwt.DecodeError
+
+        mockUtils['formatResponseObject'].return_value = 'testError'
+
+        with testApp.test_request_context(
+            '/', headers={'Authorization': 'Bearer testToken'}
+        ):
+            testResponse = decoratedFunction()
+
+            assert testResponse == 'testError'
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                403, 'authenticationError',
+                {'message': 'Unable to decode auth token'}
+            )

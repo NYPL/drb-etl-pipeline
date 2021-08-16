@@ -13,6 +13,13 @@
             "description": "Digital Research Books Search API"
         }
     ],
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization"
+        }
+    },
     "paths": {
         "/search": {
             "get": {
@@ -553,6 +560,11 @@
                 "tags": ["digital-research-books"],
                 "summary": "Create DRB Collection",
                 "description": "Creates a collection of selected edition records and returns a formatted OPDS2 feed",
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "collection",
@@ -621,6 +633,11 @@
                 "tags": ["digital-research-books"],
                 "summary": "Return DRB Collection",
                 "description": "Return a collection of selected edition records as a formatted OPDS2 feed",
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "uuid",
@@ -661,6 +678,11 @@
                 "tags": ["digital-research-books"],
                 "summary": "Delete a DRB Collection",
                 "description": "Deletes the currently specified collection",
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "uuid",

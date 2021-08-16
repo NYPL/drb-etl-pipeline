@@ -148,7 +148,7 @@ class TestDBClient:
         testInstance.session.query().filter().all.return_value = mockEditions
 
         testNewCollection = testInstance.createCollection(
-            'Test Coll', 'Test Creator', 'Test Description',
+            'Test Coll', 'Test Creator', 'Test Description', 'testOwner',
             workUUIDs=['testUUID'], editionIDs=['ed1', 'ed2']
         )
 
@@ -158,7 +158,7 @@ class TestDBClient:
 
         mockCollection.assert_called_once_with(
             uuid='testUUID', title='Test Coll', creator='Test Creator',
-            description='Test Description'
+            description='Test Description', owner='testOwner'
         )
 
         testInstance.session.query().join().filter().all.assert_called_once()
@@ -166,9 +166,10 @@ class TestDBClient:
         testInstance.session.add.assert_called_once_with(mockCollInstance)
 
     def test_deleteCollection(self, testInstance):
-        testInstance.session.query().filter().delete\
+        testInstance.session.query().filter().filter().delete\
             .return_value = 'testDelete'
 
-        assert testInstance.deleteCollection('uuid') == 'testDelete'
+        assert testInstance.deleteCollection('uuid', 'owner') == 'testDelete'
 
-        testInstance.session.query().filter().delete.assert_called_once()
+        testInstance.session.query().filter().filter().delete\
+            .assert_called_once()

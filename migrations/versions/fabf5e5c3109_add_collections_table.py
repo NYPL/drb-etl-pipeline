@@ -40,11 +40,16 @@ def upgrade():
             default=datetime.utcnow(), onupdate=datetime.utcnow()
         ),
         sa.Column(
-            'collection_id', sa.Integer, sa.ForeignKey('collections.id'),
+            'collection_id',
+            sa.Integer,
+            sa.ForeignKey('collections.id', ondelete='CASCADE'),
             index=True
         ),
         sa.Column(
-            'edition_id', sa.Integer, sa.ForeignKey('editions.id'), index=True
+            'edition_id',
+            sa.Integer,
+            sa.ForeignKey('editions.id', ondelete='CASCADE'),
+            index=True
         )
     )
 

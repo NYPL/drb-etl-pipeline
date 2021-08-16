@@ -27,6 +27,7 @@ class Collection(Base, Core):
     title = Column(Unicode, index=True)
     creator = Column(Unicode, index=True)
     description = Column(Unicode)
+    owner = Column(Unicode)
 
     editions = relationship(
         'Edition',

@@ -1,4 +1,6 @@
 from flask import Blueprint, request, current_app, jsonify
+from functools import wraps
+import jwt
 import os
 
 from ..db import DBClient
@@ -12,8 +14,52 @@ logger = createLog(__name__)
 collection = Blueprint('collection', __name__, url_prefix='/collection')
 
 
+def validateToken(func):
+    @wraps(func)
+    def decorator(*args, **kwargs):
+        logger.debug(request.headers)
+
+        errMsg = None
+
+        publicKey = os.environ['NYPL_API_CLIENT_PUBLIC_KEY']
+
+        try:
+            _, authToken = request.headers['Authorization'].split(' ')
+
+            decoded = jwt.decode(
+                authToken,
+                publicKey,
+                algorithms=['RS256'],
+                options={'verify_aud': False}
+            )
+
+            logger.debug('Decoded token for user {}'.format(decoded['aud']))
+
+            kwargs['user'] = decoded['aud']
+        except KeyError:
+            errMsg = 'Authorization Bearer token required'
+        except jwt.DecodeError:
+            errMsg = 'Unable to decode auth token'
+        except jwt.InvalidTokenError:
+            errMsg = 'Invalid auth token provided'
+        except jwt.ExpiredSignatureError:
+            errMsg = 'Supplied auth token has expired'
+
+        if errMsg:
+            return APIUtils.formatResponseObject(
+                403, 'authenticationError', {'message': errMsg}
+            )
+
+        logger.debug('Successfully validated authentication token')
+
+        return func(*args, **kwargs)
+
+    return decorator
+
+
 @collection.route('/', methods=['POST'])
-def collectionCreate():
+@validateToken
+def collectionCreate(user=None):
     logger.info('Creating new collection')
 
     collectionData = request.json
@@ -36,6 +82,7 @@ def collectionCreate():
         collectionData['title'],
         collectionData['creator'],
         collectionData['description'],
+        user,
         workUUIDs=collectionData.get('workUUIDs', []),
         editionIDs=collectionData.get('editionIDs', [])
     )
@@ -68,13 +115,14 @@ def collectionFetch(uuid):
 
 
 @collection.route('/<uuid>', methods=['DELETE'])
-def collectionDelete(uuid):
+@validateToken
+def collectionDelete(uuid, user=None):
     logger.info('Deleting collection {}'.format(uuid))
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
 
-    deleteCount = dbClient.deleteCollection(uuid)
+    deleteCount = dbClient.deleteCollection(uuid, user)
 
     if deleteCount is None or deleteCount < 1:
         errMsg = {'message': 'No collection with UUID {} exists'.format(uuid)}
