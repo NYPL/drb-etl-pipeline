@@ -682,11 +682,6 @@
                 "tags": ["digital-research-books"],
                 "summary": "Return DRB Collection",
                 "description": "Return a collection of selected edition records as a formatted OPDS2 feed",
-                "security": [
-                    {
-                        "BasicAuth": []
-                    }
-                ],
                 "parameters": [
                     {
                         "name": "uuid",
