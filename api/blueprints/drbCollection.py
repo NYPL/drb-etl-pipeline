@@ -22,15 +22,9 @@ def validateToken(func):
 
         errMsg = None
 
-        rspBody = {}
-
         publicKey = os.environ['NYPL_API_CLIENT_PUBLIC_KEY']
 
-        rspBody['key'] = publicKey
-
         headers = {k.lower(): v for k, v in request.headers.items()}
-
-        rspBody['token'] = headers['authorization']
 
         try:
             _, authToken = headers['authorization'].split(' ')
@@ -55,9 +49,8 @@ def validateToken(func):
             errMsg = 'Supplied auth token has expired'
 
         if errMsg:
-            rspBody['message'] = errMsg
             return APIUtils.formatResponseObject(
-                403, 'authenticationError', rspBody
+                403, 'authenticationError', {'message': errMsg}
             )
 
         logger.debug('Successfully validated authentication token')
