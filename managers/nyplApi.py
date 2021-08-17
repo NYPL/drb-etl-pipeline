@@ -1,6 +1,5 @@
 from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError
 import os
-from  time import time
 from requests_oauthlib import OAuth2Session
 
 
@@ -8,8 +7,10 @@ class NyplApiManager:
     def __init__(self, clientID=None, clientSecret=None):
         super(NyplApiManager, self).__init__()
         self.client = None
-        self.clientID = clientID or os.environ.get('NYPL_API_CLIENT_ID', None)
-        self.clientSecret = clientSecret or os.environ.get('NYPL_API_CLIENT_SECRET', None)
+        self.clientID = clientID\
+            or os.environ.get('NYPL_API_CLIENT_ID', None)
+        self.clientSecret = clientSecret\
+            or os.environ.get('NYPL_API_CLIENT_SECRET', None)
         self.tokenURL = os.environ.get('NYPL_API_CLIENT_TOKEN_URL', None)
         self.apiRoot = 'https://platform.nypl.org/api/v0.1'
         self.token = None
@@ -27,13 +28,18 @@ class NyplApiManager:
         self.client = OAuth2Session(self.clientID, token=self.token)
 
     def queryApi(self, requestPath):
-        if not self.client: self.createClient()
+        if not self.client:
+            self.createClient()
 
         try:
-            return self.client.get('{}/{}'.format(self.apiRoot, requestPath), timeout=15).json()
+            return self.client.get(
+                '{}/{}'.format(self.apiRoot, requestPath),
+                timeout=15
+            ).json()
         except TokenExpiredError:
             self.generateAccessToken()
             self.client = None
+
             return self.queryApi(requestPath)
         except TimeoutError:
             return {}

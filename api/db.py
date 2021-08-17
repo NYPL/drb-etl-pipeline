@@ -1,9 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.sql import text
+from uuid import uuid4
 
-from model import Work, Edition, Link, Item, Record
+from model import Work, Edition, Link, Item, Record, Collection
 from .utils import APIUtils
+
 
 class DBClient():
     def __init__(self, engine):
@@ -24,7 +26,9 @@ class DBClient():
             .options(
                 joinedload(Work.editions, Edition.links),
                 joinedload(Work.editions, Edition.items),
-                joinedload(Work.editions, Edition.items, Item.links, innerjoin=True),
+                joinedload(
+                    Work.editions, Edition.items, Item.links, innerjoin=True
+                ),
                 joinedload(Work.editions, Edition.items, Item.rights),
             )\
             .filter(Work.uuid.in_(uuids), Edition.id.in_(editionIds))\
@@ -36,7 +40,9 @@ class DBClient():
                 joinedload(Work.editions),
                 joinedload(Work.editions, Edition.rights),
                 joinedload(Work.editions, Edition.items),
-                joinedload(Work.editions, Edition.items, Item.links, innerjoin=True)
+                joinedload(
+                    Work.editions, Edition.items, Item.links, innerjoin=True
+                )
             )\
             .filter(Work.uuid == uuid).first()
 
@@ -71,6 +77,60 @@ class DBClient():
 
         createdSince = datetime.utcnow() - timedelta(days=1)
 
-        baseQuery = self.session.query(Work).filter(Work.date_created >= createdSince)
+        baseQuery = self.session.query(Work)\
+            .filter(Work.date_created >= createdSince)
 
         return (baseQuery.count(), baseQuery.offset(offset).limit(size).all())
+
+    def fetchSingleCollection(self, uuid):
+        return self.session.query(Collection)\
+            .options(joinedload(Collection.editions))\
+            .filter(Collection.uuid == uuid).first()
+
+    def createCollection(
+        self, title, creator, description, owner, workUUIDs=[], editionIDs=[]
+    ):
+        newCollection = Collection(
+            uuid=uuid4(),
+            title=title,
+            creator=creator,
+            description=description,
+            owner=owner
+        )
+
+        collectionEditions = []
+        if len(workUUIDs) > 0:
+            collectionWorks = self.session.query(Work)\
+                .join(Work.editions)\
+                .filter(Work.uuid.in_(workUUIDs))\
+                .all()
+
+            for work in collectionWorks:
+                editions = list(sorted(
+                    [ed for ed in work.editions],
+                    key=lambda x: x.publication_date
+                    if x.publication_date else date.today()
+                ))
+
+                for edition in editions:
+                    if len(edition.items) > 0:
+                        collectionEditions.append(edition)
+                        break
+
+        if len(editionIDs) > 0:
+            collectionEditions.extend(
+                self.session.query(Edition)
+                .filter(Edition.id.in_(editionIDs))
+                .all()
+            )
+
+        newCollection.editions = collectionEditions
+
+        self.session.add(newCollection)
+
+        return newCollection
+
+    def deleteCollection(self, uuid, owner):
+        return self.session.query(Collection)\
+            .filter(Collection.owner == owner)\
+            .filter(Collection.uuid == uuid).delete()

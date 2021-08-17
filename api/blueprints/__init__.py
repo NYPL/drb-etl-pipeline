@@ -1,3 +1,4 @@
+from .drbCollection import collection
 from .drbEdition import edition
 from .drbInfo import info
 from .drbLink import link

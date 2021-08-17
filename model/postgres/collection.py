@@ -23,9 +23,11 @@ class Collection(Base, Core):
     __tablename__ = 'collections'
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(UUID, index=True)
+    uuid = Column(UUID(as_uuid=True), index=True)
     title = Column(Unicode, index=True)
     creator = Column(Unicode, index=True)
+    description = Column(Unicode)
+    owner = Column(Unicode)
 
     editions = relationship(
         'Edition',

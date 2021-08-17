@@ -20,13 +20,13 @@ class TestOPDSFacet:
         return TestIter
 
     def test_initializer(self, testFeed):
-        assert testFeed.metadata == None
-        assert testFeed.navigation == None
-        assert testFeed.links == None
-        assert testFeed.publications == None
-        assert testFeed.groups == None
-        assert testFeed.images == None
-        assert testFeed.facets == None
+        assert testFeed.metadata is None
+        assert testFeed.navigation is None
+        assert testFeed.links == []
+        assert testFeed.publications == []
+        assert testFeed.groups == []
+        assert testFeed.images == []
+        assert testFeed.facets == []
 
     def test_addMetadata(self, testFeed, mocker):
         mockComponentize = mocker.patch.object(Feed, 'componentizeObject')

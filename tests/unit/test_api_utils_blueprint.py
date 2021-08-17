@@ -2,7 +2,9 @@ from flask import Flask, Response
 import pytest
 import requests
 
-from api.blueprints.drbUtils import languageCounts, totalCounts, getProxyResponse
+from api.blueprints.drbUtils import(
+    languageCounts, totalCounts, getProxyResponse, getAuthToken
+)
 from api.utils import APIUtils
 
 class TestEditionBlueprint:
@@ -119,3 +121,31 @@ class TestEditionBlueprint:
                 mocker.call('redirectURL', headers={'User-agent': 'Mozilla/5.0'})]
             )
             mockReq.assert_called_once()
+
+    def test_getAuthToken_success(self, testApp, mocker):
+        mockAPIInit = mocker.patch('api.blueprints.drbUtils.NyplApiManager')
+        mockAPI = mocker.MagicMock(token={'access_token': 'testToken'})
+        mockAPIInit.return_value = mockAPI
+
+        with testApp.test_request_context(
+            '/?client_id=testID&client_secret=testSecret'
+        ):
+            testAPIResponse = getAuthToken()
+
+            assert testAPIResponse[1] == 200
+            assert testAPIResponse[0].json['access_token'] == 'testToken'
+
+            mockAPIInit.assert_called_once_with('testID', 'testSecret')
+            mockAPI.generateAccessToken.assert_called_once()
+
+    def test_getAuthToken_missing_key(self, testApp, mockUtils, mocker):
+        mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
+
+        with testApp.test_request_context('/'):
+            testAPIResponse = getAuthToken()
+            assert testAPIResponse == 'testErrorResponse'
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                400, 'authResponse',
+                {'message': 'client_id and client_secret required'}
+            )

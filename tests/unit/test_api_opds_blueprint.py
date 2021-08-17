@@ -3,9 +3,11 @@ import pytest
 
 from api.blueprints.drbOPDS2 import (
     opdsRoot, newPublications, opdsSearch, fetchPublication, constructBaseFeed,
-    addPagingOptions, addPublications, createPublicationObject, addFacets
+    addPublications, createPublicationObject, addFacets
 )
 from api.utils import APIUtils
+from api.opdsUtils import OPDSUtils
+
 
 class TestOPDSBlueprint:
     @pytest.fixture
@@ -23,9 +25,9 @@ class TestOPDSBlueprint:
 
     @pytest.fixture
     def opdsMocks(self, mocker):
-        return mocker.patch.multiple('api.blueprints.drbOPDS2',
+        return mocker.patch.multiple(
+            'api.blueprints.drbOPDS2',
             constructBaseFeed=mocker.DEFAULT,
-            addPagingOptions=mocker.DEFAULT,
             addFacets=mocker.DEFAULT,
             addPublications=mocker.DEFAULT,
             createPublicationObject=mocker.DEFAULT
@@ -93,6 +95,8 @@ class TestOPDSBlueprint:
 
         mockUtils['formatOPDS2Object'].return_value = 'testOPDSResponse'
 
+        mockAddPaging = mocker.patch.object(OPDSUtils, 'addPagingOptions')
+
         with testFlask.test_request_context('/new'):
             assert newPublications() == 'testOPDSResponse'
 
@@ -102,8 +106,8 @@ class TestOPDSBlueprint:
                 '/new?', 'New Publications: Digital Research Books', grouped=True
             )
             mockDB.fetchNewWorks.assert_called_once_with(page=0, size=25)
-            opdsMocks['addPagingOptions'].assert_called_once_with(
-                'testBaseFeed', '/new?', 3, page=1, pageSize=25
+            mockAddPaging.assert_called_once_with(
+                'testBaseFeed', '/new?', 3, page=1, perPage=25
             )
             opdsMocks['addPublications'].assert_called_once_with(
                 'testBaseFeed', ['pub1', 'pub2', 'pub3'], grouped=True
@@ -139,6 +143,8 @@ class TestOPDSBlueprint:
 
         mockUtils['formatOPDS2Object'].return_value = 'mockOPDSResponse'
 
+        mockAddPaging = mocker.patch.object(OPDSUtils, 'addPagingOptions')
+
         with flaskApp.test_request_context('/search'):
             assert opdsSearch() == 'mockOPDSResponse'
 
@@ -158,8 +164,8 @@ class TestOPDSBlueprint:
             opdsMocks['constructBaseFeed'].assert_called_once_with(
                 '/search?', 'Search Results', grouped=True
             )
-            opdsMocks['addPagingOptions'].assert_called_once_with(
-                'testBaseFeed', '/search?', 5, page=1, pageSize=25
+            mockAddPaging.assert_called_once_with(
+                'testBaseFeed', '/search?', 5, page=1, perPage=25
             )
             opdsMocks['addFacets'].assert_called_once_with(
                 'testBaseFeed', '/search?', {'aggs': []}
@@ -281,23 +287,6 @@ class TestOPDSBlueprint:
         assert mockNavCon.call_count == 2
 
         mockFeed.addNavigations.assert_called_once_with(['currentNav', 'newNav'])
-
-    def test_addPagingOptions(self, mocker):
-        mockMetadata = mocker.MagicMock()
-        mockLink = mocker.MagicMock(rel='self', href='/test')
-        mockFeed = mocker.MagicMock(metadata=mockMetadata, links=[mockLink])
-
-        addPagingOptions(mockFeed, '/test', 150)
-
-        assert mockLink.rel == ['self', 'first', 'previous']
-        assert mockLink.href == '/test?page=1'
-        mockMetadata.addField.assert_has_calls([
-            mocker.call('numberOfItems', 150), mocker.call('itemsPerPage', 50), mocker.call('currentPage', 1)
-        ])
-        mockFeed.addLink.assert_has_calls([
-            mocker.call({'rel': 'next', 'href': '/test?page=2', 'type': 'application/opds+json'}),
-            mocker.call({'rel': 'last', 'href': '/test?page=3', 'type': 'application/opds+json'})
-        ])
 
     def test_addPublications_grouped(self, opdsMocks, mocker):
         opdsMocks['createPublicationObject'].side_effect = ['pub1', 'pub2', 'pub3']

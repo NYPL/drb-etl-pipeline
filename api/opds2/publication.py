@@ -6,6 +6,7 @@ from .metadata import Metadata
 from .link import Link
 from .image import Image
 
+
 class Publication:
     METADATA_FIELDS = [
         'identifier', 'title', 'subtitle', 'sortAs', 'author', 'translator',
@@ -30,7 +31,8 @@ class Publication:
             setattr(self.metadata, field, value)
 
     def addLinks(self, links):
-        for link in links: self.addLink(link)
+        for link in links:
+            self.addLink(link)
 
     def addLink(self, link):
         if isinstance(link, dict):
@@ -39,7 +41,8 @@ class Publication:
         self.links.append(link)
 
     def addImages(self, images):
-        for image in images: self.addImage(image)
+        for image in images:
+            self.addImage(image)
 
     def addImage(self, image):
         if isinstance(image, dict):
@@ -48,12 +51,15 @@ class Publication:
         self.images.append(image)
 
     def addEditions(self, editions):
-        for edition in editions: self.addEdition(edition)
+        for edition in editions:
+            self.addEdition(edition)
 
     def addEdition(self, edition):
         if isinstance(edition, dict):
-            edition = Publication(metadata=edition['metadata'], links=edition['links'])
-        
+            edition = Publication(
+                metadata=edition['metadata'], links=edition['links']
+            )
+
         self.editions.append(edition)
 
     def parseWorkToPublication(self, workRecord, searchResult=True):
@@ -67,21 +73,34 @@ class Publication:
         self.setBestIdentifier(workRecord.identifiers)
 
         # Authors/Contributors
-        self.metadata.addField('author', ', '.join([a['name'] for a in workRecord.authors]))
+        self.metadata.addField(
+            'author', ', '.join([a['name'] for a in workRecord.authors])
+        )
         self.setContributors(workRecord.contributors)
 
         # Languages
-        self.metadata.addField('language', ','.join(l.get('iso_3', '') for l in list(filter(None, workRecord.languages))))
+        self.metadata.addField(
+            'language', ','.join(
+                lang.get('iso_3', '')
+                for lang in list(filter(None, workRecord.languages))
+            )
+        )
 
         # Created/Modified
         self.metadata.addField('created', workRecord.date_created)
         self.metadata.addField('modified', workRecord.date_modified)
 
         # Subjects
-        self.metadata.addField('subject', ', '.join(s['heading'] for s in workRecord.subjects))
+        self.metadata.addField(
+            'subject', ', '.join(s['heading'] for s in workRecord.subjects)
+        )
 
         # Links
-        self.addLink({'href': '/opds/publication/{}'.format(workRecord.uuid), 'rel': 'self', 'type': 'application/opds-publication+json'})
+        self.addLink({
+            'href': '/opds/publication/{}'.format(workRecord.uuid),
+            'rel': 'self',
+            'type': 'application/opds-publication+json'
+        })
         self.setPreferredLink(workRecord.editions)
 
         # Covers
@@ -98,22 +117,46 @@ class Publication:
         self.metadata.addField('subtitle', editionRecord.sub_title)
         self.metadata.addField('alternate', editionRecord.alt_titles)
 
+        # Creator (from work record)
+        try:
+            self.metadata.addField(
+                'creator', editionRecord.work.authors[0]['name']
+            )
+        except IndexError:
+            pass
+
         # Identifier
         self.setBestIdentifier(editionRecord.identifiers)
 
         # Publishers/Contributors/Authors
-        self.metadata.addField('publisher', ', '.join([p['name'] for p in editionRecord.publishers]))
+        self.metadata.addField(
+            'publisher', ', '.join(
+                [p['name'] for p in editionRecord.publishers]
+            )
+        )
         self.setContributors(editionRecord.contributors)
 
         # Publication Fields
-        self.metadata.addField('published', editionRecord.publication_date.year if editionRecord.publication_date else '')
-        self.metadata.addField('locationCreated', editionRecord.publication_place)
+        if editionRecord.publication_date:
+            publicationYear = editionRecord.publication_date.year
+        else:
+            publicationYear = ''
+        self.metadata.addField('published', publicationYear)
+
+        self.metadata.addField(
+            'locationCreated', editionRecord.publication_place
+        )
 
         # Summary
         self.metadata.addField('description', editionRecord.summary)
 
         # Languages
-        self.metadata.addField('language', ','.join(l.get('iso_3', '') for l in list(filter(None, editionRecord.languages))))
+        self.metadata.addField(
+            'language', ','.join(
+                lang.get('iso_3', '')
+                for lang in list(filter(None, editionRecord.languages))
+            )
+        )
 
         # Created/Modified
         self.metadata.addField('created', editionRecord.date_created)
@@ -125,7 +168,11 @@ class Publication:
         # Acquisition Links
         for item in editionRecord.items:
             for link in item.links:
-                self.addLink({'href': link.url, 'type': link.media_type, 'rel': 'http://opds-spec.org/acquisition/open-access'})
+                self.addLink({
+                    'href': link.url,
+                    'type': link.media_type,
+                    'rel': 'http://opds-spec.org/acquisition/open-access'
+                })
 
     def parseEditions(self, editions):
         for edition in editions:
@@ -135,11 +182,14 @@ class Publication:
 
     def setBestIdentifier(self, identifiers):
         for idType in ['isbn', 'issn', 'oclc', 'lccn', 'owi']:
-            typeIDs = list(filter(lambda x: x.authority == idType, identifiers))
+            typeIDs = list(filter(
+                lambda x: x.authority == idType, identifiers
+            ))
 
             if len(typeIDs) > 0:
                 self.metadata.addField(
-                    'identifier', 'urn:{}:{}'.format(idType, typeIDs[0].identifier)
+                    'identifier',
+                    'urn:{}:{}'.format(idType, typeIDs[0].identifier)
                 )
                 break
 
@@ -149,7 +199,7 @@ class Publication:
         for contrib in contributors:
             for role in contrib['roles']:
                 contributorsByRole[role.lower()].append(contrib['name'])
-        
+
         for role, names in contributorsByRole.items():
             if role in self.METADATA_FIELDS:
                 self.metadata.addField(role, ', '.join(names))
@@ -160,10 +210,17 @@ class Publication:
                 firstLink = ed.items[0].links[0]
                 break
 
-        self.addLink({'href': firstLink.url, 'type': firstLink.media_type, 'rel': 'http://opds-spec.org/acquisition/open-access'})
+        self.addLink({
+            'href': firstLink.url,
+            'type': firstLink.media_type,
+            'rel': 'http://opds-spec.org/acquisition/open-access'
+        })
 
     def findAndAddCover(self, record):
-        editions = [record] if isinstance(record, Edition) else [e for e in record.editions]
+        if isinstance(record, Edition):
+            editions = [record]
+        else:
+            editions = [e for e in record.editions]
 
         for edition in editions:
             for link in edition.links:
@@ -173,7 +230,7 @@ class Publication:
                         'type': link.media_type
                     })
                     break
-            
+
             if len(self.images) > 0:
                 return
 
@@ -188,11 +245,13 @@ class Publication:
 
     def __iter__(self):
         if len(self.images) == 0:
-            raise OPDS2PublicationException('At least one image must be present in an OPDS2 publication')
+            raise OPDS2PublicationException(
+                'At least one image must be present in an OPDS2 publication'
+            )
 
         for attr in dir(self):
             component = getattr(self, attr)
-            
+
             if component is None:
                 continue
             if isinstance(component, list):
