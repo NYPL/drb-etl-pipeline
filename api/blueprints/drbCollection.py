@@ -91,9 +91,7 @@ def collectionCreate(user=None):
 
     logger.info('Created collection {}'.format(newCollection))
 
-    opdsFeed = constructOPDSFeed(newCollection.uuid, dbClient)
-
-    return APIUtils.formatOPDS2Object(201, opdsFeed)
+    return constructOPDSFeed(newCollection.uuid, dbClient)
 
 
 @collection.route('/<uuid>', methods=['GET'])
@@ -107,11 +105,9 @@ def collectionFetch(uuid):
     page = int(request.args.get('page', 1))
     perPage = int(request.args.get('perPage', 10))
 
-    opdsFeed = constructOPDSFeed(
+    return constructOPDSFeed(
         uuid, dbClient, sort=sort, page=page, perPage=perPage
     )
-
-    return APIUtils.formatOPDS2Object(200, opdsFeed)
 
 
 @collection.route('/<uuid>', methods=['DELETE'])
@@ -203,4 +199,4 @@ def constructOPDSFeed(uuid, dbClient, sort=None, page=1, perPage=10):
         opdsFeed, request.full_path, len(opdsPubs), page=page, perPage=perPage
     )
 
-    return opdsFeed
+    return APIUtils.formatOPDS2Object(200, opdsFeed)
