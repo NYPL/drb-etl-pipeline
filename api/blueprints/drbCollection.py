@@ -1,3 +1,4 @@
+import boto3
 from flask import Blueprint, request, current_app, jsonify
 from functools import wraps
 import jwt
@@ -23,8 +24,10 @@ def validateToken(func):
 
         publicKey = os.environ['NYPL_API_CLIENT_PUBLIC_KEY']
 
+        headers = {k.lower(): v for k, v in request.headers.items()}
+
         try:
-            _, authToken = request.headers['Authorization'].split(' ')
+            _, authToken = headers['authorization'].split(' ')
 
             decoded = jwt.decode(
                 authToken,
