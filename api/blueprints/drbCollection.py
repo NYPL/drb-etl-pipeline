@@ -218,13 +218,7 @@ def constructOPDSFeed(
         else '/collection/{}'.format(uuid)
 
     opdsFeed.addLink({
-<<<<<<< HEAD
         'rel': 'self', 'href': path, 'type': 'application/opds+json'
-=======
-        'rel': 'self',
-        'href': path or request.path,
-        'type': 'application/opds+json'
->>>>>>> main
     })
 
     host = 'digital-research-books-beta'\
