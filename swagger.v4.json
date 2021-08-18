@@ -15,9 +15,7 @@
     ],
     "securityDefinitions": {
         "BasicAuth": {
-            "type": "apiKey",
-            "in": "header",
-            "name": "Authorization"
+            "type": "basic"
         }
     },
     "paths": {
