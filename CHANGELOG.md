@@ -4,6 +4,7 @@
 ### Added
 - Collections model for storing arbitrary collections of editions/works
 - /collection endpoints for the creation, retrival and deletion of collection records
+- /collection/list epndoint to list all collections in database
 
 ## 2021-08-03 -- v0.8.0
 ### Added
