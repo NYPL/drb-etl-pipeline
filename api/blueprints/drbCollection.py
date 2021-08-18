@@ -155,10 +155,12 @@ def constructOPDSFeed(uuid, dbClient, sort=None, page=1, perPage=10):
         'description': collection.description
     })
 
+    path = request.full_path\
+        if uuid in request.path\
+        else '/collection/{}'.format(uuid)
+
     opdsFeed.addLink({
-        'rel': 'self',
-        'href': request.path,
-        'type': 'application/opds+json'
+        'rel': 'self', 'href': path, 'type': 'application/opds+json'
     })
 
     host = 'digital-research-books-beta'\
@@ -186,7 +188,7 @@ def constructOPDSFeed(uuid, dbClient, sort=None, page=1, perPage=10):
     opdsFeed.addPublications(opdsPubs[start:end])
 
     OPDSUtils.addPagingOptions(
-        opdsFeed, request.full_path, len(opdsPubs), page=page, perPage=perPage
+        opdsFeed, path, len(opdsPubs), page=page, perPage=perPage
     )
 
     return APIUtils.formatOPDS2Object(200, opdsFeed)
