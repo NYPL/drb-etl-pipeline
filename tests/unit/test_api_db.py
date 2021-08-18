@@ -117,13 +117,19 @@ class TestDBClient:
             .assert_called_once()
 
     def test_fetchSingleCollection(self, testInstance):
-        testInstance.session.query().options().filter().first\
+        testInstance.session.query().options().filter().one\
             .return_value = 'testCollection'
 
         assert testInstance.fetchSingleCollection('uuid') == 'testCollection'
 
-        testInstance.session.query().options().filter().first\
+        testInstance.session.query().options().filter().one\
             .assert_called_once()
+
+    def test_fetchCollections(self, testInstance):
+        testInstance.session.query().order_by().offset().limit().all\
+            .return_value = 'testCollections'
+
+        assert testInstance.fetchCollections() == 'testCollections'
 
     def test_createCollection(self, testInstance, mocker):
         mockUUID = mocker.patch('api.db.uuid4')
