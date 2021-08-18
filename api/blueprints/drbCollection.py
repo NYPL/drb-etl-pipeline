@@ -2,6 +2,8 @@ from base64 import b64decode
 from flask import Blueprint, request, current_app, jsonify
 from functools import wraps
 import os
+import re
+from sqlalchemy.orm.exc import NoResultFound
 
 from ..db import DBClient
 from ..opdsUtils import OPDSUtils
@@ -81,7 +83,9 @@ def collectionCreate(user=None):
 
     logger.info('Created collection {}'.format(newCollection))
 
-    return constructOPDSFeed(newCollection.uuid, dbClient)
+    opdsFeed = constructOPDSFeed(newCollection.uuid, dbClient)
+
+    return APIUtils.formatOPDS2Object(201, opdsFeed)
 
 
 @collection.route('/<uuid>', methods=['GET'])
@@ -95,9 +99,15 @@ def collectionFetch(uuid):
     page = int(request.args.get('page', 1))
     perPage = int(request.args.get('perPage', 10))
 
-    return constructOPDSFeed(
-        uuid, dbClient, sort=sort, page=page, perPage=perPage
-    )
+    try:
+        opdsFeed = constructOPDSFeed(
+            uuid, dbClient, sort=sort, page=page, perPage=perPage
+        )
+    except NoResultFound:
+        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
+        return APIUtils.formatResponseObject(404, 'fetchCollection', errMsg)
+
+    return APIUtils.formatOPDS2Object(200, opdsFeed)
 
 
 @collection.route('/<uuid>', methods=['DELETE'])
@@ -121,6 +131,56 @@ def collectionDelete(uuid, user=None):
     return (jsonify({'message': 'Deleted {}'.format(uuid)}), 200)
 
 
+@collection.route('/list', methods=['GET'])
+def collectionList():
+    logger.info('Listing all collections')
+
+    sort = request.args.get('sort', 'title')
+    page = int(request.args.get('page', 1))
+    perPage = int(request.args.get('perPage', 10))
+
+    if not re.match(r'(?:title|creator)(?::(?:asc|desc))*', sort):
+        return APIUtils.formatResponseObject(
+            400, 'collectionList',
+            {'message': 'valid sort fields are title and creator'}
+        )
+
+    dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
+
+    collections = dbClient.fetchCollections(
+        sort=sort, page=page, perPage=perPage
+    )
+
+    opdsFeed = Feed()
+
+    opdsFeed.addMetadata({
+        'title': 'Digital Research Books Collections'
+    })
+
+    opdsFeed.addLink({
+        'rel': 'self',
+        'href': request.path,
+        'type': 'application/opds+json'
+    })
+
+    OPDSUtils.addPagingOptions(
+        opdsFeed, request.full_path, len(collections),
+        page=page, perPage=perPage
+    )
+
+    for collection in collections:
+        uuid = collection.uuid
+
+        path = '/collection/{}'.format(uuid)
+
+        group = constructOPDSFeed(uuid, dbClient, perPage=5, path=path)
+
+        opdsFeed.addGroup(group)
+
+    return APIUtils.formatOPDS2Object(200, opdsFeed)
+
+
 def constructSortMethod(sort):
     sortSettings = sort.split(':')
 
@@ -140,12 +200,10 @@ def constructSortMethod(sort):
     return (sortEds, reversed)
 
 
-def constructOPDSFeed(uuid, dbClient, sort=None, page=1, perPage=10):
+def constructOPDSFeed(
+    uuid, dbClient, sort=None, page=1, perPage=10, path=None
+):
     collection = dbClient.fetchSingleCollection(uuid)
-
-    if not collection:
-        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
-        return APIUtils.formatResponseObject(404, 'fetchCollection', errMsg)
 
     opdsFeed = Feed()
 
@@ -160,7 +218,13 @@ def constructOPDSFeed(uuid, dbClient, sort=None, page=1, perPage=10):
         else '/collection/{}'.format(uuid)
 
     opdsFeed.addLink({
+<<<<<<< HEAD
         'rel': 'self', 'href': path, 'type': 'application/opds+json'
+=======
+        'rel': 'self',
+        'href': path or request.path,
+        'type': 'application/opds+json'
+>>>>>>> main
     })
 
     host = 'digital-research-books-beta'\
@@ -191,4 +255,4 @@ def constructOPDSFeed(uuid, dbClient, sort=None, page=1, perPage=10):
         opdsFeed, path, len(opdsPubs), page=page, perPage=perPage
     )
 
-    return APIUtils.formatOPDS2Object(200, opdsFeed)
+    return opdsFeed

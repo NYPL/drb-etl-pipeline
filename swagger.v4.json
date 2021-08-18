@@ -761,6 +761,56 @@
                     } 
                 }
             }
+        },
+        "/collection/list": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "Return list of DRB Collections",
+                "description": "Returns list of collections in DRB",
+                "parameters": [
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Method of sorting collections. Either title or creator",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page of collections to load",
+                        "type": "integer",
+                        "required": false
+                    },
+                    {
+                        "name": "perGage",
+                        "in": "query",
+                        "description": "Number of collections to load per page",
+                        "type": "integer",
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "A basic OPDS2 feed response",
+                        "schema": {
+                            "$ref": "#/definitions/OPDSFeedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    } 
+                }
+            }
         }
     },
     "definitions": {

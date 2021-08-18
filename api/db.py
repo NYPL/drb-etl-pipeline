@@ -85,7 +85,18 @@ class DBClient():
     def fetchSingleCollection(self, uuid):
         return self.session.query(Collection)\
             .options(joinedload(Collection.editions))\
-            .filter(Collection.uuid == uuid).first()
+            .filter(Collection.uuid == uuid).one()
+
+    def fetchCollections(self, sort=None, page=1, perPage=10):
+        offset = (page - 1) * perPage
+
+        sort = sort.replace(':', ' ') if sort else 'title'
+
+        return self.session.query(Collection)\
+            .order_by(text(sort))\
+            .offset(offset)\
+            .limit(perPage)\
+            .all()
 
     def createCollection(
         self, title, creator, description, owner, workUUIDs=[], editionIDs=[]

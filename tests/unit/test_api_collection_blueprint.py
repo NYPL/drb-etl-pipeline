@@ -2,10 +2,11 @@ from flask import Flask
 import jwt
 import os
 import pytest
+from sqlalchemy.orm.exc import NoResultFound
 
 from api.blueprints.drbCollection import (
-    collectionCreate, collectionFetch, collectionDelete, constructSortMethod,
-    constructOPDSFeed, validateToken
+    collectionCreate, collectionFetch, collectionDelete, collectionList,
+    constructSortMethod, constructOPDSFeed, validateToken
 )
 from api.utils import APIUtils
 from api.opdsUtils import OPDSUtils
@@ -27,7 +28,7 @@ class TestCollectionBlueprint:
 
         return flaskApp
 
-    def test_collectionCreate_success(self, testApp, mocker):
+    def test_collectionCreate_success(self, testApp, mockUtils, mocker):
         mockDB = mocker.MagicMock(session=mocker.MagicMock())
         mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
         mockDBClient.return_value = mockDB
@@ -53,6 +54,8 @@ class TestCollectionBlueprint:
         mockDecode = mocker.patch.object(jwt, 'decode')
         mockDecode.return_value = {'aud': 'testOwner'}
 
+        mockUtils['formatOPDS2Object'].return_value = 'testOPDS2Response'
+
         with testApp.test_request_context(
             '/',
             json=testRequestBody,
@@ -60,7 +63,7 @@ class TestCollectionBlueprint:
         ):
             testAPIResponse = collectionCreate()
 
-            assert testAPIResponse == 'testOPDS2Feed'
+            assert testAPIResponse == 'testOPDS2Response'
 
             mockDBClient.assert_called_once_with('testDBClient')
             mockDB.createSession.assert_called_once()
@@ -76,6 +79,10 @@ class TestCollectionBlueprint:
             mockDecode.assert_called_once_with(
                 'testToken', 'test', algorithms=['RS256'],
                 options={'verify_aud': False}
+            )
+
+            mockUtils['formatOPDS2Object'].assert_called_once_with(
+                201, 'testOPDS2Feed'
             )
 
     def test_collectionCreate_error(self, testApp, mockUtils, mocker):
@@ -114,7 +121,7 @@ class TestCollectionBlueprint:
                 }
             )
 
-    def test_collectionFetch(self, testApp, mocker):
+    def test_collectionFetch_success(self, testApp, mockUtils, mocker):
         mockDB = mocker.MagicMock(session=mocker.MagicMock())
         mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
         mockDBClient.return_value = mockDB
@@ -124,15 +131,49 @@ class TestCollectionBlueprint:
         )
         mockFeedConstruct.return_value = 'testOPDS2Feed'
 
+        mockUtils['formatOPDS2Object'].return_value = 'testOPDS2Response'
+
         with testApp.test_request_context('/?sort=title&page=3'):
             testAPIResponse = collectionFetch('testUUID')
 
-            assert testAPIResponse == 'testOPDS2Feed'
+            assert testAPIResponse == 'testOPDS2Response'
 
             mockDB.createSession.assert_called_once()
 
             mockFeedConstruct.assert_called_once_with(
                 'testUUID', mockDB, sort='title', page=3, perPage=10
+            )
+
+            mockUtils['formatOPDS2Object'].assert_called_once_with(
+                200, 'testOPDS2Feed'
+            )
+
+    def test_collectionFetch_error(self, testApp, mockUtils, mocker):
+        mockDB = mocker.MagicMock(session=mocker.MagicMock())
+        mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockFeedConstruct = mocker.patch(
+            'api.blueprints.drbCollection.constructOPDSFeed'
+        )
+        mockFeedConstruct.side_effect = NoResultFound
+
+        mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
+
+        with testApp.test_request_context('/?sort=title&page=3'):
+            testAPIResponse = collectionFetch('testUUID')
+
+            assert testAPIResponse == 'testErrorResponse'
+
+            mockDB.createSession.assert_called_once()
+
+            mockFeedConstruct.assert_called_once_with(
+                'testUUID', mockDB, sort='title', page=3, perPage=10
+            )
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                404, 'fetchCollection',
+                {'message': 'Unable to locate collection testUUID'}
             )
 
     def test_collectionDelete_success(self, testApp, mocker):
@@ -193,6 +234,82 @@ class TestCollectionBlueprint:
                 {'message': 'No collection with UUID testUUID exists'}
             )
 
+    def test_collectionList_success(self, testApp, mockUtils, mocker):
+        mockDB = mocker.MagicMock(session=mocker.MagicMock())
+        mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockDB.fetchCollections.return_value = [
+            mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2')
+        ]
+
+        mockFeed = mocker.MagicMock()
+        mockFeedInit = mocker.patch('api.blueprints.drbCollection.Feed')
+        mockFeedInit.return_value = mockFeed
+
+        mockPaging = mocker.patch.object(OPDSUtils, 'addPagingOptions')
+
+        mockConstruct = mocker.patch(
+            'api.blueprints.drbCollection.constructOPDSFeed'
+        )
+        mockConstruct.side_effect = ['group1', 'group2']
+
+        mockUtils['formatOPDS2Object'].return_value = 'testOPDSResponse'
+
+        with testApp.test_request_context('/list'):
+            testResponse = collectionList()
+
+            assert testResponse == 'testOPDSResponse'
+
+            mockDB.createSession.assert_called_once()
+            mockDB.fetchCollections.assert_called_once_with(
+                sort='title', page=1, perPage=10
+            )
+
+            mockFeedInit.assert_called_once()
+            mockFeed.addMetadata.assert_called_once_with(
+                {'title': 'Digital Research Books Collections'}
+            )
+            mockFeed.addLink.assert_called_once_with({
+                'rel': 'self',
+                'href': '/list',
+                'type': 'application/opds+json'
+            })
+
+            mockPaging.assert_called_once_with(
+                mockFeed, '/list?', 2, page=1, perPage=10
+            )
+
+            mockConstruct.assert_has_calls([
+                mocker.call(
+                    'uuid1', mockDB, perPage=5, path='/collection/uuid1'
+                ),
+                mocker.call(
+                    'uuid2', mockDB, perPage=5, path='/collection/uuid2'
+                )
+            ])
+
+            mockFeed.addGroup.assert_has_calls([
+                mocker.call('group1'), mocker.call('group2')
+            ])
+
+            mockUtils['formatOPDS2Object'].assert_called_once_with(
+                200, mockFeed
+            )
+
+    def test_collectionList_sort_error(self, testApp, mockUtils):
+        mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
+
+        with testApp.test_request_context('/list?sort=error'):
+            testResponse = collectionList()
+
+            assert testResponse == 'testErrorResponse'
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                400, 'collectionList',
+                {'message': 'valid sort fields are title and creator'}
+            )
+
     def test_constructSortMethod_string(self, mocker):
         sortMethod, reversed = constructSortMethod('test')
 
@@ -247,12 +364,10 @@ class TestCollectionBlueprint:
         )
         mockSortCon.return_value = (lambda x: str(x), False)
 
-        mockUtils['formatOPDS2Object'].return_value = 'testOPDSResponse'
-
         with testApp.test_request_context('/collections/test'):
             testOPDSFeed = constructOPDSFeed('testUUID', mockDB, sort='test')
 
-            assert testOPDSFeed == 'testOPDSResponse'
+            assert testOPDSFeed == mockFeed
 
             mockFeed.addMetadata.assert_called_once_with({
                 'title': 'Test Collection',
@@ -285,28 +400,6 @@ class TestCollectionBlueprint:
             mockPaging.assert_called_once_with(
                 mockFeed, '/collections/test?', 2, page=1, perPage=10
             )
-
-            mockUtils['formatOPDS2Object'].assert_called_once_with(
-                200, mockFeed
-            )
-
-    def test_constructOPDSFeed_error(self, mockUtils, mocker):
-        mockDB = mocker.MagicMock()
-        mockDB.fetchSingleCollection.return_value = None
-
-        mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
-
-        testAPIResponse = constructOPDSFeed('testUUID', mockDB)
-
-        assert testAPIResponse == 'testErrorResponse'
-
-        mockDB.fetchSingleCollection.assert_called_once_with('testUUID')
-
-        mockUtils['formatResponseObject'].assert_called_once_with(
-            404,
-            'fetchCollection',
-            {'message': 'Unable to locate collection testUUID'}
-        )
 
     def test_validateToken_success(self, testApp, mocker):
         mockFunc = mocker.MagicMock()
