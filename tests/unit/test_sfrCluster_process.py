@@ -265,6 +265,7 @@ class TestSFRClusterProcess:
         mockGetBatches.side_effect = [
             [('title1', 1, ['1|isbn']), ('title2', 2, ['2|oclc', '3|other'])],
             [('title3', 3, ['4|oclc'])],
+            [('title4', 4, ['5|oclc'])],
             []
         ]
 
@@ -273,9 +274,9 @@ class TestSFRClusterProcess:
 
         testIDs = testInstance.queryIdens(['1|test', '2|test', '3|test'])
 
-        assert testIDs == [1, 2]
-        assert mockGetBatches.call_count == 3
-        mockCompareTitles.assert_called_once_with('title3')
+        assert testIDs == [1, 2, 3]
+        assert mockGetBatches.call_count == 4
+        mockCompareTitles.assert_called_once_with('title4')
 
     def test_queryIdens_exceed_cluster_threshold(self, testInstance, mocker):
         mockGetBatch = mocker.patch.object(ClusterProcess, 'getRecordBatches')

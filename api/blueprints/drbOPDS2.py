@@ -65,7 +65,7 @@ def opdsSearch():
     if params.get('showAll', None):
         searchTerms['filter'].append(('showAll', params['showAll'][0]))
 
-    esClient = ElasticClient()
+    esClient = ElasticClient(current_app.config['REDIS_CLIENT'])
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
 
