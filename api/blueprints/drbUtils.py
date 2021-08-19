@@ -1,5 +1,4 @@
 from flask import Blueprint, current_app, request, Response
-from flask.json import jsonify
 from flask_cors import cross_origin
 import os
 import requests
@@ -8,7 +7,6 @@ from urllib.parse import unquote_plus
 from ..db import DBClient
 from ..elastic import ElasticClient
 from ..utils import APIUtils
-from managers import NyplApiManager
 from logger import createLog
 
 logger = createLog(__name__)
@@ -89,19 +87,3 @@ def getProxyResponse():
 
     proxyResp = Response(resp.content, resp.status_code, headers)
     return proxyResp
-
-
-@utils.route('/auth', methods=['GET', 'POST'])
-def getAuthToken():
-    try:
-        clientID = request.args['client_id']
-        clientSecret = request.args['client_secret']
-    except KeyError:
-        errMsg = {'message': 'client_id and client_secret required'}
-        return APIUtils.formatResponseObject(400, 'authResponse', errMsg)
-
-    apiManager = NyplApiManager(clientID, clientSecret)
-
-    apiManager.generateAccessToken()
-
-    return (jsonify(apiManager.token), 200)

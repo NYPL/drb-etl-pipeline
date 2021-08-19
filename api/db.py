@@ -3,7 +3,7 @@ from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.sql import text
 from uuid import uuid4
 
-from model import Work, Edition, Link, Item, Record, Collection
+from model import Work, Edition, Link, Item, Record, Collection, User
 from .utils import APIUtils
 
 
@@ -145,3 +145,8 @@ class DBClient():
         return self.session.query(Collection)\
             .filter(Collection.owner == owner)\
             .filter(Collection.uuid == uuid).delete()
+
+    def fetchUser(self, user):
+        return self.session.query(User)\
+            .filter(User.user == user)\
+            .one_or_none()

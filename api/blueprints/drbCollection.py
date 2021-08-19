@@ -1,6 +1,6 @@
+from base64 import b64decode
 from flask import Blueprint, request, current_app, jsonify
 from functools import wraps
-import jwt
 import os
 import re
 from sqlalchemy.orm.exc import NoResultFound
@@ -21,40 +21,30 @@ def validateToken(func):
     def decorator(*args, **kwargs):
         logger.debug(request.headers)
 
-        errMsg = None
-
-        publicKey = os.environ['NYPL_API_CLIENT_PUBLIC_KEY']
-
         headers = {k.lower(): v for k, v in request.headers.items()}
 
         try:
-            _, authToken = headers['authorization'].split(' ')
-
-            decoded = jwt.decode(
-                authToken,
-                publicKey,
-                algorithms=['RS256'],
-                options={'verify_aud': False}
-            )
-
-            logger.debug('Decoded token for user {}'.format(decoded['aud']))
-
-            kwargs['user'] = decoded['aud']
+            _, loginPair = headers['authorization'].split(' ')
+            loginBytes = loginPair.encode('utf-8')
+            user, password = b64decode(loginBytes).decode('utf-8').split(':')
         except KeyError:
-            errMsg = 'Authorization Bearer token required'
-        except jwt.DecodeError:
-            errMsg = 'Unable to decode auth token'
-        except jwt.InvalidTokenError as e:
-            errMsg = 'Invalid auth token provided: {}'.format(e)
-        except jwt.ExpiredSignatureError:
-            errMsg = 'Supplied auth token has expired'
-
-        if errMsg:
             return APIUtils.formatResponseObject(
-                403, 'authenticationError', {'message': errMsg}
+                403, 'authResponse', {'message': 'user/password not provided'}
             )
 
-        logger.debug('Successfully validated authentication token')
+        dbClient = DBClient(current_app.config['DB_CLIENT'])
+        dbClient.createSession()
+
+        user = dbClient.fetchUser(user)
+
+        if not user or APIUtils.validatePassword(password, user.password, user.salt) is False:
+            return APIUtils.formatResponseObject(
+                401, 'authResponse', {'message': 'invalid user/password'}
+            )
+
+        dbClient.closeSession()
+
+        kwargs['user'] = user.user
 
         return func(*args, **kwargs)
 
@@ -225,10 +215,12 @@ def constructOPDSFeed(
         'description': collection.description
     })
 
+    path = request.full_path\
+        if str(uuid) in request.path\
+        else '/collection/{}'.format(uuid)
+
     opdsFeed.addLink({
-        'rel': 'self',
-        'href': path or request.path,
-        'type': 'application/opds+json'
+        'rel': 'self', 'href': path, 'type': 'application/opds+json'
     })
 
     host = 'digital-research-books-beta'\
@@ -256,7 +248,7 @@ def constructOPDSFeed(
     opdsFeed.addPublications(opdsPubs[start:end])
 
     OPDSUtils.addPagingOptions(
-        opdsFeed, request.full_path, len(opdsPubs), page=page, perPage=perPage
+        opdsFeed, path, len(opdsPubs), page=page, perPage=perPage
     )
 
     return opdsFeed

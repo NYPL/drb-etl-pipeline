@@ -1,5 +1,6 @@
 from collections import OrderedDict
 from datetime import datetime
+from hashlib import scrypt
 from flask import jsonify
 from math import ceil
 import re
@@ -288,3 +289,11 @@ class APIUtils():
             return [dict(zip(fields, d.split('|'))) for d in dataList]
         else:
             return dict(zip(fields, data.split('|')))
+
+    @staticmethod
+    def validatePassword(password, hash, salt):
+        password = password.encode('utf-8')
+
+        hashedPassword = scrypt(password, salt=salt, n=2**14, r=8, p=1)
+
+        return hashedPassword == hash

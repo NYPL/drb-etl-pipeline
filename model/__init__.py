@@ -8,6 +8,7 @@ from .postgres.link import Link
 from .postgres.olCover import OpenLibraryCover
 from .postgres.rights import Rights
 from .postgres.collection import Collection
+from .postgres.user import User
 
 from .elasticsearch.agent import Agent as ESAgent
 from .elasticsearch.edition import Edition as ESEdition
