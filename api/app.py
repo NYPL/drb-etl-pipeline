@@ -44,7 +44,7 @@ class FlaskAPI:
         else:
             logger.debug('Starting production server on port 80')
 
-            serve(self.app, host='0.0.0.0', port=80)
+            serve(self.app, host='0.0.0.0', port=80, url_scheme='https')
 
     def createErrorResponses(self):
         @self.app.errorhandler(404)
@@ -60,7 +60,8 @@ class FlaskAPI:
             logger.warning('Internal SQLAlchemy error')
             logger.debug(error)
             return APIUtils.formatResponseObject(
-                500, 'dataError', {'message': 'Encountered fatal database error'}
+                500, 'dataError',
+                {'message': 'Encountered fatal database error'}
             )
 
         @self.app.errorhandler(RequestError)
@@ -71,4 +72,3 @@ class FlaskAPI:
                 400, 'requestError',
                 {'message': error.info['error']['root_cause'][0]['reason']}
             )
-            
