@@ -194,6 +194,7 @@ class CatalogMapping(XMLMapping):
                     # TODO
                     # 1) Parse HathiTrust Links
                     # 2) Parse Project Gutenberg Links
+                    logger.debug('Adding IA Link {}'.format(partLink))
 
                 self.record.identifiers.append('{}|{}'.format(sourceID, source))
 
@@ -212,6 +213,6 @@ class CatalogMapping(XMLMapping):
             return False
 
         iaData = metadataResp.json()
-        iaAccessStatus = iaData['metadata'].get('access-restricted-item', 'true')
+        iaAccessStatus = iaData['metadata'].get('access-restricted-item', 'false')
 
         return iaAccessStatus == 'false'

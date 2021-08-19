@@ -117,6 +117,7 @@ class TestOPDSBlueprint:
     def test_opdsSearch(self, mockUtils, opdsMocks, mockHits, mocker):
         flaskApp = Flask('test')
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
+        flaskApp.config['REDIS_CLIENT'] = 'testRedisClient'
 
         mockES = mocker.MagicMock()
         mockESClient = mocker.patch('api.blueprints.drbOPDS2.ElasticClient')
@@ -148,7 +149,7 @@ class TestOPDSBlueprint:
         with flaskApp.test_request_context('/search'):
             assert opdsSearch() == 'mockOPDSResponse'
 
-            mockESClient.assert_called_once()
+            mockESClient.assert_called_once_with('testRedisClient')
             mockDBClient.assert_called_once_with('testDBClient')
 
             mockUtils['normalizeQueryParams'].assert_called_once()
