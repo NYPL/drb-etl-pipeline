@@ -27,5 +27,5 @@ class TestFlaskAPI:
         testInstance.run()
 
         mockServe.assert_called_once_with(
-            testInstance.app, host='0.0.0.0', port=80
+            testInstance.app, host='0.0.0.0', port=80, url_scheme='https'
         )
