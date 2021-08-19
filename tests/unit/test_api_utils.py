@@ -1,3 +1,4 @@
+from hashlib import scrypt
 import pytest
 
 from api.utils import APIUtils
@@ -422,3 +423,15 @@ class TestAPIUtils:
 
     def test_formatPipeDelimitedData_none(self):
         assert APIUtils.formatPipeDelimitedData(None, ['one', 'two']) == None
+
+    def test_validatePassword_success(self):
+        testHash = scrypt(b'testPswd', salt=b'testSalt', n=2**14, r=8, p=1)
+
+        assert APIUtils.validatePassword('testPswd', testHash, b'testSalt')\
+            is True
+
+    def test_validatePassword_error(self):
+        testHash = scrypt(b'testPswd', salt=b'testSalt', n=2**14, r=8, p=1)
+
+        assert APIUtils.validatePassword('testError', testHash, b'testSalt')\
+            is False

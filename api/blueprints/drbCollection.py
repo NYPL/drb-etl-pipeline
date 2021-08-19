@@ -44,6 +44,8 @@ def validateToken(func):
 
         dbClient.closeSession()
 
+        kwargs['user'] = user.user
+
         return func(*args, **kwargs)
 
     return decorator
@@ -214,7 +216,7 @@ def constructOPDSFeed(
     })
 
     path = request.full_path\
-        if uuid in request.path\
+        if str(uuid) in request.path\
         else '/collection/{}'.format(uuid)
 
     opdsFeed.addLink({

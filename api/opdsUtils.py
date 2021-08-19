@@ -18,6 +18,8 @@ class OPDSUtils:
         pagingRels[page + 1 if page < lastPage else lastPage].append('next')
         pagingRels[lastPage].append('last')
 
+        path = path[:-1] if path[-1] == '?' else path
+
         joinChar = '&' if '?' in path else '?'
 
         for pageNo, rels in pagingRels.items():

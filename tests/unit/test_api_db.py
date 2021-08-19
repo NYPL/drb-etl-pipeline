@@ -179,3 +179,11 @@ class TestDBClient:
 
         testInstance.session.query().filter().filter().delete\
             .assert_called_once()
+
+    def test_fetchUser(self, testInstance):
+        testInstance.session.query().filter().one_or_none\
+            .return_value = 'testUser'
+
+        assert testInstance.fetchUser('user') == 'testUser'
+
+        testInstance.session.query().filter().one_or_none.assert_called_once()

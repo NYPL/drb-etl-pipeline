@@ -355,55 +355,6 @@
                 }
             }
         },
-        "/utils/auth": {
-            "get": {
-                "tags": ["digital-research-books"],
-                "summary": "Authenticate User",
-                "description": "Authenticates ISSO user, returning access token for use with collection endpoints",
-                "parameters": [
-                    {
-                        "name": "client_id",
-                        "in": "query",
-                        "description": "ISSO client_id value",
-                        "type": "string",
-                        "required": true
-                    },
-                    {
-                        "name": "client_secret",
-                        "in": "query",
-                        "description": "ISSO client_secret value",
-                        "type": "string",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "An object containing access token and supporting information",
-                        "schema": {
-                            "$ref": "#/definitions/TokenResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid Parameters supplied",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/opds": {
             "get": {
                 "tags": ["digital-research-books"],
