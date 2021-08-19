@@ -6,6 +6,7 @@
 - /collection endpoints for the creation, retrival and deletion of collection records
 - /collection/list epndoint to list all collections in database
 - Add Basic Authentication for managing collections
+- Update swagger documentation to use current http(s) scheme
 
 ## 2021-08-03 -- v0.8.0
 ### Added
