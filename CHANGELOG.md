@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## unreleased -- v0.9.1
+### Added
+- Per-PR deployments via TugboatQA
+### Fixed
+- InternetArchive link parsing
+- Improved Clustering performance (more agressive clustering)
+
 ## 2021-08-19 -- v0.9.0
 ### Added
 - Collections model for storing arbitrary collections of editions/works
