@@ -4,6 +4,7 @@ from .redis import RedisManager
 from .elasticsearch import ElasticsearchManager
 from .nyplApi import NyplApiManager
 from .rabbitmq import RabbitMQManager
+from .s3 import S3Manager
 
 # Managers for other processes, can be skipped for API
 try:
@@ -16,7 +17,6 @@ try:
     from .webpubManifest import WebpubManifest
     from .sfrRecord import SFRRecordManager
     from .sfrElasticRecord import SFRElasticRecordManager
-    from .s3 import S3Manager
     from .smartsheet import SmartSheetManager
 except (ModuleNotFoundError, ImportError):
         print('Unable to import module, skipping non-API managers')
