@@ -1,13 +1,13 @@
 services:
   drb-api:
-    image: python:3.8
+    image: tugboatqa/python:3.9
     default: true
     expose: 3000
     commands:
       build:
-        - pip install -r requirements.txt
+        - pip install -r api-requirements.txt
       start:
-        - python main.py -p APIProcess -e qa
+        - python main.py -p APIProcess -e qa &
   drb-api-front:
     image: tugboat/node:14
     expose: 80
