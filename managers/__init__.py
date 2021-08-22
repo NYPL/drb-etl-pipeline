@@ -2,6 +2,8 @@
 from .db import DBManager
 from .redis import RedisManager
 from .elasticsearch import ElasticsearchManager
+from .nyplApi import NyplApiManager
+from .rabbitmq import RabbitMQManager
 
 # Managers for other processes, can be skipped for API
 try:
@@ -11,9 +13,7 @@ try:
     from .kMeans import KMeansManager
     from .oclcCatalog import OCLCCatalogManager
     from .oclcClassify import ClassifyManager
-    from .nyplApi import NyplApiManager
     from .webpubManifest import WebpubManifest
-    from .rabbitmq import RabbitMQManager
     from .sfrRecord import SFRRecordManager
     from .sfrElasticRecord import SFRElasticRecordManager
     from .s3 import S3Manager
