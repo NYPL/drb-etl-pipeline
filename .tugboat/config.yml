@@ -7,4 +7,4 @@ services:
       build:
         - pip install -r api-requirements.txt
       start:
-        - python main.py -p APIProcess -e qa
+        - python main.py -p APIProcess -e qa &
