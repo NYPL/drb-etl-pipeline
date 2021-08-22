@@ -2,7 +2,6 @@ services:
   drb-api:
     image: tugboatqa/python:3.9
     default: true
-    expose: 3000
     commands:
       build:
         - pip install -r api-requirements.txt
