@@ -44,7 +44,7 @@ class FlaskAPI:
         else:
             logger.debug('Starting production server on port 80')
 
-            serve(self.app, host='0.0.0.0', port=80, url_scheme='https')
+            serve(self.app, host='0.0.0.0', port=80)
 
     def createErrorResponses(self):
         @self.app.errorhandler(404)
