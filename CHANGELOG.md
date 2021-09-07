@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased -- v0.9.1
+### Fixed
+- Improved InternetArchive link parsing
+- Improved (more aggressive) clustering
+- Set default waitress (Flask WSGI server) to serve https by default
+
 ## 2021-08-19 -- v0.9.0
 ### Added
 - Collections model for storing arbitrary collections of editions/works
