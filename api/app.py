@@ -60,7 +60,8 @@ class FlaskAPI:
             logger.warning('Internal SQLAlchemy error')
             logger.debug(error)
             return APIUtils.formatResponseObject(
-                500, 'dataError', {'message': 'Encountered fatal database error'}
+                500, 'dataError',
+                {'message': 'Encountered fatal database error'}
             )
 
         @self.app.errorhandler(RequestError)
@@ -71,4 +72,3 @@ class FlaskAPI:
                 400, 'requestError',
                 {'message': error.info['error']['root_cause'][0]['reason']}
             )
-            

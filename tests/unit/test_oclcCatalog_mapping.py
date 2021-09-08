@@ -96,6 +96,14 @@ class TestCatalogMapping:
 
         assert testMapping.checkIAReadability('archive.org/1') == False
 
+    def test_checkIAReadability_missing(self, testMapping, mocker):
+        mockResp = mocker.MagicMock()
+        mockResp.json.return_value = {'metadata': {}}
+        mockGet = mocker.patch.object(requests, 'get')
+        mockGet.return_value = mockResp
+
+        assert testMapping.checkIAReadability('archive.org/1') is True
+
     def test_checkIAReadability_error(self, testMapping, mocker):
         mockResp = mocker.MagicMock()
         mockResp.raise_for_status.side_effect = HTTPError

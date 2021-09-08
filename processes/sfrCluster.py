@@ -15,6 +15,8 @@ class ClusterProcess(CoreProcess):
     def __init__(self, *args):
         super(ClusterProcess, self).__init__(*args[:4])
 
+        self.ingestLimit = int(args[4]) if args[4] else None
+
         # PostgreSQL Connection
         self.generateEngine()
         self.createSession()
@@ -71,7 +73,14 @@ class ClusterProcess(CoreProcess):
 
         clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
         dbWork = self.createWorkFromEditions(clusteredEditions, instances)
-        self.session.flush()
+
+        try:
+            self.session.flush()
+        except DataError as e:
+            logger.error('Unable to cluster {}'.format(rec))
+            logger.debug(e)
+
+            raise ClusterError('Malformed DCDW Record Received')
 
         self.indexWorkInElasticSearch(dbWork)
 
@@ -127,7 +136,7 @@ class ClusterProcess(CoreProcess):
 
         iterations = 0
 
-        while iterations < 3:
+        while iterations < 4:
             logger.debug('Checking IDS: {}'.format(len(checkIdens)))
             matches = self.getRecordBatches(list(checkIdens), matchedIDs.copy())
             logger.debug('Got Matches: {}'.format(len(matches)))
@@ -141,7 +150,7 @@ class ClusterProcess(CoreProcess):
             for match in matches:
                 recTitle, recID, recIdentifiers = match
 
-                if iterations > 0 and self.compareTitleTokens(recTitle):
+                if iterations > 1 and self.compareTitleTokens(recTitle):
                     logger.debug('Matched Title Error: {}'.format(recTitle))
                     continue
 
