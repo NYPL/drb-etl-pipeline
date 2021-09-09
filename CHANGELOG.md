@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.9.1
+## 2021-09-09 -- v0.9.1
 ### Fixed
 - Improved InternetArchive link parsing
 - Improved (more aggressive) clustering
