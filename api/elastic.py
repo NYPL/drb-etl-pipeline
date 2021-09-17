@@ -485,7 +485,13 @@ class ElasticClient():
             .bucket('editions_per', 'reverse_nested')
 
     def addSearchHighlighting(self):
-        self.query = self.query.highlight_options(order='score')
+        self.query = self.query.highlight_options(
+            order='score',
+            number_of_fragments=10,
+            pre_tags='',
+            post_tags=''
+        )
+
         self.query = self.query.highlight(*self.searchedFields)
 
 
