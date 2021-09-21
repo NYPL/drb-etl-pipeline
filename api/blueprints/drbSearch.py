@@ -27,9 +27,8 @@ def standardQuery():
     searchPage = int(searchParams.get('page', [1])[0]) - 1
     searchSize = int(searchParams.get('size', [10])[0])
 
-    readerVersion = searchParams.get(
-        'readerVersion', current_app.config['READER_VERSION']
-    )
+    readerVersion = searchParams.get('readerVersion', [None])[0]\
+        or current_app.config['READER_VERSION']
 
     logger.info('Executing ES Query {} with filters {}'.format(searchParams, terms['filter']))
 

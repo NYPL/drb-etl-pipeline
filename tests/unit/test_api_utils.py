@@ -79,13 +79,19 @@ class TestAPIUtils:
     @pytest.fixture
     def testLink(self, MockDBObject):
         return MockDBObject(
-            id='li1', media_type='application/test', url='testURI'
+            id='li1',
+            media_type='application/epub+xml',
+            url='testURI',
+            flags={'test': True}
         )
 
     @pytest.fixture
     def testWebpubLink(self, MockDBObject):
         return MockDBObject(
-            id='li2', media_type='application/webpub+json', url='testURI'
+            id='li2',
+            media_type='application/webpub+json',
+            url='testURI',
+            flags={'test': True}
         )
 
     @pytest.fixture
@@ -338,8 +344,10 @@ class TestAPIUtils:
         assert formattedEdition['items'][0]['location'] == 'test'
         assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
         assert formattedEdition['items'][0]['links'][0]['mediaType'] ==\
-            'application/test'
+            'application/epub+xml'
         assert formattedEdition['items'][0]['links'][0]['url'] == 'testURI'
+        assert formattedEdition['items'][0]['links'][0]['flags']['test'] is\
+            True
         assert formattedEdition['items'][0]['rights'][0]['source'] == 'test'
         assert formattedEdition['items'][0]['rights'][0]['license'] ==\
             'testLicense'
@@ -365,8 +373,9 @@ class TestAPIUtils:
             'id': 'it1',
             'links': [{
                 'link_id': 'li1',
-                'mediaType': 'application/test',
-                'url': 'testURI'
+                'mediaType': 'application/epub+xml',
+                'url': 'testURI',
+                'flags': {'test': True}
             }],
             'rights': [{
                 'source': 'test',
@@ -383,17 +392,19 @@ class TestAPIUtils:
             mocker.call('rec2', {'testURI': testItemDict})
         ])
 
-    def test_formatEdition_filter_reader_v1(self, testEdition, testWebpubItem):
+    def test_formatEdition_v1_reader_flag(self, testEdition, testWebpubItem):
         testEdition.items.append(testWebpubItem)
 
         formattedEdition = APIUtils.formatEdition(testEdition, reader='v1')
 
-        assert len(formattedEdition['items']) == 1
+        assert len(formattedEdition['items']) == 2
         assert formattedEdition['items'][0]['item_id'] == 'it1'
         assert formattedEdition['items'][0]['links'][0]['mediaType'] ==\
-            'application/test'
+            'application/epub+xml'
+        assert formattedEdition['items'][1]['links'][0]['flags']['reader'] is\
+            False
 
-    def test_formatEdition_filter_reader_v2(self, testEdition, testWebpubItem):
+    def test_formatEdition_v2_reader_flag(self, testEdition, testWebpubItem):
         testEdition.items.append(testWebpubItem)
 
         formattedEdition = APIUtils.formatEdition(testEdition, reader='v2')
@@ -402,6 +413,8 @@ class TestAPIUtils:
         assert formattedEdition['items'][1]['item_id'] == 'it2'
         assert formattedEdition['items'][1]['links'][0]['mediaType'] ==\
             'application/webpub+json'
+        assert formattedEdition['items'][0]['links'][0]['flags']['reader'] is\
+            False
 
     def test_formatRecord(self, testRecord, mocker):
         testLinkItems = {

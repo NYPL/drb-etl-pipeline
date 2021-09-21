@@ -152,7 +152,7 @@ class CatalogMapping(XMLMapping):
                     '//oclc:datafield[@tag=\'856\']/oclc:subfield[@code=\'u\']/text()',
                     '//oclc:datafield[@tag=\'856\']/@ind1'
                 ],
-                '1|{0}|oclc|text/html|{{"ebook": true, "download": false, "reader": false, "catalog": true, "marcInd1": "{1}"}}'
+                '1|{0}|oclc|text/html|{{"download": false, "reader": false, "catalog": false, "marcInd1": "{1}"}}'
             )]
         }
 

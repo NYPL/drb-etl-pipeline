@@ -197,23 +197,33 @@ class APIUtils():
             itemDict['location'] = item.physical_location['name']\
                 if item.physical_location else None
 
-            itemDict['links'] = list(filter(None, [
-                {
+            itemDict['links'] = []
+
+            for link in item.links:
+                if formats and link.media_type not in formats:
+                    continue
+
+                flags = link.flags
+
+                if (
+                    (
+                        reader == 'v2'
+                        and link.media_type == 'application/epub+xml'
+                    )
+                    or
+                    (
+                        reader != 'v2'
+                        and link.media_type == 'application/webpub+json'
+                    )
+                ):
+                    flags['reader'] = False
+
+                itemDict['links'].append({
                     'link_id': link.id,
                     'mediaType': link.media_type,
-                    'url': link.url
-                }
-                if not formats or link.media_type in formats else None
-                for link in item.links
-            ]))
-
-            if reader != 'v2':
-                itemDict['links'] = list(filter(
-                    lambda x: x['mediaType'] != 'application/webpub+json',
-                    itemDict['links']
-                ))
-                if len(itemDict['links']) < 1:
-                    continue
+                    'url': link.url,
+                    'flags': flags
+                })
 
             itemDict['rights'] = [
                 {

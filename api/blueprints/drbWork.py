@@ -17,9 +17,8 @@ def workFetch(uuid):
 
     searchParams = APIUtils.normalizeQueryParams(request.args)
     showAll = searchParams.get('showAll', ['true'])[0].lower() != 'false'
-    readerVersion = searchParams.get(
-        'readerVersion', current_app.config['READER_VERSION']
-    )
+    readerVersion = searchParams.get('readerVersion', [None])[0]\
+        or current_app.config['READER_VERSION']
 
     work = dbClient.fetchSingleWork(uuid)
 
