@@ -27,6 +27,10 @@ def standardQuery():
     searchPage = int(searchParams.get('page', [1])[0]) - 1
     searchSize = int(searchParams.get('size', [10])[0])
 
+    readerVersion = searchParams.get(
+        'readerVersion', current_app.config['READER_VERSION']
+    )
+
     logger.info('Executing ES Query {} with filters {}'.format(searchParams, terms['filter']))
 
     try:
@@ -57,7 +61,7 @@ def standardQuery():
 
     dataBlock = {
         'totalWorks': searchResult.hits.total,
-        'works': APIUtils.formatWorkOutput(works, resultIds, formats=filteredFormats),
+        'works': APIUtils.formatWorkOutput(works, resultIds, formats=filteredFormats, reader=readerVersion),
         'paging': paging,
         'facets': facets
     }

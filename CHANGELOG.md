@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.9.2
+### Added
+- `readerVersion` parameter for `/search`, `/work` and `/edition` endpoints to control media types returned
+
 ## 2021-09-09 -- v0.9.1
 ### Fixed
 - Improved InternetArchive link parsing

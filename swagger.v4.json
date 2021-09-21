@@ -74,6 +74,14 @@
                         "description": "Sets the number of results to return per page",
                         "required": false,
                         "type": "integer"
+                    },
+                    {
+                        "name": "readerVersion",
+                        "in": "query",
+                        "description": "Informs the API of the reader to be used, which determines which Read Online links can be served",
+                        "required": false,
+                        "type": "string",
+                        "enum": ["v1", "v2"]
                     }
                 ],
                 "responses": {
@@ -123,6 +131,14 @@
                         "description": "If True all editions are returned, if False only editions with readable links are returned",
                         "type": "boolean",
                         "required": false
+                    },
+                    {
+                        "name": "readerVersion",
+                        "in": "query",
+                        "description": "Informs the API of the reader to be used, which determines which Read Online links can be served",
+                        "required": false,
+                        "type": "string",
+                        "enum": ["v1", "v2"]
                     }
                 ],
                 "responses": {
@@ -172,6 +188,14 @@
                         "description": "If True all editions are returned, if False only editions with readable links are returned",
                         "type": "boolean",
                         "required": false
+                    },
+                    {
+                        "name": "readerVersion",
+                        "in": "query",
+                        "description": "Informs the API of the reader to be used, which determines which Read Online links can be served",
+                        "required": false,
+                        "type": "string",
+                        "enum": ["v1", "v2"]
                     }
                 ],
                 "responses": {

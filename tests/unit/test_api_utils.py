@@ -3,6 +3,7 @@ import pytest
 
 from api.utils import APIUtils
 
+
 class TestAPIUtils:
     @pytest.fixture
     def testAggregationResp(self):
@@ -17,7 +18,10 @@ class TestAPIUtils:
                     },
                     'formats': {
                         'buckets': [
-                            {'key': 'Format1', 'editions_per': {'doc_count': 5}}
+                            {
+                                'key': 'Format1',
+                                'editions_per': {'doc_count': 5}
+                            }
                         ]
                     }
                 }
@@ -74,25 +78,39 @@ class TestAPIUtils:
 
     @pytest.fixture
     def testLink(self, MockDBObject):
-        return MockDBObject(id='li1', media_type='application/test', url='testURI')
+        return MockDBObject(
+            id='li1', media_type='application/test', url='testURI'
+        )
 
     @pytest.fixture
     def testWebpubLink(self, MockDBObject):
-        return MockDBObject(id='li2', media_type='application/webpub+json', url='testURI')
+        return MockDBObject(
+            id='li2', media_type='application/webpub+json', url='testURI'
+        )
 
     @pytest.fixture
     def testRights(self, MockDBObject):
-        return MockDBObject(id='ri1', source='test', license='testLicense', rights_statement='testStatement')
+        return MockDBObject(
+            id='ri1',
+            source='test',
+            license='testLicense',
+            rights_statement='testStatement'
+        )
 
     @pytest.fixture
     def testItem(self, MockDBObject, testLink, testRights):
         return MockDBObject(
-            id='it1', links=[testLink], rights=[testRights], physical_location={'name': 'test'}
+            id='it1',
+            links=[testLink],
+            rights=[testRights],
+            physical_location={'name': 'test'}
         )
 
     @pytest.fixture
     def testWebpubItem(self, MockDBObject, testWebpubLink):
-        return MockDBObject(id='it2', links=[testWebpubLink], rights=[], physical_location={})
+        return MockDBObject(
+            id='it2', links=[testWebpubLink], rights=[], physical_location={}
+        )
 
     @pytest.fixture
     def testEdition(self, MockDBObject, testItem, mocker):
@@ -101,12 +119,16 @@ class TestAPIUtils:
             work=mocker.MagicMock(uuid='uuid1'),
             publication_date=mocker.MagicMock(year=2000),
             items=[testItem],
-            links=[mocker.MagicMock(id='co1', media_type='image/png', url='testCover')]
+            links=[mocker.MagicMock(
+                id='co1', media_type='image/png', url='testCover'
+            )]
         )
 
     @pytest.fixture
     def testWork(self, MockDBObject, testEdition):
-        return MockDBObject(uuid='testUUID', title='Test Title', editions=[testEdition])
+        return MockDBObject(
+            uuid='testUUID', title='Test Title', editions=[testEdition]
+        )
 
     def test_normalizeQueryParams(self, mocker):
         mockParams = mocker.MagicMock()
@@ -117,50 +139,69 @@ class TestAPIUtils:
         assert testParams == {'test1': 1, 'test2': 2}
 
     def test_extractParamPairs(self):
-        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:value', 'bareValue']})
+        testPairs = APIUtils.extractParamPairs(
+            'test', {'test': ['title:value', 'bareValue']}
+        )
 
         assert testPairs[0] == ('title', 'value')
         assert testPairs[1] == ('test', 'bareValue')
 
     def test_extractParamPairs_comma_delimited(self):
-        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:value,subject:value']})
+        testPairs = APIUtils.extractParamPairs(
+            'test', {'test': ['title:value,subject:value']}
+        )
 
         assert testPairs[0] == ('title', 'value')
         assert testPairs[1] == ('subject', 'value')
 
     def test_extractParamPairs_comma_delimited_quotes(self):
-        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:value,author:"Test, Author",other']})
+        testPairs = APIUtils.extractParamPairs(
+            'test', {'test': ['title:value,author:"Test, Author",other']}
+        )
 
         assert testPairs[0] == ('title', 'value')
         assert testPairs[1] == ('author', '"Test, Author",other')
 
     def test_extractParamPairs_semantic_semicolon(self):
-        testPairs = APIUtils.extractParamPairs('test', {'test': ['title:A Book: A Title']})
+        testPairs = APIUtils.extractParamPairs(
+            'test', {'test': ['title:A Book: A Title']}
+        )
 
         assert testPairs[0] == ('title', 'A Book: A Title')
 
     def test_extractParamPairs_semicolon_no_field(self):
-        testPairs = APIUtils.extractParamPairs('test', {'test': ['A Book: A Title']})
+        testPairs = APIUtils.extractParamPairs(
+            'test', {'test': ['A Book: A Title']}
+        )
 
         assert testPairs[0] == ('test', 'A Book: A Title')
 
     def test_extractParamPairs_dangling_quotation(self):
-        testPairs = APIUtils.extractParamPairs('test', {'test': ['"A Title']})
+        testPairs = APIUtils.extractParamPairs(
+            'test', {'test': ['"A Title']}
+        )
 
         assert testPairs[0] == ('test', 'A Title')
 
     def test_extractParamPairs_dangling_quotation_multiple(self):
-        testPairs = APIUtils.extractParamPairs('test', {'test': ['"A Title",keyword:"other']})
+        testPairs = APIUtils.extractParamPairs(
+            'test', {'test': ['"A Title",keyword:"other']}
+        )
 
         assert testPairs[0] == ('test', '"A Title"')
         assert testPairs[1] == ('keyword', 'other')
 
     def test_formatAggregationResult(self, testAggregationResp):
-        testAggregations = APIUtils.formatAggregationResult(testAggregationResp)
+        testAggregations = APIUtils.formatAggregationResult(
+            testAggregationResp
+        )
 
-        assert testAggregations['languages'][0] == {'value': 'Lang1', 'count': 1}
-        assert testAggregations['languages'][1] == {'value': 'Lang2', 'count': 3}
-        assert testAggregations['formats'][0] == {'value': 'Format1', 'count': 5}
+        assert testAggregations['languages'][0] ==\
+            {'value': 'Lang1', 'count': 1}
+        assert testAggregations['languages'][1] ==\
+            {'value': 'Lang2', 'count': 3}
+        assert testAggregations['formats'][0] ==\
+            {'value': 'Format1', 'count': 5}
 
     def test_formatPagingOptions_previous_null(self):
         testPagingOptions = APIUtils.formatPagingOptions(1, 10, 50)
@@ -202,25 +243,31 @@ class TestAPIUtils:
         assert outWork['uuid'] == 1
         assert outWork['editions'][0]['id'] == 'ed3'
         assert outWork['editions'][2]['id'] == 'ed1'
-        mockFormat.assert_called_once_with('testWork', None, True)
+        mockFormat.assert_called_once_with('testWork', None, True, reader=None)
 
     def test_formatWorkOutput_multiple_works(self, mocker):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
         mockFormat.side_effect = ['formattedWork1', 'formattedWork2']
 
-        testWorks = [mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2')]
+        testWorks = [
+            mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2')
+        ]
 
-        outWorks = APIUtils.formatWorkOutput(testWorks, [('uuid1', 1), ('uuid2', 2), ('uuid3', 3)])
+        outWorks = APIUtils.formatWorkOutput(
+            testWorks, [('uuid1', 1), ('uuid2', 2), ('uuid3', 3)]
+        )
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
         mockFormat.assert_has_calls([
-            mocker.call(testWorks[0], 1, True, formats=None),
-            mocker.call(testWorks[1], 2, True, formats=None)
+            mocker.call(testWorks[0], 1, True, formats=None, reader=None),
+            mocker.call(testWorks[1], 2, True, formats=None, reader=None)
         ])
 
     def test_formatWork_showAll(self, testWork, mocker):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
-        mockFormatEdition.return_value = {'edition_id': 'ed1', 'items': ['it1']}
+        mockFormatEdition.return_value = {
+            'edition_id': 'ed1', 'items': ['it1']
+        }
 
         testWorkDict = APIUtils.formatWork(testWork, ['ed1'], True)
 
@@ -233,7 +280,9 @@ class TestAPIUtils:
 
     def test_formatWork_showAll_false(self, testWork, mocker):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
-        mockFormatEdition.return_value = {'edition_id': 'ed1', 'items': ['it1']}
+        mockFormatEdition.return_value = {
+            'edition_id': 'ed1', 'items': ['it1']
+        }
         testWorkDict = APIUtils.formatWork(testWork, ['ed1'], False)
 
         assert testWorkDict['uuid'] == 'testUUID'
@@ -268,9 +317,13 @@ class TestAPIUtils:
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
         mockFormatEdition.return_value = 'testEdition'
 
-        assert APIUtils.formatEditionOutput(1, records='testRecords', showAll=True) == 'testEdition'
+        assert APIUtils.formatEditionOutput(
+            1, records='testRecords', showAll=True
+        ) == 'testEdition'
 
-        mockFormatEdition.assert_called_once_with(1, 'testRecords', showAll=True)
+        mockFormatEdition.assert_called_once_with(
+            1, 'testRecords', showAll=True, reader=None
+        )
 
     def test_formatEdition_no_records(self, testEdition):
         formattedEdition = APIUtils.formatEdition(testEdition)
@@ -284,27 +337,42 @@ class TestAPIUtils:
         assert formattedEdition['items'][0]['item_id'] == 'it1'
         assert formattedEdition['items'][0]['location'] == 'test'
         assert formattedEdition['items'][0]['links'][0]['link_id'] == 'li1'
-        assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
+        assert formattedEdition['items'][0]['links'][0]['mediaType'] ==\
+            'application/test'
         assert formattedEdition['items'][0]['links'][0]['url'] == 'testURI'
         assert formattedEdition['items'][0]['rights'][0]['source'] == 'test'
-        assert formattedEdition['items'][0]['rights'][0]['license'] == 'testLicense'
-        assert formattedEdition['items'][0]['rights'][0]['rightsStatement'] == 'testStatement'
-        assert formattedEdition.get('instances', None) == None
+        assert formattedEdition['items'][0]['rights'][0]['license'] ==\
+            'testLicense'
+        assert formattedEdition['items'][0]['rights'][0]['rightsStatement'] ==\
+            'testStatement'
+        assert formattedEdition.get('instances', None) is None
 
     def test_formatEdition_w_records(self, testEdition, mocker):
         mockRecFormat = mocker.patch.object(APIUtils, 'formatRecord')
-        mockRecFormat.side_effect = [{'id': 1, 'items': []}, {'id': 2, 'items': ['it1']}]
+        mockRecFormat.side_effect = [
+            {'id': 1, 'items': []}, {'id': 2, 'items': ['it1']}
+        ]
 
-        formattedEdition = APIUtils.formatEdition(testEdition, ['rec1', 'rec2'], showAll=False)
+        formattedEdition = APIUtils.formatEdition(
+            testEdition, ['rec1', 'rec2'], showAll=False
+        )
 
         assert len(formattedEdition['instances']) == 1
         assert formattedEdition['instances'][0]['id'] == 2
-        assert formattedEdition.get('items', None) == None
+        assert formattedEdition.get('items', None) is None
 
         testItemDict = {
             'id': 'it1',
-            'links': [{'link_id': 'li1', 'mediaType': 'application/test', 'url': 'testURI'}],
-            'rights': [{'source': 'test', 'license': 'testLicense', 'rightsStatement': 'testStatement'}],
+            'links': [{
+                'link_id': 'li1',
+                'mediaType': 'application/test',
+                'url': 'testURI'
+            }],
+            'rights': [{
+                'source': 'test',
+                'license': 'testLicense',
+                'rightsStatement': 'testStatement'
+            }],
             'physical_location': {'name': 'test'},
             'item_id': 'it1',
             'location': 'test'
@@ -315,14 +383,25 @@ class TestAPIUtils:
             mocker.call('rec2', {'testURI': testItemDict})
         ])
 
-    def test_formatEdition_filter_webpubs_temp(self, testEdition, testWebpubItem):
+    def test_formatEdition_filter_reader_v1(self, testEdition, testWebpubItem):
         testEdition.items.append(testWebpubItem)
 
-        formattedEdition = APIUtils.formatEdition(testEdition)
+        formattedEdition = APIUtils.formatEdition(testEdition, reader='v1')
 
         assert len(formattedEdition['items']) == 1
         assert formattedEdition['items'][0]['item_id'] == 'it1'
-        assert formattedEdition['items'][0]['links'][0]['mediaType'] == 'application/test'
+        assert formattedEdition['items'][0]['links'][0]['mediaType'] ==\
+            'application/test'
+
+    def test_formatEdition_filter_reader_v2(self, testEdition, testWebpubItem):
+        testEdition.items.append(testWebpubItem)
+
+        formattedEdition = APIUtils.formatEdition(testEdition, reader='v2')
+
+        assert len(formattedEdition['items']) == 2
+        assert formattedEdition['items'][1]['item_id'] == 'it2'
+        assert formattedEdition['items'][1]['links'][0]['mediaType'] ==\
+            'application/webpub+json'
 
     def test_formatRecord(self, testRecord, mocker):
         testLinkItems = {
@@ -330,9 +409,12 @@ class TestAPIUtils:
             'url2': {'item_id': 2, 'url': 'url2'}
         }
 
-        mockFormatPipe = mocker.patch.object(APIUtils, 'formatPipeDelimitedData')
+        mockFormatPipe = mocker.patch.object(
+            APIUtils, 'formatPipeDelimitedData'
+        )
         mockFormatPipe.side_effect = [
-            'testAuthors', 'testContribs', 'testPublishers', 'testDates', 'testLangs', 'testIDs'
+            'testAuthors', 'testContribs', 'testPublishers',
+            'testDates', 'testLangs', 'testIDs'
         ]
 
         testFormatted = APIUtils.formatRecord(testRecord, testLinkItems)
@@ -367,16 +449,25 @@ class TestAPIUtils:
 
     def test_formatLanguages_no_counts(self, mocker):
         mockAggs = mocker.MagicMock()
-        mockAggs.languages.languages.buckets = [mocker.MagicMock(key='bLang'), mocker.MagicMock(key='aLang')]
+        mockAggs.languages.languages.buckets = [
+            mocker.MagicMock(key='bLang'), mocker.MagicMock(key='aLang')
+        ]
 
-        assert APIUtils.formatLanguages(mockAggs) == [{'language': 'aLang'}, {'language': 'bLang'}]
+        assert APIUtils.formatLanguages(mockAggs) ==\
+            [{'language': 'aLang'}, {'language': 'bLang'}]
 
     def test_formatLanguages_counts(self, mocker):
         mockAggs = mocker.MagicMock()
         mockAggs.languages.languages.buckets = [
-            mocker.MagicMock(key='bLang', work_totals=mocker.MagicMock(doc_count=10)),
-            mocker.MagicMock(key='cLang', work_totals=mocker.MagicMock(doc_count=30)),
-            mocker.MagicMock(key='aLang', work_totals=mocker.MagicMock(doc_count=20))
+            mocker.MagicMock(
+                key='bLang', work_totals=mocker.MagicMock(doc_count=10)
+            ),
+            mocker.MagicMock(
+                key='cLang', work_totals=mocker.MagicMock(doc_count=30)
+            ),
+            mocker.MagicMock(
+                key='aLang', work_totals=mocker.MagicMock(doc_count=20)
+            )
         ]
 
         assert APIUtils.formatLanguages(mockAggs, True) == [
@@ -386,7 +477,8 @@ class TestAPIUtils:
         ]
 
     def test_formatTotals(self):
-        assert APIUtils.formatTotals([('test', 3), ('other', 6)]) == {'test': 3, 'other': 6}
+        assert APIUtils.formatTotals([('test', 3), ('other', 6)]) ==\
+            {'test': 3, 'other': 6}
 
     def test_flatten_already_flat(self):
         flatArray = [i for i in APIUtils.flatten([1, 2, 3, 4, 5])]
@@ -410,7 +502,10 @@ class TestAPIUtils:
         assert testResponse[1] == 200
         mockDatetime.utcnow.assert_called_once
         mockJsonify.assert_called_once_with({
-            'status': 200, 'timestamp': 'presentTimestamp', 'responseType': 'test', 'data': 'testData'
+            'status': 200,
+            'timestamp': 'presentTimestamp',
+            'responseType': 'test',
+            'data': 'testData'
         })
 
     def test_formatPipeDelimitedData_string(self):
@@ -418,11 +513,15 @@ class TestAPIUtils:
             == {'one': 'test', 'two': 'object'}
 
     def test_formatPipeDelimitedData_list(self):
-        assert APIUtils.formatPipeDelimitedData(['test|object', None, 'another|thing'], ['one', 'two'])\
-            == [{'one': 'test', 'two': 'object'}, {'one': 'another', 'two': 'thing'}]
+        assert APIUtils.formatPipeDelimitedData(
+            ['test|object', None, 'another|thing'], ['one', 'two']
+        ) == [
+            {'one': 'test', 'two': 'object'},
+            {'one': 'another', 'two': 'thing'}
+        ]
 
     def test_formatPipeDelimitedData_none(self):
-        assert APIUtils.formatPipeDelimitedData(None, ['one', 'two']) == None
+        assert APIUtils.formatPipeDelimitedData(None, ['one', 'two']) is None
 
     def test_validatePassword_success(self):
         testHash = scrypt(b'testPswd', salt=b'testSalt', n=2**14, r=8, p=1)
