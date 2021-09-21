@@ -345,7 +345,11 @@ class SFRRecordManager:
         newEd = Edition(items=[], links=[])
 
         # Set Titles
-        newEd.title = edition['title'].most_common(1)[0][0].strip(' .:/')
+        try:
+            newEd.title = edition['title'].most_common(1)[0][0].strip(' .:/')
+        except AttributeError:
+            logger.warning('Unable to read title for edition')
+
         if len(edition['sub_title']):
             newEd.sub_title = edition['sub_title'].most_common(1)[0][0]
         newEd.alt_titles = [t[0] for t in edition['alt_titles'].most_common()]

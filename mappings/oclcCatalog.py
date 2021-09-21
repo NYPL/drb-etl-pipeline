@@ -15,11 +15,11 @@ class CatalogMapping(XMLMapping):
         'internetarchive': r'archive.org\/details\/([a-z0-9]+)$',
         'hathitrust': r'catalog.hathitrust.org\/api\/volumes\/([a-z]{3,6}\/[a-zA-Z0-9]+)\.html'
     }
-    
+
     def __init__(self, source, namespace, statics):
         super(CatalogMapping, self).__init__(source, namespace, statics)
         self.mapping = self.createMapping()
-    
+
     def createMapping(self):
         return {
             'title': ('//oclc:datafield[@tag=\'245\']/oclc:subfield[@code=\'a\' or @code=\'b\']/text()', '{0} {1}'),
@@ -161,15 +161,20 @@ class CatalogMapping(XMLMapping):
         self.record.source_id = self.record.identifiers[0]
         self.record.frbr_status = 'complete'
 
-        logger.info('Formatting OCLC Catalog record {}'.format(self.record.source_id))
+        logger.info('Formatting OCLC Catalog record {}'.format(
+            self.record.source_id
+        ))
 
         # Parse language field
         logger.debug('Parsing ISO lang code from 008 fixed field')
         _, _, lang_3, *_ = tuple(self.record.languages[0].split('|'))
         self.record.languages = [('||{}'.format(lang_3[35:38]))]
 
-        # Parse has_part fields
+        # Parse has_part fields (fetch only top 10 for perfomance reasons)
         logger.debug('Parsing has_part links for valid/resolvable URLs')
+
+        self.record.has_part = self.record.has_part[:10]
+
         self.record.has_part = list(filter(None, [
             self.parseLink(p) for p in self.record.has_part
         ]))
@@ -179,7 +184,8 @@ class CatalogMapping(XMLMapping):
 
         partDict = json.loads(partFlags)
 
-        if partDict['marcInd1'] != '4' or partLink == '': return None
+        if partDict['marcInd1'] != '4' or partLink == '':
+            return None
 
         for source, sourceRegex in self.EBOOK_REGEX.items():
             sourceMatch = re.search(sourceRegex, partLink)
@@ -196,10 +202,18 @@ class CatalogMapping(XMLMapping):
                     # 2) Parse Project Gutenberg Links
                     logger.debug('Adding IA Link {}'.format(partLink))
 
-                self.record.identifiers.append('{}|{}'.format(sourceID, source))
+                self.record.identifiers.append('{}|{}'.format(
+                    sourceID, source
+                ))
 
                 del partDict['marcInd1']
-                return '|'.join([partNo, partLink, partSource, partFormat, json.dumps(partDict)])
+                return '|'.join([
+                    partNo,
+                    partLink,
+                    partSource,
+                    partFormat,
+                    json.dumps(partDict)
+                ])
 
     def checkIAReadability(self, iaURL):
         metadataURL = iaURL.replace('details', 'metadata')
@@ -213,6 +227,7 @@ class CatalogMapping(XMLMapping):
             return False
 
         iaData = metadataResp.json()
-        iaAccessStatus = iaData['metadata'].get('access-restricted-item', 'false')
+        iaAccessStatus = iaData['metadata']\
+            .get('access-restricted-item', 'false')
 
         return iaAccessStatus == 'false'

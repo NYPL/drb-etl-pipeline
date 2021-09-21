@@ -164,7 +164,7 @@ class ClusterProcess(CoreProcess):
 
         if len(matchedIDs) > 10000:
             logger.info(matchedIDs)
-            raise Exception('Clustering Error encountered, unreasonable number of records matched')
+            raise ClusterError('Clustering Error encountered, unreasonable number of records matched')
 
         return list(matchedIDs)
 
