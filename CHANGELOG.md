@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.9.2
+### Fixed
+- Improve clustering stability by improving individual error handling
+
 ## 2021-09-09 -- v0.9.1
 ### Fixed
 - Improved InternetArchive link parsing
