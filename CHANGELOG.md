@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## unreleased -- v0.9.2
+### Added
+- `readerVersion` parameter for `/search`, `/work` and `/edition` endpoints to control media types returned
 ### Fixed
 - Improve clustering stability by improving individual error handling
 

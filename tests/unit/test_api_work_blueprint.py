@@ -4,6 +4,7 @@ import pytest
 from api.blueprints.drbWork import workFetch
 from api.utils import APIUtils
 
+
 class TestSearchBlueprint:
     @pytest.fixture
     def mockUtils(self, mocker):
@@ -18,6 +19,7 @@ class TestSearchBlueprint:
     def testApp(self):
         flaskApp = Flask('test')
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
+        flaskApp.config['READER_VERSION'] = 'test'
 
         return flaskApp
 
@@ -27,7 +29,7 @@ class TestSearchBlueprint:
         mockDBClient.return_value = mockDB
 
         mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
-        
+
         mockDB.fetchSingleWork.return_value = 'dbWorkRecord'
 
         mockUtils['formatWorkOutput'].return_value = 'testWork'
@@ -41,7 +43,7 @@ class TestSearchBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=True
+                'dbWorkRecord', None, showAll=True, reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'
@@ -53,7 +55,7 @@ class TestSearchBlueprint:
         mockDBClient.return_value = mockDB
 
         mockUtils['normalizeQueryParams'].return_value = {'showAll': ['false']}
-        
+
         mockDB.fetchSingleWork.return_value = 'dbWorkRecord'
 
         mockUtils['formatWorkOutput'].return_value = 'testWork'
@@ -67,7 +69,7 @@ class TestSearchBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=False
+                'dbWorkRecord', None, showAll=False, reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'
@@ -79,7 +81,7 @@ class TestSearchBlueprint:
         mockDBClient.return_value = mockDB
 
         mockUtils['normalizeQueryParams'].return_value = {}
-        
+
         mockDB.fetchSingleWork.return_value = None
 
         mockUtils['formatResponseObject'].return_value = 'errorResponse'
@@ -93,5 +95,7 @@ class TestSearchBlueprint:
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockUtils['formatWorkOutput'].assert_not_called()
             mockUtils['formatResponseObject'].assert_called_once_with(
-                404, 'singleWork', {'message': 'Unable to locate work with UUID testUUID'}
+                404,
+                'singleWork',
+                {'message': 'Unable to locate work with UUID testUUID'}
             )
