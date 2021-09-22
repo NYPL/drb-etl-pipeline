@@ -4,6 +4,7 @@ import pytest
 from api.blueprints.drbEdition import editionFetch
 from api.utils import APIUtils
 
+
 class TestEditionBlueprint:
     @pytest.fixture
     def mockUtils(self, mocker):
@@ -18,6 +19,7 @@ class TestEditionBlueprint:
     def testApp(self):
         flaskApp = Flask('test')
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
+        flaskApp.config['READER_VERSION'] = 'test'
 
         return flaskApp
 
@@ -34,7 +36,8 @@ class TestEditionBlueprint:
         mockDB.fetchRecordsByUUID.return_value = 'testRecords'
 
         mockUtils['formatEditionOutput'].return_value = 'testEdition'
-        mockUtils['formatResponseObject'].return_value = 'singleEditionResponse'
+        mockUtils['formatResponseObject'].return_value\
+            = 'singleEditionResponse'
 
         with testApp.test_request_context('/'):
             testAPIResponse = editionFetch(1)
@@ -44,7 +47,7 @@ class TestEditionBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockUtils['formatEditionOutput'].assert_called_once_with(
-                mockEdition, records='testRecords', showAll=True
+                mockEdition, records='testRecords', showAll=True, reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleEdition', 'testEdition'
@@ -70,5 +73,7 @@ class TestEditionBlueprint:
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockUtils['formatEditionOutput'].assert_not_called()
             mockUtils['formatResponseObject'].assert_called_once_with(
-                404, 'singleEdition', {'message': 'Unable to locate edition with id 1'}
+                404,
+                'singleEdition',
+                {'message': 'Unable to locate edition with id 1'}
             )

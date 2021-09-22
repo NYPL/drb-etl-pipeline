@@ -274,9 +274,11 @@ class TestSFRClusterProcess:
 
         testIDs = testInstance.queryIdens(['1|test', '2|test', '3|test'])
 
-        assert testIDs == [1, 2, 3]
+        assert testIDs == [1, 2]
         assert mockGetBatches.call_count == 4
-        mockCompareTitles.assert_called_once_with('title4')
+        mockCompareTitles.assert_has_calls([
+            mocker.call('title3'), mocker.call('title4')
+        ])
 
     def test_queryIdens_exceed_cluster_threshold(self, testInstance, mocker):
         mockGetBatch = mocker.patch.object(ClusterProcess, 'getRecordBatches')

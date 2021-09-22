@@ -649,14 +649,14 @@ class TestElasticClient:
             mocker.call('exists', field='editions.formats'),
             mocker.call(
                 'terms',
-                editions__formats=['application/pdf', 'application/html+edd', 'application/x.html+edd']
+                editions__formats=['application/pdf', 'application/webpub+json', 'application/html+edd', 'application/x.html+edd']
             )
         ])
         mockAgg.assert_has_calls([
             mocker.call('filter', exists={'field': 'editions.formats'}),
             mocker.call(
                 'filter',
-                terms={'editions.formats': ['application/pdf', 'application/html+edd', 'application/x.html+edd']}
+                terms={'editions.formats': ['application/pdf', 'application/webpub+json', 'application/html+edd', 'application/x.html+edd']}
             )
         ])
 

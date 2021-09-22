@@ -25,6 +25,8 @@ class FlaskAPI:
         self.app.config['DB_CLIENT'] = dbEngine
         self.app.config['REDIS_CLIENT'] = redisClient
 
+        self.app.config['READER_VERSION'] = os.environ['READER_VERSION']
+
         self.app.register_blueprint(info)
         self.app.register_blueprint(search)
         self.app.register_blueprint(work)
