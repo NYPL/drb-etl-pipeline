@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## unreleased -- v0.9.2
+### Added
+- Detect file types in s3 process and specify during storage process
 ### Fixed
 - Improve clustering stability by improving individual error handling
 
