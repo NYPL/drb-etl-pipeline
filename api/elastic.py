@@ -65,9 +65,7 @@ class ElasticClient():
             elif field == 'subject':
                 searchClauses.append(self.subjectQuery(escapedQuery))
             elif field == 'viaf' or field == 'lcnaf':
-                searchClauses.append(
-                    ElasticClient.authorityQuery(field, escapedQuery)
-                )
+                searchClauses.append(self.authorityQuery(field, escapedQuery))
             else:
                 searchClauses.append(Q('match', **{field: escapedQuery}))
 
@@ -254,15 +252,14 @@ class ElasticClient():
             Q('nested', path='editions.agents', query=editionAgentQuery)
         ])
 
-    @classmethod
-    def authorityQuery(cls, authority, authorityID):
-        workAuthorityQuery = Q(
-            'term', **{'agents.{}'.format(authority): authorityID}
-        )
+    def authorityQuery(self, authority, authorityID):
+        workAgentField = 'agents.{}'.format(authority)
+        editionAgentField = 'editions.agents.{}'.format(authority)
 
-        editionAuthorityQuery = Q(
-            'term', **{'editions.agents.{}'.format(authority): authorityID}
-        )
+        self.searchedFields.extend([workAgentField, editionAgentField])
+
+        workAuthorityQuery = Q('term', **{workAgentField: authorityID})
+        editionAuthorityQuery = Q('term', **{editionAgentField: authorityID})
 
         return Q('bool', should=[
             Q('nested', path='agents', query=workAuthorityQuery),
