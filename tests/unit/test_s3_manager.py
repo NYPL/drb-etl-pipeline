@@ -1,6 +1,4 @@
-from managers.oclcClassify import ClassifyManager
 from botocore.exceptions import ClientError
-import hashlib
 import pytest
 
 from managers.s3 import S3Manager, S3Error
@@ -20,16 +18,27 @@ class TestS3Manager:
     def test_createS3Client(self, testInstance, mocker):
         mockBoto = mocker.patch('managers.s3.boto3')
         mockBoto.client.return_value = 'testClient'
-        mocker.patch.dict('os.environ', {'AWS_ACCESS': 'access', 'AWS_SECRET': 'secret', 'AWS_REGION': 'region'})
+        mocker.patch.dict(
+            'os.environ',
+            {
+                'AWS_ACCESS': 'access',
+                'AWS_SECRET': 'secret',
+                'AWS_REGION': 'region'
+            }
+        )
         testInstance.createS3Client()
 
         assert testInstance.s3Client == 'testClient'
         mockBoto.client.assert_called_once_with(
-            's3', aws_access_key_id='access', aws_secret_access_key='secret', region_name='region'
+            's3',
+            aws_access_key_id='access',
+            aws_secret_access_key='secret',
+            region_name='region'
         )
 
     def test_createS3Bucket_success(self, testInstance):
-        testInstance.s3Client.create_bucket.return_value = {'Location': 'testing'}
+        testInstance.s3Client.create_bucket.return_value =\
+            {'Location': 'testing'}
 
         assert testInstance.createS3Bucket('testBucket', 'test-perms') is True
         testInstance.s3Client.create_bucket.assert_called_once_with(
@@ -54,15 +63,21 @@ class TestS3Manager:
 
         testInstance.s3Client.put_object.return_value = 'testObjectResponse'
 
-        testResponse = testInstance.putObjectInBucket('testObj', 'testKey.epub', 'testBucket')
+        testResponse = testInstance.putObjectInBucket(
+            'testObj', 'testKey.epub', 'testBucket'
+        )
 
         assert testResponse == 'testObjectResponse'
 
         managerMocks['getmd5HashOfObject'].assert_called_once_with('testObj')
-        managerMocks['getObjectFromBucket'].assert_called_once_with('testKey.epub', 'testBucket', md5Hash='testMd5Hash')
-        managerMocks['putExplodedEpubComponentsInBucket'].assert_called_once_with('testObj', 'testKey.epub', 'testBucket') 
+        managerMocks['getObjectFromBucket'].assert_called_once_with(
+            'testKey.epub', 'testBucket', md5Hash='testMd5Hash'
+        )
+        managerMocks['putExplodedEpubComponentsInBucket']\
+            .assert_called_once_with('testObj', 'testKey.epub', 'testBucket')
         testInstance.s3Client.put_object.assert_called_once_with(
-            ACL='public-read', Body='testObj', Bucket='testBucket', Key='testKey.epub',
+            ACL='public-read', Body='testObj', Bucket='testBucket',
+            Key='testKey.epub', ContentType='application/epub+zip',
             ContentMD5='testMd5Hash', Metadata={'md5Checksum': 'testMd5Hash'}
         )
 
@@ -80,15 +95,22 @@ class TestS3Manager:
 
         testInstance.s3Client.put_object.return_value = 'testObjectResponse'
 
-        testResponse = testInstance.putObjectInBucket('testObj', 'testKey.epub', 'testBucket')
+        testResponse = testInstance.putObjectInBucket(
+            'testObj', 'testKey.epub', 'testBucket'
+        )
 
         assert testResponse == 'testObjectResponse'
 
         managerMocks['getmd5HashOfObject'].assert_called_once_with('testObj')
-        managerMocks['getObjectFromBucket'].assert_called_once_with('testKey.epub', 'testBucket', md5Hash='testMd5Hash')
-        managerMocks['putExplodedEpubComponentsInBucket'].assert_called_once_with('testObj', 'testKey.epub', 'testBucket') 
+        managerMocks['getObjectFromBucket'].assert_called_once_with(
+            'testKey.epub', 'testBucket', md5Hash='testMd5Hash'
+        )
+        managerMocks['putExplodedEpubComponentsInBucket']\
+            .assert_called_once_with('testObj', 'testKey.epub', 'testBucket')
         testInstance.s3Client.put_object.assert_called_once_with(
-            ACL='public-read', Body='testObj', Bucket='testBucket', Key='testKey.epub',
+            ACL='public-read', Body='testObj', Bucket='testBucket',
+            Key='testKey.epub',
+            ContentType='application/epub+zip',
             ContentMD5='testMd5Hash', Metadata={'md5Checksum': 'testMd5Hash'}
         )
 
@@ -98,12 +120,16 @@ class TestS3Manager:
         mockGet = mocker.patch.object(S3Manager, 'getObjectFromBucket')
         mockGet.return_value = {'ResponseMetadata': {'HTTPStatusCode': 304}}
 
-        testResponse = testInstance.putObjectInBucket('testObj', 'testKey.epub', 'testBucket')
+        testResponse = testInstance.putObjectInBucket(
+            'testObj', 'testKey.epub', 'testBucket'
+        )
 
-        assert testResponse == None
+        assert testResponse is None
 
         mockHash.assert_called_once_with('testObj')
-        mockGet.assert_called_once_with('testKey.epub', 'testBucket', md5Hash='testMd5Hash')
+        mockGet.assert_called_once_with(
+            'testKey.epub', 'testBucket', md5Hash='testMd5Hash'
+        )
         testInstance.s3Client.put_object.assert_not_called
 
     def test_putObjectInBucket_error(self, testInstance, mocker):
@@ -112,7 +138,8 @@ class TestS3Manager:
         mockGet = mocker.patch.object(S3Manager, 'getObjectFromBucket')
         mockGet.return_value = None
 
-        testInstance.s3Client.put_object.side_effect = ClientError({}, 'Testing')
+        testInstance.s3Client.put_object.side_effect =\
+            ClientError({}, 'Testing')
 
         with pytest.raises(S3Error):
             testInstance.putObjectInBucket('testObj', 'testKey', 'testBucket')
@@ -130,7 +157,9 @@ class TestS3Manager:
 
         mockPut = mocker.patch.object(S3Manager, 'putObjectInBucket')
 
-        testInstance.putExplodedEpubComponentsInBucket(b'testObj', '10.10/testKey.epub', 'testBucket')
+        testInstance.putExplodedEpubComponentsInBucket(
+            b'testObj', '10.10/testKey.epub', 'testBucket'
+        )
 
         mockPut.assert_has_calls([
             mocker.call('compBytes1', '10.10/testKey/comp1', 'testBucket'),
@@ -140,7 +169,9 @@ class TestS3Manager:
     def test_getObjectFromBucket_success(self, testInstance, mocker):
         testInstance.s3Client.get_object.return_value = 'testObject'
 
-        testResponse = testInstance.getObjectFromBucket('testKey', 'testBucket')
+        testResponse = testInstance.getObjectFromBucket(
+            'testKey', 'testBucket'
+        )
 
         assert testResponse == 'testObject'
         testInstance.s3Client.get_object.assert_called_once_with(
@@ -148,11 +179,12 @@ class TestS3Manager:
         )
 
     def test_getObjectFromBucket_error(self, testInstance, mocker):
-        testInstance.s3Client.get_object.side_effect = ClientError({}, 'Testing')
-
+        testInstance.s3Client.get_object.side_effect =\
+            ClientError({}, 'Testing')
 
         with pytest.raises(S3Error):
-            testResponse = testInstance.getObjectFromBucket('testKey', 'testBucket')
+            testInstance.getObjectFromBucket('testKey', 'testBucket')
 
     def test_getmd5HashOfObject(self):
-        S3Manager.getmd5HashOfObject('testing'.encode('utf-8')) == 'ae2b1fca515949e5d54fb22b8ed95575'
+        S3Manager.getmd5HashOfObject('testing'.encode('utf-8')) ==\
+            'ae2b1fca515949e5d54fb22b8ed95575'

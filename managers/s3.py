@@ -3,8 +3,13 @@ import boto3
 from botocore.exceptions import ClientError
 import hashlib
 from io import BytesIO
+import mimetypes
 import os
 from zipfile import ZipFile
+
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class S3Manager:
@@ -18,7 +23,7 @@ class S3Manager:
             aws_secret_access_key=os.environ.get('AWS_SECRET', None),
             region_name=os.environ.get('AWS_REGION', None)
         )
-    
+
     def createS3Bucket(self, bucketName, bucketPermissions):
         s3Resp = self.s3Client.create_bucket(
             ACL=bucketPermissions,
@@ -29,27 +34,35 @@ class S3Manager:
             return True
 
         raise S3Error('Unable to create bucket in s3')
-    
-    def putObjectInBucket(self, obj, objKey, bucket, bucketPermissions='public-read'):
+
+    def putObjectInBucket(
+        self, obj, objKey, bucket, bucketPermissions='public-read'
+    ):
         objMD5 = S3Manager.getmd5HashOfObject(obj)
         objExtension = objKey[-4:].lower()
 
         existingObject = None
         try:
             if objExtension == 'epub':
-                existingObject = self.getObjectFromBucket(objKey, bucket, md5Hash=objMD5)
+                existingObject = self.getObjectFromBucket(
+                    objKey, bucket, md5Hash=objMD5
+                )
         except S3Error:
-            print('{} does not yet exist'.format(objKey))
+            logger.info('{} does not yet exist'.format(objKey))
 
-        if existingObject and\
-            (existingObject['ResponseMetadata']['HTTPStatusCode'] == 304\
-            or existingObject['Metadata'].get('md5checksum', None) == objMD5):
-                print('Skipping existing, unmodified file {}'.format(objKey))
-                return None
+        if existingObject and (
+            existingObject['ResponseMetadata']['HTTPStatusCode'] == 304
+            or existingObject['Metadata'].get('md5checksum', None) == objMD5
+        ):
+            logger.info('Skipping existing, unmodified file {}'.format(objKey))
+            return None
 
         try:
             if objExtension == 'epub':
                 self.putExplodedEpubComponentsInBucket(obj, objKey, bucket)
+
+            objectType = mimetypes.guess_type(objKey)[0]\
+                or 'binary/octet-stream'
 
             return self.s3Client.put_object(
                 ACL=bucketPermissions,
@@ -57,13 +70,14 @@ class S3Manager:
                 Bucket=bucket,
                 Key=objKey,
                 ContentMD5=objMD5,
+                ContentType=objectType,
                 Metadata={'md5Checksum': objMD5}
             )
-        except ClientError as e:
+        except ClientError:
             raise S3Error('Unable to store file in s3')
 
     def putExplodedEpubComponentsInBucket(self, obj, objKey, bucket):
-        keyRoot = '.'.join(objKey.split('.')[:-1]) 
+        keyRoot = '.'.join(objKey.split('.')[:-1])
 
         with ZipFile(BytesIO(obj), 'r') as epubZip:
             for component in epubZip.namelist():
@@ -78,7 +92,7 @@ class S3Manager:
                 Key=objKey,
                 IfNoneMatch=md5Hash
             )
-        except ClientError as e:
+        except ClientError:
             raise S3Error('Unable to get object from s3')
 
     @staticmethod

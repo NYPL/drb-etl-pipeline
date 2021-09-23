@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, request, Response
 from flask_cors import cross_origin
 import os
 import requests
-from urllib.parse import unquote_plus
+from urllib.parse import unquote_plus, urlparse
 
 from ..db import DBClient
 from ..elastic import ElasticClient
@@ -51,7 +51,10 @@ def totalCounts():
 @cross_origin(origins=os.environ.get('API_PROXY_CORS_ALLOWED', '*'))
 def getProxyResponse():
     proxyUrl = request.args.get('proxy_url')
+
     cleanUrl = unquote_plus(proxyUrl)
+
+    urlParts = urlparse(cleanUrl)
 
     while True:
         headResp = requests.head(
@@ -63,6 +66,11 @@ def getProxyResponse():
             break
         elif statusCode in [301, 302, 303, 307, 308]:
             cleanUrl = headResp.headers['Location']
+
+            if cleanUrl[0] == '/':
+                cleanUrl = '{}://{}{}'.format(
+                    urlParts.scheme, urlParts.netloc, cleanUrl
+                )
 
     resp = requests.request(
         method=request.method,

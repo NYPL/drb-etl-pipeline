@@ -150,7 +150,7 @@ class ClusterProcess(CoreProcess):
             for match in matches:
                 recTitle, recID, recIdentifiers = match
 
-                if iterations > 1 and self.compareTitleTokens(recTitle):
+                if iterations > 0 and self.compareTitleTokens(recTitle):
                     logger.debug('Matched Title Error: {}'.format(recTitle))
                     continue
 
