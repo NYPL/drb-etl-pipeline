@@ -4,6 +4,7 @@
 ### Added
 - Detect file types in s3 process and specify during storage process
 - `readerVersion` parameter for `/search`, `/work` and `/edition` endpoints to control media types returned
+- ElasticSearch query highlighting
 ### Fixed
 - Improve clustering stability by improving individual error handling
 - Handle relative links from redirects in proxy endpoint
