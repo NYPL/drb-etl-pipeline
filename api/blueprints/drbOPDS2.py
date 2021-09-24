@@ -83,7 +83,7 @@ def opdsSearch():
 
     results = []
     highlights = {}
-    for res in searchResult:
+    for res in searchResult.hits:
         editionIds = [e.edition_id for e in res.meta.inner_hits.editions.hits]
 
         if res.meta.highlight:
@@ -109,7 +109,6 @@ def opdsSearch():
         searchFeed, request.full_path, searchResult.aggregations.to_dict()
     )
 
-    print(highlights)
     addPublications(searchFeed, works, grouped=True, highlights=highlights)
 
     dbClient.closeSession()
@@ -202,6 +201,7 @@ def constructBaseFeed(path, title, grouped=False):
 
 
 def addPublications(feed, publications, grouped=False, highlights={}):
+    print(publications)
     opdsPubs = [
         createPublicationObject(
             pub, _meta={'highlights': highlights.get(str(pub.uuid), {})}

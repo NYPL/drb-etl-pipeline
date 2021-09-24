@@ -255,18 +255,30 @@ class TestAPIUtils:
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
         mockFormat.side_effect = ['formattedWork1', 'formattedWork2']
 
+        mockAddMeta = mocker.patch.object(APIUtils, 'addWorkMeta')
+
         testWorks = [
             mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2')
         ]
 
         outWorks = APIUtils.formatWorkOutput(
-            testWorks, [('uuid1', 1), ('uuid2', 2), ('uuid3', 3)]
+            testWorks,
+            [
+                ('uuid1', 1, 'highlight1'),
+                ('uuid2', 2, 'highlight2'),
+                ('uuid3', 3, 'highlight3')
+            ]
         )
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
         mockFormat.assert_has_calls([
             mocker.call(testWorks[0], 1, True, formats=None, reader=None),
             mocker.call(testWorks[1], 2, True, formats=None, reader=None)
+        ])
+
+        mockAddMeta.assert_has_calls([
+            mocker.call('formattedWork1', highlights='highlight1'),
+            mocker.call('formattedWork2', highlights='highlight2')
         ])
 
     def test_formatWork_showAll(self, testWork, mocker):
@@ -547,3 +559,11 @@ class TestAPIUtils:
 
         assert APIUtils.validatePassword('testError', testHash, b'testSalt')\
             is False
+
+    def test_addWorkMeta(self):
+        testWork = {}
+
+        APIUtils.addWorkMeta(testWork, field1='value1', field2=['value2'])
+
+        assert testWork['_meta']['field1'] == 'value1'
+        assert testWork['_meta']['field2'] == ['value2']

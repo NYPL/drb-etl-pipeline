@@ -45,7 +45,7 @@ def standardQuery():
         )
 
     results = []
-    for res in searchResult:
+    for res in searchResult.hits:
         editionIds = [e.edition_id for e in res.meta.inner_hits.editions.hits]
 
         try:
