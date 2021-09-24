@@ -26,7 +26,7 @@ class ElasticClient():
         self.esIndex = os.environ['ELASTICSEARCH_INDEX']
 
         self.redis = redisClient
-        
+
         self.dateSort = None
         self.sortReversed = False
 
@@ -34,7 +34,8 @@ class ElasticClient():
         self.appliedFilters = []
 
         self.appliedAggregations = []
-    
+        self.searchedFields = []
+
     def createSearch(self):
         return Search(index=os.environ['ELASTICSEARCH_INDEX'])
 
@@ -52,21 +53,19 @@ class ElasticClient():
             escapedQuery = self.escapeSearchQuery(query)
 
             if field is None or field in ['keyword', 'query']:
-                searchClauses.append(Q('bool',
-                    should=[
-                        ElasticClient.titleQuery(escapedQuery),
-                        ElasticClient.authorQuery(escapedQuery),
-                        ElasticClient.subjectQuery(escapedQuery)
-                    ]
-                ))
+                searchClauses.append(Q('bool', should=[
+                    self.titleQuery(escapedQuery),
+                    self.authorQuery(escapedQuery),
+                    self.subjectQuery(escapedQuery)
+                ]))
             elif field == 'title':
-                searchClauses.append(ElasticClient.titleQuery(escapedQuery))
+                searchClauses.append(self.titleQuery(escapedQuery))
             elif field == 'author':
-                searchClauses.append(ElasticClient.authorQuery(escapedQuery))
+                searchClauses.append(self.authorQuery(escapedQuery))
             elif field == 'subject':
-                searchClauses.append(ElasticClient.subjectQuery(escapedQuery))
+                searchClauses.append(self.subjectQuery(escapedQuery))
             elif field == 'viaf' or field == 'lcnaf':
-                searchClauses.append(ElasticClient.authorityQuery(field, escapedQuery))
+                searchClauses.append(self.authorityQuery(field, escapedQuery))
             else:
                 searchClauses.append(Q('match', **{field: escapedQuery}))
 
@@ -76,29 +75,37 @@ class ElasticClient():
 
         self.addSortClause(params['sort'])
         self.addFiltersAndAggregations(3)
+        self.addSearchHighlighting()
 
     def executeSearchQuery(self, params, page, perPage):
         startPos, endPos = ElasticClient.getFromSize(page, perPage)
 
         queryHash = self.generateQueryHash(params, startPos)
 
-        searchFromStr = self.getPageResultCache(queryHash) if startPos > 0 else None
+        searchFromStr = self.getPageResultCache(queryHash)\
+            if startPos > 0 else None
 
         if searchFromStr:
             logger.info('Found cached search page: {}'.format(searchFromStr))
+
             searchFrom = list(searchFromStr.decode().split('|'))
-            res = self.query.extra(search_after=searchFrom)[0:perPage].execute()
+
+            res = self.query.extra(search_after=searchFrom)[0:perPage]\
+                .execute()
         elif startPos > 5000:
             totalCount = self.query.count()
             if totalCount - startPos < 10000:
                 logger.debug('Executing Reversed Search')
-                res = self.executeReversedQuery(params, totalCount, startPos, perPage)
+
+                res = self.executeReversedQuery(
+                    params, totalCount, startPos, perPage
+                )
             else:
                 logger.debug('Executing Deep Pagination Search')
                 res = self.executeDeepQuery(startPos, perPage)
         else:
             res = self.query[startPos:endPos].execute()
-        
+
         if not searchFromStr:
             try:
                 lastSort = list(res.hits[-1].meta.sort)
@@ -110,7 +117,7 @@ class ElasticClient():
 
     def executeReversedQuery(self, params, totalCount, startPos, perPage):
         self.sortReversed = True
-        self.query = self.query.sort() # Clear existing sort
+        self.query = self.query.sort()  # Clear existing sort
         self.addSortClause(params['sort'], reverse=True)
 
         revEndPos = totalCount - startPos
@@ -135,7 +142,7 @@ class ElasticClient():
             elif startPos - (pagingEnd * iteration) < 5000:
                 pagingEnd = startPos % 5000
 
-            iteration += 1 
+            iteration += 1
 
     def setPageResultCache(self, cacheKey, sort):
         self.redis.set(
@@ -145,7 +152,9 @@ class ElasticClient():
         )
 
     def getPageResultCache(self, cacheKey):
-        return self.redis.get('{}/queryPaging/{}'.format(self.environment, cacheKey))
+        return self.redis.get(
+            '{}/queryPaging/{}'.format(self.environment, cacheKey)
+        )
 
     @classmethod
     def generateQueryHash(cls, params, startPos):
@@ -162,76 +171,115 @@ class ElasticClient():
     @classmethod
     def makeDictHashable(cls, object):
         if isinstance(object, dict):
-            return tuple(sorted((k, cls.makeDictHashable(v)) for k, v in object.items()))
+            return tuple(
+                sorted((k, cls.makeDictHashable(v)) for k, v in object.items())
+            )
         elif isinstance(object, (list, tuple, set)):
             return tuple([cls.makeDictHashable(sub) for sub in object])
-        
+
         return object
 
     @staticmethod
     def escapeSearchQuery(query):
-        return re.sub(r'[\+\-\&\|\!\(\)\[\]\{\}\^\~\?\:\\\/]{1}', '\\\\\g<0>', query)
+        return re.sub(
+           r'[\+\-\&\|\!\(\)\[\]\{\}\^\~\?\:\\\/]{1}', '\\\\\g<0>', query
+        )
 
     def languageQuery(self, workTotals):
         search = self.createSearch()
 
         query = search.query(Q())[:0]
 
-        languageAgg = query.aggs.bucket('languages', A('nested', path='editions.languages'))\
-            .bucket('languages', 'terms', **{'field': 'editions.languages.language', 'size': 250})
+        languageAgg = query.aggs\
+            .bucket('languages', A('nested', path='editions.languages'))\
+            .bucket(
+                'languages', 'terms',
+                **{'field': 'editions.languages.language', 'size': 250}
+            )
 
         if workTotals:
             languageAgg.bucket('work_totals', 'reverse_nested')
 
         return query.execute()
 
-    @classmethod
-    def titleQuery(cls, titleText):
-        return Q('bool',
-            should=[
-                Q('query_string', query=titleText, fields=['title^3', 'alt_titles'], default_operator='and'),
-                Q('nested', path='editions', query=Q('query_string', query=titleText, fields=['editions.title'], default_operator='and'))
-            ]
+    def titleQuery(self, titleText):
+        self.searchedFields.extend(['title', 'alt_titles', 'editions.title'])
+
+        return Q('bool', should=[
+            Q(
+                'query_string',
+                query=titleText,
+                fields=['title^3', 'alt_titles'],
+                default_operator='and'
+            ),
+            Q(
+                'nested',
+                path='editions',
+                query=Q(
+                    'query_string',
+                    query=titleText,
+                    fields=['editions.title'],
+                    default_operator='and'
+                )
+            )
+        ])
+
+    def authorQuery(self, authorText):
+        self.searchedFields.extend(['agents.name', 'editions.agents.name'])
+
+        workAgentQuery = Q('bool', must=[
+            Q(
+                'query_string',
+                query=authorText,
+                fields=['agents.name^2'],
+                default_operator='and'
+            ),
+            Q('terms', agents__roles=self.ROLE_ALLOWLIST)
+        ])
+
+        editionAgentQuery = Q('bool', must=[
+            Q(
+                'query_string',
+                query=authorText,
+                fields=['editions.agents.name'],
+                default_operator='and'
+            ),
+            Q('terms', editions__agents__roles=self.ROLE_ALLOWLIST)
+        ])
+
+        return Q('bool', should=[
+            Q('nested', path='agents', query=workAgentQuery),
+            Q('nested', path='editions.agents', query=editionAgentQuery)
+        ])
+
+    def authorityQuery(self, authority, authorityID):
+        workAgentField = 'agents.{}'.format(authority)
+        editionAgentField = 'editions.agents.{}'.format(authority)
+
+        self.searchedFields.extend([workAgentField, editionAgentField])
+
+        workAuthorityQuery = Q('term', **{workAgentField: authorityID})
+        editionAuthorityQuery = Q('term', **{editionAgentField: authorityID})
+
+        return Q('bool', should=[
+            Q('nested', path='agents', query=workAuthorityQuery),
+            Q('nested', path='editions.agents', query=editionAuthorityQuery)
+        ])
+
+    def subjectQuery(self, subjectText):
+        self.searchedFields.append('subjects.heading')
+
+        return Q(
+            'nested',
+            path='subjects',
+            query=Q(
+                'query_string',
+                query=subjectText,
+                fields=['subjects.heading'],
+                default_operator='and'
+            )
         )
 
-    @classmethod
-    def authorQuery(cls, authorText):
-        workAgentQuery = Q('bool',
-            must=[
-                Q('query_string', query=authorText, fields=['agents.name^2'], default_operator='and'),
-                Q('terms', agents__roles=cls.ROLE_ALLOWLIST)
-            ]
-        )
-        editionAgentQuery = Q('bool',
-            must=[
-                Q('query_string', query=authorText, fields=['editions.agents.name'], default_operator='and'),
-                Q('terms', editions__agents__roles=cls.ROLE_ALLOWLIST)
-            ]
-        )
-
-        return Q('bool',
-            should=[
-                Q('nested', path='agents', query=workAgentQuery),
-                Q('nested', path='editions.agents', query=editionAgentQuery)
-            ]
-        )
-
-    @classmethod
-    def authorityQuery(cls, authority, authorityID):
-        workAuthorityQuery = Q('term', **{'agents.{}'.format(authority): authorityID})
-        editionAuthorityQuery = Q('term', **{'editions.agents.{}'.format(authority): authorityID})
-
-        return Q('bool',
-            should=[
-                Q('nested', path='agents', query=workAuthorityQuery),
-                Q('nested', path='editions.agents', query=editionAuthorityQuery)
-            ]
-        )
-
-    @classmethod
-    def subjectQuery(cls, subjectText):
-        return Q('nested', path='subjects', query=Q('query_string', query=subjectText, fields=['subjects.heading'], default_operator='and'))
-    
     @staticmethod
     def getFromSize(page, perPage):
         startPos = page * perPage
@@ -241,8 +289,10 @@ class ElasticClient():
     def addSortClause(self, sortParams, reverse=False):
         sortValues = []
         for sort, direction in sortParams:
-            sortDir = direction.lower() if direction else 'asc' 
-            if reverse is True: sortDir = 'desc' if sortDir == 'asc' else 'asc'
+            sortDir = direction.lower() if direction else 'asc'
+
+            if reverse is True:
+                sortDir = 'desc' if sortDir == 'asc' else 'asc'
 
             if sort == 'title':
                 sortValues.append({'sort_title': {'order': sortDir}})
@@ -261,7 +311,9 @@ class ElasticClient():
                 sortFilters = [f.to_dict() for f in self.appliedFilters]
 
                 if len(self.languageFilters) > 0:
-                    sortFilters.extend([l.to_dict() for l in self.languageFilters])
+                    sortFilters.extend(
+                        [lang.to_dict() for lang in self.languageFilters]
+                    )
 
                 self.dateSort = {
                     'editions.publication_date': {
@@ -279,29 +331,44 @@ class ElasticClient():
             sortValues.append({'_score': 'desc'})
 
         sortValues.append({'uuid': 'asc' if reverse is False else 'desc'})
-        
+
         self.query = self.query.sort(*sortValues)
-    
+
     def createFilterClausesAndAggregations(self, filterParams):
-        dateFilters = list(filter(lambda x: 'year' in x[0].lower(), filterParams))
-        languageFilters = list(filter(lambda x: x[0] == 'language', filterParams))
+        dateFilters = list(filter(
+            lambda x: 'year' in x[0].lower(), filterParams)
+        )
+        languageFilters = list(filter(
+            lambda x: x[0] == 'language', filterParams)
+        )
         formatFilters = list(filter(lambda x: x[0] == 'format', filterParams))
-        displayFilters = list(filter(lambda x: x[0] == 'showAll', filterParams))
+        displayFilters = list(filter(
+            lambda x: x[0] == 'showAll', filterParams)
+        )
 
         dateFilter, dateAggregation = (None, None)
         formatFilter, formatAggregation = (None, None)
-        displayFilter, displayAggregation = (Q('exists', field='editions.formats'), A('filter', **{'exists': {'field': 'editions.formats'}}))
+        displayFilter, displayAggregation = (
+            Q('exists', field='editions.formats'),
+            A('filter', **{'exists': {'field': 'editions.formats'}})
+        )
 
         if len(languageFilters) > 0:
             self.languageFilters = [
-                Q('nested', path='editions.languages', query=Q('term', editions__languages__language=language[1]))
+                Q(
+                    'nested',
+                    path='editions.languages',
+                    query=Q('term', editions__languages__language=language[1])
+                )
                 for language in languageFilters
             ]
 
         if len(dateFilters) > 0:
             dateRange = ElasticClient.generateDateRange(dateFilters)
             dateFilter = Q('range', **{'editions.publication_date': dateRange})
-            dateAggregation = A('filter', **{'range': {'editions.publication_date': dateRange}})
+            dateAggregation = A(
+                'filter', **{'range': {'editions.publication_date': dateRange}}
+            )
 
         if len(formatFilters) > 0:
             formats = []
@@ -309,17 +376,26 @@ class ElasticClient():
                 try:
                     formats.extend(APIUtils.FORMAT_CROSSWALK[format[1]])
                 except KeyError:
-                    raise ElasticClientError('Invalid format filter {} received'.format(format[1]))
+                    raise ElasticClientError(
+                        'Invalid format filter {} received'.format(format[1])
+                    )
 
             formatFilter = Q('terms', editions__formats=formats)
-            formatAggregation = A('filter', **{'terms': {'editions.formats': formats}})
+            formatAggregation = A(
+                'filter', **{'terms': {'editions.formats': formats}}
+            )
 
         if len(displayFilters) > 0 and displayFilters[0][1] == 'true':
             displayFilter = None
             displayAggregation = None
-        
-        self.appliedFilters = list(filter(None, [dateFilter, formatFilter, displayFilter]))
-        self.appliedAggregations = list(filter(None, [dateAggregation, formatAggregation, displayAggregation]))
+
+        self.appliedFilters = list(filter(
+            None, [dateFilter, formatFilter, displayFilter])
+        )
+
+        self.appliedAggregations = list(filter(
+            None, [dateAggregation, formatAggregation, displayAggregation])
+        )
 
     def addFiltersAndAggregations(self, innerHits):
         self.applyFilters(size=innerHits)
@@ -350,30 +426,70 @@ class ElasticClient():
             for i, langFilter in enumerate(self.languageFilters):
                 filterSet = self.appliedFilters + [langFilter]
                 if i == 0:
-                    filters.append(Q('nested', path='editions', inner_hits=innerHitsClause, query=Q('bool', must=filterSet)))
+                    filters.append(
+                        Q(
+                            'nested',
+                            path='editions',
+                            inner_hits=innerHitsClause,
+                            query=Q('bool', must=filterSet)
+                        )
+                    )
                 else:
-                    filters.append(Q('nested', path='editions', query=Q('bool', must=filterSet)))
-            
+                    filters.append(
+                        Q(
+                            'nested',
+                            path='editions',
+                            query=Q('bool', must=filterSet)
+                        )
+                    )
+
             self.query = self.query.query('bool', must=filters)
         elif len(self.appliedFilters) > 0:
-            self.query = self.query.query('nested', path='editions', inner_hits=innerHitsClause, query=Q('bool', must=self.appliedFilters))
+            self.query = self.query.query(
+                'nested',
+                path='editions',
+                inner_hits=innerHitsClause,
+                query=Q('bool', must=self.appliedFilters)
+            )
         else:
-            self.query = self.query.query('nested', path='editions', inner_hits=innerHitsClause, query=Q('match_all'))
+            self.query = self.query.query(
+                'nested',
+                path='editions',
+                inner_hits=innerHitsClause, query=Q('match_all')
+            )
 
     def applyAggregations(self):
-        rootAgg = self.query.aggs.bucket('editions', A('nested', path='editions'))
+        rootAgg = self.query.aggs.bucket(
+            'editions', A('nested', path='editions')
+        )
 
         lastAgg = rootAgg
         for i, agg in enumerate(self.appliedAggregations):
             currentAgg = 'edition_filter_{}'.format(i)
             lastAgg = lastAgg.bucket(currentAgg, agg)
-        
+
         lastAgg.bucket('lang_parent', 'nested', path='editions.languages')\
-            .bucket('languages', 'terms', **{'field': 'editions.languages.language', 'size': 200})\
+            .bucket(
+                'languages', 'terms',
+                **{'field': 'editions.languages.language', 'size': 200}
+            )\
             .bucket('editions_per', 'reverse_nested')
 
-        lastAgg.bucket('formats', 'terms', **{'field': 'editions.formats', 'size': 10})\
+        lastAgg.bucket(
+            'formats', 'terms',
+            **{'field': 'editions.formats', 'size': 10}
+        )\
             .bucket('editions_per', 'reverse_nested')
+
+    def addSearchHighlighting(self):
+        self.query = self.query.highlight_options(
+            order='score',
+            number_of_fragments=10,
+            pre_tags='',
+            post_tags=''
+        )
+
+        self.query = self.query.highlight(*self.searchedFields)
 
 
 class ElasticClientError(Exception):

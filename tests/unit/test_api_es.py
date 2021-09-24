@@ -19,6 +19,7 @@ class TestElasticClient:
             def __init__(self):
                 self.esIndex = 'test_es_index'
                 self.environment = 'test'
+                self.searchedFields = []
 
         return MockElasticClient()
 
@@ -48,6 +49,7 @@ class TestElasticClient:
             createFilterClausesAndAggregations=mocker.DEFAULT,
             addSortClause=mocker.DEFAULT,
             addFiltersAndAggregations=mocker.DEFAULT,
+            addSearchHighlighting=mocker.DEFAULT,
             escapeSearchQuery=mocker.DEFAULT,
             generateQueryHash=mocker.DEFAULT,
             getPageResultCache=mocker.DEFAULT,
@@ -73,13 +75,16 @@ class TestElasticClient:
         mockGenerate.assert_called_once_with('testParams')
         mockExecute.assert_called_once_with('testParams', 0, 10)
 
-    def test_generateSearchQuery_keyword_search(self, testInstance, mockSearch, searchMocks, mocker):
+    def test_generateSearchQuery_keyword_search(
+        self, testInstance, mockSearch, searchMocks, mocker
+    ):
         searchMocks['createSearch'].return_value = mockSearch
         searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
         searchMocks['titleQuery'].return_value = 'titleQuery'
         searchMocks['authorQuery'].return_value = 'authorQuery'
         searchMocks['subjectQuery'].return_value = 'subjectQuery'
-        searchMocks['createFilterClausesAndAggregations'].return_value = mockSearch
+        searchMocks['createFilterClausesAndAggregations'].return_value =\
+            mockSearch
         searchMocks['addSortClause'].return_value = mockSearch
 
         mockQuery = mocker.patch('api.elastic.Q')
@@ -107,6 +112,7 @@ class TestElasticClient:
         searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
         searchMocks['addSortClause'].assert_called_once_with(['sort'])
         searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
+        searchMocks['addSearchHighlighting'].assert_called_once()
 
     def test_generateSearchQuery_title_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
@@ -134,6 +140,7 @@ class TestElasticClient:
         searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
         searchMocks['addSortClause'].assert_called_once_with(['sort'])
         searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
+        searchMocks['addSearchHighlighting'].assert_called_once()
 
     def test_generateSearchQuery_author_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
@@ -161,6 +168,7 @@ class TestElasticClient:
         searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
         searchMocks['addSortClause'].assert_called_once_with(['sort'])
         searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
+        searchMocks['addSearchHighlighting'].assert_called_once()
 
     def test_generateSearchQuery_subject_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
@@ -188,6 +196,7 @@ class TestElasticClient:
         searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
         searchMocks['addSortClause'].assert_called_once_with(['sort'])
         searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
+        searchMocks['addSearchHighlighting'].assert_called_once()
 
     def test_generateSearchQuery_authority_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
@@ -215,6 +224,7 @@ class TestElasticClient:
         searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
         searchMocks['addSortClause'].assert_called_once_with(['sort'])
         searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
+        searchMocks['addSearchHighlighting'].assert_called_once()
 
     def test_generateSearchQuery_generic_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
@@ -244,6 +254,7 @@ class TestElasticClient:
         searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
         searchMocks['addSortClause'].assert_called_once_with(['sort'])
         searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
+        searchMocks['addSearchHighlighting'].assert_called_once()
 
     def test_generateSearchQuery_multi_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
@@ -274,6 +285,7 @@ class TestElasticClient:
         searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
         searchMocks['addSortClause'].assert_called_once_with(['sort'])
         searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
+        searchMocks['addSearchHighlighting'].assert_called_once()
 
     def test_executeSearchQuery_standard(self, testInstance, mockSearch, searchMocks):
         searchMocks['getFromSize'].return_value = (0, 10)
@@ -434,10 +446,11 @@ class TestElasticClient:
     def test_escapeSearchQuery_unchanged(self):
         assert ElasticClient.escapeSearchQuery('a simple query') == 'a simple query'
 
-    def test_titleQuery(self):
-        testQueryES = ElasticClient.titleQuery('testTitle')
+    def test_titleQuery(self, testInstance):
+        testQueryES = testInstance.titleQuery('testTitle')
         testQuery = testQueryES.to_dict()
 
+        assert testInstance.searchedFields == ['title', 'alt_titles', 'editions.title']
         assert testQuery['bool']['should'][0]['query_string']['query'] == 'testTitle'
         assert testQuery['bool']['should'][0]['query_string']['fields'] == ['title^3', 'alt_titles']
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions'
@@ -445,10 +458,11 @@ class TestElasticClient:
         assert testQuery['bool']['should'][1]['nested']['query']['query_string']['fields'] == ['editions.title']
         assert testQuery['bool']['should'][1]['nested']['query']['query_string']['default_operator'] == 'and'
 
-    def test_authorQuery(self):
-        testQueryES = ElasticClient.authorQuery('testAuthor')
+    def test_authorQuery(self, testInstance):
+        testQueryES = testInstance.authorQuery('testAuthor')
         testQuery = testQueryES.to_dict()
 
+        assert testInstance.searchedFields == ['agents.name', 'editions.agents.name']
         assert testQuery['bool']['should'][0]['nested']['path'] == 'agents'
         assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['query_string']['query'] == 'testAuthor'
         assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['query_string']['fields'] == ['agents.name^2']
@@ -458,19 +472,21 @@ class TestElasticClient:
         assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['query_string']['fields'] == ['editions.agents.name']
         assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][1]['terms']['editions.agents.roles'] == ElasticClient.ROLE_ALLOWLIST
 
-    def test_authorityQuery(self):
-        testQueryES = ElasticClient.authorityQuery('testAuth', 'testID')
+    def test_authorityQuery(self, testInstance):
+        testQueryES = testInstance.authorityQuery('testAuth', 'testID')
         testQuery = testQueryES.to_dict()
 
+        assert testInstance.searchedFields == ['agents.testAuth', 'editions.agents.testAuth']
         assert testQuery['bool']['should'][0]['nested']['path'] == 'agents'
         assert testQuery['bool']['should'][0]['nested']['query']['term']['agents.testAuth'] == 'testID'
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions.agents'
         assert testQuery['bool']['should'][1]['nested']['query']['term']['editions.agents.testAuth'] == 'testID'
 
-    def test_subjectQuery(self):
-        testQueryES = ElasticClient.subjectQuery('testSubject')
+    def test_subjectQuery(self, testInstance):
+        testQueryES = testInstance.subjectQuery('testSubject')
         testQuery = testQueryES.to_dict()
 
+        assert testInstance.searchedFields == ['subjects.heading']
         assert testQuery['nested']['path'] == 'subjects'
         assert testQuery['nested']['query']['query_string']['query'] == 'testSubject'
         assert testQuery['nested']['query']['query_string']['fields'] == ['subjects.heading']
@@ -834,3 +850,20 @@ class TestElasticClient:
             mocker.call('formats', 'terms', field='editions.formats', size=10),
             mocker.call('editions_per', 'reverse_nested')
         ])
+
+    def test_addSearchHighlighting(self, testInstance, mocker):
+        mockQuery = mocker.MagicMock()
+        mockQuery.highlight_options.return_value = mockQuery
+        mockQuery.highlight.return_value = 'testHighlightedQuery'
+
+        testInstance.query = mockQuery
+
+        testInstance.addSearchHighlighting()
+
+        mockQuery.highlight_options.assert_called_once_with(
+            order='score', number_of_fragments=10, pre_tags='', post_tags=''
+        )
+
+        mockQuery.highlight.assert_called_once()
+
+        assert testInstance.query == 'testHighlightedQuery'
