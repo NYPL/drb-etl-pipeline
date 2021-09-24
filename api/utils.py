@@ -110,21 +110,23 @@ class APIUtils():
             outWorks = []
             workDict = {str(work.uuid): work for work in works}
 
-            for workUUID, editionIds in identifiers:
+            for workUUID, editionIds, highlights in identifiers:
                 work = workDict.get(workUUID, None)
 
                 if work is None:
                     continue
 
-                outWorks.append(
-                    cls.formatWork(
-                        work,
-                        editionIds,
-                        showAll,
-                        formats=formats,
-                        reader=reader
-                    )
+                outWork = cls.formatWork(
+                    work,
+                    editionIds,
+                    showAll,
+                    formats=formats,
+                    reader=reader
                 )
+
+                cls.addWorkMeta(outWork, highlights=highlights)
+
+                outWorks.append(outWork)
 
             return outWorks
         else:
@@ -166,6 +168,12 @@ class APIUtils():
         )
 
         return workDict
+
+    @classmethod
+    def addWorkMeta(cls, work, **kwargs):
+        work['_meta'] = {
+            metaField: metaValue for metaField, metaValue in kwargs.items()
+        }
 
     @classmethod
     def formatEditionOutput(
