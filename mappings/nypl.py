@@ -68,7 +68,7 @@ class NYPLMapping(SQLMapping):
                 ('656', '{a}|{2}|'),
                 ('690', '{a} -- {b} -- {v} -- {x} -- {z}|lcsh|{0}'),
             ],
-            'has_part': [('856', '1|{u}|nypl|text/html|{{"catalog": false, "download": false, "reader": false}}')],
+            'has_part': [('856', '1|{u}|nypl|text/html|{{"catalog": false, "download": false, "reader": false, "embed": true}}')],
         }
 
     def applyMapping(self):

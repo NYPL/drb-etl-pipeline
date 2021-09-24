@@ -48,7 +48,7 @@ class DOABMapping(XMLMapping):
             'subjects': [('./datacite:subject/text()', '{0}||')],
             'has_part': [(
                 './dc:identifier/text()',
-                '1|{0}|doab|text/html|{{"reader": false, "download": false, "catalog": false}}'
+                '1|{0}|doab|text/html|{{"reader": false, "download": false, "catalog": false, "embed": true}}'
             )],
             'rights': [
                 (
