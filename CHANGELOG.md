@@ -7,6 +7,7 @@
 ### Fixed
 - Improve clustering stability by improving individual error handling
 - Handle relative links from redirects in proxy endpoint
+- Add `embed` flag for HTML links
 
 ## 2021-09-09 -- v0.9.1
 ### Fixed

@@ -57,7 +57,7 @@ class MUSEMapping(MARCMapping):
             ],
             'is_part_of': ('490', '{a}|{v}|volume'),
             'has_part': [
-                ('856', '1|{u}|muse|text/html|{{"reader": false, "download": false, "catalog": false}}')
+                ('856', '1|{u}|muse|text/html|{{"reader": false, "download": false, "catalog": false, "embed": true}}')
             ]
         }
 

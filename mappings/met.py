@@ -34,7 +34,7 @@ class METMapping(JSONMapping):
             ],
             'subjects': [('subjec', '{0}||')],
             'rights': (['rights', 'copyra', 'copyri'], 'met|{0}|{1}|{2}|'),
-            'has_part': [('link', '1|{0}|met|text/html|{{}}')]
+            'has_part': [('link', '1|{0}|met|text/html|{{"catalog": false, "download": false, "reader": false, "embed": true}}')]
         }
 
     def applyFormatting(self):

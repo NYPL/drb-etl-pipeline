@@ -86,7 +86,7 @@ class HathiMapping(CSVMapping):
             'https://babel.hathitrust.org/cgi/pt?id={}'.format(self.source[0]),
             'hathitrust',
             'text/html',
-            json.dumps({'reader': False, 'download': False, 'catalog': False})
+            json.dumps({'reader': False, 'download': False, 'catalog': False, 'embed': True})
         )
 
         self.record.has_part = [readOnlineLink]
