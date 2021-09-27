@@ -91,6 +91,8 @@ class TestEditionBlueprint:
             assert testAPIResponse.status_code == 200
             assert testAPIResponse.response == [b'Test Content']
             assert testAPIResponse.headers['Media-Type'] == 'allow'
+            assert testAPIResponse.headers['Access-Control-Allow-Origin'] ==\
+                '*'
 
             mockHead.assert_called_once_with(
                 'https://www.testURL.com',
