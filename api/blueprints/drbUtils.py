@@ -47,7 +47,7 @@ def totalCounts():
     return APIUtils.formatResponseObject(200, 'totalCounts', totalsSummary)
 
 
-@utils.route('/proxy', methods=['GET', 'POST', 'PUT', 'HEAD'])
+@utils.route('/proxy', methods=['GET', 'POST', 'PUT', 'HEAD', 'OPTIONS'])
 @cross_origin(origins=os.environ.get('API_PROXY_CORS_ALLOWED', '*'))
 def getProxyResponse():
     proxyUrl = request.args.get('proxy_url')
@@ -92,6 +92,11 @@ def getProxyResponse():
         (k, v) for (k, v) in resp.headers.items()
         if k.lower() not in excludedHeaders
     ]
+
+    headers.append((
+        'Access-Control-Allow-Origin',
+        os.environ.get('API_PROXY_CORS_ALLOWED', '*')
+    ))
 
     proxyResp = Response(resp.content, resp.status_code, headers)
     return proxyResp
