@@ -93,10 +93,5 @@ def getProxyResponse():
         if k.lower() not in excludedHeaders
     ]
 
-    headers.append((
-        'Access-Control-Allow-Origin',
-        os.environ.get('API_PROXY_CORS_ALLOWED', '*')
-    ))
-
     proxyResp = Response(resp.content, resp.status_code, headers)
     return proxyResp
