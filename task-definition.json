@@ -17,12 +17,12 @@
             "essential": true,
             "command": [
                 "--process", "APIProcess",
-                "--environment", "qa"
+                "--environment", "development"
             ],
             "environment": [
                 {
                     "name": "ENVIRONMENT",
-                    "value": "qa"
+                    "value": "development"
                 },
                 {
                     "name": "ELASTICSEARCH_HOST",
