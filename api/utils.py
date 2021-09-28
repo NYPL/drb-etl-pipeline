@@ -13,11 +13,11 @@ class APIUtils():
     ]
 
     FORMAT_CROSSWALK = {
-        'epub_zip': ['application/epub+zip', 'application/epub+xml', 'application/webpub+json'],
-        'epub_xml': ['application/epub+zip', 'application/epub+xml', 'application/webpub+json'],
+        'epub_zip': ['application/epub+zip', 'application/epub+xml'],
+        'epub_xml': ['application/epub+zip', 'application/epub+xml'],
         'html': ['text/html'],
         'html_edd': ['application/html+edd', 'application/x.html+edd'],
-        'pdf': ['application/pdf', 'application/webpub+json'],
+        'pdf': ['application/pdf'],
         'webpub_json': ['application/webpub+json']
     }
 
@@ -199,18 +199,13 @@ class APIUtils():
 
             itemDict['links'] = []
 
-            validLinks = list(filter(lambda x: x.media_type in formats, item.links))\
-                if formats else item.links
-
-            if (
-                len(validLinks) < 1
-                or (
-                    formats
-                    and len(validLinks) == 1
-                    and validLinks[0].media_type == 'application/webpub+json'
-                )
-            ):
-                continue
+            if formats:
+                formats.append('application/webpub+json')
+                validLinks = list(filter(
+                    lambda x: x.media_type in formats, item.links
+                ))
+            else:
+                validLinks = item.links
 
             for link in validLinks:
                 flags = link.flags
