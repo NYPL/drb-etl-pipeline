@@ -10,6 +10,7 @@
 - Handle relative links from redirects in proxy endpoint
 - Add `embed` flag for HTML links
 - Extended settings for `utils/proxy` epndoint to be more flexible
+- Resolve issue with display of links when filtering by format
 
 ## 2021-09-09 -- v0.9.1
 ### Fixed
