@@ -230,6 +230,8 @@ class APIUtils():
                     'flags': flags
                 })
 
+            itemDict['links'].sort(key=cls.sortByMediaType)
+
             itemDict['rights'] = [
                 {
                     'source': rights.source,
@@ -259,6 +261,18 @@ class APIUtils():
             del editionDict['items']
 
         return editionDict
+
+    @staticmethod
+    def sortByMediaType(link):
+        scores = {
+            'application/epub+xml': 1, 'application/epub+zip': 1,
+            'text/html': 2,
+            'application/pdf': 3,
+            'application/html+edd': 4,
+            'application/webpub+json': 5
+        }
+
+        return scores[link['mediaType']]
 
     @classmethod
     def formatRecord(cls, record, itemsByLink):
