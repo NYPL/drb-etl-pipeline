@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.9.2
+## 2021-10-04 -- v0.9.2
 ### Added
 - Detect file types in s3 process and specify during storage process
 - `readerVersion` parameter for `/search`, `/work` and `/edition` endpoints to control media types returned
