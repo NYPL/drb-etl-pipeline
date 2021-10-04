@@ -45,6 +45,7 @@ class TestOPDSBlueprint:
                     editions.append(ed)
                 mockMeta = mocker.MagicMock()
                 mockMeta.inner_hits.editions.hits = editions
+                mockMeta.highlight = {'field': ['highlight_{}'.format(uuid)]}
                 self.meta = mockMeta
 
         return FakeHit
@@ -55,9 +56,11 @@ class TestOPDSBlueprint:
             def __init__(self):
                 self.total = 5
                 self.hits = [
-                    FakeHit('uuid1', ['ed1', 'ed2']), FakeHit('uuid2', ['ed3']),
+                    FakeHit('uuid1', ['ed1', 'ed2']),
+                    FakeHit('uuid2', ['ed3']),
                     FakeHit('uuid3', ['ed4', 'ed5', 'ed6']),
-                    FakeHit('uuid4', ['ed7']), FakeHit('uuid5', ['ed8'])
+                    FakeHit('uuid4', ['ed7']),
+                    FakeHit('uuid5', ['ed8'])
                 ]
 
             def __iter__(self):
@@ -110,7 +113,9 @@ class TestOPDSBlueprint:
                 'testBaseFeed', '/new?', 3, page=1, perPage=25
             )
             opdsMocks['addPublications'].assert_called_once_with(
-                'testBaseFeed', ['pub1', 'pub2', 'pub3'], grouped=True
+                'testBaseFeed',
+                ['pub1', 'pub2', 'pub3'],
+                grouped=True
             )
             mockUtils['formatOPDS2Object'].assert_called_once_with(200, 'testBaseFeed')
 
@@ -172,7 +177,16 @@ class TestOPDSBlueprint:
                 'testBaseFeed', '/search?', {'aggs': []}
             )
             opdsMocks['addPublications'].assert_called_once_with(
-                'testBaseFeed', ['work1', 'work2', 'work3', 'work4', 'work5'], grouped=True
+                'testBaseFeed',
+                ['work1', 'work2', 'work3', 'work4', 'work5'],
+                grouped=True,
+                highlights={
+                    'uuid1': {'field': ['highlight_uuid1']},
+                    'uuid2': {'field': ['highlight_uuid2']},
+                    'uuid3': {'field': ['highlight_uuid3']},
+                    'uuid4': {'field': ['highlight_uuid4']},
+                    'uuid5': {'field': ['highlight_uuid5']}
+                }
             )
             mockUtils['formatOPDS2Object'].assert_called_once_with(200, 'testBaseFeed')
 
@@ -297,10 +311,18 @@ class TestOPDSBlueprint:
         mockGroupCon = mocker.patch('api.blueprints.drbOPDS2.Group')
         mockGroupCon.return_value = mockGroup
 
-        addPublications(mockFeed, [1, 2, 3], grouped=True)
+        mockPubs = [mocker.MagicMock(uuid=1), mocker.MagicMock(uuid=2), mocker.MagicMock(uuid=3)]
+
+        addPublications(
+            mockFeed,
+            mockPubs,
+            grouped=True,
+            highlights={'1': 'highlights1', '2': 'highlights2', '3': 'highlights3'}
+        )
 
         opdsMocks['createPublicationObject'].assert_has_calls([
-            mocker.call(i) for i in range(1, 4)
+            mocker.call(mockPubs[i], _meta={'highlights': 'highlights{}'.format(i+1)})
+            for i in range(3)
         ])
         mockGroupCon.assert_called_once_with(metadata={'title': 'Publications'})
         mockGroup.addPublications.assert_called_once_with(['pub1', 'pub2', 'pub3'])
@@ -310,10 +332,17 @@ class TestOPDSBlueprint:
         opdsMocks['createPublicationObject'].side_effect = ['pub1', 'pub2', 'pub3']
         mockFeed = mocker.MagicMock()
 
-        addPublications(mockFeed, [1, 2, 3])
+        mockPubs = [mocker.MagicMock(uuid=1), mocker.MagicMock(uuid=2), mocker.MagicMock(uuid=3)]
+
+        addPublications(
+            mockFeed,
+            mockPubs,
+            highlights={'1': 'highlights1', '2': 'highlights2', '3': 'highlights3'}
+        )
 
         opdsMocks['createPublicationObject'].assert_has_calls([
-            mocker.call(i) for i in range(1, 4)
+            mocker.call(mockPubs[i], _meta={'highlights': 'highlights{}'.format(i+1)})
+            for i in range(3)
         ])
         mockFeed.addPublications.assert_called_once_with(['pub1', 'pub2', 'pub3'])
 

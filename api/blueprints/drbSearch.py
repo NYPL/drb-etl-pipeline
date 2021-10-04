@@ -8,6 +8,7 @@ logger = createLog(__name__)
 
 search = Blueprint('search', __name__, url_prefix='/search')
 
+
 @search.route('/', methods=['GET'])
 def standardQuery():
     esClient = ElasticClient(current_app.config['REDIS_CLIENT'])
@@ -30,37 +31,58 @@ def standardQuery():
     readerVersion = searchParams.get('readerVersion', [None])[0]\
         or current_app.config['READER_VERSION']
 
-    logger.info('Executing ES Query {} with filters {}'.format(searchParams, terms['filter']))
+    logger.info('Executing ES Query {} with filters {}'.format(
+        searchParams, terms['filter'])
+    )
 
     try:
-        searchResult = esClient.searchQuery(terms, page=searchPage, perPage=searchSize)
+        searchResult = esClient.searchQuery(
+            terms, page=searchPage, perPage=searchSize
+        )
     except ElasticClientError as e:
         return APIUtils.formatResponseObject(
             400, 'searchResponse', {'message': str(e)}
         )
 
-    resultIds = [
-        (r.uuid, [e.edition_id for e in r.meta.inner_hits.editions.hits])
-        for r in searchResult.hits
-    ]
+    results = []
+    for res in searchResult.hits:
+        editionIds = [e.edition_id for e in res.meta.inner_hits.editions.hits]
+
+        try:
+            highlights = {
+                key: list(set(res.meta.highlight[key]))
+                for key in res.meta.highlight
+            }
+        except AttributeError:
+            highlights = {}
+
+        results.append((res.uuid, editionIds, highlights))
 
     if esClient.sortReversed is True:
-        resultIds = [r for r in reversed(resultIds)]
+        results = [r for r in reversed(results)]
 
     filteredFormats = [
-        mediaType for f in list(filter(lambda x: x[0] == 'format', terms['filter']))
+        mediaType for f in list(filter(
+            lambda x: x[0] == 'format', terms['filter']
+        ))
         for mediaType in APIUtils.FORMAT_CROSSWALK[f[1]]
     ]
 
-    logger.info('Executing DB Query for {} editions'.format(len(resultIds)))
+    logger.info('Executing DB Query for {} editions'.format(len(results)))
 
-    works = dbClient.fetchSearchedWorks(resultIds)
-    facets = APIUtils.formatAggregationResult(searchResult.aggregations.to_dict())
-    paging = APIUtils.formatPagingOptions(searchPage + 1, searchSize, searchResult.hits.total)
+    works = dbClient.fetchSearchedWorks(results)
+    facets = APIUtils.formatAggregationResult(
+        searchResult.aggregations.to_dict()
+    )
+    paging = APIUtils.formatPagingOptions(
+        searchPage + 1, searchSize, searchResult.hits.total
+    )
 
     dataBlock = {
         'totalWorks': searchResult.hits.total,
-        'works': APIUtils.formatWorkOutput(works, resultIds, formats=filteredFormats, reader=readerVersion),
+        'works': APIUtils.formatWorkOutput(
+            works, results, formats=filteredFormats, reader=readerVersion
+        ),
         'paging': paging,
         'facets': facets
     }

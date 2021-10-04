@@ -33,7 +33,11 @@ def newPublications():
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
 
-    baseFeed = constructBaseFeed(request.full_path, 'New Publications: Digital Research Books', grouped=True)
+    baseFeed = constructBaseFeed(
+        request.full_path,
+        'New Publications: Digital Research Books',
+        grouped=True
+    )
 
     pubCount, newPubs = dbClient.fetchNewWorks(page=page, size=pageSize)
 
@@ -59,7 +63,9 @@ def opdsSearch():
 
     searchTerms = {'query': [], 'filter': [], 'sort': []}
     for queryField in ['keyword', 'title', 'author', 'subject']:
-        searchTerms['query'].extend([(queryField, term) for term in params.get(queryField, [])])
+        searchTerms['query'].extend([
+            (queryField, term) for term in params.get(queryField, [])
+        ])
 
     searchTerms['filter'] = APIUtils.extractParamPairs('filter', params)
     if params.get('showAll', None):
@@ -71,25 +77,39 @@ def opdsSearch():
 
     logger.info('Executing ES Query {}'.format(searchTerms))
 
-    searchResult = esClient.searchQuery(searchTerms, page=page, perPage=pageSize)
+    searchResult = esClient.searchQuery(
+        searchTerms, page=page, perPage=pageSize
+    )
 
-    resultIds = [
-        (r.uuid, [e.edition_id for e in r.meta.inner_hits.editions.hits])
-        for r in searchResult.hits
-    ]
+    results = []
+    highlights = {}
+    for res in searchResult.hits:
+        editionIds = [e.edition_id for e in res.meta.inner_hits.editions.hits]
 
-    works = dbClient.fetchSearchedWorks(resultIds)
+        if res.meta.highlight:
+            highlights[res.uuid] = {
+                key: list(set(res.meta.highlight[key]))
+                for key in res.meta.highlight
+            }
 
-    searchFeed = constructBaseFeed(request.full_path, 'Search Results', grouped=True)
+        results.append((res.uuid, editionIds))
+
+    works = dbClient.fetchSearchedWorks(results)
+
+    searchFeed = constructBaseFeed(
+        request.full_path, 'Search Results', grouped=True
+    )
 
     OPDSUtils.addPagingOptions(
         searchFeed, request.full_path, searchResult.hits.total,
         page=page+1, perPage=pageSize
     )
 
-    addFacets(searchFeed, request.full_path, searchResult.aggregations.to_dict())
+    addFacets(
+        searchFeed, request.full_path, searchResult.aggregations.to_dict()
+    )
 
-    addPublications(searchFeed, works, grouped=True)
+    addPublications(searchFeed, works, grouped=True, highlights=highlights)
 
     dbClient.closeSession()
 
@@ -107,12 +127,19 @@ def fetchPublication(uuid):
     
     if workRecord is None:
         return APIUtils.formatResponseObject(
-            404, 'opdsPublication', {'message': 'Unable to find work for uuid {}'.format(uuid)}
+            404,
+            'opdsPublication',
+            {'message': 'Unable to find work for uuid {}'.format(uuid)}
         )
 
     publication = createPublicationObject(workRecord, searchResult=False)
 
-    publication.addLink({'rel': 'search', 'href': '/opds/search{?query,title,subject,author}', 'type': 'application/opds+json', 'templated': True})
+    publication.addLink({
+        'rel': 'search',
+        'href': '/opds/search{?query,title,subject,author}',
+        'type': 'application/opds+json',
+        'templated': True
+    })
 
     dbClient.closeSession()
 
@@ -126,21 +153,41 @@ def constructBaseFeed(path, title, grouped=False):
     feed.addMetadata(feedMetadata)
 
     selfLink = Link(rel='self', href=path, type='application/opds+json')
-    searchLink = Link(rel='search', href='/opds/search{?query,title,subject,author}', type='application/opds+json', templated=True)
+    searchLink = Link(
+        rel='search',
+        href='/opds/search{?query,title,subject,author}',
+        type='application/opds+json',
+        templated=True
+    )
     altLink = Link(rel='alternative', href='/', type='text/html')
 
     feed.addLinks([selfLink, searchLink, altLink])
 
-    currentNavigation = Navigation(href=path, title=title, type='application/opds+json', rel='current')
+    currentNavigation = Navigation(
+        href=path,
+        title=title,
+        type='application/opds+json',
+        rel='current'
+    )
 
     navOptions = [currentNavigation]
 
     if path != '/opds/':
-        baseNavigation = Navigation(href='/opds', title='Home', type='application/opds+json', rel='home')
+        baseNavigation = Navigation(
+            href='/opds',
+            title='Home',
+            type='application/opds+json',
+            rel='home'
+        )
         navOptions.append(baseNavigation)
 
     if path != '/opds/new/':
-        newNavigation = Navigation(href='/opds/new', title='New Works', type='application/opds+json', rel='http://opds-spec.org/sort/new')
+        newNavigation = Navigation(
+            href='/opds/new',
+            title='New Works',
+            type='application/opds+json',
+            rel='http://opds-spec.org/sort/new'
+        )
         navOptions.append(newNavigation)
 
     if grouped is True:
@@ -153,8 +200,14 @@ def constructBaseFeed(path, title, grouped=False):
     return feed
 
 
-def addPublications(feed, publications, grouped=False):
-    opdsPubs = [createPublicationObject(pub) for pub in publications]
+def addPublications(feed, publications, grouped=False, highlights={}):
+    print(publications)
+    opdsPubs = [
+        createPublicationObject(
+            pub, _meta={'highlights': highlights.get(str(pub.uuid), {})}
+        )
+        for pub in publications
+    ]
 
     if grouped is True:
         pubGroup = Group(metadata={'title': 'Publications'})
@@ -164,11 +217,11 @@ def addPublications(feed, publications, grouped=False):
         feed.addPublications(opdsPubs)
 
 
-def createPublicationObject(publication, searchResult=True):
-        newPub = Publication()
-        newPub.parseWorkToPublication(publication, searchResult=searchResult)
+def createPublicationObject(publication, searchResult=True, _meta={}):
+    newPub = Publication(metadata={'_meta': _meta})
+    newPub.parseWorkToPublication(publication, searchResult=searchResult)
 
-        return newPub
+    return newPub
 
 
 def addFacets(feed, path, facets):
@@ -178,9 +231,12 @@ def addFacets(feed, path, facets):
 
     for facet, options in reducedFacets.items():
         newFacet = Facet(metadata={'title': facet})
+
         facetOptions = [
             {
-                'href': '{}&filter={}:{}'.format(path, facet[:-1], option['value']),
+                'href': '{}&filter={}:{}'.format(
+                    path, facet[:-1], option['value']
+                ),
                 'type': 'application/opds+json',
                 'title': option['value'],
                 'properties': {'numberOfItems': option['count']}
@@ -195,11 +251,17 @@ def addFacets(feed, path, facets):
     opdsFacets.append(Facet(
         metadata={'title': 'Show All Editions'},
         links=[
-            {'href': '{}&showAll=true'.format(path), 'type': 'application/opds+json', 'title': 'True'},
-            {'href': '{}&showAll=false'.format(path), 'type': 'application/opds+json', 'title': 'False'}
+            {
+                'href': '{}&showAll=true'.format(path),
+                'type': 'application/opds+json',
+                'title': 'True'
+            },
+            {
+                'href': '{}&showAll=false'.format(path),
+                'type': 'application/opds+json',
+                'title': 'False'
+            }
         ]
     ))
 
     feed.addFacets(opdsFacets)
-
-    
