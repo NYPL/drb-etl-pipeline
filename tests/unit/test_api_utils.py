@@ -1,5 +1,6 @@
 from hashlib import scrypt
 import pytest
+from random import shuffle
 
 from api.utils import APIUtils
 
@@ -567,3 +568,21 @@ class TestAPIUtils:
 
         assert testWork['_meta']['field1'] == 'value1'
         assert testWork['_meta']['field2'] == ['value2']
+
+    def test_sortByMediaType(self):
+        testList = [
+            {'id': 2, 'mediaType': 'text/html'},
+            {'id': 1, 'mediaType': 'application/epub+xml'},
+            {'id': 4, 'mediaType': 'application/html+edd'},
+            {'id': 1, 'mediaType': 'application/epub+zip'},
+            {'id': 5, 'mediaType': 'application/webpub+json'},
+            {'id': 3, 'mediaType': 'application/pdf'}
+        ]
+
+        shuffle(testList)
+        testList.sort(key=APIUtils.sortByMediaType)
+        assert [i['id'] for i in testList] == [1, 1, 2, 3, 4, 5]
+
+        shuffle(testList)
+        testList.sort(key=APIUtils.sortByMediaType)
+        assert [i['id'] for i in testList] == [1, 1, 2, 3, 4, 5]

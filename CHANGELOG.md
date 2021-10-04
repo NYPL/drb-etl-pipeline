@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.9.2
+## 2021-10-04 -- v0.9.2
 ### Added
 - Detect file types in s3 process and specify during storage process
 - `readerVersion` parameter for `/search`, `/work` and `/edition` endpoints to control media types returned
@@ -9,6 +9,9 @@
 - Improve clustering stability by improving individual error handling
 - Handle relative links from redirects in proxy endpoint
 - Add `embed` flag for HTML links
+- Extended settings for `utils/proxy` epndoint to be more flexible
+- Resolve issue with display of links when filtering by format
+- Release stability via distinct production tag
 
 ## 2021-09-09 -- v0.9.1
 ### Fixed

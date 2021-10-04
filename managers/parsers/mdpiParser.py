@@ -28,7 +28,7 @@ class MDPIParser(AbstractParser):
 
         return [
             (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
-            (pdfSourceURI, {'download': True}, self.mediaType, None, None)
+            (pdfSourceURI, {'download': True}, 'application/pdf', None, None)
         ]
 
     def generateManifest(self, sourceURI, manifestURI):
