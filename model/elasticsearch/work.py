@@ -1,4 +1,4 @@
-from elasticsearch_dsl import Text, Keyword, DateRange, Boolean, Nested
+from elasticsearch_dsl import Text, Keyword, Boolean, Nested
 import os
 
 from .base import BaseDoc, plain_ascii
@@ -8,8 +8,8 @@ from .identifier import Identifier
 from .agent import Agent
 from .subject import Subject
 
+
 class Work(BaseDoc):
-    title = Text(analyzer=plain_ascii, fields={'keyword': Keyword()})
     sort_title = Keyword(index=False)
     uuid = Keyword(store=True)
     medium = Text(fields={'keyword': Keyword()})
@@ -23,17 +23,17 @@ class Work(BaseDoc):
     subjects = Nested(Subject)
     agents = Nested(Agent)
     languages = Nested(Language)
-    
+
     @classmethod
     def getFields(cls):
         return [
             'uuid', 'title', 'sort_title', 'sub_title', 'medium',
             'series', 'series_position', 'date_modified', 'date_updated'
         ]
-    
+
     def __dir__(self):
         return ['identifiers', 'subjects', 'agents', 'languages']
-    
+
     def __repr__(self):
         return '<ESWork(title={}, uuid={})>'.format(self.title, self.uuid)
 

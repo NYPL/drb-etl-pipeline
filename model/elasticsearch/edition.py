@@ -8,7 +8,6 @@ from .rights import Rights
 
 
 class Edition(BaseInner):
-    title = Text(analyzer=plain_ascii, fields={'keyword': Keyword()})
     sub_title = Text(analyzer=plain_ascii, fields={'keyword': Keyword()})
     alt_titles = Text(fields={'keyword': Keyword()})
     publication_place = Text(fields={'keyword': Keyword()})

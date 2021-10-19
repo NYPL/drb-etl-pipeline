@@ -4,7 +4,7 @@ from elasticsearch_dsl import InnerDoc, Document, Date, analyzer
 plain_ascii = analyzer(
     'plain_ascii',
     tokenizer='standard',
-    filter=['standard', 'lowercase', 'stop', 'asciifolding']
+    filter=['lowercase', 'stop', 'asciifolding']
 )
 
 
