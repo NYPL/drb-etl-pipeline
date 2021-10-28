@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.9.4
+## 2021-10-28 -- v0.9.4
 ### Fixed
 - Updated order of links for new reader
 
