@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.9.4
+### Fixed
+- Updated order of links for new reader
+
 ## 2021-10-04 -- v0.9.3
 ### Added
 - ElasticSearch query highlighting

@@ -273,11 +273,11 @@ class APIUtils():
     @staticmethod
     def sortByMediaType(link):
         scores = {
-            'application/epub+xml': 1, 'application/epub+zip': 1,
+            'application/webpub+json': 1,
             'text/html': 2,
             'application/pdf': 3,
             'application/html+edd': 4,
-            'application/webpub+json': 5
+            'application/epub+xml': 5, 'application/epub+zip': 5,
         }
 
         return scores[link['mediaType']]

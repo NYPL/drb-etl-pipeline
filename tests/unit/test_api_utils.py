@@ -581,8 +581,8 @@ class TestAPIUtils:
 
         shuffle(testList)
         testList.sort(key=APIUtils.sortByMediaType)
-        assert [i['id'] for i in testList] == [1, 1, 2, 3, 4, 5]
+        assert [i['id'] for i in testList] == [5, 2, 3, 4, 1, 1]
 
         shuffle(testList)
         testList.sort(key=APIUtils.sortByMediaType)
-        assert [i['id'] for i in testList] == [1, 1, 2, 3, 4, 5]
+        assert [i['id'] for i in testList] == [5, 2, 3, 4, 1, 1]
