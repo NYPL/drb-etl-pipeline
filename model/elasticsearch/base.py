@@ -1,4 +1,4 @@
-from elasticsearch_dsl import InnerDoc, Document, Date, analyzer
+from elasticsearch_dsl import InnerDoc, Document, Date, analyzer, Keyword, Text
 
 
 plain_ascii = analyzer(
@@ -28,3 +28,28 @@ class BaseInner(InnerDoc):
             if isinstance(getattr(self, rel), set):
                 setattr(self, rel, list(getattr(self, rel)))
         return super().save(**kwargs)
+
+
+class PerLanguageField(InnerDoc):
+    language = Keyword(required=True)
+    default = Text(
+        analyzer='default',
+        fields={'icu': {'type': 'text', 'analyzer': 'icu_analyzer'}}
+    )
+    en = Text(analyzer='english')
+    de = Text(analyzer='german')
+    fr = Text(analyzer='french')
+    sp = Text(analyzer='spanish')
+    po = Text(analyzer='polish')
+    nl = Text(analyzer='dutch')
+    it = Text(analyzer='italian')
+    da = Text(analyzer='danish')
+    ar = Text(analyzer='arabic')
+    zh = Text(analyzer='smartcn')
+    el = Text(analyzer='greek')
+    hi = Text(analyzer='hindi')
+    fa = Text(analyzer='farsi')
+    ko = Text(analyzer='nori')
+    ja = Text(analyzer='kuromoji')
+    ru = Text(analyzer='russian')
+    th = Text(analyzer='thai')

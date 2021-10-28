@@ -1,7 +1,7 @@
 from elasticsearch_dsl import Text, Keyword, Boolean, Nested
 import os
 
-from .base import BaseDoc, plain_ascii
+from .base import BaseDoc, PerLanguageField
 from .edition import Edition
 from .language import Language
 from .identifier import Identifier
@@ -10,12 +10,13 @@ from .subject import Subject
 
 
 class Work(BaseDoc):
+    title = PerLanguageField()
     sort_title = Keyword(index=False)
     uuid = Keyword(store=True)
     medium = Text(fields={'keyword': Keyword()})
     series = Text(fields={'keyword': Keyword()})
     series_position = Keyword()
-    alt_titles = Text(fields={'keyword': Keyword()})
+    alt_titles = PerLanguageField()
     is_government_document = Boolean(multi=False)
 
     editions = Nested(Edition)

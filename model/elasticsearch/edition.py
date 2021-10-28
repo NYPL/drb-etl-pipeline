@@ -1,6 +1,6 @@
 from elasticsearch_dsl import Text, Keyword, Date, Integer, Nested
 
-from .base import BaseInner, plain_ascii
+from .base import BaseInner, PerLanguageField
 from .language import Language
 from .identifier import Identifier
 from .agent import Agent
@@ -8,8 +8,9 @@ from .rights import Rights
 
 
 class Edition(BaseInner):
-    sub_title = Text(analyzer=plain_ascii, fields={'keyword': Keyword()})
-    alt_titles = Text(fields={'keyword': Keyword()})
+    title = PerLanguageField()
+    sub_title = PerLanguageField()
+    alt_titles = PerLanguageField()
     publication_place = Text(fields={'keyword': Keyword()})
     publication_date = Date(format='date_optional_time')
     edition = Text(fields={'keyword': Keyword()})
@@ -36,7 +37,7 @@ class Edition(BaseInner):
 
     def __dir__(self):
         return ['agents', 'identifiers', 'rights', 'languages', 'formats']
-    
+
     def cleanRels(self):
         for rel in dir(self):
             if isinstance(getattr(self, rel), set):
