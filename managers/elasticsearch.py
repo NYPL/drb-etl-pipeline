@@ -41,7 +41,7 @@ class ElasticsearchManager:
                             'model_id': 'lang_ident_model_1',
                             'inference_config': {
                                 'classification': {
-                                    'num_top_classes': 25
+                                    'num_top_classes': 3
                                 }
                             },
                             'field_map': {
@@ -83,7 +83,7 @@ class ElasticsearchManager:
                             'model_id': 'lang_ident_model_1',
                             'inference_config': {
                                 'classification': {
-                                    'num_top_classes': 25
+                                    'num_top_classes': 3
                                 }
                             },
                             'field_map': {
@@ -108,6 +108,48 @@ class ElasticsearchManager:
                         'set': {
                             'field': '_ingest._value.title.{{_ingest._value.title.language}}',
                             'value': '{{_ingest._value.title.default}}',
+                            'override': False
+                        }
+                    }
+                ]
+            }
+        )
+
+        esIngestClient.put_pipeline(
+            id='subject_heading_language_detector',
+            body={
+                'description': 'Detect cataloging language of key fields',
+                'processors': [
+                    {
+                        'inference': {
+                            'model_id': 'lang_ident_model_1',
+                            'inference_config': {
+                                'classification': {
+                                    'num_top_classes': 3
+                                }
+                            },
+                            'field_map': {
+                                '_ingest._value.heading': 'text'
+                            },
+                            'target_field': '_ingest._value._ml.lang_ident'
+                        }
+                    },
+                    {
+                        'rename': {
+                            'field': '_ingest._value.heading',
+                            'target_field': '_ingest._value.heading.default'
+                        }
+                    },
+                    {
+                        'rename': {
+                            'field': '_ingest._value._ml.lang_ident.predicted_value',
+                            'target_field': '_ingest._value.heading.language'
+                        }
+                    },
+                    {
+                        'set': {
+                            'field': '_ingest._value.heading.{{_ingest._value.heading.language}}',
+                            'value': '{{_ingest._value.heading.default}}',
                             'override': False
                         }
                     }
