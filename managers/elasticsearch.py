@@ -31,130 +31,32 @@ class ElasticsearchManager:
     def createElasticSearchIngestPipeline(self):
         esIngestClient = IngestClient(self.client)
 
-        esIngestClient.put_pipeline(
-            id='title_language_detector',
-            body={
-                'description': 'Detect cataloging language of key fields',
-                'processors': [
-                    {
-                        'inference': {
-                            'model_id': 'lang_ident_model_1',
-                            'inference_config': {
-                                'classification': {
-                                    'num_top_classes': 3
-                                }
-                            },
-                            'field_map': {
-                                'title': 'text'
-                            },
-                            'target_field': '_ml.lang_ident'
-                        }
-                    },
-                    {
-                        'rename': {
-                            'field': 'title',
-                            'target_field': 'title.default'
-                        }
-                    },
-                    {
-                        'rename': {
-                            'field': '_ml.lang_ident.predicted_value',
-                            'target_field': 'title.language'
-                        }
-                    },
-                    {
-                        'set': {
-                            'field': 'title.{{title.language}}',
-                            'value': '{{title.default}}',
-                            'override': False
-                        }
-                    }
-                ]
-            }
+        self.constructLanguagePipeline(
+            esIngestClient, 'title_language_detector', 'title', 'Work title language detection'
         )
 
-        esIngestClient.put_pipeline(
-            id='edition_title_language_detector',
-            body={
-                'description': 'Detect cataloging language of key fields',
-                'processors': [
-                    {
-                        'inference': {
-                            'model_id': 'lang_ident_model_1',
-                            'inference_config': {
-                                'classification': {
-                                    'num_top_classes': 3
-                                }
-                            },
-                            'field_map': {
-                                '_ingest._value.title': 'text'
-                            },
-                            'target_field': '_ingest._value._ml.lang_ident'
-                        }
-                    },
-                    {
-                        'rename': {
-                            'field': '_ingest._value.title',
-                            'target_field': '_ingest._value.title.default'
-                        }
-                    },
-                    {
-                        'rename': {
-                            'field': '_ingest._value._ml.lang_ident.predicted_value',
-                            'target_field': '_ingest._value.title.language'
-                        }
-                    },
-                    {
-                        'set': {
-                            'field': '_ingest._value.title.{{_ingest._value.title.language}}',
-                            'value': '{{_ingest._value.title.default}}',
-                            'override': False
-                        }
-                    }
-                ]
-            }
+        self.constructLanguagePipeline(
+            esIngestClient, 'alt_title_language_detector', 'alt_titles', 'Work alt_title language detection'
         )
 
-        esIngestClient.put_pipeline(
-            id='subject_heading_language_detector',
-            body={
-                'description': 'Detect cataloging language of key fields',
-                'processors': [
-                    {
-                        'inference': {
-                            'model_id': 'lang_ident_model_1',
-                            'inference_config': {
-                                'classification': {
-                                    'num_top_classes': 3
-                                }
-                            },
-                            'field_map': {
-                                '_ingest._value.heading': 'text'
-                            },
-                            'target_field': '_ingest._value._ml.lang_ident'
-                        }
-                    },
-                    {
-                        'rename': {
-                            'field': '_ingest._value.heading',
-                            'target_field': '_ingest._value.heading.default'
-                        }
-                    },
-                    {
-                        'rename': {
-                            'field': '_ingest._value._ml.lang_ident.predicted_value',
-                            'target_field': '_ingest._value.heading.language'
-                        }
-                    },
-                    {
-                        'set': {
-                            'field': '_ingest._value.heading.{{_ingest._value.heading.language}}',
-                            'value': '{{_ingest._value.heading.default}}',
-                            'override': False
-                        }
-                    }
-                ]
-            }
+        self.constructLanguagePipeline(
+            esIngestClient, 'edition_title_language_detector', 'title', 'Edition title language detection',
+            prefix='_ingest._value'
+        )
+
+        self.constructLanguagePipeline(
+            esIngestClient, 'edition_sub_title_language_detector', 'sub_title', 'Edition subtitle language detection',
+            prefix='_ingest._value'
+        )
+
+        self.constructLanguagePipeline(
+            esIngestClient, 'edition_alt_title_language_detector', 'alt_titles', 'Edition alttitle language detection',
+            prefix='_ingest._value'
+        )
+
+        self.constructLanguagePipeline(
+            esIngestClient, 'subject_heading_language_detector', 'heading', 'Work title language detection',
+            prefix='_ingest._value'
         )
 
         esIngestClient.put_pipeline(
@@ -168,11 +70,46 @@ class ElasticsearchManager:
                         }
                     },
                     {
+                        'pipeline': {
+                            'name': 'alt_title_language_detector'
+                        }
+                    },
+                    {
                         'foreach': {
                             'field': 'editions',
                             'processor': {
                                 'pipeline': {
                                     'name': 'edition_title_language_detector'
+                                }
+                            }
+                        }
+                    },
+                    {
+                        'foreach': {
+                            'field': 'editions',
+                            'processor': {
+                                'pipeline': {
+                                    'name': 'edition_sub_title_language_detector'
+                                }
+                            }
+                        }
+                    },
+                    {
+                        'foreach': {
+                            'field': 'editions',
+                            'processor': {
+                                'pipeline': {
+                                    'name': 'edition_alt_title_language_detector'
+                                }
+                            }
+                        }
+                    },
+                    {
+                        'foreach': {
+                            'field': 'subjects',
+                            'processor': {
+                                'pipeline': {
+                                    'name': 'subject_heading_language_detector'
                                 }
                             }
                         }
@@ -219,3 +156,49 @@ class ElasticsearchManager:
                     )
 
                     retries += 1
+
+    @staticmethod
+    def constructLanguagePipeline(client, id, field, description, prefix=''):
+        pipelineBody = {
+            'description': description,
+            'processors': [
+                {
+                    'inference': {
+                        'model_id': 'lang_ident_model_1',
+                        'inference_config': {
+                            'classification': {
+                                'num_top_classes': 3
+                            }
+                        },
+                        'field_map': {
+                            '{}.{}'.format(prefix, field): 'text'
+                        },
+                        'target_field': '{}._ml.lang_ident'.format(prefix)
+                    }
+                },
+                {
+                    'rename': {
+                        'field': '{}.{}'.format(prefix, field),
+                        'target_field': '{}.{}.default'.format(prefix, field)
+                    }
+                },
+                {
+                    'rename': {
+                        'field': '{}._ml.lang_ident.predicted_value'.format(prefix),
+                        'target_field': '{}.{}.language'.format(prefix, field)
+                    }
+                },
+                {
+                    'set': {
+                        'field': '{}.{}.{{{}.{}.language}}'.format(prefix, field, prefix, field),
+                        'value': '{{{}.{}.default}}'.format(prefix, field),
+                        'override': False
+                    }
+                }
+            ]
+        }
+
+        client.put_pipeline(
+            id=id,
+            body=pipelineBody
+        )
