@@ -1,4 +1,4 @@
-from elasticsearch_dsl import Text, Keyword, Date, Integer, Nested
+from elasticsearch_dsl import Text, Keyword, Date, Integer, Nested, Object
 
 from .base import BaseInner, PerLanguageField
 from .language import Language
@@ -8,9 +8,9 @@ from .rights import Rights
 
 
 class Edition(BaseInner):
-    title = PerLanguageField()
-    sub_title = PerLanguageField()
-    alt_titles = PerLanguageField()
+    title = Object(PerLanguageField)
+    sub_title = Object(PerLanguageField)
+    alt_titles = Object(PerLanguageField)
     publication_place = Text(fields={'keyword': Keyword()})
     publication_date = Date(format='date_optional_time')
     edition = Text(fields={'keyword': Keyword()})

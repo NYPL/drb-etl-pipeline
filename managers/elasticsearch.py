@@ -26,7 +26,6 @@ class ElasticsearchManager:
             retry_on_timeout=True,
             max_retries=3
         )
-        print(self.client.info())
 
     def createElasticSearchIngestPipeline(self):
         esIngestClient = IngestClient(self.client)
