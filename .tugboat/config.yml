@@ -1,10 +1,13 @@
 services:
   drb-api:
-    image: python:3.8
+    image: tugboatqa/python:3.8
     default: true
     expose: 80
     commands:
+      init: 
+        - ssh ec2-user@$BASTION_HOST -L 5432:$REMOTE_POSTGRES_HOST:5432
+        - ssh ec2-user@$BASTION_HOST -L 9200:$REMOTE_ELASTICSEARCH_HOST:443
       build:
         - pip install -r requirements.txt
       start:
-        - python main.py -p APIProcess -e qa
+        - python main.py -p APIProcess -e qa &

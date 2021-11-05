@@ -1,0 +1,19 @@
+# LOGGING
+LOG_LEVEL: debug
+
+# POSTGRES CONNECTION DETAILS
+# POSTGRES_USER, POSTGRES_PSWD, POSTGRES_ADMIN_USER and POSTGRES_ADMIN_PSWD must be configured in secrets file 
+POSTGRES_HOST: '127.0.0.1'
+POSTGRES_NAME: dcdw_qa
+POSTGRES_PORT: '5432'
+
+# ELASTICSEARCH CONFIGURATION
+# ELASTICSEARCH_INDEX, ELASTICSEARCH_HOST must be configured in secrets file
+ELASTICSEARCH_PORT: '9200'
+ELASTICSEARCH_TIMEOUT: '5'
+
+# Allowed sources of CORS requests to proxy endpoint
+API_PROXY_CORS_ALLOWED: (?:http[s]?://sfr.*.tugboat.qa)
+
+# Current NYPL Webreader version
+READER_VERSION: v2
