@@ -14,7 +14,7 @@ ELASTICSEARCH_TIMEOUT: '5'
 
 # REDIS CONFIGURATION
 # REDIS_HOST configured as part of ECS deployment
-REDIS_PORT: '6379'
+REDIS_PORT: '9092'
 
 # Allowed sources of CORS requests to proxy endpoint
 API_PROXY_CORS_ALLOWED: (?:http[s]?://sfr.*.tugboat.qa)
