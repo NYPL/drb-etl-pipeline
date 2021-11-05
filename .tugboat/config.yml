@@ -4,10 +4,11 @@ services:
     default: true
     expose: 80
     commands:
-      init: 
-        - ssh -NTf ec2-user@$BASTION_HOST -L 9090:$REMOTE_POSTGRES_HOST:5432
-        - ssh -NTf ec2-user@$BASTION_HOST -L 9091:$REMOTE_ELASTICSEARCH_HOST:443
       build:
         - pip install -r requirements.txt
       start:
-        - python main.py -p APIProcess -e qa &
+        - echo $BASTION_HOST
+        - echo $REMOTE_POSTGRES_HOST
+        - ssh -4NTf ec2-user@$BASTION_HOST -L 9090:$REMOTE_POSTGRES_HOST:5432
+        - ssh -4NTf ec2-user@$BASTION_HOST -L 9091:$REMOTE_ELASTICSEARCH_HOST:80
+        - python main.py -p APIProcess -e tugboat-qa &
