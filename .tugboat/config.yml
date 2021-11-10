@@ -2,6 +2,8 @@ services:
   drb-api:
     image: tugboatqa/python:3.8
     default: true
+    http: true
+    https: false
     expose: 80
     commands:
       build:
@@ -15,6 +17,8 @@ services:
     image: tugboatqa/node:16
     expose: 3000
     checkout: false
+    http: true
+    https: false
     depends:
       - drb-api
     commands:
