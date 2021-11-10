@@ -22,6 +22,6 @@ services:
         - git clone https://github.com/NYPL/sfr-bookfinder-front-end.git /drb-front-end
       build: 
         - npm --prefix /drb-front-end install
-        - npm --prefix /drb-front-end build
+        - npm --prefix /drb-front-end run build
       start:
         - npm --prefix /drb-front-end run start &
