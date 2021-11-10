@@ -11,3 +11,17 @@ services:
         - ssh -4NTf ec2-user@$BASTION_HOST -L 9091:$REMOTE_ELASTICSEARCH_HOST:80
         - ssh -4NTf ec2-user@$BASTION_HOST -L 9092:$REMOTE_REDIS_HOST:6379
         - python main.py -p APIProcess -e tugboat-qa &
+  drb-front-end:
+    image: tugboatqa/node:16
+    expose: 3000
+    checkout: false
+    depends:
+      - drb-api
+    commands:
+      init:
+        - git clone https://github.com/NYPL/sfr-bookfinder-front-end.git /drb-front-end
+      build: 
+        - npm --prefix /drb-front-end install
+        - npm --prefix /drb-front-end build
+      start:
+        - npm --prefix /drb-front-end run start &

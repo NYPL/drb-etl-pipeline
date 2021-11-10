@@ -88,7 +88,7 @@ WEBPUB_CONVERSION_URL: https://epub-to-webpub.vercel.app
 WEBPUB_PDF_PROFILE: http://librarysimplified.org/terms/profiles/pdf
 
 # Allowed sources of CORS requests to proxy endpoint
-API_PROXY_CORS_ALLOWED: (?:http[s]?://.*nypl.org|https://nypl-web-reader.vercel.app|http[s]?://.*-nypl.vercel.app)
+API_PROXY_CORS_ALLOWED: (?:http[s]?://.*nypl.org|https://nypl-web-reader.vercel.app|http[s]?://.*.tugboat.qa)
 
 # Current NYPL Webreader version
-READER_VERSION: v1
+READER_VERSION: v2
