@@ -62,15 +62,22 @@ def getProxyResponse():
         )
 
         statusCode = headResp.status_code
+        print(statusCode, cleanUrl)
         if statusCode in [200, 204]:
             break
         elif statusCode in [301, 302, 303, 307, 308]:
+            print(headResp.headers)
             cleanUrl = headResp.headers['Location']
 
             if cleanUrl[0] == '/':
                 cleanUrl = '{}://{}{}'.format(
                     urlParts.scheme, urlParts.netloc, cleanUrl
                 )
+        else:
+            logger.warn('Unable to proxy URL {}'.format(cleanUrl))
+            cleanUrl = proxyUrl
+            break
+
 
     resp = requests.request(
         method=request.method,

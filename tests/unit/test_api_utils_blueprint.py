@@ -127,3 +127,27 @@ class TestEditionBlueprint:
                 mocker.call('https://www.testURL.com/redirectURL', headers={'User-agent': 'Mozilla/5.0'})]
             )
             mockReq.assert_called_once()
+
+    def test_getProxyResponse_redirect_error(self, testApp, mocker):
+        mockHead = mocker.patch.object(requests, 'head')
+        mockHead.side_effect = [
+            mocker.MagicMock(status_code=404, headers={'Location': '/redirectURL'}),
+        ]
+
+        mockReq = mocker.patch.object(requests, 'request')
+        mockReq.return_value = mocker.MagicMock(
+            status_code=200,
+            headers={'Content-Encoding': 'block', 'Media-Type': 'allow'},
+            content='Test Content'
+        )
+
+        with testApp.test_request_context('/?proxy_url=https://www.testURL.com'):
+            testAPIResponse = getProxyResponse()
+
+            assert isinstance(testAPIResponse, Response)
+            assert testAPIResponse.status_code == 200
+            assert testAPIResponse.response == [b'Test Content']
+            assert testAPIResponse.headers['Media-Type'] == 'allow'
+
+            mockHead.assert_called_once_with('https://www.testURL.com', headers={'User-agent': 'Mozilla/5.0'})
+            mockReq.assert_called_once()
