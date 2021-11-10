@@ -17,7 +17,7 @@ ELASTICSEARCH_TIMEOUT: '5'
 REDIS_PORT: '9092'
 
 # Allowed sources of CORS requests to proxy endpoint
-API_PROXY_CORS_ALLOWED: (?:http[s]?://sfr.*.tugboat.qa)
+API_PROXY_CORS_ALLOWED: (?:http[s]?://drb-api)
 
 # Current NYPL Webreader version
 READER_VERSION: v2
