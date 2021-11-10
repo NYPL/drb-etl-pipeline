@@ -1,6 +1,9 @@
 # CHANGELOG
 
-<<<<<<< HEAD
+## unreleased -- v0.9.5
+### Added
+- Tugboat deployments for feature branches
+
 ## 2021-10-28 -- v0.9.4
 ### Fixed
 - Updated order of links for new reader
@@ -25,14 +28,6 @@
 ### Fixed
 - Improved InternetArchive link parsing
 - Improved (more aggressive) clustering
-=======
-## unreleased -- v0.9.1
-### Added
-- Per-PR deployments via TugboatQA
-### Fixed
-- InternetArchive link parsing
-- Improved Clustering performance (more agressive clustering)
->>>>>>> SFR-1271 Update CHANGELOG
 
 ## 2021-08-19 -- v0.9.0
 ### Added
