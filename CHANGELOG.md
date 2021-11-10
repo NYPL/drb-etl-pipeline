@@ -3,6 +3,8 @@
 ## unreleased -- v0.9.5
 ### Added
 - Tugboat deployments for feature branches
+### Fixed
+- Improved redirect handling in proxy endpoint
 
 ## 2021-10-28 -- v0.9.4
 ### Fixed
