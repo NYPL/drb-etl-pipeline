@@ -2,8 +2,6 @@ services:
   drb-api:
     image: tugboatqa/python:3.8
     default: true
-    http: true
-    https: false
     expose: 80
     commands:
       build:
@@ -17,13 +15,12 @@ services:
     image: tugboatqa/node:16
     expose: 3000
     checkout: false
-    http: true
-    https: false
     depends:
       - drb-api
     commands:
       init:
         - git clone https://github.com/NYPL/sfr-bookfinder-front-end.git /drb-front-end
+        - export API_URL=$TUGBOAT_DEFAULT_SERVICE_URL_HOST
       build: 
         - npm --prefix /drb-front-end install
         - npm --prefix /drb-front-end run build
