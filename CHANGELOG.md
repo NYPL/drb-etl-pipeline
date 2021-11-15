@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## unreleased -- v0.9.5
+### Added
+- Tugboat deployments for feature branches
 ### Fixed
 - Improved redirect handling in proxy endpoint
 
