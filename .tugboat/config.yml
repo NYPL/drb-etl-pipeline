@@ -20,7 +20,7 @@ services:
     commands:
       init:
         - git clone https://github.com/NYPL/sfr-bookfinder-front-end.git /drb-front-end
-        - echo "API_URL=$TUGBOAT_DEFAULT_SERVICE_URL_HOST" >> /drb-front-end/.env
+        - echo "API_URL=https://$TUGBOAT_DEFAULT_SERVICE_URL_HOST" >> /drb-front-end/.env
       build: 
         - npm --prefix /drb-front-end install
         - npm --prefix /drb-front-end run build
