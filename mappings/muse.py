@@ -105,8 +105,8 @@ class MUSEMapping(MARCMapping):
         return '||{}'.format(marcData[35:38])
 
     def addHasPartLink(self, url, mediaType, flags):
-        lastItemNo = int(self.record.has_part[0][0])
+        lastItemNo = int(self.record.has_part[-1][0])
 
         self.record.has_part.append(
-            '{}|{}|muse|{}|{}'.format(lastItemNo + 1, url, mediaType, flags)
+            '{}|{}|muse|{}|{}'.format(lastItemNo, url, mediaType, flags)
         )
