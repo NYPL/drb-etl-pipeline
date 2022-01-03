@@ -71,6 +71,11 @@ class MUSEMapping(MARCMapping):
         # Extract language code from 008 fixed data field
         self.record.languages = [self.extractLanguage(l) for l in self.record.languages]
 
+        # Extract publication date from 008 fixed field if 264 field is missing
+        if len(self.record.dates) < 1:
+            pubDate = self.source['008'].data[11:15]
+            self.record.dates.append('{}|publication_date'.format(pubDate))
+
         # Clean up subjects to remove spots for missing subheadings
         self.record.subjects = [
             self.cleanUpSubjectHead(s)
