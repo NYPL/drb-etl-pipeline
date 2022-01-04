@@ -3,6 +3,8 @@ services:
     image: tugboatqa/python:3.8
     default: true
     expose: 80
+    http: true
+    https: false
     commands:
       build:
         - pip install -r requirements.txt
@@ -15,6 +17,8 @@ services:
     image: tugboatqa/node:16
     expose: 3000
     checkout: false
+    http: true
+    https: false
     depends:
       - drb-api
     commands:
