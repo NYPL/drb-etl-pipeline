@@ -161,12 +161,3 @@ class GutenbergProcess(CoreProcess):
             sourceURL = '{}/{}'.format(sourceRoot, coverData['image_path'])
 
             self.sendFileToProcessingQueue(sourceURL, bucketLocation)
-
-    def sendFileToProcessingQueue(self, fileURL, s3Location):
-        s3Message = {
-            'fileData': {
-                'fileURL': fileURL,
-                'bucketPath': s3Location
-            }
-        }
-        self.sendMessageToQueue(self.fileQueue, self.fileRoute, s3Message)
