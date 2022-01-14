@@ -76,6 +76,10 @@ class MUSEMapping(MARCMapping):
             pubDate = self.source['008'].data[11:15]
             self.record.dates.append('{}|publication_date'.format(pubDate))
 
+        # If publisher missing, assume JHU
+        if len(self.record.publisher) < 1:
+            self.record.publisher.append('John Hopkins University Press||')
+
         # Clean up subjects to remove spots for missing subheadings
         self.record.subjects = [
             self.cleanUpSubjectHead(s)

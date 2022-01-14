@@ -64,11 +64,12 @@ class MUSEProcess(CoreProcess):
 
         museManager.addReadableLinks()
 
-        self.putObjectInBucket(
-            museManager.pdfWebpubManifest.toJson().encode('utf-8'),
-            museManager.s3PDFReadPath,
-            museManager.s3Bucket
-        )
+        if museManager.pdfWebpubManifest:
+            self.putObjectInBucket(
+                museManager.pdfWebpubManifest.toJson().encode('utf-8'),
+                museManager.s3PDFReadPath,
+                museManager.s3Bucket
+            )
 
         if museManager.epubURL:
             self.sendFileToProcessingQueue(
