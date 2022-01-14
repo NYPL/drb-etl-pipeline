@@ -63,3 +63,12 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
     
     def saveRecords(self):
         self.bulkSaveObjects(self.records)
+
+    def sendFileToProcessingQueue(self, fileURL, s3Location):
+        s3Message = {
+            'fileData': {
+                'fileURL': fileURL,
+                'bucketPath': s3Location
+            }
+        }
+        self.sendMessageToQueue(self.fileQueue, self.fileRoute, s3Message)

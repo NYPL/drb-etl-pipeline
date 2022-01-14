@@ -1,8 +1,6 @@
-from bs4 import BeautifulSoup
 import csv
 from datetime import datetime, timedelta
 from io import BytesIO
-import json
 import os
 from pymarc import MARCReader
 import requests
@@ -10,7 +8,7 @@ from requests.exceptions import ReadTimeout, HTTPError
 
 from .core import CoreProcess
 from mappings.muse import MUSEMapping
-from managers import WebpubManifest
+from managers import MUSEError, MUSEManager
 from logger import createLog
 
 logger = createLog(__name__)
@@ -22,11 +20,18 @@ class MUSEProcess(CoreProcess):
     def __init__(self, *args):
         super(MUSEProcess, self).__init__(*args[:4])
 
+        # Create database session
         self.generateEngine()
         self.createSession()
 
+        # Create AWS S3 Client
         self.createS3Client()
-        self.s3Bucket = os.environ['FILE_BUCKET']
+
+        # Connect to epub processing queue
+        self.fileQueue = os.environ['FILE_QUEUE']
+        self.fileRoute = os.environ['FILE_ROUTING_KEY']
+        self.createRabbitConnection()
+        self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
     def runProcess(self):
         if self.process == 'daily':
@@ -35,6 +40,8 @@ class MUSEProcess(CoreProcess):
             self.importMARCRecords(full=True)
         elif self.process == 'custom':
             self.importMARCRecords(startTimestamp=self.ingestPeriod)
+        elif self.process == 'single':
+            self.importMARCRecords(recID=self.singleRecord)
 
         self.saveRecords()
         self.commitChanges()
@@ -48,20 +55,30 @@ class MUSEProcess(CoreProcess):
         _, museLink, _, museType, _ = list(
             museRec.record.has_part[0].split('|')
         )
-        webpubManifest = self.constructWebpubManifest(
-            museLink, museType, museRec.record
-        )
 
-        s3URL = self.createManifestInS3(
-            webpubManifest, museRec.record.source_id
-        )
-        museRec.addHasPartLink(
-            s3URL, 'application/webpub+json',
-            json.dumps({'reader': True, 'download': False, 'catalog': False})
-        )
+        museManager = MUSEManager(museRec, museLink, museType)
+
+        museManager.parseMusePage()
+
+        museManager.identifyReadableVersions()
+
+        museManager.addReadableLinks()
+
+        if museManager.pdfWebpubManifest:
+            self.putObjectInBucket(
+                museManager.pdfWebpubManifest.toJson().encode('utf-8'),
+                museManager.s3PDFReadPath,
+                museManager.s3Bucket
+            )
+
+        if museManager.epubURL:
+            self.sendFileToProcessingQueue(
+                museManager.epubURL, museManager.s3EpubPath
+            )
+
         self.addDCDWToUpdateList(museRec)
 
-    def importMARCRecords(self, full=False, startTimestamp=None):
+    def importMARCRecords(self, full=False, startTimestamp=None, recID=None):
         self.downloadRecordUpdates()
 
         museFile = self.downloadMARCRecords()
@@ -76,8 +93,9 @@ class MUSEProcess(CoreProcess):
         marcReader = MARCReader(museFile)
 
         for record in marcReader:
-            if startDateTime \
-                    and self.recordToBeUpdated(record, startDateTime) is False:
+            if (startDateTime or recID) \
+                    and self.recordToBeUpdated(record, startDateTime, recID)\
+                    is False:
                 continue
 
             try:
@@ -126,90 +144,16 @@ class MUSEProcess(CoreProcess):
         for row in csvReader:
             try:
                 self.updateDates[row[7]] = \
-                    datetime.strptime(row[10], '%Y-%m-%d')
+                    datetime.strptime(row[11], '%Y-%m-%d')
             except (IndexError, ValueError):
                 logger.warning('Unable to parse MUSE')
                 logger.debug(row)
 
-    def recordToBeUpdated(self, record, startDate):
+    def recordToBeUpdated(self, record, startDate, recID):
         recordURL = record.get_fields('856')[0]['u']
 
         updateDate = self.updateDates.get(recordURL[:-1], datetime(1970, 1, 1))
 
-        return updateDate >= startDate
+        updateURL = 'https://muse.jhu.edu/book/{}'.format(recID)
 
-    def constructWebpubManifest(self, museLink, museType, museRecord):
-        try:
-            museHTML = self.loadMusePage(museLink)
-        except Exception:
-            raise MUSEError(
-                'Unable to load record from link {}'.format(museLink)
-            )
-
-        pdfManifest = WebpubManifest(museLink, museType)
-        pdfManifest.addMetadata(
-            museRecord, conformsTo=os.environ['WEBPUB_PDF_PROFILE']
-        )
-
-        museSoup = BeautifulSoup(museHTML, features='lxml')
-
-        chapterTable = museSoup.find(id='available_items_list_wrap')
-
-        if not chapterTable:
-            raise MUSEError('Book {} unavailable'.format(museRecord.source_id))
-
-        for card in chapterTable.find_all(class_='card_text'):
-            titleItem = card.find('li', class_='title')
-
-            if not titleItem:
-                continue
-            elif not titleItem.span.a:
-                pdfManifest.addSection(titleItem.span.string, '')
-                continue
-            else:
-                if card.parent.get('style') != 'margin-left:30px;':
-                    pdfManifest.closeSection()
-
-                pdfManifest.addChapter(
-                    '{}{}/pdf'.format(
-                        self.MUSE_ROOT_URL, titleItem.span.a.get('href')
-                    ),
-                    titleItem.span.a.string,
-                )
-
-        pdfManifest.closeSection()
-
-        return pdfManifest
-
-    def loadMusePage(self, museLink):
-        museResponse = requests.get(
-            museLink, timeout=15, headers={'User-agent': 'Mozilla/5.0'}
-        )
-
-        if museResponse.status_code == 200:
-            return museResponse.text
-
-        raise Exception('Unable to load HTML page from Project MUSE')
-
-    def createManifestInS3(self, webpubManifest, museID):
-        bucketLocation = 'manifests/muse/{}.json'.format(museID)
-        s3URL = 'https://{}.s3.amazonaws.com/{}'.format(
-            self.s3Bucket, bucketLocation
-        )
-
-        webpubManifest.links.append(
-            {'href': s3URL, 'type': 'application/webpub+json', 'rel': 'self'}
-        )
-
-        self.putObjectInBucket(
-            webpubManifest.toJson().encode('utf-8'),
-            bucketLocation,
-            self.s3Bucket
-        )
-
-        return s3URL
-
-
-class MUSEError(Exception):
-    def __init__(self, message):
-        self.message = message
+        return (updateDate >= startDate) or updateURL == recordURL[:-1]

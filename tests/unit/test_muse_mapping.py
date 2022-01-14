@@ -12,15 +12,17 @@ class TestMUSEMapping:
         mockRecord.subjects = ['subj1', 'subj2', 'subj3']
         mockRecord.has_part = ['1|testURL|muse|testType|testFlags']
         mockRecord.languages = ['||lang1', '||lang2']
+        mockRecord.dates = []
 
         return mockRecord
 
     @pytest.fixture
-    def testMapping(self, testRecord):
+    def testMapping(self, testRecord, mocker):
         class TestMapping(MUSEMapping):
             def __init__(self):
                 self.mapping = None
                 self.record = testRecord
+                self.source = {'008': mocker.MagicMock(data='testingdate2000pla')}
         
         return TestMapping()
 
@@ -50,6 +52,7 @@ class TestMUSEMapping:
         assert testMapping.record.title == 'Main Title'
         assert testMapping.record.subjects == [1, 2, 3]
         assert testMapping.record.languages == ['lng1', 'lng2']
+        assert testMapping.record.dates[0] == '2000|publication_date'
 
     def test_cleanUpSubjectHead(self, testMapping):
         cleanSubject = testMapping.cleanUpSubjectHead('first -- second. -- -- |||')
@@ -62,4 +65,4 @@ class TestMUSEMapping:
     def test_addHasPartLink(self, testMapping):
         testMapping.addHasPartLink('newURL', 'pdf+json', 'pdfFlags')
 
-        assert testMapping.record.has_part[1] == '2|newURL|muse|pdf+json|pdfFlags'
+        assert testMapping.record.has_part[1] == '1|newURL|muse|pdf+json|pdfFlags'

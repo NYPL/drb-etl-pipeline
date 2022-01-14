@@ -21,6 +21,16 @@ class APIUtils():
         'webpub_json': ['application/webpub+json']
     }
 
+    SOURCE_PRIORITY = {
+        'gutenberg': 1,
+        'doab': 2,
+        'muse': 3,
+        'met': 4,
+        'hathitrust': 5,
+        'oclc': 6,
+        'nypl': 7
+    }
+
     @staticmethod
     def normalizeQueryParams(params):
         paramDict = params.to_dict(flat=False)
@@ -250,6 +260,9 @@ class APIUtils():
             ]
 
             editionDict['items'].append(itemDict)
+
+        editionDict['items']\
+            .sort(key=lambda x: cls.SOURCE_PRIORITY[x['source']])
 
         if records is not None:
             itemsByLink = {}

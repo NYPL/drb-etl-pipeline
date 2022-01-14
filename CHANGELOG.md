@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## unreleased -- v0.9.6
+### Fixed
+- Improved handling of Project MUSE records
+
 ## 2021-11-22 -- v0.9.5
 ### Added
 - Tugboat deployments for feature branches
