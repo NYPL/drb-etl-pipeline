@@ -45,6 +45,10 @@ def main():
             continue
 
         soup = BeautifulSoup(elem.text, 'lxml')   #Parsing the catalog's webpage using BeautifulSoup
+
+        if i == 1:
+            metadata = parse_Pub_Alt(soup)
+            print(metadata)
     
         catContainer = soup.find(class_='content-inner-left')
 
@@ -76,7 +80,7 @@ def parsePub(pub):
     #Link should only be the link to the publication webpage
     detailLink = pubLinks[0].get('href', None)
 
-    detailURL = f'{OIC_ROOT}{detailLink}'
+    detailURL = '{}{}'.format(OIC_ROOT, detailLink)
 
     print(detailURL)
 
@@ -105,6 +109,21 @@ def parsePub(pub):
        'extent': metadata[2].text
     }
 
+def parse_Pub_Alt(soup):
+    catContainer = soup.find(class_='catalog')
+
+    pubList = catContainer.find('tbody')
+
+    pubEntry = pubList.find_all('tr')
+
+    for pub in pubEntry:
+        pub_tds = pub.find_all('td')
+        return({
+            'Volume': pub_tds[0].text,
+            'publicationInfo': pub_tds[2].text,
+            'isbnNumber': pub_tds[3].text,
+            'Extent': pub_tds[1].text
+            } )
 
 if __name__ == '__main__':
     main()
