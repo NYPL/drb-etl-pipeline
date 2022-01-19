@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 import requests, json
+from requests.exceptions import ConnectionError, HTTPError
 
 
 def fetchPageHTML(url):
@@ -46,7 +47,8 @@ def main(journal_key=0):
 
         soup = BeautifulSoup(elem.text, 'lxml')   #Parsing the catalog's webpage using BeautifulSoup
 
-        if i == 1 or i == 3:
+        #Parsing for dictionary catalogs
+        if i == 1 or i == 3 or i == 15:
 
             catContainer = soup.find(class_='catalog')
 
@@ -55,13 +57,13 @@ def main(journal_key=0):
             pubEntry = pubList.find_all('tr')
 
             for pub in pubEntry:
-
                 print(url)
 
                 print(parse_Pub_Dict(pub))
 
+        #Parsing for journal catalogs
         else:
-            journal_key = 2
+            journal_key += 1
 
             catContainer = soup.find(class_='content-inner-left')
 
@@ -73,7 +75,15 @@ def main(journal_key=0):
                 if not isinstance(pub, Tag):
                     continue
                 metadata = parse_Pub_Jour(pub, journal_key)
+
+                if metadata is None:
+                    continue
+
                 downloadLink = pub.find('a', class_= "publication ss-standard ss-download btn")
+
+                if downloadLink is None:
+                    continue
+
                 metadata['url'] = downloadLink.get('href', None)
                 print(metadata)
         '''
@@ -91,12 +101,17 @@ def parse_Pub_Jour(pub, journal_key):
 
     print(detailURL)
 
-    pubElem = fetchPageHTML(detailURL)
+    try:
+        pubElem = fetchPageHTML(detailURL)
+    except ConnectionError or HTTPError:
+        return None
     
     pubSoup = BeautifulSoup(pubElem.text, 'lxml')
 
     pubContainer = pubSoup.find(class_='content-inner-left')
 
+    if pubContainer is None:
+        return None
     #Metadata list is the last unordered list on the webpage
     dataList = pubContainer.find_all('ul')[-1]
 
@@ -113,9 +128,10 @@ def parse_Pub_Jour(pub, journal_key):
             }
         else:
             return {
-            'series': metadata[0].text,
-            'publicationInfo': metadata[1].text,
-            'extent': metadata[2].text
+            'series': metadata[1].text,
+            'publicationInfo': metadata[2].text,
+            'isbnNumber': metadata[3].text,
+            'extent': metadata[4].text
             }
     #OIDA metadata dictionary
     elif journal_key == 7:
@@ -124,15 +140,24 @@ def parse_Pub_Jour(pub, journal_key):
         'publicationInfo': metadata[1].text,
         'extent': metadata[2].text
         }
-    #OIMP metadata dictionary
+    #OIMP and OIS metadata dictionary
     elif journal_key == 8  or journal_key == 10:
-         return {
-            'series': metadata[0].text,
-            'publicationInfo': metadata[1].text,
-            'isbnNumber(hardbook)': metadata[2].text,
-            'isbnNumber(ebook)': metadata[3].text,
-            'extent': metadata[4].text
+        if len(metadata) == 2 or len(metadata) == 3:
+            return {
+                'publicationInfo': metadata[0],
+                'extent': metadata[1]
             }
+        elif len(metadata) == 4: #OIP 117 has metadata in middle of page instead of at the bottom
+            return None
+        else:
+            return {
+                'series': metadata[0].text,
+                'publicationInfo': metadata[1].text,
+                'isbnNumber(hardbook)': metadata[2].text,
+                'isbnNumber(ebook)': metadata[3].text,
+                'extent': metadata[4].text
+            }
+
     #OIS metadata dictionary(Sometimes series firsts and sometimes it's last in the list)
     elif journal_key == 11:
         return {
@@ -141,6 +166,7 @@ def parse_Pub_Jour(pub, journal_key):
             'isbnNumber': metadata[1].text,
             'extent': metadata[2].text
             }
+    #Miscellaneous metadata dictionary
     elif journal_key == 13:
         return {
             'title': metadata[0].text,
@@ -149,21 +175,23 @@ def parse_Pub_Jour(pub, journal_key):
             'isbnNumber-10': metadata[4].text,
             'extent': metadata[2].text
         }
-
+    #Some journals don't have ISBN metadata
     else:
-        if metadata[2].text[0:4] == 'ISBN':
+        if len(metadata) == 1:
+            return None
+        elif metadata[2].text[0:4] == 'ISBN':
             return {
-        'series': metadata[0].text,
-        'publicationInfo': metadata[1].text,
-        'isbnNumber': metadata[2].text,
-        'extent': metadata[3].text
-        }
+            'series': metadata[0].text,
+            'publicationInfo': metadata[1].text,
+            'isbnNumber': metadata[2].text,
+            'extent': metadata[3].text
+            }
         else:
             return {
-        'series': metadata[0].text,
-        'publicationInfo': metadata[1].text,
-        'extent': metadata[2].text
-        }
+            'series': metadata[0].text,
+            'publicationInfo': metadata[1].text,
+            'extent': metadata[2].text
+            }
 
 #Parsing Dictionary catalogs
 def parse_Pub_Dict(pub):
