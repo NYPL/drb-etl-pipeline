@@ -9,35 +9,35 @@ def fetchPageHTML(url):
     elemResponse.raise_for_status()
     return elemResponse
 
-#Array of each catalog publications
-request_urls = [
-    'https://oi.uchicago.edu/research/publications/assyriological-studies', 
-    'https://oi.uchicago.edu/research/publications/assyrian-dictionary-oriental-institute-university-chicago-cad',
-    'https://oi.uchicago.edu/research/publications/demotic-dictionary-oriental-institute-university-chicago',
-    'https://oi.uchicago.edu/research/publications/hittite-dictionary-oriental-institute-university-chicago-chd',
-    'https://oi.uchicago.edu/research/publications/chicago-hittite-dictionary-supplements-chds',
-    'https://oi.uchicago.edu/research/publications/late-antique-and-medieval-islamic-near-east-lamine',
-    'https://oi.uchicago.edu/research/publications/materials-assyrian-dictionary',
-    'https://oi.uchicago.edu/research/publications/materials-and-studies-kassite-history-mskh',
-    'https://oi.uchicago.edu/research/publications/oriental-institute-communications-oic',
-    'https://oi.uchicago.edu/research/publications/oriental-institute-digital-archives-oida',
-    'https://oi.uchicago.edu/research/oimp',
-    'https://oi.uchicago.edu/research/publications/oriental-institute-nubian-expedition-oine',
-    'https://oi.uchicago.edu/research/publications/oriental-institute-publications-oip',
-    'https://oi.uchicago.edu/research/publications/oriental-institute-seminars-ois',
-    'https://oi.uchicago.edu/research/publications/studies-ancient-oriental-civilization-saoc',
-    'https://oi.uchicago.edu/research/publications/lost-egypt',
-    'https://oi.uchicago.edu/research/publications/miscellaneous-publications'
-]
+#Dicitionary of each catalog's publications 
+request_urls =\
+    {'AS':  'https://oi.uchicago.edu/research/publications/assyriological-studies', 
+    'CAD':  'https://oi.uchicago.edu/research/publications/assyrian-dictionary-oriental-institute-university-chicago-cad',
+    'CDD':  'https://oi.uchicago.edu/research/publications/demotic-dictionary-oriental-institute-university-chicago',
+    'CHD':  'https://oi.uchicago.edu/research/publications/hittite-dictionary-oriental-institute-university-chicago-chd',
+    'CHDS': 'https://oi.uchicago.edu/research/publications/chicago-hittite-dictionary-supplements-chds',
+    'LAM':  'https://oi.uchicago.edu/research/publications/late-antique-and-medieval-islamic-near-east-lamine',
+    'MAD':  'https://oi.uchicago.edu/research/publications/materials-assyrian-dictionary',
+    'MKSH': 'https://oi.uchicago.edu/research/publications/materials-and-studies-kassite-history-mskh',
+    'OIC':  'https://oi.uchicago.edu/research/publications/oriental-institute-communications-oic',
+    'OIDA': 'https://oi.uchicago.edu/research/publications/oriental-institute-digital-archives-oida',
+    'OIMP': 'https://oi.uchicago.edu/research/oimp',
+    'OINE': 'https://oi.uchicago.edu/research/publications/oriental-institute-nubian-expedition-oine',
+    'OIP':  'https://oi.uchicago.edu/research/publications/oriental-institute-publications-oip',
+    'OIS':  'https://oi.uchicago.edu/research/publications/oriental-institute-seminars-ois',
+    'SAOC': 'https://oi.uchicago.edu/research/publications/studies-ancient-oriental-civilization-saoc',
+    'LE':   'https://oi.uchicago.edu/research/publications/lost-egypt',
+    'MIS':  'https://oi.uchicago.edu/research/publications/miscellaneous-publications'
+    }
 
 
 OIC_ROOT = 'https://oi.uchicago.edu'
 
-def main(journal_key=0):
+def main():
     #Looping through each catalog to add the download links and metadata to a dictionary
-    for i, url in enumerate(request_urls):
+    for catalog, url in request_urls.items():
         try:
-            if i == 2:
+            if catalog == 'CDD':
                 continue
             else:
                 elem = fetchPageHTML(url)
@@ -48,7 +48,11 @@ def main(journal_key=0):
         soup = BeautifulSoup(elem.text, 'lxml')   #Parsing the catalog's webpage using BeautifulSoup
 
         #Parsing for dictionary catalogs
-        if i == 1 or i == 3 or i == 15:
+        if catalog == 'CAD' or catalog == 'CHD' or catalog == 'LE':
+
+            titleContainer = soup.find(class_='subtitle')
+
+            titleText = titleContainer.text
 
             catContainer = soup.find(class_='catalog')
 
@@ -59,11 +63,10 @@ def main(journal_key=0):
             for pub in pubEntry:
                 print(url)
 
-                print(parse_Pub_Dict(pub))
+                print(parsePubDict(pub, titleText))
 
         #Parsing for journal catalogs
         else:
-            journal_key += 1
 
             catContainer = soup.find(class_='content-inner-left')
 
@@ -74,7 +77,7 @@ def main(journal_key=0):
                 #Testing to make sure pub is a <li> Tag and not an empty string
                 if not isinstance(pub, Tag):
                     continue
-                metadata = parse_Pub_Jour(pub, journal_key)
+                metadata = parsePubJour(pub, catalog)
 
                 if metadata is None:
                     continue
@@ -86,13 +89,9 @@ def main(journal_key=0):
 
                 metadata['url'] = downloadLink.get('href', None)
                 print(metadata)
-        '''
-        #Serializing download_dict to create a JSON file
-        with open("data_file.json", "w") as write_file:
-            json.dump(download_dict, write_file)
-        '''
+
 #Parsing the journal and miscelleanous publications for metadata at the bottom of webpage
-def parse_Pub_Jour(pub, journal_key):
+def parsePubJour(pub, catalog):
     pubLinks = pub.find_all('a')
     #Link should only be the link to the publication webpage
     detailLink = pubLinks[0].get('href', None)
@@ -110,6 +109,10 @@ def parse_Pub_Jour(pub, journal_key):
 
     pubContainer = pubSoup.find(class_='content-inner-left')
 
+    subTitleSoup = pubContainer.find(class_='subtitle')
+
+    titleSoup = subTitleSoup.find('cite')
+
     if pubContainer is None:
         return None
     #Metadata list is the last unordered list on the webpage
@@ -118,9 +121,10 @@ def parse_Pub_Jour(pub, journal_key):
     metadata = dataList.find_all('li')
 
     #CHDS metadata dictionary
-    if journal_key == 2:
+    if catalog == 'CHDS':
         if metadata[2].text[0:4] == 'ISBN':
             return {
+            'title': titleSoup.text,
             'series': metadata[0].text,
             'publicationInfo': metadata[1].text,
             'isbnNumber': metadata[2].text,
@@ -128,22 +132,25 @@ def parse_Pub_Jour(pub, journal_key):
             }
         else:
             return {
+            'title': titleSoup.text,
             'series': metadata[1].text,
             'publicationInfo': metadata[2].text,
             'isbnNumber': metadata[3].text,
             'extent': metadata[4].text
             }
     #OIDA metadata dictionary
-    elif journal_key == 7:
+    elif catalog == 'OIDA':
         return {
+        'title': titleSoup.text,
         'series': metadata[0].text,
         'publicationInfo': metadata[1].text,
         'extent': metadata[2].text
         }
-    #OIMP and OIS metadata dictionary
-    elif journal_key == 8  or journal_key == 10:
+    #OIMP and OIP metadata dictionary
+    elif catalog == 'OIMP'  or catalog== 'OIP':
         if len(metadata) == 2 or len(metadata) == 3:
             return {
+                'title': titleSoup.text,
                 'publicationInfo': metadata[0],
                 'extent': metadata[1]
             }
@@ -151,28 +158,28 @@ def parse_Pub_Jour(pub, journal_key):
             return None
         else:
             return {
+                'title': titleSoup.text,
                 'series': metadata[0].text,
                 'publicationInfo': metadata[1].text,
-                'isbnNumber(hardbook)': metadata[2].text,
-                'isbnNumber(ebook)': metadata[3].text,
+                'isbnNumber': [metadata[2].text, metadata[3].text],
                 'extent': metadata[4].text
             }
 
     #OIS metadata dictionary(Sometimes series firsts and sometimes it's last in the list)
-    elif journal_key == 11:
+    elif catalog == "OIS":
         return {
+            'title': titleSoup.text,
             'series': metadata[3].text,
             'publicationInfo': metadata[0].text,
             'isbnNumber': metadata[1].text,
             'extent': metadata[2].text
             }
     #Miscellaneous metadata dictionary
-    elif journal_key == 13:
+    elif catalog == 'MIS':
         return {
-            'title': metadata[0].text,
+            'title': titleSoup.text,
             'publicationInfo': metadata[1].text,
-            'isbnNumber-13': metadata[3].text,
-            'isbnNumber-10': metadata[4].text,
+            'isbnNumber': [metadata[3].text, metadata[4].text],
             'extent': metadata[2].text
         }
     #Some journals don't have ISBN metadata
@@ -181,6 +188,7 @@ def parse_Pub_Jour(pub, journal_key):
             return None
         elif metadata[2].text[0:4] == 'ISBN':
             return {
+            'title': titleSoup.text,
             'series': metadata[0].text,
             'publicationInfo': metadata[1].text,
             'isbnNumber': metadata[2].text,
@@ -188,19 +196,21 @@ def parse_Pub_Jour(pub, journal_key):
             }
         else:
             return {
+            'title': titleSoup.text,
             'series': metadata[0].text,
             'publicationInfo': metadata[1].text,
             'extent': metadata[2].text
             }
 
 #Parsing Dictionary catalogs
-def parse_Pub_Dict(pub):
+def parsePubDict(pub, titleText):
     pub_tds = pub.find_all('td')
     metadata = {
+        'title': titleText,
         'Volume': pub_tds[0].text,
         'publicationInfo': pub_tds[2].text,
         'isbnNumber': pub_tds[3].text,
-        'Extent': pub_tds[1].text
+        'extent': pub_tds[1].text
     }
     downloadLink = pub.find('a', class_= "publication ss-standard ss-download btn")
     #Conditional if there is no download link for publication
