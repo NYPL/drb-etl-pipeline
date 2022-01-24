@@ -61,4 +61,4 @@ jobs:
           SLACK_MESSAGE: 'https://nypl.github.io/drb-etl-pipeline'
           SLACK_TITLE: DRB Pipeline Test Results
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_USERNAME: drbpipeBot
+          SLACK_USERNAME: nyplorgBot

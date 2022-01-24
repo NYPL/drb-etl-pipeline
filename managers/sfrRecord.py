@@ -25,8 +25,6 @@ class SFRRecordManager:
         self.work = Work(uuid=uuid4(), editions=[])
 
     def mergeRecords(self):
-        existingIDs = {}
-
         dcdwUUIDs = set()
         for edition in self.work.editions:
             dcdwUUIDs.update(edition.dcdw_uuids)
@@ -40,14 +38,27 @@ class SFRRecordManager:
 
         matchedWorks.sort(key=lambda x: x[1])
 
+        allIdentifiers = self.work.identifiers
+
         for edition in self.work.editions:
-            edition.identifiers = self.dedupeIdentifiers(edition.identifiers, existingIDs)
+            allIdentifiers.extend(edition.identifiers)
 
             for item in edition.items:
-                item.identifiers = self.dedupeIdentifiers(item.identifiers, existingIDs)
+                allIdentifiers.extend(item.identifiers)
                 item.links = self.dedupeLinks(item.links)
 
-        self.work.identifiers = self.dedupeIdentifiers(self.work.identifiers, existingIDs)
+        print('deduping indentifiers')
+        cleanIdentifiers = self.dedupeIdentifiers(allIdentifiers)
+
+        self.seenIdentifiers = {}
+
+        self.assignIdentifierIDs(cleanIdentifiers, self.work.identifiers)
+
+        for edition in self.work.editions:
+            self.assignIdentifierIDs(cleanIdentifiers, edition.identifiers)
+
+            for item in edition.items:
+                self.assignIdentifierIDs(cleanIdentifiers, item.identifiers)
 
         if len(matchedWorks) > 0:
             self.work.date_created = matchedWorks[0][1]
@@ -55,40 +66,24 @@ class SFRRecordManager:
 
         self.work = self.session.merge(self.work)
 
-        return [w[0] for w in matchedWorks]
+        return [w[0] for w in matchedWorks[1:]]
 
-    def dedupeIdentifiers(self, identifiers, existingIDs):
-        queryGroups = defaultdict(list)
-        cleanIdentifiers = set()
+    def dedupeIdentifiers(self, identifiers):
+        queryGroups = defaultdict(set)
+        cleanIdentifiers = {}
 
         for iden in identifiers:
-            if existingIDs.get((iden.authority, iden.identifier), None):
-                cleanIdentifiers.add(existingIDs[(iden.authority, iden.identifier)])
-                continue
-
-            queryGroups[iden.authority].append(iden)
+            queryGroups[iden.authority].add(iden)
 
         for authority, identifiers in queryGroups.items():
-            idenNos = {i.identifier: i for i in identifiers}
-
+            idenNos = [i.identifier for i in identifiers]
             for matchedID in self.session.query(Identifier)\
-                .filter(Identifier.identifier.in_(idenNos.keys()))\
+                .filter(Identifier.identifier.in_(idenNos))\
                 .filter(Identifier.authority == authority)\
                 .all():
-                try:
-                    newIden = idenNos[matchedID.identifier]
-                    newIden.id = matchedID.id
-                    cleanIdentifiers.add(newIden)
-                    existingIDs[(newIden.authority, newIden.identifier)] = newIden
-                    del idenNos[matchedID.identifier]
-                except KeyError:
-                    pass
+                cleanIdentifiers[(authority, matchedID.identifier)] = matchedID.id
 
-            for _, newIden in idenNos.items():
-                cleanIdentifiers.add(newIden)
-                existingIDs[(newIden.authority, newIden.identifier)] = newIden
-
-        return list(cleanIdentifiers)
+        return cleanIdentifiers
 
     def dedupeLinks(self, links):
         cleanLinks = set()
@@ -104,7 +99,27 @@ class SFRRecordManager:
         
         return list(cleanLinks)
 
+    def assignIdentifierIDs(self, existingIDs, identifiers):
+        for i in range(len(identifiers)):
+            iden = identifiers[i]
+
+            try:
+                seenID = self.seenIdentifiers[(iden.authority, iden.identifier)]
+                identifiers[i] = seenID
+                continue
+            except KeyError:
+                pass
+
+            try:
+                existingID = existingIDs[(iden.authority, iden.identifier)]
+                iden.id = existingID
+            except KeyError:
+                pass
+
+            self.seenIdentifiers[(iden.authority, iden.identifier)] = iden
+
     def buildEditionStructure(self, records, editions):
+        logger.debug('Building Edition Structure')
         recordDict = {r.uuid: r for r in records}
 
         editionRecs = [] 
@@ -117,6 +132,7 @@ class SFRRecordManager:
 
             workRecs = workRecs - set(edRecs)
 
+        logger.debug('Edition Structure Complete')
         return editionRecs, workRecs
 
     def buildWork(self, records, editions):

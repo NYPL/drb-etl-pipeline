@@ -113,7 +113,7 @@ class ClassifyManager:
             [str] -- A string of XML data comprising of the body of the
             Classify response.
         """
-        classifyResp = requests.get(self.query)
+        classifyResp = requests.get(self.query, timeout=5)
 
         classifyResp.raise_for_status()
 

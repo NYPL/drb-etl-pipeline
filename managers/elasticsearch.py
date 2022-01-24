@@ -1,6 +1,8 @@
 import os
 
+from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import ConflictError
+from elasticsearch.helpers import bulk
 from elasticsearch_dsl import connections, Search, Index
 
 from model import ESWork
@@ -25,6 +27,10 @@ class ElasticsearchManager:
             max_retries=3
         )
 
+        self.es = Elasticsearch(
+            hosts=['{}:{}'.format(host, port)]
+        )
+
     def createElasticSearchIndex(self):
         esIndex = Index(self.index)
         if esIndex.exists() is False:
@@ -34,32 +40,34 @@ class ElasticsearchManager:
                 'ElasticSearch index {} already exists'.format(self.index)
             )
 
+    def saveWorkRecords(self, works):
+        print('Saving ES Work Records')
+
+        def upsertGen():
+            for work in works:
+                yield {
+                    '_op_type': 'update',
+                    '_index': self.index,
+                    '_id': work.uuid,
+                    '_type': 'doc',
+                    'doc': work.to_dict(),
+                    'doc_as_upsert': True
+                }
+
+        saveRes = bulk(self.es, upsertGen())
+        print(saveRes)
+
     def deleteWorkRecords(self, uuids):
-        for uuid in uuids:
-            retries = 0
+        print('Deleting ES Work Records')
+        
+        def deleteGen():
+            for uuid in uuids:
+                yield {
+                    '_op_type': 'delete',
+                    '_index': self.index,
+                    '_id': uuid,
+                    '_type': 'doc'
+                }
 
-            while True:
-                try:
-                    logger.debug('Deleting work {}'.format(uuid))
-
-                    workSearch = Search(index=self.index)\
-                        .query('match', uuid=uuid)
-
-                    workSearch.params(
-                        refresh=True,
-                        wait_for_active_shards='all'
-                    )
-
-                    workSearch.delete()
-
-                    break
-                except ConflictError as e:
-                    if retries >= 2:
-                        logger.error('Unable to delete work {}'.format(uuid))
-                        raise e
-
-                    logger.warning(
-                        'Unable to delete work {}. Retrying'.format(uuid)
-                    )
-
-                    retries += 1
+        deleteRes = bulk(self.es, deleteGen(), raise_on_error=False)
+        print(deleteRes)
