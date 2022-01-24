@@ -48,7 +48,7 @@ def main():
         soup = BeautifulSoup(elem.text, 'lxml')   #Parsing the catalog's webpage using BeautifulSoup
 
         #Parsing for dictionary catalogs
-        if catalog == 'CAD' or catalog == 'CHD' or catalog == 'LE':
+        if catalog in ['CAD', 'CHD', 'LE']:
 
             titleContainer = soup.find(class_='subtitle')
 
@@ -147,7 +147,7 @@ def parsePubJour(pub, catalog):
         'extent': metadata[2].text
         }
     #OIMP and OIP metadata dictionary
-    elif catalog == 'OIMP'  or catalog== 'OIP':
+    elif catalog in ['OIMP', 'OIP']:
         if len(metadata) == 2 or len(metadata) == 3:
             return {
                 'title': titleSoup.text,
