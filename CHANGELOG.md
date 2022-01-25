@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.9.6
+## 2022-01-25 -- v0.9.6
 ### Fixed
 - Improved handling of Project MUSE records
 
