@@ -26,6 +26,7 @@ class SFRRecordManager:
 
     def mergeRecords(self):
         dcdwUUIDs = set()
+
         for edition in self.work.editions:
             dcdwUUIDs.update(edition.dcdw_uuids)
 

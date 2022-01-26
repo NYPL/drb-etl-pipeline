@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from math import ceil
 import re
 from sqlalchemy.exc import DataError
+from sqlalchemy.orm.exc import StaleDataError
 
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
@@ -97,8 +98,14 @@ class ClusterProcess(CoreProcess):
         clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
         dbWork, deletedUUIDs = self.createWorkFromEditions(clusteredEditions, instances)
 
-        # This is necessary to assign postgres row ids within the work object
-        self.session.flush()
+        try:
+            self.session.flush()
+        except (DataError, StaleDataError) as e:
+            self.session.rollback()
+            logger.error('Unable to cluster {}'.format(rec))
+            logger.debug(e)
+
+            raise ClusterError('Malformed DCDW Record Received')
 
         self.updateMatchedRecordsStatus(matchedIDs)
 
@@ -150,7 +157,7 @@ class ClusterProcess(CoreProcess):
     def queryIdens(self, idens):
         matchedIDs = set()
         checkedIdens = set()
-        
+
         checkIdens = idens
 
         iterations = 0
