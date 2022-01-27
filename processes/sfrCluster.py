@@ -67,6 +67,7 @@ class ClusterProcess(CoreProcess):
             except ClusterError:
                 logger.warning('Skipping record {}'.format(rec))
                 self.updateMatchedRecordsStatus([rec.id])
+                self.session.commit()
 
             if len(indexingWorks) >= 50:
                 self.updateElasticSearch(indexingWorks, deletingWorks)
@@ -76,8 +77,6 @@ class ClusterProcess(CoreProcess):
                 deletingWorks = set()
 
                 self.session.commit()
-
-                break
 
         # Run index/delete methods again for final batch
         self.updateElasticSearch(indexingWorks, deletingWorks)
