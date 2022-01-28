@@ -76,7 +76,7 @@ class KMeansManager:
             'place': 1.0,
             'publisher': 1.0,
             'edition': 1.0,
-            'pubDate': 1.25
+            'pubDate': 1.75
         }
 
         return Pipeline([

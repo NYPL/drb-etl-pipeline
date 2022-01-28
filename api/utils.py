@@ -21,6 +21,16 @@ class APIUtils():
         'webpub_json': ['application/webpub+json']
     }
 
+    SOURCE_PRIORITY = {
+        'gutenberg': 1,
+        'doab': 2,
+        'muse': 3,
+        'met': 4,
+        'hathitrust': 5,
+        'oclc': 6,
+        'nypl': 7
+    }
+
     @staticmethod
     def normalizeQueryParams(params):
         paramDict = params.to_dict(flat=False)
@@ -110,21 +120,23 @@ class APIUtils():
             outWorks = []
             workDict = {str(work.uuid): work for work in works}
 
-            for workUUID, editionIds in identifiers:
+            for workUUID, editionIds, highlights in identifiers:
                 work = workDict.get(workUUID, None)
 
                 if work is None:
                     continue
 
-                outWorks.append(
-                    cls.formatWork(
-                        work,
-                        editionIds,
-                        showAll,
-                        formats=formats,
-                        reader=reader
-                    )
+                outWork = cls.formatWork(
+                    work,
+                    editionIds,
+                    showAll,
+                    formats=formats,
+                    reader=reader
                 )
+
+                cls.addWorkMeta(outWork, highlights=highlights)
+
+                outWorks.append(outWork)
 
             return outWorks
         else:
@@ -166,6 +178,12 @@ class APIUtils():
         )
 
         return workDict
+
+    @classmethod
+    def addWorkMeta(cls, work, **kwargs):
+        work['_meta'] = {
+            metaField: metaValue for metaField, metaValue in kwargs.items()
+        }
 
     @classmethod
     def formatEditionOutput(
@@ -243,6 +261,9 @@ class APIUtils():
 
             editionDict['items'].append(itemDict)
 
+        editionDict['items']\
+            .sort(key=lambda x: cls.SOURCE_PRIORITY[x['source']])
+
         if records is not None:
             itemsByLink = {}
             for item in editionDict['items']:
@@ -265,11 +286,11 @@ class APIUtils():
     @staticmethod
     def sortByMediaType(link):
         scores = {
-            'application/epub+xml': 1, 'application/epub+zip': 1,
+            'application/webpub+json': 1,
             'text/html': 2,
             'application/pdf': 3,
             'application/html+edd': 4,
-            'application/webpub+json': 5
+            'application/epub+xml': 5, 'application/epub+zip': 5,
         }
 
         return scores[link['mediaType']]

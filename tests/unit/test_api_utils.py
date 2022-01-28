@@ -110,13 +110,18 @@ class TestAPIUtils:
             id='it1',
             links=[testLink],
             rights=[testRights],
-            physical_location={'name': 'test'}
+            physical_location={'name': 'test'},
+            source='hathitrust'
         )
 
     @pytest.fixture
     def testWebpubItem(self, MockDBObject, testWebpubLink):
         return MockDBObject(
-            id='it2', links=[testWebpubLink], rights=[], physical_location={}
+            id='it2',
+            links=[testWebpubLink],
+            rights=[],
+            physical_location={},
+            source='gutenberg'
         )
 
     @pytest.fixture
@@ -134,7 +139,9 @@ class TestAPIUtils:
     @pytest.fixture
     def testWork(self, MockDBObject, testEdition):
         return MockDBObject(
-            uuid='testUUID', title='Test Title', editions=[testEdition]
+            uuid='testUUID',
+            title='Test Title',
+            editions=[testEdition],
         )
 
     def test_normalizeQueryParams(self, mocker):
@@ -256,18 +263,30 @@ class TestAPIUtils:
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
         mockFormat.side_effect = ['formattedWork1', 'formattedWork2']
 
+        mockAddMeta = mocker.patch.object(APIUtils, 'addWorkMeta')
+
         testWorks = [
             mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2')
         ]
 
         outWorks = APIUtils.formatWorkOutput(
-            testWorks, [('uuid1', 1), ('uuid2', 2), ('uuid3', 3)]
+            testWorks,
+            [
+                ('uuid1', 1, 'highlight1'),
+                ('uuid2', 2, 'highlight2'),
+                ('uuid3', 3, 'highlight3')
+            ]
         )
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
         mockFormat.assert_has_calls([
             mocker.call(testWorks[0], 1, True, formats=None, reader=None),
             mocker.call(testWorks[1], 2, True, formats=None, reader=None)
+        ])
+
+        mockAddMeta.assert_has_calls([
+            mocker.call('formattedWork1', highlights='highlight1'),
+            mocker.call('formattedWork2', highlights='highlight2')
         ])
 
     def test_formatWork_showAll(self, testWork, mocker):
@@ -385,7 +404,8 @@ class TestAPIUtils:
             }],
             'physical_location': {'name': 'test'},
             'item_id': 'it1',
-            'location': 'test'
+            'location': 'test',
+            'source': 'hathitrust'
         }
 
         mockRecFormat.assert_has_calls([
@@ -399,11 +419,11 @@ class TestAPIUtils:
         formattedEdition = APIUtils.formatEdition(testEdition, reader='v1')
 
         assert len(formattedEdition['items']) == 2
-        assert formattedEdition['items'][0]['item_id'] == 'it1'
-        assert formattedEdition['items'][0]['links'][0]['mediaType'] ==\
-            'application/epub+xml'
-        assert formattedEdition['items'][1]['links'][0]['flags']['reader'] is\
+        assert formattedEdition['items'][0]['links'][0]['flags']['reader'] is\
             False
+        assert formattedEdition['items'][1]['item_id'] == 'it1'
+        assert formattedEdition['items'][1]['links'][0]['mediaType'] ==\
+            'application/epub+xml'
 
     def test_formatEdition_v2_reader_flag(self, testEdition, testWebpubItem):
         testEdition.items.append(testWebpubItem)
@@ -411,10 +431,10 @@ class TestAPIUtils:
         formattedEdition = APIUtils.formatEdition(testEdition, reader='v2')
 
         assert len(formattedEdition['items']) == 2
-        assert formattedEdition['items'][1]['item_id'] == 'it2'
-        assert formattedEdition['items'][1]['links'][0]['mediaType'] ==\
+        assert formattedEdition['items'][0]['item_id'] == 'it2'
+        assert formattedEdition['items'][0]['links'][0]['mediaType'] ==\
             'application/webpub+json'
-        assert formattedEdition['items'][0]['links'][0]['flags']['reader'] is\
+        assert formattedEdition['items'][1]['links'][0]['flags']['reader'] is\
             False
 
     def test_formatRecord(self, testRecord, mocker):
@@ -549,6 +569,14 @@ class TestAPIUtils:
         assert APIUtils.validatePassword('testError', testHash, b'testSalt')\
             is False
 
+    def test_addWorkMeta(self):
+        testWork = {}
+
+        APIUtils.addWorkMeta(testWork, field1='value1', field2=['value2'])
+
+        assert testWork['_meta']['field1'] == 'value1'
+        assert testWork['_meta']['field2'] == ['value2']
+
     def test_sortByMediaType(self):
         testList = [
             {'id': 2, 'mediaType': 'text/html'},
@@ -561,8 +589,8 @@ class TestAPIUtils:
 
         shuffle(testList)
         testList.sort(key=APIUtils.sortByMediaType)
-        assert [i['id'] for i in testList] == [1, 1, 2, 3, 4, 5]
+        assert [i['id'] for i in testList] == [5, 2, 3, 4, 1, 1]
 
         shuffle(testList)
         testList.sort(key=APIUtils.sortByMediaType)
-        assert [i['id'] for i in testList] == [1, 1, 2, 3, 4, 5]
+        assert [i['id'] for i in testList] == [5, 2, 3, 4, 1, 1]

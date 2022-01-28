@@ -1,19 +1,20 @@
 import json
 import os
+from typing import NoReturn
 
 
 class WebpubManifest:
     def __init__(self, source, sourceType):
-        self.metadata = {'@type': 'https://schema.org/Book'}
-        self.links = [{'href': source, 'type': sourceType, 'rel': 'alternate'}]
-        self.readingOrder = []
-        self.resources = set()
-        self.tableOfContents = []
+        self.metadata: dict = {'@type': 'https://schema.org/Book'}
+        self.links: list = [{'href': source, 'type': sourceType, 'rel': 'alternate'}]
+        self.readingOrder: list = []
+        self.resources: set = set()
+        self.tableOfContents: list = []
 
         self.openSection = None
 
     # TODO validate kwargs against schema.org/Book
-    def addMetadata(self, dcdwRecord, conformsTo=None):
+    def addMetadata(self, dcdwRecord: object, conformsTo=None) -> NoReturn:
         self.metadata['title'] = dcdwRecord.title
 
         if len(dcdwRecord.authors) > 0:
@@ -29,7 +30,7 @@ class WebpubManifest:
         if conformsTo:
             self.metadata['conformsTo'] = conformsTo
 
-    def addSection(self, sectionTitle, sectionURL):
+    def addSection(self, sectionTitle: str, sectionURL: str) -> NoReturn:
         if self.openSection:
             self.tableOfContents.append(self.openSection)
 
@@ -39,14 +40,14 @@ class WebpubManifest:
             'children': []
         }
 
-    def closeSection(self):
+    def closeSection(self) -> NoReturn:
         if self.openSection:
             self.tableOfContents.append(self.openSection)
 
         self.openSection = None
 
     # TODO Make it possible to add subsections iteratively
-    def addChapter(self, link, title, subsections=None):
+    def addChapter(self, link: str, title: str, subsections=None) -> NoReturn:
         component = {'href': link, 'title': title}
         tocEntry = component.copy()
 
@@ -61,17 +62,17 @@ class WebpubManifest:
         self.addReadingOrder(component)
         self.addResource(component['href'])
 
-    def addReadingOrder(self, component):
+    def addReadingOrder(self, component: dict) -> NoReturn:
         component['type'] = 'application/pdf'
 
         self.readingOrder.append(component)
 
-    def addResource(self, href):
+    def addResource(self, href: str) -> NoReturn:
         rootHref, *_ = href.split('#')
 
         self.resources.add(rootHref)
 
-    def toDict(self):
+    def toDict(self) -> dict:
         return {
             'context': 'https://{}-s3.amazonaws.com/manifests/context.jsonld'.format(os.environ['FILE_BUCKET']),
             'metadata': self.metadata,
@@ -84,5 +85,5 @@ class WebpubManifest:
             'toc': self.tableOfContents
         }
 
-    def toJson(self):
+    def toJson(self) -> str:
         return json.dumps(self.toDict())

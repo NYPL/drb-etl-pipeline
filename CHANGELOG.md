@@ -1,10 +1,27 @@
 # CHANGELOG
 
+## 2022-01-25 -- v0.9.6
+### Fixed
+- Improved handling of Project MUSE records
+
+## 2021-11-22 -- v0.9.5
+### Added
+- Tugboat deployments for feature branches
+### Fixed
+- Improved redirect handling in proxy endpoint
+
+## 2021-10-28 -- v0.9.4
+### Fixed
+- Updated order of links for new reader
+
+## 2021-10-04 -- v0.9.3
+### Added
+- ElasticSearch query highlighting
+
 ## 2021-10-04 -- v0.9.2
 ### Added
 - Detect file types in s3 process and specify during storage process
 - `readerVersion` parameter for `/search`, `/work` and `/edition` endpoints to control media types returned
-- ElasticSearch query highlighting
 ### Fixed
 - Improve clustering stability by improving individual error handling
 - Handle relative links from redirects in proxy endpoint

@@ -31,6 +31,8 @@ class TestSearchBlueprint:
                     editions.append(ed)
                 mockMeta = mocker.MagicMock()
                 mockMeta.inner_hits.editions.hits = editions
+                if int(uuid[-1]) % 2 != 0:
+                    mockMeta.highlight = {'field': ['highlight_{}'.format(uuid)]}
                 self.meta = mockMeta
 
         return FakeHit
@@ -121,10 +123,11 @@ class TestSearchBlueprint:
                 page=0, perPage=5
             )
             testResultIds = [
-                ('uuid1', ['ed1', 'ed2']),
-                ('uuid2', ['ed3']),
-                ('uuid3', ['ed4', 'ed5', 'ed6']),
-                ('uuid4', ['ed7']), ('uuid5', ['ed8'])
+                ('uuid1', ['ed1', 'ed2'], {'field': ['highlight_uuid1']}),
+                ('uuid2', ['ed3'], {}),
+                ('uuid3', ['ed4', 'ed5', 'ed6'], {'field': ['highlight_uuid3']}),
+                ('uuid4', ['ed7'], {}),
+                ('uuid5', ['ed8'], {'field': ['highlight_uuid5']})
             ]
             mockDB.fetchSearchedWorks.assert_called_once_with(testResultIds)
             mockUtils['formatAggregationResult'].assert_called_once_with(

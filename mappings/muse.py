@@ -71,6 +71,15 @@ class MUSEMapping(MARCMapping):
         # Extract language code from 008 fixed data field
         self.record.languages = [self.extractLanguage(l) for l in self.record.languages]
 
+        # Extract publication date from 008 fixed field if 264 field is missing
+        if len(self.record.dates) < 1:
+            pubDate = self.source['008'].data[11:15]
+            self.record.dates.append('{}|publication_date'.format(pubDate))
+
+        # If publisher missing, assume JHU
+        if len(self.record.publisher) < 1:
+            self.record.publisher.append('John Hopkins University Press||')
+
         # Clean up subjects to remove spots for missing subheadings
         self.record.subjects = [
             self.cleanUpSubjectHead(s)
@@ -105,8 +114,8 @@ class MUSEMapping(MARCMapping):
         return '||{}'.format(marcData[35:38])
 
     def addHasPartLink(self, url, mediaType, flags):
-        lastItemNo = int(self.record.has_part[0][0])
+        lastItemNo = int(self.record.has_part[-1][0])
 
         self.record.has_part.append(
-            '{}|{}|muse|{}|{}'.format(lastItemNo + 1, url, mediaType, flags)
+            '{}|{}|muse|{}|{}'.format(lastItemNo, url, mediaType, flags)
         )
