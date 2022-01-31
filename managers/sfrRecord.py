@@ -354,11 +354,20 @@ class SFRRecordManager:
             newEd.sub_title = edition['sub_title'].most_common(1)[0][0]
         newEd.alt_titles = [t[0] for t in edition['alt_titles'].most_common()]
 
-        # Set Publication Data
-        pubYearGroup = re.search(r'([0-9]{4})', str(edition['publication_date']))
-        if pubYearGroup:
-            newEd.publication_date = date(year=int(pubYearGroup.group(1)), month=1, day=1)
+        # Set Publication Date
+        def publicationDateCheck(edition):
+            #Exclude dates in the future and dates before the oldest book publisher was founded
+            if edition['publication_date'] > date.today() or edition['publication_date'].year < 1488:
+                return None
+            else:
+                pubYearGroup = re.search(r'([0-9]{4})', str(edition['publication_date']))
+                if pubYearGroup:
+                    publication_date = date(year=int(pubYearGroup.group(1)), month=1, day=1)
+                return publication_date
 
+        newEd.publication_date = publicationDateCheck(edition)
+
+        # Set Publication Place
         newEd.publication_place = edition['publication_place'].most_common(1)[0][0]
 
         # Set Abstract Data
