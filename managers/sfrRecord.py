@@ -252,9 +252,8 @@ class SFRRecordManager:
             except json.decoder.JSONDecodeError:
                 linkFlags = {}
 
-            if linkFlags.get('cover', False) is True:
+            if linkFlags.get('cover', False) is True or 'covers' in uri:
                 editionData['links'].append('{}|{}|{}'.format(uri, linkType, flags))
-
                 continue
 
             itemPos = startPos + int(no)

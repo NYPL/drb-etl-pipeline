@@ -1,10 +1,11 @@
 # CHANGELOG
 
-## Unreleased
+## unreleased -- v0.9.6
 ### Added
 - Method in sfrRecord manager to check for reasonable publication dates for editions
 - Tests for publicationDateCheck method in sfrRecord manager
 ### Fixed
+- Improved handling of Project MUSE records
 - Merged SFR-1415 branch with old branch
 - Tugboat deployment for SFR-1415 branch commmit
 
