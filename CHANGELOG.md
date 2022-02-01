@@ -5,6 +5,9 @@
 - Method in sfrRecord manager to check for reasonable publication dates for editions
 - Tests for publicationDateCheck method in sfrRecord manager
 
+### Fixed
+- Merged SFR-1415 Branch with old
+
 ## 2021-11-22 -- v0.9.5
 ### Added
 - Tugboat deployments for feature branches
