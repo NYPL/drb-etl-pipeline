@@ -1,5 +1,8 @@
 import pytest
 
+import datetime
+from datetime import date, timedelta
+
 from managers import SFRRecordManager
 
 
@@ -248,6 +251,37 @@ class TestSFRRecordManager:
         assert testEditionData['items'][0]['identifiers'] == set(['1|test'])
         assert testEditionData['items'][1]['identifiers'] == set(['1|test'])
         assert testEditionData['items'][0]['physical_location'] == {'code': 'tst', 'name': 'Test Location'}
+
+    def test_publicationDateCheck(self):
+        #Tests for correct date ranges
+        testEdition = SFRRecordManager.createEmptyEditionRecord()
+        testEdition['publication_date'] == date(1900, 1, 1)
+
+        testEdition2 = SFRRecordManager.createEmptyEditionRecord()
+        testEdition2['publication_date'] == date.today()
+
+        testEdition3 = SFRRecordManager.createEmptyEditionRecord()
+        testEdition3['publication_date'] == date(1488, 1, 1)
+
+        #Tests for incorrect date ranges
+        testEdition4 = SFRRecordManager.createEmptyEditionRecord()
+        testEdition4['publication_date'] == date(1300, 1, 1)
+
+        testEdition5 = SFRRecordManager.createEmptyEditionRecord()
+        testEdition5['publication_date'] == datetime.timedelta(days=1)
+
+        #Calling class method with each tests as parameters
+        testPubDateCheck = SFRRecordManager.publicationDateCheck(testEdition)
+        testPubDateCheck2 = SFRRecordManager.publicationDateCheck(testEdition2)
+        testPubDateCheck3 = SFRRecordManager.publicationDateCheck(testEdition3)
+        testPubDateCheck4 = SFRRecordManager.publicationDateCheck(testEdition4)
+        testPubDateCheck5 = SFRRecordManager.publicationDateCheck(testEdition5)
+
+        assert testPubDateCheck.year == 1900
+        assert testPubDateCheck2.year == date.today().year
+        assert testPubDateCheck3.year == 1488
+        assert testPubDateCheck4 == None
+        assert testPubDateCheck5 == None
 
     def test_setPipeDelimitedData(self, mocker):
         mockParse = mocker.patch.object(SFRRecordManager, 'parseDelimitedEntry')
