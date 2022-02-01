@@ -444,7 +444,7 @@ class SFRRecordManager:
         return newItem
 
     @staticmethod
-    #Exclude dates in the future and dates before the oldest book publisher was founded
+    #Exclude dates in the future and dates before the oldest book publisher company was founded
     def publicationDateCheck(edition):
         if edition['publication_date'] > datetime.utcnow() or edition['publication_date'].year < 1488:
             return None
