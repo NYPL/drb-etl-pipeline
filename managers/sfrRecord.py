@@ -1,5 +1,6 @@
 from collections import Counter, defaultdict
 from datetime import date
+import datetime
 import json
 from Levenshtein import jaro_winkler
 import pycountry
@@ -355,17 +356,7 @@ class SFRRecordManager:
         newEd.alt_titles = [t[0] for t in edition['alt_titles'].most_common()]
 
         # Set Publication Date
-        def publicationDateCheck(edition):
-            #Exclude dates in the future and dates before the oldest book publisher was founded
-            if edition['publication_date'] > date.today() or edition['publication_date'].year < 1488:
-                return None
-            else:
-                pubYearGroup = re.search(r'([0-9]{4})', str(edition['publication_date']))
-                if pubYearGroup:
-                    publication_date = date(year=int(pubYearGroup.group(1)), month=1, day=1)
-                return publication_date
-
-        newEd.publication_date = publicationDateCheck(edition)
+        newEd.publication_date = SFRRecordManager.publicationDateCheck(edition)
 
         # Set Publication Place
         newEd.publication_place = edition['publication_place'].most_common(1)[0][0]
@@ -451,6 +442,17 @@ class SFRRecordManager:
         newItem.contributors = self.agentParser(item['contributors'], ['name', 'viaf', 'lcnaf', 'role'])
 
         return newItem
+
+    @staticmethod
+    #Exclude dates in the future and dates before the oldest book publisher was founded
+    def publicationDateCheck(edition):
+        if edition['publication_date'] > datetime.utcnow() or edition['publication_date'].year < 1488:
+            return None
+        else:
+            pubYearGroup = re.search(r'([0-9]{4})', str(edition['publication_date']))
+            if pubYearGroup:
+                publication_date = date(year=int(pubYearGroup.group(1)), month=1, day=1)
+            return publication_date
 
     @staticmethod
     def setPipeDelimitedData(data, fields, dType=None, dParser=None):
