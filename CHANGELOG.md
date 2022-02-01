@@ -6,7 +6,7 @@
 - Tests for publicationDateCheck method in sfrRecord manager
 
 ### Fixed
-- Merged SFR-1415 Branch with old
+- Merged SFR-1415 branch with old branch
 
 ## 2021-11-22 -- v0.9.5
 ### Added
