@@ -8,6 +8,7 @@
 - Improved handling of Project MUSE records
 - Merged SFR-1415 branch with old branch
 - Tugboat deployment for SFR-1415 branch commmit
+- Formatting for pubDateCheck tests methods
 
 ## 2021-11-22 -- v0.9.5
 ### Added
