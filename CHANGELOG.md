@@ -1,9 +1,11 @@
 # CHANGELOG
 
-## unreleased -- v0.9.6
+## unreleased -- v0.9.7
 ### Added
 - Method in sfrRecord manager to check for reasonable publication dates for editions
 - Tests for publicationDateCheck method in sfrRecord manager
+
+## 2022-01-25 -- v0.9.6
 ### Fixed
 - Improved handling of Project MUSE records
 - Merged SFR-1415 branch with old branch
