@@ -1,5 +1,7 @@
 import pytest
 
+from datetime import datetime, timedelta
+
 from managers import SFRRecordManager
 
 
@@ -248,6 +250,53 @@ class TestSFRRecordManager:
         assert testEditionData['items'][0]['identifiers'] == set(['1|test'])
         assert testEditionData['items'][1]['identifiers'] == set(['1|test'])
         assert testEditionData['items'][0]['physical_location'] == {'code': 'tst', 'name': 'Test Location'}
+
+    #Test for publication date between 1488-Present
+    def test_publicationDateCheck1(self):
+        testEdition = SFRRecordManager.createEmptyEditionRecord()
+        testEdition['publication_date'] = datetime(1900, 1, 1)
+
+        testPubDateCheck = SFRRecordManager.publicationDateCheck(testEdition)
+
+        assert testPubDateCheck.year == 1900
+
+    #Test for publication date with present date
+    def test_publicationDateCheck2(self):
+        testEdition2 = SFRRecordManager.createEmptyEditionRecord()
+        testEdition2['publication_date'] = datetime.utcnow()
+
+        testPubDateCheck2 = SFRRecordManager.publicationDateCheck(testEdition2)
+
+        assert testPubDateCheck2.year == datetime.utcnow().year
+    
+    #Test for publication date with earliest year in our date range
+    def test_publicationDateCheck3(self):
+        testEdition3 = SFRRecordManager.createEmptyEditionRecord()
+        testEdition3['publication_date'] = datetime(1488, 1, 1)
+
+        testPubDateCheck3 = SFRRecordManager.publicationDateCheck(testEdition3)
+
+        assert testPubDateCheck3.year == 1488
+
+    #Test for publication date set before our date range(<1488)
+    def test_publicationDateCheck4(self):
+        #Tests for incorrect date ranges
+        testEdition4 = SFRRecordManager.createEmptyEditionRecord()
+        testEdition4['publication_date'] = datetime(1300, 1, 1)
+
+        testPubDateCheck4 = SFRRecordManager.publicationDateCheck(testEdition4)
+
+        assert testPubDateCheck4 == None
+       
+    #Test for publication date set after our date range by at least one day
+    def test_publicationDateCheck5(self):
+        testEdition5 = SFRRecordManager.createEmptyEditionRecord()
+        testEdition5['publication_date'] = datetime.utcnow() + timedelta(1)
+
+        testPubDateCheck5 = SFRRecordManager.publicationDateCheck(testEdition5)
+
+        assert testPubDateCheck5 == None
+    
 
     def test_setPipeDelimitedData(self, mocker):
         mockParse = mocker.patch.object(SFRRecordManager, 'parseDelimitedEntry')
