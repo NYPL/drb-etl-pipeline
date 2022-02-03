@@ -1,7 +1,6 @@
 import pytest
 
-import datetime
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 
 from managers import SFRRecordManager
 
@@ -255,7 +254,7 @@ class TestSFRRecordManager:
     #Test for publication date between 1488-Present
     def test_publicationDateCheck1(self):
         testEdition = SFRRecordManager.createEmptyEditionRecord()
-        testEdition['publication_date'] == date(1900, 1, 1)
+        testEdition['publication_date'] = datetime(1900, 1, 1)
 
         testPubDateCheck = SFRRecordManager.publicationDateCheck(testEdition)
 
@@ -264,16 +263,16 @@ class TestSFRRecordManager:
     #Test for publication date with present date
     def test_publicationDateCheck2(self):
         testEdition2 = SFRRecordManager.createEmptyEditionRecord()
-        testEdition2['publication_date'] == date.today()
+        testEdition2['publication_date'] = datetime.utcnow()
 
         testPubDateCheck2 = SFRRecordManager.publicationDateCheck(testEdition2)
 
-        assert testPubDateCheck2.year == date.today().year
+        assert testPubDateCheck2.year == datetime.utcnow().year
     
     #Test for publication date with earliest year in our date range
     def test_publicationDateCheck3(self):
         testEdition3 = SFRRecordManager.createEmptyEditionRecord()
-        testEdition3['publication_date'] == date(1488, 1, 1)
+        testEdition3['publication_date'] = datetime(1488, 1, 1)
 
         testPubDateCheck3 = SFRRecordManager.publicationDateCheck(testEdition3)
 
@@ -283,16 +282,16 @@ class TestSFRRecordManager:
     def test_publicationDateCheck4(self):
         #Tests for incorrect date ranges
         testEdition4 = SFRRecordManager.createEmptyEditionRecord()
-        testEdition4['publication_date'] == date(1300, 1, 1)
+        testEdition4['publication_date'] = datetime(1300, 1, 1)
 
         testPubDateCheck4 = SFRRecordManager.publicationDateCheck(testEdition4)
 
         assert testPubDateCheck4 == None
        
-    #Test for publication date set after our date range
+    #Test for publication date set after our date range by at least one day
     def test_publicationDateCheck5(self):
         testEdition5 = SFRRecordManager.createEmptyEditionRecord()
-        testEdition5['publication_date'] == datetime.timedelta(days=1)
+        testEdition5['publication_date'] = datetime.utcnow() + timedelta(1)
 
         testPubDateCheck5 = SFRRecordManager.publicationDateCheck(testEdition5)
 

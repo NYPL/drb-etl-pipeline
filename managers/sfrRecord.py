@@ -1,6 +1,5 @@
 from collections import Counter, defaultdict
-from datetime import date
-import datetime
+from datetime import date, datetime
 import json
 from Levenshtein import jaro_winkler
 import pycountry
