@@ -1,10 +1,10 @@
 import csv
 from datetime import datetime
 import gzip
-import json
 import os
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import requests
+from sqlalchemy.exc import ProgrammingError
 
 from managers.db import DBManager
 from .core import CoreProcess
@@ -19,8 +19,8 @@ class DevelopmentSetupProcess(CoreProcess):
         self.adminDBConnection = DBManager(
             user=os.environ['ADMIN_USER'],
             pswd=os.environ['ADMIN_PSWD'],
-            host=os.environ['DB_HOST'],
-            port=os.environ['DB_PORT'],
+            host=os.environ['POSTGRES_HOST'],
+            port=os.environ['POSTGRES_PORT'],
             db='postgres'
         )
         self.initializeDB()
@@ -30,8 +30,8 @@ class DevelopmentSetupProcess(CoreProcess):
     def runProcess(self):
         # Setup database if necessary
         self.generateEngine()
-        self.initializeDatabase()
         self.createSession()
+        self.initializeDatabase()
 
         # Setup ElasticSearch index if necessary
         self.createElasticConnection()
@@ -39,35 +39,43 @@ class DevelopmentSetupProcess(CoreProcess):
 
         # Create rabbit queues
         self.createRabbitConnection()
-        self.createOrConnectQueue(os.environ['OCLC_QUEUE'])
-        self.createOrConnectQueue(os.environ['FILE_QUEUE'])
+        self.createOrConnectQueue(os.environ['OCLC_QUEUE'], os.environ['OCLC_ROUTING_KEY'])
+        self.createOrConnectQueue(os.environ['FILE_QUEUE'], os.environ['FILE_ROUTING_KEY'])
 
         # Populate with set of sample data from sources
         self.fetchHathiSampleData()
 
+        procArgs = ['complete'] + ([None] * 4)
         # FRBRize the fetched data
-        classifyProc = ClassifyProcess('complete', None, None)
+        classifyProc = ClassifyProcess(*procArgs)
         classifyProc.runProcess()
 
-        catalogProc = CatalogProcess('complete', None, None)
+        catalogProc = CatalogProcess(*procArgs)
         catalogProc.runProcess()
 
         # Group the fetched data
-        clusterProc = ClusterProcess('complete', None, None)
+        clusterProc = ClusterProcess(*procArgs)
         clusterProc.runProcess()
         
-
     def initializeDB(self):
         self.adminDBConnection.generateEngine()
         with self.adminDBConnection.engine.connect() as conn:
             conn.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            conn.execute('CREATE DATABASE {}'.format(os.environ['POSTGRES_NAME']))
-            conn.execute('CREATE USER {} WITH PASSWORD \'{}\''.format(
-                os.environ['POSTGRES_USER'], os.environ['POSTGRES_PSWD']
-            ))
-            conn.execute('GRANT ALL PRIVILEGES ON DATABASE {} TO {}'.format(
-                os.environ['POSTGRES_NAME'], os.environ['POSTGRES_USER'])
-            )
+            
+            try:
+                conn.execute('CREATE DATABASE {}'.format(os.environ['POSTGRES_NAME']))
+            except ProgrammingError:
+                pass
+
+            try:
+                conn.execute('CREATE USER {} WITH PASSWORD \'{}\''.format(
+                    os.environ['POSTGRES_USER'], os.environ['POSTGRES_PSWD']
+                ))
+                conn.execute('GRANT ALL PRIVILEGES ON DATABASE {} TO {}'.format(
+                    os.environ['POSTGRES_NAME'], os.environ['POSTGRES_USER'])
+                )
+            except ProgrammingError:
+                pass
 
         self.adminDBConnection.engine.dispose()
 

@@ -26,6 +26,7 @@ class ClusterProcess(CoreProcess):
 
         # ElasticSearch Connection
         self.createElasticConnection()
+        self.createElasticSearchIngestPipeline()
         self.createElasticSearchIndex()
 
     def runProcess(self):

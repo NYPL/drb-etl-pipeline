@@ -31,9 +31,9 @@ class BaseInner(InnerDoc):
 
 
 class PerLanguageField(InnerDoc):
-    language = Keyword(required=True)
+    language = Keyword()
     default = Text(
-        analyzer='default',
+        analyzer='plain_ascii',
         fields={'icu': {'type': 'text', 'analyzer': 'icu_analyzer'}}
     )
     en = Text(analyzer='english')

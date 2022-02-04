@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 
@@ -36,7 +36,7 @@ class DBManager:
             raise e
 
     def initializeDatabase(self):
-        if not self.engine.dialect.has_table(self.engine, 'works'):
+        if not inspect(self.engine).has_table('works'):
             Base.metadata.create_all(self.engine)
 
     def createSession(self, autoflush=False):
