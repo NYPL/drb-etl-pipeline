@@ -4,6 +4,7 @@ from polyglot.detect import Detector
 from polyglot.detect.base import UnknownLanguage
 import re
 import requests
+from requests.exceptions import HTTPError, ReadTimeout
 
 
 class ClassifyManager:
@@ -50,7 +51,12 @@ class ClassifyManager:
 
     def getClassifyResponse(self):
         self.generateQueryURL()
-        self.execQuery()
+
+        try:
+            self.execQuery()
+        except (HTTPError, ReadTimeout):
+            raise ClassifyError('Unable execute query to Classify service')
+
         return self.parseXMLResponse()
 
     def generateQueryURL(self):
@@ -113,7 +119,7 @@ class ClassifyManager:
             [str] -- A string of XML data comprising of the body of the
             Classify response.
         """
-        classifyResp = requests.get(self.query, timeout=5)
+        classifyResp = requests.get(self.query, timeout=10)
 
         classifyResp.raise_for_status()
 
