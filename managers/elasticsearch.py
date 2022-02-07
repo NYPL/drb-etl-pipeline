@@ -41,33 +41,37 @@ class ElasticsearchManager:
             )
 
     def saveWorkRecords(self, works):
-        print('Saving ES Work Records')
+        logger.info('Saving {} ES Work Records'.format(len(works)))
 
-        def upsertGen():
-            for work in works:
-                yield {
-                    '_op_type': 'update',
-                    '_index': self.index,
-                    '_id': work.uuid,
-                    '_type': 'doc',
-                    'doc': work.to_dict(),
-                    'doc_as_upsert': True
-                }
+        saveRes = bulk(self.es, self._upsertGenerator(works))
+        logger.debug(saveRes)
 
-        saveRes = bulk(self.es, upsertGen())
-        print(saveRes)
+    def _upsertGenerator(self, works):
+        for work in works:
+            logger.debug('Saving {}'.format(work))
+
+            yield {
+                '_op_type': 'update',
+                '_index': self.index,
+                '_id': work.uuid,
+                '_type': 'doc',
+                'doc': work.to_dict(),
+                'doc_as_upsert': True
+            }
 
     def deleteWorkRecords(self, uuids):
-        print('Deleting ES Work Records')
-        
-        def deleteGen():
-            for uuid in uuids:
-                yield {
-                    '_op_type': 'delete',
-                    '_index': self.index,
-                    '_id': uuid,
-                    '_type': 'doc'
-                }
+        logger.info('Deleting {} ES Work Records'.format(len(uuids)))
 
-        deleteRes = bulk(self.es, deleteGen(), raise_on_error=False)
-        print(deleteRes)
+        deleteRes = bulk(self.es, self._deleteGenerator(uuids), raise_on_error=False)
+        logger.debug(deleteRes)
+
+    def _deleteGenerator(self, uuids):
+        for uuid in uuids:
+            logger.debug('Deleting {}'.format(uuid))
+
+            yield {
+                '_op_type': 'delete',
+                '_index': self.index,
+                '_id': uuid,
+                '_type': 'doc'
+            }

@@ -175,7 +175,8 @@ class ClassifyProcess(CoreProcess):
             self.sendCatalogLookupMessage(oclcNo, owiNo)
             counter += 1
 
-        self.setIncrementerRedis('oclcCatalog', 'API', amount=counter)
+        if counter > 0:
+            self.setIncrementerRedis('oclcCatalog', 'API', amount=counter)
 
     def sendCatalogLookupMessage(self, oclcNo, owiNo):
         logger.debug('Sending OCLC# {} to queue'.format(oclcNo))

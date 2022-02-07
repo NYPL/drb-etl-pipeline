@@ -316,26 +316,26 @@ class TestOCLCClassifyProcess:
         mockfetchOCLC.assert_called_once_with(['1|test', '2|test'])
 
     def test_fetchOCLCCatalogRecords_no_redis_match(self, testInstance, mocker):
-        mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
-        mockRedisCheck.return_value = False
+        mockRedisCheck = mocker.patch.object(ClassifyProcess, 'multiCheckSetRedis')
+        mockRedisCheck.return_value = [('2', True)]
         mockSendLookup = mocker.patch.object(ClassifyProcess, 'sendCatalogLookupMessage')
         mockSetRedis = mocker.patch.object(ClassifyProcess, 'setIncrementerRedis')
 
         testInstance.fetchOCLCCatalogRecords(['1|owi', '2|oclc'])
 
-        mockRedisCheck.assert_called_once_with('catalog', '2', 'oclc')
+        mockRedisCheck.assert_called_once_with('catalog', ['2'], 'oclc')
         mockSendLookup.assert_called_once_with('2', '1')
-        mockSetRedis.assert_called_once_with('oclcCatalog', 'API')
+        mockSetRedis.assert_called_once_with('oclcCatalog', 'API', amount=1)
 
     def test_fetchOCLCCatalogRecords_redis_match(self, testInstance, mocker):
-        mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
-        mockRedisCheck.return_value = True
+        mockRedisCheck = mocker.patch.object(ClassifyProcess, 'multiCheckSetRedis')
+        mockRedisCheck.return_value = [(2, False)]
         mockSendLookup = mocker.patch.object(ClassifyProcess, 'sendCatalogLookupMessage')
         mockSetRedis = mocker.patch.object(ClassifyProcess, 'setIncrementerRedis')
 
         testInstance.fetchOCLCCatalogRecords(['1|test', '2|oclc'])
 
-        mockRedisCheck.assert_called_once_with('catalog', '2', 'oclc')
+        mockRedisCheck.assert_called_once_with('catalog', ['2'], 'oclc')
         mockSendLookup.assert_not_called()
         mockSetRedis.assert_not_called()
     

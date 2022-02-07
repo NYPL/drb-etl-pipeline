@@ -89,4 +89,4 @@ class RedisManager:
             service, self.presentTime.strftime('%Y-%m-%d'), identifier
         )
 
-        self.redisClient.incr(redisKey, amount=1)
+        self.redisClient.incr(redisKey, amount=amount)

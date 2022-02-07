@@ -48,7 +48,7 @@ class SFRRecordManager:
                 allIdentifiers.extend(item.identifiers)
                 item.links = self.dedupeLinks(item.links)
 
-        print('deduping indentifiers')
+        logger.info('Deduping Indentifiers')
         cleanIdentifiers = self.dedupeIdentifiers(allIdentifiers)
 
         self.seenIdentifiers = {}
@@ -459,15 +459,26 @@ class SFRRecordManager:
         return newItem
 
     @staticmethod
-    #Exclude dates in the future and dates before the oldest book publisher company was founded
+    # Exclude dates in the future and dates before the oldest book publisher company was founded
     def publicationDateCheck(edition):
-        if edition['publication_date'] > datetime.utcnow() or edition['publication_date'].year < 1488:
-            return None
+        publicationDate = None
+
+        if isinstance(edition['publication_date'], datetime):
+            publicationDate = edition['publication_date']
+        elif re.match(r'([0-9]{4})-([0-9]{2})-([0-9]{2})', edition['publication_date']):
+            publicationDate = datetime.strptime(edition['publication_date'], '%Y-%m-%d')
         else:
             pubYearGroup = re.search(r'([0-9]{4})', str(edition['publication_date']))
+
             if pubYearGroup:
-                publication_date = date(year=int(pubYearGroup.group(1)), month=1, day=1)
-            return publication_date
+                publicationDate = datetime(year=int(pubYearGroup.group(1)), month=1, day=1)
+
+        if publicationDate\
+                and publicationDate < datetime.utcnow()\
+                and publicationDate.year >= 1488:
+            return publicationDate
+
+        return None
 
     @staticmethod
     def setPipeDelimitedData(data, fields, dType=None, dParser=None):
