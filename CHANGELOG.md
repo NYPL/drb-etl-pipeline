@@ -5,6 +5,7 @@
 - Method in sfrRecord manager to check for reasonable publication dates for editions
 - Tests for publicationDateCheck method in sfrRecord manager
 - Bulk ElasticSearch indexing
+- Blueprint for a citation generator 
 ### Fixed
 - Classify Performance improvemences
 - Improved stability during clustering processes
