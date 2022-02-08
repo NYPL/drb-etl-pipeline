@@ -112,7 +112,7 @@ class TestClassifyManager:
         testInstance.execQuery()
 
         assert testInstance.rawXML == 'testXMLResponse'
-        mockRequest.get.assert_called_once_with('testQuery')
+        mockRequest.get.assert_called_once_with('testQuery', timeout=10)
 
     def test_execQuery_error(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()

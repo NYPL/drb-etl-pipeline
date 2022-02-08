@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-from lxml import etree
 import os
 
 from .core import CoreProcess
@@ -44,10 +43,13 @@ class ClassifyProcess(CoreProcess):
         self.saveRecords()
         self.updateClassifiedRecordsStatus()
         self.commitChanges()
-    
+
     def classifyRecords(self, full=False, startDateTime=None):
         baseQuery = self.session.query(Record)\
-            .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')\
+            .filter(
+                Record.source != 'oclcClassify'
+                and Record.source != 'oclcCatalog'
+            )\
             .filter(Record.frbr_status == 'to_do')
 
         if full is False:
@@ -55,8 +57,13 @@ class ClassifyProcess(CoreProcess):
                 startDateTime = datetime.utcnow() - timedelta(hours=24)
             baseQuery = baseQuery.filter(Record.date_modified > startDateTime)
 
-        windowSize = 100 if (self.ingestLimit is None or self.ingestLimit > 100) else self.ingestLimit
-        for rec in self.windowedQuery(Record, baseQuery, windowSize=windowSize):
+        windowSize = self.ingestLimit
+        if (self.ingestLimit is None or self.ingestLimit > 100):
+            windowSize = 100
+
+        for rec in self.windowedQuery(
+            Record, baseQuery, windowSize=windowSize
+        ):
             self.frbrizeRecord(rec)
 
             # Update Record with status
@@ -65,7 +72,7 @@ class ClassifyProcess(CoreProcess):
             self.classifiedRecords[rec.id] = rec
 
             if self.checkIncrementerRedis('oclcCatalog', 'API'):
-                logger.warning('Exceeding max requests to OCLC catalog, breaking')
+                logger.warning('Exceeded max requests to OCLC catalog')
                 break
 
             if len(self.classifiedRecords) >= windowSize:
@@ -77,9 +84,12 @@ class ClassifyProcess(CoreProcess):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
     def frbrizeRecord(self, record):
-        queryableIDs = ClassifyManager.getQueryableIdentifiers(record.identifiers)
+        queryableIDs = ClassifyManager.getQueryableIdentifiers(
+            record.identifiers
+        )
 
-        if len(queryableIDs) < 1: queryableIDs = [None]
+        if len(queryableIDs) < 1:
+            queryableIDs = [None]
 
         for iden in queryableIDs:
             try:
@@ -94,7 +104,10 @@ class ClassifyProcess(CoreProcess):
 
             # Check if this identifier has been queried in the past 24 hours
             # Skip if it has already been looked up
-            if identifier and self.checkSetRedis('classify', identifier, idenType): continue
+            if identifier and self.checkSetRedis(
+                'classify', identifier, idenType
+            ):
+                continue
 
             try:
                 self.classifyRecordByMetadata(
@@ -111,7 +124,11 @@ class ClassifyProcess(CoreProcess):
 
         for classifyXML in classifier.getClassifyResponse():
             if self.checkIfClassifyWorkFetched(classifyXML) is True:
-                logger.info('Skipping Duplicate Classify Record {} ({}:{})'.format(title, identifier, idType))
+                logger.info(
+                    'Skipping Duplicate Classify Record {} ({}:{})'.format(
+                        title, identifier, idType
+                    )
+                )
                 continue
 
             classifier.checkAndFetchAdditionalEditions(classifyXML)
@@ -119,8 +136,10 @@ class ClassifyProcess(CoreProcess):
             self.createClassifyDCDWRecord(
                 classifyXML, classifier.addlIds, identifier, idType
             )
-    
-    def createClassifyDCDWRecord(self, classifyXML, additionalOCLCs, identifier, idType):
+
+    def createClassifyDCDWRecord(
+        self, classifyXML, additionalOCLCs, identifier, idType
+    ):
         classifyRec = ClassifyMapping(
             classifyXML,
             {'oclc': 'http://classify.oclc.org'},
@@ -135,20 +154,36 @@ class ClassifyProcess(CoreProcess):
         self.addDCDWToUpdateList(classifyRec)
 
         self.fetchOCLCCatalogRecords(classifyRec.record.identifiers)
-    
+
     def fetchOCLCCatalogRecords(self, identifiers):
         owiNo, _ = tuple(identifiers[0].split('|'))
 
+        counter = 0
+        oclcIDs = set()
         for oclcID in list(filter(lambda x: 'oclc' in x, identifiers)):
             oclcNo, _ = tuple(oclcID.split('|'))
-            if self.checkSetRedis('catalog', oclcNo, 'oclc') is False:
-                self.sendCatalogLookupMessage(oclcNo, owiNo)
-                self.setIncrementerRedis('oclcCatalog', 'API')
-    
+            oclcIDs.add(oclcNo)
+
+        oclcIDs = list(oclcIDs)
+
+        checkedIDs = self.multiCheckSetRedis('catalog', oclcIDs, 'oclc')
+
+        for oclcNo, updateReq in checkedIDs:
+            if updateReq is False:
+                continue
+
+            self.sendCatalogLookupMessage(oclcNo, owiNo)
+            counter += 1
+
+        if counter > 0:
+            self.setIncrementerRedis('oclcCatalog', 'API', amount=counter)
+
     def sendCatalogLookupMessage(self, oclcNo, owiNo):
         logger.debug('Sending OCLC# {} to queue'.format(oclcNo))
         self.sendMessageToQueue(
-            self.rabbitQueue, self.rabbitRoute, {'oclcNo': oclcNo, 'owiNo': owiNo}
+            self.rabbitQueue,
+            self.rabbitRoute,
+            {'oclcNo': oclcNo, 'owiNo': owiNo}
         )
 
     def checkIfClassifyWorkFetched(self, classifyXML):

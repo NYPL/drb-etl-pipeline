@@ -4,6 +4,11 @@
 ### Added
 - Method in sfrRecord manager to check for reasonable publication dates for editions
 - Tests for publicationDateCheck method in sfrRecord manager
+- Bulk ElasticSearch indexing
+### Fixed
+- Classify Performance improvemences
+- Improved stability during clustering processes
+- Improved development process script
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed

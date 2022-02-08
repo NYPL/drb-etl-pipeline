@@ -50,12 +50,10 @@ class TestSFRRecordManager:
         recordMocks = mocker.patch.multiple(
             SFRRecordManager,
             dedupeIdentifiers=mocker.DEFAULT,
+            assignIdentifierIDs=mocker.DEFAULT,
             dedupeLinks=mocker.DEFAULT
         )
-        recordMocks['dedupeIdentifiers'].side_effect = [
-            ['newEd1', 'newEd2'], ['item1'], ['item2'], ['newEd3'],
-            ['item3'], ['item4'], ['work1']
-        ]
+        recordMocks['dedupeIdentifiers'].return_value = ['id1', 'id2', 'id3']
         recordMocks['dedupeLinks'].side_effect = [
             ['url1'], ['url2'], ['url3'], ['url4']
         ]
@@ -80,12 +78,13 @@ class TestSFRRecordManager:
             mocker.MagicMock(uuid=3, date_created='2019-01-01'),
             mocker.MagicMock(uuid=4, date_created='2018-01-01'),
         ]
-        testInstance.session.query().join().filter().filter().all.return_value = matchingWorks
+        testInstance.session.query().join().filter().filter().all.return_value\
+            = matchingWorks
         testInstance.session.merge.return_value = testInstance.work
 
         testUUIDsToDelete = testInstance.mergeRecords()
 
-        assert testUUIDsToDelete == [4, 3, 2]
+        assert testUUIDsToDelete == [3, 2]
         assert testInstance.work.uuid == 4
         assert testInstance.work.date_created == '2018-01-01'
 
@@ -93,7 +92,6 @@ class TestSFRRecordManager:
         testInstance.session.merge.assert_called_once_with(testInstance.work)
 
     def test_dedupeIdentifiers(self, testInstance, mocker):
-        testExistingIDs = {}
         mockIdentifiers = [
             mocker.MagicMock(identifier=1, authority='test', id=None),
             mocker.MagicMock(identifier=2, authority='test', id=None),
@@ -107,14 +105,13 @@ class TestSFRRecordManager:
             mocker.MagicMock(id=6, identifier=1, authority='test'),
         ]
 
-        testIdentifiers = testInstance.dedupeIdentifiers(mockIdentifiers, testExistingIDs)
+        testIdentifiers = testInstance.dedupeIdentifiers(mockIdentifiers)
 
-        assert len(testExistingIDs) == 4
-        assert testExistingIDs[('test', 3)].id == 5
-        assert testExistingIDs[('test', 2)].id == None
-        assert len(testIdentifiers) == 4
-        assert set([i.identifier for i in testIdentifiers]) == set([1, 2, 3, 4])
-        assert set([getattr(i, 'id', None) for i in testIdentifiers]) == set([5, 6, None])
+        assert len(testIdentifiers.keys()) == 2
+        assert testIdentifiers == {
+            ('test', 3): 5,
+            ('test', 1): 6
+        }
         testInstance.session.query().filter().filter().all.assert_called_once()
 
     def test_dedupeLinks(self, testInstance, mocker):
@@ -254,49 +251,63 @@ class TestSFRRecordManager:
     #Test for publication date between 1488-Present
     def test_publicationDateCheck1(self):
         testEdition = SFRRecordManager.createEmptyEditionRecord()
+
         testEdition['publication_date'] = datetime(1900, 1, 1)
-
         testPubDateCheck = SFRRecordManager.publicationDateCheck(testEdition)
+        assert testPubDateCheck.year == 1900
 
+        testEdition['publication_date'] = '1900'
+        testPubDateCheck = SFRRecordManager.publicationDateCheck(testEdition)
         assert testPubDateCheck.year == 1900
 
     #Test for publication date with present date
     def test_publicationDateCheck2(self):
         testEdition2 = SFRRecordManager.createEmptyEditionRecord()
+
         testEdition2['publication_date'] = datetime.utcnow()
-
         testPubDateCheck2 = SFRRecordManager.publicationDateCheck(testEdition2)
+        assert testPubDateCheck2.year == datetime.utcnow().year
 
+        testEdition2['publication_date'] = datetime.utcnow().strftime('%Y-%m-%d')
+        testPubDateCheck2 = SFRRecordManager.publicationDateCheck(testEdition2)
         assert testPubDateCheck2.year == datetime.utcnow().year
     
     #Test for publication date with earliest year in our date range
     def test_publicationDateCheck3(self):
         testEdition3 = SFRRecordManager.createEmptyEditionRecord()
+
         testEdition3['publication_date'] = datetime(1488, 1, 1)
-
         testPubDateCheck3 = SFRRecordManager.publicationDateCheck(testEdition3)
+        assert testPubDateCheck3.year == 1488
 
+        testEdition3['publication_date'] = 'December 1488'
+        testPubDateCheck3 = SFRRecordManager.publicationDateCheck(testEdition3)
         assert testPubDateCheck3.year == 1488
 
     #Test for publication date set before our date range(<1488)
     def test_publicationDateCheck4(self):
         #Tests for incorrect date ranges
         testEdition4 = SFRRecordManager.createEmptyEditionRecord()
+
         testEdition4['publication_date'] = datetime(1300, 1, 1)
-
         testPubDateCheck4 = SFRRecordManager.publicationDateCheck(testEdition4)
+        assert testPubDateCheck4 == None
 
+        testEdition4['publication_date'] = '1300'
+        testPubDateCheck4 = SFRRecordManager.publicationDateCheck(testEdition4)
         assert testPubDateCheck4 == None
        
     #Test for publication date set after our date range by at least one day
     def test_publicationDateCheck5(self):
         testEdition5 = SFRRecordManager.createEmptyEditionRecord()
+
         testEdition5['publication_date'] = datetime.utcnow() + timedelta(1)
-
         testPubDateCheck5 = SFRRecordManager.publicationDateCheck(testEdition5)
-
         assert testPubDateCheck5 == None
     
+        testEdition5['publication_date'] = (datetime.utcnow() + timedelta(1)).strftime('%Y-%m-%d')
+        testPubDateCheck5 = SFRRecordManager.publicationDateCheck(testEdition5)
+        assert testPubDateCheck5 == None
 
     def test_setPipeDelimitedData(self, mocker):
         mockParse = mocker.patch.object(SFRRecordManager, 'parseDelimitedEntry')

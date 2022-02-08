@@ -61,21 +61,21 @@ class TestDevelopmentSetupProcess:
 
         devInstance.runProcess()
 
-        mockGenerateEngine.assert_called_once
-        mockInitializeDatabase.assert_called_once
-        mockCreateSession.assert_called_once
-        mockCreateElastic.assert_called_once
-        mockCreateElasticIndex.assert_called_once
-        mockCreateRabbit.assert_called_once
-        mockCreateQueue.assert_called_once
-        mockFetchHathi.assert_called_once
+        mockGenerateEngine.assert_called_once()
+        mockInitializeDatabase.assert_called_once()
+        mockCreateSession.assert_called_once()
+        mockCreateElastic.assert_called_once()
+        mockCreateElasticIndex.assert_called_once()
+        mockCreateRabbit.assert_called_once()
+        mockCreateQueue.assert_has_calls([
+            mocker.call('test_oclc_queue', 'test_oclc_key'),
+            mocker.call('test_file_queue', 'test_file_key')
+        ])
+        mockFetchHathi.assert_called_once()
 
-        mockClassify.assert_called_with('complete', None, None)
-        mockClassify.runProcess.assert_called_once
-        mockCatalog.assert_called_with('complete', None, None)
-        mockCatalog.runProcess.assert_called_once
-        mockCluster.assert_called_with('complete', None, None)
-        mockCluster.runProcess.assert_called_once
+        mockClassify.assert_called_with('complete', None, None, None, None)
+        mockCatalog.assert_called_with('complete', None, None, None, None)
+        mockCluster.assert_called_with('complete', None, None, None, None)
 
     def test_initializeDB(self, devInstance, mocker):
         mockEngine = mocker.MagicMock()
@@ -92,7 +92,7 @@ class TestDevelopmentSetupProcess:
             mocker.call('CREATE USER test_psql_user WITH PASSWORD \'test_psql_pswd\''),
             mocker.call('GRANT ALL PRIVILEGES ON DATABASE test_psql_name TO test_psql_user')
         ])
-        mockEngine.dispose.assert_called_once
+        mockEngine.dispose.assert_called_once()
 
     def test_fetchHathiSampleData(self, devInstance, mocker):
         fetchMocks = mocker.patch.multiple(
@@ -104,9 +104,9 @@ class TestDevelopmentSetupProcess:
 
         devInstance.fetchHathiSampleData()
 
-        fetchMocks['importFromHathiTrustDataFile'].assert_called_once
-        fetchMocks['saveRecords'].assert_called_once
-        fetchMocks['commitChanges'].assert_called_once
+        fetchMocks['importFromHathiTrustDataFile'].assert_called_once()
+        fetchMocks['saveRecords'].assert_called_once()
+        fetchMocks['commitChanges'].assert_called_once()
 
     def test_importFromHathiTrustDataFile_standard(self, devInstance, hathiFilesData, hathiTSV, mocker):
         mockRequest = mocker.patch.object(requests, 'get')
