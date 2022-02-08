@@ -32,10 +32,12 @@ class DevelopmentSetupProcess(CoreProcess):
         self.generateEngine()
         self.initializeDatabase()
         self.createSession()
+        #Allow database to be trashed when reinitializing local DevelopmentSetUp
 
         # Setup ElasticSearch index if necessary
         self.createElasticConnection()
         self.createElasticSearchIndex()
+        #Allow ElasticSearch to be trashed when reinitializing local DevelopmentSetUp
 
         # Create rabbit queues
         self.createRabbitConnection()

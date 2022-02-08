@@ -21,7 +21,7 @@ def citationFetch(uuid):
     formatList = citeFormats.split(',')
     print(formatList)
 
-    if request.args.get['format'] is None:
+    if formatList[0] != 'mla':
         logger.warning('Page not found')
         return APIUtils.formatResponseObject(
                 404, 'pageNotFound', {'message': 'Need to specify citation format'}
@@ -55,4 +55,4 @@ def citationFetch(uuid):
     )
 
 def mlaGenerator(citationWork):
-    return f'A FORMATTED CITATION'
+    return f'A FORMATTED CITATION {citationWork.title}'
