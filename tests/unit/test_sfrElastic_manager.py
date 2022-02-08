@@ -53,33 +53,16 @@ class TestSFRElasticRecordManager:
         assert testInstance.dbWork.uuid == 'testUUID'
         assert testInstance.work == None
 
-    def test_getCreateWork_new(self, testInstance, mocker):
+    def test_getCreateWork(self, testInstance, mocker):
         mockEnhance = mocker.patch.object(SFRElasticRecordManager, 'enhanceWork')
         mockESWork = mocker.patch('managers.sfrElasticRecord.ESWork')
-        mockESWork.get.return_value = None
         mockESWork.return_value = 'testESWork'
 
         testInstance.getCreateWork()
 
         assert testInstance.work == 'testESWork'
-        mockESWork.get.assert_called_once_with('testUUID', ignore=404)
-        mockESWork.assert_called_once
-        mockEnhance.assert_called_once
-
-    def test_getCreateWork_existing(self, testInstance, mocker):
-        mockEnhance = mocker.patch.object(SFRElasticRecordManager, 'enhanceWork')
-        mockUpdate = mocker.patch.object(SFRElasticRecordManager, 'updateWork')
-        mockESRec = mocker.MagicMock()
-        mockESWork = mocker.patch('managers.sfrElasticRecord.ESWork')
-        mockESWork.get.return_value = mockESRec
-
-        testInstance.getCreateWork()
-
-        assert testInstance.work == mockESRec
-        mockESWork.get.assert_called_once_with('testUUID', ignore=404)
-        mockESWork.assert_not_called
-        mockUpdate.assert_called_once_with({})
-        mockEnhance.assert_called_once
+        mockESWork.assert_called_once()
+        mockEnhance.assert_called_once()
 
     def test_saveWork(self, testInstance, mocker):
         testInstance.work = mocker.MagicMock()
