@@ -1,4 +1,3 @@
-from elasticsearch.exceptions import ConflictError
 import pytest
 
 from managers import ElasticsearchManager
@@ -22,11 +21,16 @@ class TestElasticsearchManager:
 
     def test_createElasticConnection_success(self, testInstance, mocker):
         mockConnection = mocker.patch('managers.elasticsearch.connections')
+        mockClient = mocker.patch('managers.elasticsearch.Elasticsearch')
 
         testInstance.createElasticConnection()
 
         mockConnection.create_connection.assert_called_once_with(
             hosts=['host:port'], timeout=1000, retry_on_timeout=True, max_retries=3
+        )
+
+        mockClient.assert_called_once_with(
+            hosts=['host:port']
         )
 
     def test_createELasticSearchIndex_execute(self, testInstance, mocker):
@@ -58,31 +62,50 @@ class TestElasticsearchManager:
         mockInit.assert_not_called()
 
     def test_deleteWorkRecords(self, testInstance, mocker):
-        mockResp = mocker.MagicMock(name='testQuery')
-        mockSearchObj = mocker.MagicMock(name='searchObject')
-        mockSearch = mocker.patch('managers.elasticsearch.Search')
-        mockSearch.return_value = mockSearchObj
-        mockSearchObj.query.return_value = mockResp
+        testInstance.es = 'mockClient'
+        mockBulk = mocker.patch('managers.elasticsearch.bulk')
+        mockGen = mocker.patch.object(ElasticsearchManager, '_deleteGenerator')
+        mockGen.return_value = 'generator'
 
         testInstance.deleteWorkRecords(['uuid1', 'uuid2', 'uuid3'])
 
-        assert mockSearch.call_count == 3
-        mockSearchObj.query.assert_has_calls([
-            mocker.call('match', uuid='uuid1'),
-            mocker.call('match', uuid='uuid2'),
-            mocker.call('match', uuid='uuid3')
-        ])
+        mockGen.assert_called_once_with(['uuid1', 'uuid2', 'uuid3'])
+        mockBulk.assert_called_once_with(
+            'mockClient', 'generator', raise_on_error=False
+        )
 
-        assert mockResp.delete.call_count == 3
+    def test_deleteGenerator(self, testInstance):
+        deleteStmts = [out for out in testInstance._deleteGenerator([1, 2, 3])]
 
-    def test_deleteWorkRecords_error(self, testInstance, mocker):
-        mockResp = mocker.MagicMock(name='testQuery')
-        mockSearchObj = mocker.MagicMock(name='searchObject')
-        mockSearch = mocker.patch('managers.elasticsearch.Search')
-        mockSearch.return_value = mockSearchObj
-        mockSearchObj.query.return_value = mockResp
+        assert deleteStmts == [
+            {'_op_type': 'delete', '_index': 'testES', '_id': 1, '_type': 'doc'},
+            {'_op_type': 'delete', '_index': 'testES', '_id': 2, '_type': 'doc'},
+            {'_op_type': 'delete', '_index': 'testES', '_id': 3, '_type': 'doc'},
+        ]
 
-        mockResp.delete.side_effect = [ConflictError] * 3
+    def test_saveWorkRecords(self, testInstance, mocker):
+        testInstance.es = 'mockClient'
+        mockBulk = mocker.patch('managers.elasticsearch.bulk')
+        mockGen = mocker.patch.object(ElasticsearchManager, '_upsertGenerator')
+        mockGen.return_value = 'generator'
 
-        with pytest.raises(ConflictError):
-            testInstance.deleteWorkRecords(['uuid1'])
+        testInstance.saveWorkRecords(['work1', 'work2', 'work3'])
+
+        mockGen.assert_called_once_with(['work1', 'work2', 'work3'])
+        mockBulk.assert_called_once_with('mockClient', 'generator')
+
+    def test_upsertGenerator(self, testInstance, mocker):
+        mockWork = mocker.MagicMock(uuid=1)
+        mockWork.to_dict.return_value = 'mockWork'
+        upsertStmts = [out for out in testInstance._upsertGenerator([mockWork])]
+
+        assert upsertStmts == [
+            {
+                '_op_type': 'update',
+                '_index': 'testES',
+                '_id': 1,
+                '_type': 'doc',
+                'doc': 'mockWork',
+                'doc_as_upsert': True
+            }
+        ]

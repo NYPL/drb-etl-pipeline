@@ -24,11 +24,7 @@ class SFRElasticRecordManager:
             for field in ESWork.getFields()
         }
 
-        self.work = ESWork.get(self.dbWork.uuid, ignore=404)
-        if self.work is None:
-            self.work = ESWork(meta={'id': self.dbWork.uuid}, **workData)
-        else:
-            self.updateWork(workData)
+        self.work = ESWork(**workData)
 
         self.enhanceWork()
     

@@ -56,12 +56,11 @@ class DevelopmentSetupProcess(CoreProcess):
         # Group the fetched data
         clusterProc = ClusterProcess(*procArgs)
         clusterProc.runProcess()
-        
+
     def initializeDB(self):
         self.adminDBConnection.generateEngine()
         with self.adminDBConnection.engine.connect() as conn:
             conn.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            
             try:
                 conn.execute('CREATE DATABASE {}'.format(os.environ['POSTGRES_NAME']))
             except ProgrammingError:
@@ -113,4 +112,3 @@ class DevelopmentSetupProcess(CoreProcess):
 
                 if i >= 500:
                     break
-

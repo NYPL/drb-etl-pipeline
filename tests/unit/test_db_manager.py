@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy import inspect
 from sqlalchemy.exc import OperationalError
 
 from managers import DBManager
@@ -43,25 +44,32 @@ class TestDBManager:
         testInstance.engine = mocker.MagicMock()
         testInstance.engine.dialect.has_table.return_value = None
         mockBase = mocker.patch('managers.db.Base')
+        mockHasTable = mocker.MagicMock()
+        mockHasTable.has_table.return_value = False
+        mockInspect = mocker.patch('managers.db.inspect')
+        mockInspect.return_value = mockHasTable
 
         testInstance.initializeDatabase()
 
-        testInstance.engine.dialect.has_table.assert_called_once_with(
-            testInstance.engine, 'works'
-        )
+        mockInspect.assert_called_once_with(testInstance.engine)
+        mockHasTable.has_table.assert_called_once_with('works')
         mockBase.metadata.create_all.assert_called_once_with(testInstance.engine)
 
     def test_initializeDatabase_skip(self, testInstance, mocker):
         testInstance.engine = mocker.MagicMock()
         testInstance.engine.dialect.has_table.return_value = 'testTable'
         mockBase = mocker.patch('managers.db.Base')
+        mockHasTable = mocker.MagicMock()
+        mockHasTable.has_table.return_value = True
+        mockInspect = mocker.patch('managers.db.inspect')
+        mockInspect.return_value = mockHasTable
+
 
         testInstance.initializeDatabase()
 
-        testInstance.engine.dialect.has_table.assert_called_once_with(
-            testInstance.engine, 'works'
-        )
-        mockBase.metadata.create_all.assert_not_called
+        mockInspect.assert_called_once_with(testInstance.engine)
+        mockHasTable.has_table.assert_called_once_with('works')
+        mockBase.metadata.create_all.assert_not_called()
 
     def test_createSession_engine_exists(self, testInstance, mocker):
         mockSessionmaker = mocker.patch('managers.db.sessionmaker')

@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 from math import ceil
 import re
 from sqlalchemy.exc import DataError
+from sqlalchemy.orm.exc import StaleDataError
 
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
@@ -47,8 +48,13 @@ class ClusterProcess(CoreProcess):
         if full is False:
             if not startDateTime:
                 startDateTime = datetime.utcnow() - timedelta(hours=24)
+            elif self.process == 'custom':
+                startDateTime = datetime.strptime(startDateTime, '%Y-%m-%dT%H:%M:%S')
+
             baseQuery = baseQuery.filter(Record.date_modified > startDateTime)
         
+        indexingWorks = []
+        deletingWorks = set()
         while True:
             rec = baseQuery.first()
 
@@ -56,11 +62,28 @@ class ClusterProcess(CoreProcess):
                 break
 
             try:
-                self.clusterRecord(rec)
+                dbWork, deletedUUIDs = self.clusterRecord(rec)
+                indexingWorks.append(dbWork)
+                deletingWorks.update(deletedUUIDs)
             except ClusterError:
                 logger.warning('Skipping record {}'.format(rec))
                 self.updateMatchedRecordsStatus([rec.id])
+                self.session.commit()
 
+            if len(indexingWorks) >= 50:
+                self.updateElasticSearch(indexingWorks, deletingWorks)
+                indexingWorks = []
+
+                self.deleteStaleWorks(deletingWorks)
+                deletingWorks = set()
+
+                self.session.commit()
+
+        # Run index/delete methods again for final batch
+        self.updateElasticSearch(indexingWorks, deletingWorks)
+        self.deleteStaleWorks(deletingWorks)
+
+        self.session.commit()
         self.closeConnection()
 
     def clusterRecord(self, rec):
@@ -73,30 +96,35 @@ class ClusterProcess(CoreProcess):
         matchedIDs.append(rec.id)
 
         clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
-        dbWork = self.createWorkFromEditions(clusteredEditions, instances)
+        dbWork, deletedUUIDs = self.createWorkFromEditions(clusteredEditions, instances)
 
         try:
             self.session.flush()
-        except DataError as e:
+        except (DataError, StaleDataError) as e:
+            self.session.rollback()
             logger.error('Unable to cluster {}'.format(rec))
             logger.debug(e)
 
             raise ClusterError('Malformed DCDW Record Received')
 
-        self.indexWorkInElasticSearch(dbWork)
-
         self.updateMatchedRecordsStatus(matchedIDs)
 
+        return dbWork, deletedUUIDs
+
     def updateMatchedRecordsStatus(self, matchedIDs):
-        updatedRecords = []
+        self.session.query(Record)\
+            .filter(Record.id.in_(list(set(matchedIDs))))\
+            .update({'cluster_status': True, 'frbr_status': 'complete'})
 
-        for rec in self.session.query(Record).filter(Record.id.in_(matchedIDs)).all():
-            rec.cluster_status = True
-            rec.frbr_status = 'complete'
-            
-            updatedRecords.append(rec)
+    def updateElasticSearch(self, indexingWorks, deletingWorks):
+        self.deleteWorkRecords(deletingWorks)
+        self.indexWorksInElasticSearch(indexingWorks)
 
-        self.bulkSaveObjects(updatedRecords)
+    def deleteStaleWorks(self, deletingWorks):
+        editionIDTuples = self.session.query(Edition.id).join(Work).filter(Work.uuid.in_(list(deletingWorks))).all()
+        editionIDs = [ed[0] for ed in editionIDTuples]
+        self.deleteRecordsByQuery(self.session.query(Edition).filter(Edition.id.in_(editionIDs)))
+        self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid.in_(list(deletingWorks))))
 
     def clusterMatchedRecords(self, recIDs):
         records = self.session.query(Record).filter(Record.id.in_(recIDs)).all()
@@ -115,24 +143,21 @@ class ClusterProcess(CoreProcess):
 
     def createWorkFromEditions(self, editions, instances):
         recordManager = SFRRecordManager(self.session, self.statics['iso639'])
+        logger.debug('BUILDING WORK')
         workData = recordManager.buildWork(instances, editions)
+        logger.debug('SAVING WORK')
+
         recordManager.saveWork(workData)
 
+        logger.debug('MERGING RECORDS')
         deletedRecordUUIDs = recordManager.mergeRecords()
 
-        self.deleteWorkRecords(deletedRecordUUIDs)
+        return recordManager.work, deletedRecordUUIDs
 
-        for uuid in deletedRecordUUIDs:
-            work = self.session.query(Work).filter(Work.uuid == uuid).one()
-            self.deleteRecordsByQuery(self.session.query(Edition).filter(Edition.id.in_([e.id for e in work.editions])))
-            self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid == uuid))
-
-        return recordManager.work
-    
     def queryIdens(self, idens):
         matchedIDs = set()
         checkedIdens = set()
-        
+
         checkIdens = idens
 
         iterations = 0
@@ -194,10 +219,17 @@ class ClusterProcess(CoreProcess):
         
         return totalMatches
 
-    def indexWorkInElasticSearch(self, dbWork):
-        elasticManager = SFRElasticRecordManager(dbWork)
-        elasticManager.getCreateWork()
-        elasticManager.saveWork()
+    def indexWorksInElasticSearch(self, dbWorks):
+        esWorks = []
+
+        for dbWork in dbWorks:
+            print('Generating ES for {}'.format(dbWork))
+            elasticManager = SFRElasticRecordManager(dbWork)
+            elasticManager.getCreateWork()
+            esWorks.append(elasticManager.work)
+
+        # elasticManager.saveWork()
+        self.saveWorkRecords(esWorks)
 
     def compareTitleTokens(self, recTitle):
         recTitleTokens = self.tokenizeTitle(recTitle)
