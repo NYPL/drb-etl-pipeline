@@ -8,6 +8,7 @@
 ### Fixed
 - Classify Performance improvemences
 - Improved stability during clustering processes
+- Improved development process script
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed
