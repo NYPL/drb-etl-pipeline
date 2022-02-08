@@ -15,7 +15,8 @@ class ElasticsearchManager:
         self.index = index or os.environ.get('ELASTICSEARCH_INDEX', None)
         self.client = None
 
-    def createElasticConnection(self, host=None, port=None, user=None, pswd=None):
+    def createElasticConnection(self, scheme=None, host=None, port=None, user=None, pswd=None):
+        scheme = scheme or os.environ.get('ELASTICSEARCH_SCHEME', None)
         host = host or os.environ.get('ELASTICSEARCH_HOST', None)
         port = port or os.environ.get('ELASTICSEARCH_PORT', None)
         user = user or os.environ.get('ELASTICSEARCH_USER', None)
@@ -24,8 +25,9 @@ class ElasticsearchManager:
 
         creds = '{}:{}@'.format(user, pswd) if user and pswd else ''
 
+        print(scheme, creds, host, port)
         self.client = connections.create_connection(
-            hosts=['{}{}:{}'.format(creds, host, port)],
+            hosts=['{}://{}{}:{}'.format(scheme, creds, host, port)],
             timeout=timeout,
             retry_on_timeout=True,
             max_retries=3
