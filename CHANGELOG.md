@@ -10,6 +10,7 @@
 - Classify Performance improvemences
 - Improved stability during clustering processes
 - Improved development process script
+- Improved unit tests for citation generator
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed
