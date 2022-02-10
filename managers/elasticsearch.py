@@ -26,16 +26,13 @@ class ElasticsearchManager:
 
         creds = '{}:{}@'.format(user, pswd) if user and pswd else ''
 
+        host = '{}://{}{}:{}'.format(scheme, creds, host, port)
+
         self.client = connections.create_connection(
-            hosts=['{}://{}{}:{}'.format(scheme, creds, host, port)],
-            timeout=timeout,
-            retry_on_timeout=True,
-            max_retries=3
+            hosts=[host], timeout=timeout, retry_on_timeout=True, max_retries=3
         )
 
-        self.es = Elasticsearch(
-            hosts=['{}:{}'.format(host, port)]
-        )
+        self.es = Elasticsearch(hosts=[host])
 
     def createElasticSearchIngestPipeline(self):
         esIngestClient = IngestClient(self.client)
@@ -63,7 +60,7 @@ class ElasticsearchManager:
         )
 
         self.constructLanguagePipeline(
-            esIngestClient, 'subject_heading_language_detector', 'Work title language detection',
+            esIngestClient, 'subject_heading_language_detector', 'Subject heading language detection',
             prefix='_ingest._value.',
             field='heading.'
         )
@@ -90,7 +87,7 @@ class ElasticsearchManager:
         esIngestClient.put_pipeline(
             id='edition_language_detector',
             body={
-                'description': 'loop for parsing alt_titles',
+                'description': 'loop for parsing edition fields',
                 'processors': [
                     {
                         'pipeline': {

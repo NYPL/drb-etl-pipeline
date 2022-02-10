@@ -209,7 +209,7 @@ class ElasticClient():
             Q(
                 'query_string',
                 query=titleText,
-                fields=['title.*^3', 'alt_titles'],
+                fields=['title.*^3', 'alt_titles.*'],
                 default_operator='and'
             ),
             Q(

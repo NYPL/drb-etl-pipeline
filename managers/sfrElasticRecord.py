@@ -108,9 +108,7 @@ class SFRElasticRecordManager:
         newEd.title = PerLanguageField(default=newEd.title)
         newEd.sub_title = PerLanguageField(default=newEd.sub_title)
 
-        newEd.alt_titles = [
-            PerLanguageField(default=a) for a in edition.alt_titles
-        ]
+        newEd.alt_titles = [a for a in edition.alt_titles]
 
         newEd.identifiers = [ESIdentifier(**dict(i)) for i in edition.identifiers]
 

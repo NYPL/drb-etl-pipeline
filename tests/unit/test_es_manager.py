@@ -11,7 +11,10 @@ class TestElasticsearchManager:
             'ELASTICSEARCH_INDEX': 'testES',
             'ELASTICSEARCH_HOST': 'host',
             'ELASTICSEARCH_PORT': 'port',
-            'ELASTICSEARCH_TIMEOUT': '1000'
+            'ELASTICSEARCH_TIMEOUT': '1000',
+            'ELASTICSEARCH_SCHEME': 'http',
+            'ELASTICSEARCH_USER': 'testUser',
+            'ELASTICSEARCH_PSWD': 'testPswd'
         })
 
         return ElasticsearchManager()
@@ -26,11 +29,14 @@ class TestElasticsearchManager:
         testInstance.createElasticConnection()
 
         mockConnection.create_connection.assert_called_once_with(
-            hosts=['host:port'], timeout=1000, retry_on_timeout=True, max_retries=3
+            hosts=['http://testUser:testPswd@host:port'],
+            timeout=1000,
+            retry_on_timeout=True,
+            max_retries=3
         )
 
         mockClient.assert_called_once_with(
-            hosts=['host:port']
+            hosts=['http://testUser:testPswd@host:port']
         )
 
     def test_createELasticSearchIndex_execute(self, testInstance, mocker):
@@ -109,3 +115,177 @@ class TestElasticsearchManager:
                 'doc_as_upsert': True
             }
         ]
+
+    def test_createElasticSearchIngestPipeline(self, testInstance, mocker):
+        mockIngest = mocker.MagicMock()
+        mockClient = mocker.patch('managers.elasticsearch.IngestClient')
+        mockClient.return_value = mockIngest
+
+        mockConstructor = mocker.patch.object(ElasticsearchManager, 'constructLanguagePipeline')
+
+        testInstance.createElasticSearchIngestPipeline()
+
+        mockClient.assert_called_once_with(None)
+
+        mockConstructor.assert_has_calls([
+            mocker.call(mockIngest, 'title_language_detector', 'Work title language detection', field='title.'),
+            mocker.call(mockIngest, 'alt_title_language_detector', 'Work alt_title language detection', prefix='_ingest._value.'),
+            mocker.call(mockIngest, 'edition_title_language_detector', 'Edition title language detection', prefix='_ingest._value.', field='title.'),
+            mocker.call(mockIngest, 'edition_sub_title_language_detector', 'Edition subtitle language detection', prefix='_ingest._value.', field='sub_title.'),
+            mocker.call(mockIngest, 'subject_heading_language_detector', 'Subject heading language detection', prefix='_ingest._value.', field='heading.')
+        ])
+
+        mockIngest.put_pipeline.assert_has_calls([
+            mocker.call(
+                id='foreach_alt_title_language_detector',
+                body={
+                    'description': 'loop for parsing alt_titles',
+                    'processors': [
+                        {
+                            'foreach': {
+                                'field': 'alt_titles',
+                                'processor': {'pipeline': {'name': 'alt_title_language_detector'}}
+                            }
+                        }
+                    ]
+                }
+            ),
+            mocker.call(
+                id='edition_language_detector',
+                body={
+                    'description': 'loop for parsing edition fields',
+                    'processors': [
+                        {
+                            'pipeline': {
+                                'name': 'edition_title_language_detector',
+                                'ignore_failure': True
+                            }
+                        },
+                        {
+                            'pipeline': {
+                                'name': 'edition_sub_title_language_detector',
+                                'ignore_failure': True
+                            }
+                        }
+                    ]
+                }
+            ),
+            mocker.call(
+                id='language_detector',
+                body={
+                    'description': 'Full language processing',
+                    'processors': [
+                        {
+                            'pipeline': {
+                                'name': 'title_language_detector',
+                                'ignore_failure': True
+                            }
+                        },
+                        {
+                            'pipeline': {
+                                'name': 'foreach_alt_title_language_detector',
+                                'ignore_failure': True
+                            }
+                        },
+                        {
+                            'foreach': {
+                                'field': 'editions',
+                                'processor': {
+                                    'pipeline': {
+                                        'name': 'edition_language_detector',
+                                        'ignore_failure': True
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            'foreach': {
+                                'field': 'subjects',
+                                'ignore_missing': True,
+                                'processor': {
+                                    'pipeline': {
+                                        'name': 'subject_heading_language_detector',
+                                        'ignore_failure': True
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                }
+            )
+        ])
+
+    def test_constructLanguagePipeline(self, mocker):
+        mockClient = mocker.MagicMock()
+
+        ElasticsearchManager.constructLanguagePipeline(
+            mockClient, 'testPipeline', 'Testing', 'prefix.', 'field.'
+        )
+
+        testBody = {
+            'description': 'Testing',
+            'processors': [
+                {
+                    'inference': {
+                        'model_id': 'lang_ident_model_1',
+                        'inference_config': {
+                            'classification': {
+                                'num_top_classes': 3
+                            }
+                        },
+                        'field_map': {'prefix.field.default': 'text'},
+                        'target_field': 'prefix._ml.lang_ident',
+                        'on_failure': [
+                            {
+                                'remove': {
+                                    'field': '_ml'
+                                }
+                            }
+                        ]
+                    },
+                },
+                {
+                    'rename': {
+                        'field': 'prefix._ml.lang_ident.predicted_value',
+                        'target_field': 'prefix.field.language'
+                    }
+                },
+                {
+                    'set': {
+                        'field': 'tmp_lang',
+                        'value': '{{prefix.field.language}}',
+                        'override': True
+                    }
+                },
+                {
+                    'set': {
+                        'field': 'tmp_score',
+                        'value': '{{prefix._ml.lang_ident.prediction_score}}',
+                        'override': True
+                    }
+                },
+                {
+                    'script': {'lang': 'painless', 'source': 'ctx.supported = (["en", "de", "fr", "sp", "po", "nl", "it", "da", "ar", "zh", "el", "hi", "fa", "ja", "ru", "th"].contains(ctx.tmp_lang))'}
+                },
+                {
+                    'script': {'lang': 'painless', 'source': 'ctx.threshold = Float.parseFloat(ctx.tmp_score) > 0.7'}
+                },
+                {
+                    'set': {
+                        'if': 'ctx.supported && ctx.threshold',
+                        'field': 'prefix.field.{{prefix.field.language}}',
+                        'value': '{{prefix.field.default}}',
+                        'override': False
+                    }
+                },
+                {
+                    'remove': {
+                        'field': ['prefix._ml', 'tmp_lang', 'tmp_score', 'threshold', 'supported']
+                    }
+                }
+            ]
+        }
+
+        mockClient.put_pipeline.assert_called_once_with(
+            id='testPipeline', body=testBody
+        )
