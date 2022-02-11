@@ -110,9 +110,10 @@ class TestElasticsearchManager:
                 '_op_type': 'update',
                 '_index': 'testES',
                 '_id': 1,
-                '_type': 'doc',
+                '_type': '_doc',
                 'doc': 'mockWork',
-                'doc_as_upsert': True
+                'doc_as_upsert': True,
+                'pipeline': 'language_detector'
             }
         ]
 

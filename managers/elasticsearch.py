@@ -257,9 +257,10 @@ class ElasticsearchManager:
                 '_op_type': 'update',
                 '_index': self.index,
                 '_id': work.uuid,
-                '_type': 'doc',
-                'doc': work.to_dict(),
-                'doc_as_upsert': True
+                '_type': '_doc',
+                'pipeline': 'language_detector',
+                'doc_as_upsert': True,
+                'doc': work.to_dict()
             }
 
     def deleteWorkRecords(self, uuids):

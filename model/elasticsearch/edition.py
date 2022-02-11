@@ -10,7 +10,7 @@ from .rights import Rights
 class Edition(BaseInner):
     title = Object(PerLanguageField)
     sub_title = Object(PerLanguageField)
-    alt_titles = Object(PerLanguageField)
+    alt_titles = Text(fields={'keyword': Keyword()})
     publication_place = Text(fields={'keyword': Keyword()})
     publication_date = Date(format='date_optional_time')
     edition = Text(fields={'keyword': Keyword()})

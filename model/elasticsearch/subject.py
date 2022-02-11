@@ -6,7 +6,7 @@ from .base import BaseInner, PerLanguageField
 class Subject(BaseInner):
     authority = Keyword()
     control_number = Keyword()
-    subject = Object(PerLanguageField)
+    heading = Object(PerLanguageField)
 
     @classmethod
     def getFields(cls):
