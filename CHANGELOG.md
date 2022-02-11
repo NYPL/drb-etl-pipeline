@@ -11,6 +11,7 @@
 - Improved stability during clustering processes
 - Improved development process script
 - Improved unit tests for citation generator
+- Removed uuid array
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed
