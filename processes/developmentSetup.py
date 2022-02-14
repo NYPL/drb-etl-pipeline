@@ -30,8 +30,8 @@ class DevelopmentSetupProcess(CoreProcess):
     def runProcess(self):
         # Setup database if necessary
         self.generateEngine()
-        self.initializeDatabase()
         self.createSession()
+        self.initializeDatabase()
 
         # Setup ElasticSearch index if necessary
         self.createElasticConnection()
@@ -61,7 +61,6 @@ class DevelopmentSetupProcess(CoreProcess):
         self.adminDBConnection.generateEngine()
         with self.adminDBConnection.engine.connect() as conn:
             conn.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-
             try:
                 conn.execute('CREATE DATABASE {}'.format(os.environ['POSTGRES_NAME']))
             except ProgrammingError:

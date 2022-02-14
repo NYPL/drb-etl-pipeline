@@ -5,6 +5,7 @@
 - Method in sfrRecord manager to check for reasonable publication dates for editions
 - Tests for publicationDateCheck method in sfrRecord manager
 - Bulk ElasticSearch indexing
+- ElasticSearch 7.10+ language per-field indexing & searching
 ### Fixed
 - Classify Performance improvemences
 - Improved stability during clustering processes
