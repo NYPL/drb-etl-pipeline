@@ -246,8 +246,14 @@ class ElasticsearchManager:
     def saveWorkRecords(self, works):
         logger.info('Saving {} ES Work Records'.format(len(works)))
 
-        saveRes = bulk(self.es, self._upsertGenerator(works))
+        saveRes = bulk(self.es, self._upsertGenerator(works), raise_on_error=False)
         logger.debug(saveRes)
+
+        if saveRes[1]:
+            for err in saveRes[1]:
+                logger.error('Type: {}, Reason: {}'.format(
+                    err['update']['error']['type'], err['update']['error']['reason']
+                ))
 
     def _upsertGenerator(self, works):
         for work in works:

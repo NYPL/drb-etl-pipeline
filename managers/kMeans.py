@@ -108,19 +108,21 @@ class KMeansManager:
     def createDF(self):
         logger.info('Generating DataFrame from instance data')
 
-        self.df = pd.DataFrame(columns=['place', 'publisher', 'pubDate', 'edition', 'uuid'])
+        frameRows = []
 
         for i in self.instances:
             spatialData, dateData, publisherData = self.getInstanceData(i)
 
             if bool(spatialData) or dateData != {} or publisherData:
-                self.df = self.df.append({
+                frameRows.append({
                     'place': spatialData or '',
                     'publisher': publisherData,
                     'pubDate': dateData,
                     'edition': self.getEditionStatement(i.has_version),
                     'uuid': i.uuid
-                }, ignore_index=True)
+                })
+
+        self.df = pd.DataFrame(frameRows)
 
         self.maxK = len(self.df.index) if len(self.df.index) > 1 else 2
 

@@ -95,10 +95,12 @@ class TestElasticsearchManager:
         mockGen = mocker.patch.object(ElasticsearchManager, '_upsertGenerator')
         mockGen.return_value = 'generator'
 
+        mockBulk.return_value = (2, [{'update': {'error': {'type': 'testing', 'reason': 'testing'}}}])
+
         testInstance.saveWorkRecords(['work1', 'work2', 'work3'])
 
         mockGen.assert_called_once_with(['work1', 'work2', 'work3'])
-        mockBulk.assert_called_once_with('mockClient', 'generator')
+        mockBulk.assert_called_once_with('mockClient', 'generator', raise_on_error=False)
 
     def test_upsertGenerator(self, testInstance, mocker):
         mockWork = mocker.MagicMock(uuid=1)
