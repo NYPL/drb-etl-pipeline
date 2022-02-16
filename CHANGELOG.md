@@ -5,11 +5,14 @@
 - Method in sfrRecord manager to check for reasonable publication dates for editions
 - Tests for publicationDateCheck method in sfrRecord manager
 - Bulk ElasticSearch indexing
+- Blueprint for a citation generator 
 - ElasticSearch 7.10+ language per-field indexing & searching
 ### Fixed
 - Classify Performance improvemences
 - Improved stability during clustering processes
 - Improved development process script
+- Improved unit tests for citation generator
+- Removed uuid array
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed

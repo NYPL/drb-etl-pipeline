@@ -31,11 +31,13 @@ class DevelopmentSetupProcess(CoreProcess):
         # Setup database if necessary
         self.generateEngine()
         self.createSession()
+        #Allow Database to be trashed when reinitializing local DevelopmentSetUp
         self.initializeDatabase()
 
         # Setup ElasticSearch index if necessary
         self.createElasticConnection()
         self.createElasticSearchIndex()
+        #Allow ElasticSearch to be trashed when reinitializing local DevelopmentSetUp
 
         # Create rabbit queues
         self.createRabbitConnection()
