@@ -37,7 +37,6 @@ class DBManager:
 
     def initializeDatabase(self):
         if not inspect(self.engine).has_table('works'):
-            print('Calling')
             Base.metadata.create_all(self.engine)
 
     def createSession(self, autoflush=False):

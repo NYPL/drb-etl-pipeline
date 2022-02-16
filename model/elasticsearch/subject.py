@@ -1,12 +1,12 @@
-from elasticsearch_dsl import Keyword, Text
+from elasticsearch_dsl import Keyword, Object
 
+from .base import BaseInner, PerLanguageField
 
-from .base import BaseInner, plain_ascii
 
 class Subject(BaseInner):
     authority = Keyword()
     control_number = Keyword()
-    subject = Text(analyzer=plain_ascii, fields={'keyword': Keyword()})
+    heading = Object(PerLanguageField)
 
     @classmethod
     def getFields(cls):

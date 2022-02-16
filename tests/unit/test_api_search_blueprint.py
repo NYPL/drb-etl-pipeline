@@ -41,7 +41,7 @@ class TestSearchBlueprint:
     def mockHits(self, FakeHit, mocker):
         class FakeHits:
             def __init__(self):
-                self.total = 5
+                self.total = mocker.MagicMock(value=5)
                 self.hits = [
                     FakeHit('uuid1', ['ed1', 'ed2']),
                     FakeHit('uuid2', ['ed3']),

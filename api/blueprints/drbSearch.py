@@ -74,12 +74,13 @@ def standardQuery():
     facets = APIUtils.formatAggregationResult(
         searchResult.aggregations.to_dict()
     )
+
     paging = APIUtils.formatPagingOptions(
-        searchPage + 1, searchSize, searchResult.hits.total
+        searchPage + 1, searchSize, searchResult.hits.total.value
     )
 
     dataBlock = {
-        'totalWorks': searchResult.hits.total,
+        'totalWorks': searchResult.hits.total.value,
         'works': APIUtils.formatWorkOutput(
             works, results, formats=filteredFormats, reader=readerVersion
         ),

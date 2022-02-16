@@ -6,6 +6,7 @@
 - Tests for publicationDateCheck method in sfrRecord manager
 - Bulk ElasticSearch indexing
 - Blueprint for a citation generator 
+- ElasticSearch 7.10+ language per-field indexing & searching
 ### Fixed
 - Classify Performance improvemences
 - Improved stability during clustering processes

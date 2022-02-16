@@ -17,3 +17,4 @@ from .elasticsearch.language import Language as ESLanguage
 from .elasticsearch.rights import Rights as ESRights
 from .elasticsearch.subject import Subject as ESSubject
 from .elasticsearch.work import Work as ESWork
+from .elasticsearch.base import PerLanguageField
