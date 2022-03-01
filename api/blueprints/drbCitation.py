@@ -829,7 +829,8 @@ def mlaThreeAuthorsGenerator(citationWork):
         authName = citationWork.authors[0]['name']
 
         citationResponse = f"{authName}, et al. {citationWork.title}. {citationWork.edition_statement}, \
-                    {citationWork.editions[0].publishers[0]['name']}, {citationWork.editions[0].publication_date}."
+                            {citationWork.editions[0].publishers[0]['name']}, \
+                            {citationWork.editions[0].publication_date}."
 
         return ' '.join(citationResponse.split())
         

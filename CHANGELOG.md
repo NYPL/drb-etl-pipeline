@@ -6,8 +6,9 @@
 - Tests for publicationDateCheck method in sfrRecord manager
 - Bulk ElasticSearch indexing
 - Blueprint for a citation generator 
+- MLA Citation rules to citation generator
 ### Fixed
-- Classify Performance improvemences
+- Classify Performance improvements
 - Improved stability during clustering processes
 - Improved development process script
 - Improved unit tests for citation generator
