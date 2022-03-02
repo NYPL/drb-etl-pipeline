@@ -209,7 +209,7 @@ class ElasticClient():
             Q(
                 'query_string',
                 query=titleText,
-                fields=['title^3', 'alt_titles'],
+                fields=['title.*^3', 'alt_titles.*'],
                 default_operator='and'
             ),
             Q(
@@ -218,7 +218,7 @@ class ElasticClient():
                 query=Q(
                     'query_string',
                     query=titleText,
-                    fields=['editions.title'],
+                    fields=['editions.title.*'],
                     default_operator='and'
                 )
             )
@@ -275,7 +275,7 @@ class ElasticClient():
             query=Q(
                 'query_string',
                 query=subjectText,
-                fields=['subjects.heading'],
+                fields=['subjects.heading.*'],
                 default_operator='and'
             )
         )

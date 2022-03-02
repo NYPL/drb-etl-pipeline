@@ -7,6 +7,7 @@
 - Bulk ElasticSearch indexing
 - Blueprint for a citation generator 
 - MLA Citation rules to citation generator
+- ElasticSearch 7.10+ language per-field indexing & searching
 ### Fixed
 - Classify Performance improvements
 - Improved stability during clustering processes
