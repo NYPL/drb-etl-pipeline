@@ -36,7 +36,7 @@ def citationFetch(uuid):
     outputCitations = {}
 
     for format in formatListSet:
-        logger.info("Do formatting here")
+        logger.info(format)
         if format == 'mla':
             newCite = mlaGenerator(citationWork)
         outputCitations[format] = newCite
@@ -58,16 +58,23 @@ def citationFetch(uuid):
         statusCode, 'citation', responseBody
     )
 
+# Why is 1900 the cutoff date for MLA citations?
+    #* Pre-1900: Use publication location in citation
+    #* Post-1900: Use publisher name in citation
 def mlaGenerator(citationWork):
     if citationWork:
-        if citationWork.title == "The Bible":
+        # Made title lowercase for consistency when finding this info in the database
+        if citationWork.title.lower() == "the bible":
             return mlaBibleGenerator(citationWork)
 
-        elif citationWork.editions[0].measurements:
-            if citationWork.editions[0].measurements[0] == {"type": "government_document", "value": "1"}:
-                return mlaGovGenerator(citationWork)
+        if citationWork.editions[0].measurements:
+            govDocOnly = filter(lambda x: (x["type"] == "government_document"), citationWork.editions[0].measurements)
+            if govDocOnly:
+                listGovDocOnly = list(govDocOnly)
+                if listGovDocOnly[0]["value"] == "1":
+                    return mlaGovGenerator(citationWork)
 
-        elif len(citationWork.authors) == 0:
+        if len(citationWork.authors) == 0:
             return mlaNoAuthorGenerator(citationWork)
 
         elif len(citationWork.authors) == 1:
@@ -76,7 +83,7 @@ def mlaGenerator(citationWork):
         elif len(citationWork.authors) == 2:
             return mlaTwoAuthorsGenerator(citationWork)
 
-        elif len(citationWork.authors) == 3:
+        elif len(citationWork.authors) >= 3:
             return mlaThreeAuthorsGenerator(citationWork)
             
         else:
@@ -90,49 +97,49 @@ def mlaBibleGenerator(citationWork):
     if citationWork.editions[0].publication_date < date(1900, 1, 1):
         citationResponse = f"{citationWork.title}. Unknown version, \
                             {citationWork.editions[0].publication_place}, \
-                            {citationWork.editions[0].publication_date}."
-            
-        return ' '.join(citationResponse.split())
+                            {citationWork.editions[0].publication_date.year}."
 
     #Bible editions during and after 1900
         #Specific version info of Bible currently not displayed in database
     else:      
         citationResponse = f"{citationWork.title}. Unknown version, \
                             {citationWork.editions[0].publishers[0]['name']}, \
-                            {citationWork.editions[0].publication_date}."
+                            {citationWork.editions[0].publication_date.year}."
             
-        return ' '.join(citationResponse.split())
+    return ' '.join(citationResponse.split())
 
 def mlaGovGenerator(citationWork):
     #Government Publications before 1900
     if citationWork.editions[0].publication_date < date(1900, 1, 1):
-
+        
         govName = citationWork.authors[0]['name']
+    
+        #Gov Pubs have government name and agency/division as the author
+            #* There's a period separating the Gov name and agency/division
+            #* Must replace with comma instead to match MLA rule
         govNameAndAgency = govName.replace('.', ',', 1)
 
-        citationResponse = f"{govNameAndAgency} \
+        citationResponse = f"{govNameAndAgency}. \
                     {citationWork.title}. \
-                    {citationWork.editions[0].publishers[0]['name']}, \
-                    {citationWork.editions[0].publication_date}."
-            
-        return ' '.join(citationResponse.split())
+                    {citationWork.editions[0].publication_place}, \
+                    {citationWork.editions[0].publication_date.year}."
 
     else:
 
         govName = citationWork.authors[0]['name']
         govNameAndAgency = govName.replace('.', ',', 1)
 
-        citationResponse = f"{govNameAndAgency} \
+        citationResponse = f"{govNameAndAgency}. \
                             {citationWork.title}. \
-                            {citationWork.editions[0].publication_place}, \
-                            {citationWork.editions[0].publication_date}."
+                            {citationWork.editions[0].publishers[0]['name']}, \
+                            {citationWork.editions[0].publication_date.year}."
             
-        return ' '.join(citationResponse.split())
+    return ' '.join(citationResponse.split())
 
 def mlaNoAuthorGenerator(citationWork):
-    #Translated works/works prepared by editors before 1900
-    if citationWork.editions[0].publication_date < date(1900, 1, 1) and \
-        citationWork.contributors:
+
+    #Translated works/works prepared by editors
+    if citationWork.contributors:
 
         i = 0
         transName = ''
@@ -140,9 +147,9 @@ def mlaNoAuthorGenerator(citationWork):
 
         while i < len(citationWork.contributors):
             if citationWork.contributors[i]['roles'] == 'translator':
-                transName = citationWork.contributors[i]['roles']
+                transName = citationWork.contributors[i]['name']
             if citationWork.contributors[i]['roles'] == 'editor':
-                editorName = citationWork.contributors[i]['roles']
+                editorName = citationWork.contributors[i]['name']
             i += 1
         
         if transName and editorName:
@@ -153,10 +160,20 @@ def mlaNoAuthorGenerator(citationWork):
             editorLastName = listEditorName[0]
             editorFirstName = listEditorName[1]
 
-            citationResponse = f"{citationWork.title}. \
-                    translated by {transFirstName} {transLastName}, \
-                    edited by {editorFirstName} {editorLastName}, {citationWork.editions[0].publication_place}, \
-                    {citationWork.editions[0].publication_date}."
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
                     
@@ -164,82 +181,55 @@ def mlaNoAuthorGenerator(citationWork):
             listTransName = transName.split(', ')
             transLastName = listTransName[0]
             transFirstName = listTransName[1]
-            citationResponse = f"{citationWork.title}. \
-                    translated by {transFirstName} {transLastName}, {citationWork.editions[0].publication_place}, \
-                    {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-        if citationWork.contributors[i]['roles'] == 'editor':
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-            citationResponse = f"{citationWork.title}, \
-                edited by {editorFirstName} {editorLastName}, {citationWork.editions[0].publication_place}, \
-                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-    #Translated works/works prepared by editors during or after 1900
-    if citationWork.editions[0].publication_date >= date(1900, 1, 1) and \
-        citationWork.contributors:
-
-        i = 0
-        transName = ''
-        editorName = ''
-
-        while i < len(citationWork.contributors):
-            if citationWork.contributors[i]['roles'] == 'translator':
-                transName = citationWork.contributors[i]['roles']
-            if citationWork.contributors[i]['roles'] == 'editor':
-                editorName = citationWork.contributors[i]['roles']
-            i += 1
-        
-        if transName and editorName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-
-            citationResponse = f"{citationWork.title}. \
-                                translated by {transFirstName} {transLastName}, \
-                                edited by {editorFirstName} {editorLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-                    
-        if transName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
-            citationResponse = f"{citationWork.title}. \
-                                translated by {transFirstName} {transLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-        if editorName:
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-            citationResponse = f"{citationWork.title}, \
-                                edited by {editorFirstName} {editorLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-    
             
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
+
+            return ' '.join(citationResponse.split())
+
+        elif editorName:
+            listEditorName = editorName.split(', ')
+            editorLastName = listEditorName[0]
+            editorFirstName = listEditorName[1]
+
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{citationWork.title}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{citationWork.title}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
+
+            return ' '.join(citationResponse.split())
+
+        else:
+            return mlaNoAuthorExtraRulesGenerator(citationWork)
+    else:
+        return mlaNoAuthorExtraRulesGenerator(citationWork)
+            
+#Works with no authors that are not translated or prepared by editors
+def mlaNoAuthorExtraRulesGenerator(citationWork):
     #Single edition books with no author before 1900
     if citationWork.editions[0].publication_date < date(1900, 1, 1) and \
         citationWork.editions[0].edition_statement is None:
 
         citationResponse = f"{citationWork.title}. {citationWork.editions[0].publication_place}, \
-                            {citationWork.editions[0].publication_date}."
+                            {citationWork.editions[0].publication_date.year}."
 
         return ' '.join(citationResponse.split())
                 
@@ -249,7 +239,7 @@ def mlaNoAuthorGenerator(citationWork):
 
         citationResponse = f"{citationWork.title}. {citationWork.edition_statement}, \
                             {citationWork.editions[0].publication_place}, \
-                            {citationWork.editions[0].publication_date}."
+                            {citationWork.editions[0].publication_date.year}."
 
         return ' '.join(citationResponse.split())
 
@@ -258,7 +248,7 @@ def mlaNoAuthorGenerator(citationWork):
         citationWork.editions[0].edition_statement is None:
 
         citationResponse = f"{citationWork.title}. {citationWork.editions[0].publishers[0]['name']}, \
-                            {citationWork.editions[0].publication_date}." 
+                            {citationWork.editions[0].publication_date.year}." 
 
         return ' '.join(citationResponse.split())
 
@@ -268,14 +258,17 @@ def mlaNoAuthorGenerator(citationWork):
 
         citationResponse = f"{citationWork.title}. {citationWork.edition_statement}, \
                             {citationWork.editions[0].publishers[0]['name']}, \
-                            {citationWork.editions[0].publication_date}." 
+                            {citationWork.editions[0].publication_date.year}." 
 
         return ' '.join(citationResponse.split())
 
+    else:
+        return "MLA Citation rule not implemented"
+        
 def mlaOneAuthorGenerator(citationWork):
-    #Translated works/works prepared by editors before 1900
-    if citationWork.editions[0].publication_date < date(1900, 1, 1) and \
-        citationWork.contributors:
+
+    #Translated works/works prepared by editors 
+    if citationWork.contributors:
 
         i = 0
         transName = ''
@@ -283,9 +276,9 @@ def mlaOneAuthorGenerator(citationWork):
 
         while i < len(citationWork.contributors):
             if citationWork.contributors[i]['roles'] == 'translator':
-                transName = citationWork.contributors[i]['roles']
+                transName = citationWork.contributors[i]['name']
             if citationWork.contributors[i]['roles'] == 'editor':
-                editorName = citationWork.contributors[i]['roles']
+                editorName = citationWork.contributors[i]['name']
             i += 1
         
         if transName and editorName:
@@ -297,10 +290,20 @@ def mlaOneAuthorGenerator(citationWork):
             editorFirstName = listEditorName[1]
             authName = citationWork.authors[0]['name']
 
-            citationResponse = f"{authName}. {citationWork.title}. \
-                    translated by {transFirstName} {transLastName}, \
-                    edited by {editorFirstName} {editorLastName}, {citationWork.editions[0].publication_place}, \
-                    {citationWork.editions[0].publication_date}."
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{authName}. {citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{authName}. {citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
                     
@@ -309,80 +312,53 @@ def mlaOneAuthorGenerator(citationWork):
             transLastName = listTransName[0]
             transFirstName = listTransName[1]
             authName = citationWork.authors[0]['name']
-            citationResponse = f"{authName}. {citationWork.title}. \
-                    translated by {transFirstName} {transLastName}, {citationWork.editions[0].publication_place}, \
-                    {citationWork.editions[0].publication_date}."
+
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{authName}. {citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{authName}. {citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
 
-        if citationWork.contributors[i]['roles'] == 'editor':
+        elif editorName:
             listEditorName = editorName.split(', ')
             editorLastName = listEditorName[0]
             editorFirstName = listEditorName[1]
             authName = citationWork.authors[0]['name']
-            citationResponse = f"{authName}. {citationWork.title}, \
-                edited by {editorFirstName} {editorLastName}, {citationWork.editions[0].publication_place}, \
-                {citationWork.editions[0].publication_date}."
+
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{authName}. {citationWork.title}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            
+            else:
+
+                citationResponse = f"{authName}. {citationWork.title}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
-
-    #Translated works/works prepared by editors during or after 1900
-    if citationWork.editions[0].publication_date >= date(1900, 1, 1) and \
-        citationWork.contributors:
-
-        i = 0
-        transName = ''
-        editorName = ''
-
-        while i < len(citationWork.contributors):
-            if citationWork.contributors[i]['roles'] == 'translator':
-                transName = citationWork.contributors[i]['roles']
-            if citationWork.contributors[i]['roles'] == 'editor':
-                editorName = citationWork.contributors[i]['roles']
-            i += 1
         
-        if transName and editorName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-            authName = citationWork.authors[0]['name']
+        else:
+            return mlaOneAuthorExtraRulesGenerator(citationWork)
+    else:
+        return mlaOneAuthorExtraRulesGenerator(citationWork)
 
-            citationResponse = f"{authName}. {citationWork.title}. \
-                                translated by {transFirstName} {transLastName}, \
-                                edited by {editorFirstName} {editorLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-                    
-        if transName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
-            citationResponse = f"{authName}. {citationWork.title}. \
-                                translated by {transFirstName} {transLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-        if editorName:
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-            citationResponse = f"{authName}. {citationWork.title}, \
-                                edited by {editorFirstName} {editorLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-
+#Works with one author that are not translated or prepared by editors
+def mlaOneAuthorExtraRulesGenerator(citationWork):
     #Single edition books with one author before 1900
-    elif citationWork.editions[0].publication_date < date(1900, 1, 1) and \
+    if citationWork.editions[0].publication_date < date(1900, 1, 1) and \
         citationWork.editions[0].edition_statement is None:
 
         authName = citationWork.authors[0]['name']
@@ -392,7 +368,7 @@ def mlaOneAuthorGenerator(citationWork):
             citationResponse = f"{citationWork.title}. \
                                 {citationWork.editions[0].publishers[0]['name']}, \
                                 {citationWork.editions[0].publication_place}, \
-                                {citationWork.editions[0].publication_date}."
+                                {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
 
@@ -400,7 +376,7 @@ def mlaOneAuthorGenerator(citationWork):
             citationResponse = f"{authName}. {citationWork.title}. \
                                 {citationWork.editions[0].publishers[0]['name']}, \
                                 {citationWork.editions[0].publication_place} \
-                                {citationWork.editions[0].publication_date}."
+                                {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
 
@@ -415,14 +391,14 @@ def mlaOneAuthorGenerator(citationWork):
             citationResponse = f"{citationWork.title}. {citationWork.edition_statement}, \
                                 {citationWork.editions[0].publishers[0]['name']}, \
                                 {citationWork.editions[0].publication_place}, \
-                                {citationWork.editions[0].publication_date}."
+                                {citationWork.editions[0].publication_date.year}."
             return ' '.join(citationResponse.split())
 
         else:   
             citationResponse = f"{authName}. {citationWork.title}. {citationWork.edition_statement}, \
                                 {citationWork.editions[0].publishers[0]['name']}, \
                                 {citationWork.editions[0].publication_place} \
-                                {citationWork.editions[0].publication_date}."
+                                {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
     
@@ -437,13 +413,13 @@ def mlaOneAuthorGenerator(citationWork):
         if authName == citationWork.editions[0].publishers[0]['name']:
             citationResponse = f"{citationWork.title}. \
                                 {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
+                                {citationWork.editions[0].publication_date.year}."
             return ' '.join(citationResponse.split())
 
         else:   
             citationResponse = f"{authName}. {citationWork.title}. \
                                 {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
+                                {citationWork.editions[0].publication_date.year}."
             return ' '.join(citationResponse.split())
 
     #Multiple Edition books with one author during and after 1900
@@ -456,232 +432,203 @@ def mlaOneAuthorGenerator(citationWork):
         if authName == citationWork.editions[0].publishers[0]['name']:
             citationResponse = f"{citationWork.title}. {citationWork.edition_statement} \
                                 {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
+                                {citationWork.editions[0].publication_date.year}."
             return ' '.join(citationResponse.split())
 
         else:   
             citationResponse = f"{authName}. {citationWork.title}. {citationWork.edition_statement} \
                                 {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
+                                {citationWork.editions[0].publication_date.year}."
             return ' '.join(citationResponse.split())
+
+    else:
+        return "MLA Citation rule not implemented"
 
 def mlaTwoAuthorsGenerator(citationWork):
-    #Translated works/works prepared by editors before 1900
+
+    #Translated works/works prepared by editors
+    if citationWork.contributors:
+
+        i = 0
+        transName = ''
+        editorName = ''
+
+        while i < len(citationWork.contributors):
+            if citationWork.contributors[i]['roles'] == 'translator':
+                transName = citationWork.contributors[i]['name']
+            if citationWork.contributors[i]['roles'] == 'editor':
+                editorName = citationWork.contributors[i]['name']
+            i += 1
+        
+        if transName and editorName:
+            listTransName = transName.split(', ')
+            transLastName = listTransName[0]
+            transFirstName = listTransName[1]
+            listEditorName = editorName.split(', ')
+            editorLastName = listEditorName[0]
+            editorFirstName = listEditorName[1]
+
+            authName1 = citationWork.authors[0]['name']
+            authName2 = citationWork.authors[1]['name']
+            listAuthName2 = authName2.split(', ')
+            auth2LastName = listAuthName2[0]
+            auth2FirstName = listAuthName2[1]
+
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                                    {citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                                    {citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
+
+            return ' '.join(citationResponse.split())
+                    
+        if transName:
+            listTransName = transName.split(', ')
+            transLastName = listTransName[0]
+            transFirstName = listTransName[1]
+
+            authName1 = citationWork.authors[0]['name']
+            authName2 = citationWork.authors[1]['name']
+            listAuthName = authName2.split(', ')
+            auth2LastName = listAuthName[0]
+            auth2FirstName = listAuthName[1]
+
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                                    {citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                                    {citationWork.title}. \
+                                    Translated by {transFirstName} {transLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
+
+            return ' '.join(citationResponse.split())
+
+        elif editorName:
+            listEditorName = editorName.split(', ')
+            editorLastName = listEditorName[0]
+            editorFirstName = listEditorName[1]
+
+            authName1 = citationWork.authors[0]['name']
+            authName2 = citationWork.authors[1]['name']
+            listAuthName2 = authName2.split(', ')
+            auth2LastName = listAuthName2[0]
+            auth2FirstName = listAuthName2[1]
+            
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                                    {citationWork.title}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                                    {citationWork.title}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
+
+            return ' '.join(citationResponse.split())
+
+        else:
+            return mlaTwoAuthorsExtraRulesGenerator(citationWork)
+    else:
+        return mlaTwoAuthorsExtraRulesGenerator(citationWork)
+
+#Works with two authors that are not translated or prepared by editors
+def mlaTwoAuthorsExtraRulesGenerator(citationWork):
+    #Single edition books with two authors before 1900
     if citationWork.editions[0].publication_date < date(1900, 1, 1) and \
-        citationWork.contributors:
+        citationWork.editions[0].edition_statement is None:
 
-        i = 0
-        transName = ''
-        editorName = ''
+        authName1 = citationWork.authors[0]['name']
+        authName2 = citationWork.authors[1]['name']
+        listAuthName2 = authName2.split(', ')
+        auth2LastName = listAuthName2[0]
+        auth2FirstName = listAuthName2[1]
 
-        while i < len(citationWork.contributors):
-            if citationWork.contributors[i]['roles'] == 'translator':
-                transName = citationWork.contributors[i]['roles']
-            if citationWork.contributors[i]['roles'] == 'editor':
-                editorName = citationWork.contributors[i]['roles']
-            i += 1
-        
-        if transName and editorName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
+        citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                            {citationWork.title}. {citationWork.editions[0].publication_place}, \
+                            {citationWork.editions[0].publication_date.year}."
 
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
+        return ' '.join(citationResponse.split())
 
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
-                                {citationWork.title}. \
-                                translated by {transFirstName} {transLastName}, \
-                                edited by {editorFirstName} {editorLastName}, \
-                                {citationWork.editions[0].publication_place}, \
-                                {citationWork.editions[0].publication_date}."
+    #Multiple edition books with two authors before 1900
+    elif citationWork.editions[0].publication_date < date(1900, 1, 1) and \
+        citationWork.editions[0].edition_statement is not None:
 
-            return ' '.join(citationResponse.split())
-                    
-        if transName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
+        authName1 = citationWork.authors[0]['name']
+        authName2 = citationWork.authors[1]['name']
+        listAuthName = authName2.split(', ')
+        auth2LastName = listAuthName[0]
+        auth2FirstName = listAuthName[1]
 
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
+        citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                            {citationWork.title}. {citationWork.edition_statement} \
+                            {citationWork.editions[0].publication_place}, \
+                            {citationWork.editions[0].publication_date.year}."
 
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. {citationWork.title}. \
-                    translated by {transFirstName} {transLastName}, {citationWork.editions[0].publication_place}, \
-                    {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-        if citationWork.contributors[i]['roles'] == 'editor':
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
-
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. {citationWork.title}, \
-                edited by {editorFirstName} {editorLastName}, {citationWork.editions[0].publication_place}, \
-                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-    #Translated works/works prepared by editors during or after 1900
-    if citationWork.editions[0].publication_date >= date(1900, 1, 1) and \
-        citationWork.contributors:
-
-        i = 0
-        transName = ''
-        editorName = ''
-
-        while i < len(citationWork.contributors):
-            if citationWork.contributors[i]['roles'] == 'translator':
-                transName = citationWork.contributors[i]['roles']
-            if citationWork.contributors[i]['roles'] == 'editor':
-                editorName = citationWork.contributors[i]['roles']
-            i += 1
-        
-        if transName and editorName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
-
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. {citationWork.title}. \
-                                translated by {transFirstName} {transLastName}, \
-                                edited by {editorFirstName} {editorLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-                    
-        if transName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
-
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
-
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. {citationWork.title}. \
-                                translated by {transFirstName} {transLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-        if editorName:
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
+        return ' '.join(citationResponse.split())
             
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. {citationWork.title}, \
-                                edited by {editorFirstName} {editorLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-            
-            return ' '.join(citationResponse.split())
+    #Single Edition books with two authors during and after 1900
+    elif citationWork.editions[0].publication_date >= date(1900, 1, 1) and \
+        citationWork.editions[0].edition_statement is None:
 
-        #Single edition books with two authors before 1900
-        elif citationWork.editions[0].publication_date < date(1900, 1, 1) and \
-            citationWork.editions[0].edition_statement is None:
-
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
-
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
-                                {citationWork.title}. {citationWork.editions[0].publication_place}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-        #Multiple edition books with two authors before 1900
-        elif citationWork.editions[0].publication_date < date(1900, 1, 1) and \
-            citationWork.editions[0].edition_statement is not None:
-
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
-
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
-                                {citationWork.title}. {citationWork.edition_statement} \
-                                {citationWork.editions[0].publication_place}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-            
-        #Single Edition books with two authors during and after 1900
-        elif citationWork.editions[0].publication_date >= date(1900, 1, 1) and \
-            citationWork.editions[0].edition_statement is None:
-
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
+        authName1 = citationWork.authors[0]['name']
+        authName2 = citationWork.authors[1]['name']
+        listAuthName2 = authName2.split(', ')
+        auth2LastName = listAuthName2[0]
+        auth2FirstName = listAuthName2[1]
                 
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
-                                {citationWork.title}. {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
+        citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                            {citationWork.title}. {citationWork.editions[0].publishers[0]['name']}, \
+                            {citationWork.editions[0].publication_date.year}."
             
-            return ' '.join(citationResponse.split())
+        return ' '.join(citationResponse.split())
 
-        #Multiple Edition books with two authors during and after 1900
-        elif citationWork.editions[0].publication_date >= date(1900, 1, 1) and \
-            citationWork.editions[0].edition_statement is not None:
+    #Multiple Edition books with two authors during and after 1900
+    elif citationWork.editions[0].publication_date >= date(1900, 1, 1) and \
+        citationWork.editions[0].edition_statement is not None:
 
-            authName1 = citationWork.authors[0]['name']
-            authName2 = citationWork.authors[1]['name']
-            listAuthName = authName2.split(', ')
-            auth2LastName = listAuthName[0]
-            auth2FirstName = listAuthName[1]
+        authName1 = citationWork.authors[0]['name']
+        authName2 = citationWork.authors[1]['name']
+        listAuthName2 = authName2.split(', ')
+        auth2LastName = listAuthName2[0]
+        auth2FirstName = listAuthName2[1]
                 
-            citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
-                                {citationWork.title}. {citationWork.edition_statement}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
+        citationResponse = f"{authName1}, and {auth2FirstName} {auth2LastName}. \
+                            {citationWork.title}. {citationWork.editions[0].edition_statement}, \
+                            {citationWork.editions[0].publishers[0]['name']}, \
+                            {citationWork.editions[0].publication_date.year}."
             
-            return ' '.join(citationResponse.split())
+        return ' '.join(citationResponse.split())
+
+    else:
+        return "MLA Citation rule not implemented"
 
 def mlaThreeAuthorsGenerator(citationWork):
 
     #Translated works/works prepared by editors before 1900
-    if citationWork.editions[0].publication_date < date(1900, 1, 1) and \
-        citationWork.contributors:
+    if citationWork.contributors:
 
         i = 0
         transName = ''
@@ -689,9 +636,9 @@ def mlaThreeAuthorsGenerator(citationWork):
 
         while i < len(citationWork.contributors):
             if citationWork.contributors[i]['roles'] == 'translator':
-                transName = citationWork.contributors[i]['roles']
+                transName = citationWork.contributors[i]['name']
             if citationWork.contributors[i]['roles'] == 'editor':
-                editorName = citationWork.contributors[i]['roles']
+                editorName = citationWork.contributors[i]['name']
             i += 1
         
         if transName and editorName:
@@ -703,10 +650,20 @@ def mlaThreeAuthorsGenerator(citationWork):
             editorFirstName = listEditorName[1]
             authName = citationWork.authors[0]['name']
 
-            citationResponse = f"{authName}, et al. {citationWork.title}. \
-                    translated by {transFirstName} {transLastName}, \
-                    edited by {editorFirstName} {editorLastName}, {citationWork.editions[0].publication_place}, \
-                    {citationWork.editions[0].publication_date}."
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{authName}, et al. {citationWork.title}. \
+                                    translated by {transFirstName} {transLastName}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+                
+                citationResponse = f"{authName}, et al. {citationWork.title}. \
+                                    translated by {transFirstName} {transLastName}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
                     
@@ -715,86 +672,58 @@ def mlaThreeAuthorsGenerator(citationWork):
             transLastName = listTransName[0]
             transFirstName = listTransName[1]
             authName = citationWork.authors[0]['name']
-            citationResponse = f"{authName}, et al. {citationWork.title}. \
-                    translated by {transFirstName} {transLastName}, {citationWork.editions[0].publication_place}, \
-                    {citationWork.editions[0].publication_date}."
+
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+
+                citationResponse = f"{authName}, et al. {citationWork.title}. \
+                                    translated by {transFirstName} {transLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{authName}, et al. {citationWork.title}. \
+                                    translated by {transFirstName} {transLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
 
-        if citationWork.contributors[i]['roles'] == 'editor':
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-            authName = citationWork.authors[0]['name']
-            citationResponse = f"{authName}, et al. {citationWork.title}, \
-                edited by {editorFirstName} {editorLastName}, {citationWork.editions[0].publication_place}, \
-                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
-    #Translated works/works prepared by editors during or after 1900
-    if citationWork.editions[0].publication_date >= date(1900, 1, 1) and \
-        citationWork.contributors:
-
-        i = 0
-        transName = ''
-        editorName = ''
-
-        while i < len(citationWork.contributors):
-            if citationWork.contributors[i]['roles'] == 'translator':
-                transName = citationWork.contributors[i]['roles']
-            if citationWork.contributors[i]['roles'] == 'editor':
-                editorName = citationWork.contributors[i]['roles']
-            i += 1
-        
-        if transName and editorName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
+        elif editorName:
             listEditorName = editorName.split(', ')
             editorLastName = listEditorName[0]
             editorFirstName = listEditorName[1]
             authName = citationWork.authors[0]['name']
 
-            citationResponse = f"{authName}, et al. {citationWork.title}. \
-                                translated by {transFirstName} {transLastName}, \
-                                edited by {editorFirstName} {editorLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
+            if citationWork.editions[0].publication_date < date(1900, 1, 1):
+                
+                citationResponse = f"{authName}, et al. {citationWork.title}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publication_place}, \
+                                    {citationWork.editions[0].publication_date.year}."
+            else:
+
+                citationResponse = f"{authName}, et al. {citationWork.title}, \
+                                    edited by {editorFirstName} {editorLastName}, \
+                                    {citationWork.editions[0].publishers[0]['name']}, \
+                                    {citationWork.editions[0].publication_date.year}."
 
             return ' '.join(citationResponse.split())
-                    
-        if transName:
-            listTransName = transName.split(', ')
-            transLastName = listTransName[0]
-            transFirstName = listTransName[1]
-            citationResponse = f"{authName}, et al. {citationWork.title}. \
-                                translated by {transFirstName} {transLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
+        else:
+            mlaThreeAuthorsExtraRulesGenerator(citationWork)
+    else:
+        mlaThreeAuthorsExtraRulesGenerator(citationWork)
 
-            return ' '.join(citationResponse.split())
-
-        if editorName:
-            listEditorName = editorName.split(', ')
-            editorLastName = listEditorName[0]
-            editorFirstName = listEditorName[1]
-            citationResponse = f"{authName}, et al. {citationWork.title}, \
-                                edited by {editorFirstName} {editorLastName}, \
-                                {citationWork.editions[0].publishers[0]['name']}, \
-                                {citationWork.editions[0].publication_date}."
-
-            return ' '.join(citationResponse.split())
-
+#Works with three authors that are not translated or prepared by editors
+def mlaThreeAuthorsExtraRulesGenerator(citationWork):
     #Single Edition books with three authors or more before 1900
-    elif citationWork.editions[0].publication_date < date(1900, 1, 1) and \
+    if citationWork.editions[0].publication_date < date(1900, 1, 1) and \
         citationWork.editions[0].edition_statement is None:
             
         authName = citationWork.authors[0]['name']
 
         citationResponse = f"{authName}, et al. {citationWork.title}. \
                 {citationWork.editions[0].publication_place}, \
-                {citationWork.editions[0].publication_date}."
+                {citationWork.editions[0].publication_date.year}."
 
         return ' '.join(citationResponse.split())
         
@@ -805,9 +734,9 @@ def mlaThreeAuthorsGenerator(citationWork):
         authName = citationWork.authors[0]['name']
 
         citationResponse = f"{authName}, et al. {citationWork.title}. \
-                            {citationWork.edition_statement} \
+                            {citationWork.editions[0].edition_statement} \
                             {citationWork.editions[0].publication_place}, \
-                            {citationWork.editions[0].publication_date}."
+                            {citationWork.editions[0].publication_date.year}."
 
         return ' '.join(citationResponse.split())
         
@@ -828,9 +757,11 @@ def mlaThreeAuthorsGenerator(citationWork):
 
         authName = citationWork.authors[0]['name']
 
-        citationResponse = f"{authName}, et al. {citationWork.title}. {citationWork.edition_statement}, \
+        citationResponse = f"{authName}, et al. {citationWork.title}. {citationWork.editions[0].edition_statement}, \
                             {citationWork.editions[0].publishers[0]['name']}, \
-                            {citationWork.editions[0].publication_date}."
+                            {citationWork.editions[0].publication_date.year}."
 
         return ' '.join(citationResponse.split())
-        
+
+    else:
+        return "MLA Citation rule not implemented"
