@@ -33,7 +33,7 @@ Locally these services can be run in two modes:
 
 Local development requires that the following services be available. They do not need to be running locally, but for development purposes this is probably easiest. These should be installed by whatever means is easiest (on macOS this is generally `brew`, or your package manager of choice). These dependencies are:
 - PostgreSQL@10
-- ElasticSearch@6.8
+- ElasticSearch@7.10>
 - RabbitMQ
 - Redis
 - XCode Command Line Tools

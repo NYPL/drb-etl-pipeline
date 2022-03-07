@@ -452,10 +452,10 @@ class TestElasticClient:
 
         assert testInstance.searchedFields == ['title', 'alt_titles', 'editions.title']
         assert testQuery['bool']['should'][0]['query_string']['query'] == 'testTitle'
-        assert testQuery['bool']['should'][0]['query_string']['fields'] == ['title^3', 'alt_titles']
+        assert testQuery['bool']['should'][0]['query_string']['fields'] == ['title.*^3', 'alt_titles.*']
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions'
         assert testQuery['bool']['should'][1]['nested']['query']['query_string']['query'] == 'testTitle'
-        assert testQuery['bool']['should'][1]['nested']['query']['query_string']['fields'] == ['editions.title']
+        assert testQuery['bool']['should'][1]['nested']['query']['query_string']['fields'] == ['editions.title.*']
         assert testQuery['bool']['should'][1]['nested']['query']['query_string']['default_operator'] == 'and'
 
     def test_authorQuery(self, testInstance):
@@ -489,7 +489,7 @@ class TestElasticClient:
         assert testInstance.searchedFields == ['subjects.heading']
         assert testQuery['nested']['path'] == 'subjects'
         assert testQuery['nested']['query']['query_string']['query'] == 'testSubject'
-        assert testQuery['nested']['query']['query_string']['fields'] == ['subjects.heading']
+        assert testQuery['nested']['query']['query_string']['fields'] == ['subjects.heading.*']
 
     def test_getFromSize(self):
         startPosition, endPosition = ElasticClient.getFromSize(3, 15)

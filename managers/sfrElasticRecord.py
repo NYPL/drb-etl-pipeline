@@ -1,4 +1,5 @@
 from elasticsearch.exceptions import ConnectionTimeout
+import json
 
 from model import (
     ESWork,
@@ -7,7 +8,8 @@ from model import (
     ESAgent,
     ESLanguage,
     ESRights,
-    ESEdition
+    ESEdition,
+    PerLanguageField
 )
 
 
@@ -28,7 +30,7 @@ class SFRElasticRecordManager:
     
     def saveWork(self, retries=0):
         try:
-            self.work.save()
+            self.work.save(pipeline='language_detector')
         except ConnectionTimeout as e:
             if retries >= 2: raise e
             self.saveWork(retries=retries+1)
@@ -45,10 +47,18 @@ class SFRElasticRecordManager:
         self.work.date_created = self.dbWork.date_created
         self.work.date_modified = self.dbWork.date_modified
 
-        self.setSortTitle()
-        self.work.alt_titles = [a for a in self.dbWork.alt_titles]
+        self.work.title = PerLanguageField(default=self.work.title)
 
-        self.work.subjects = [ESSubject(**s) for s in self.dbWork.subjects]
+        self.setSortTitle()
+        self.work.alt_titles = [
+            PerLanguageField(default=a) for a in self.dbWork.alt_titles
+        ]
+
+        self.work.subjects = []
+        for s in self.dbWork.subjects:
+            subj = ESSubject(**s)
+            subj.heading = PerLanguageField(default=subj.heading)
+            self.work.subjects.append(subj)
 
         self.work.agents = [
             ESAgent(**SFRElasticRecordManager.addAgent(a, defaultRole='author'))
@@ -94,6 +104,9 @@ class SFRElasticRecordManager:
         })
         newEd.edition_id = newEd.id
         del newEd.id
+
+        newEd.title = PerLanguageField(default=newEd.title)
+        newEd.sub_title = PerLanguageField(default=newEd.sub_title)
 
         newEd.alt_titles = [a for a in edition.alt_titles]
 
