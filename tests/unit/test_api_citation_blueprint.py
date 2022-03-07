@@ -437,7 +437,7 @@ class TestCitationBlueprint:
                 {'message': 'Unable to locate work with UUID testUUID'}
             )
 
-    #Test for when request arguments for format are not set
+    #Test when request arguments for format are not set
     def test_citationFetch_fail2(self, mockUtils, testApp, mocker):
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbCitation.DBClient')

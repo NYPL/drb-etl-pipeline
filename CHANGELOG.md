@@ -13,6 +13,7 @@
 - Improved development process script
 - Improved unit tests for citation generator
 - Removed uuid array
+- Modified MLA citation rules
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed
