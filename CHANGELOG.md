@@ -6,13 +6,16 @@
 - Tests for publicationDateCheck method in sfrRecord manager
 - Bulk ElasticSearch indexing
 - Blueprint for a citation generator 
+- MLA Citation rules to citation generator
 - ElasticSearch 7.10+ language per-field indexing & searching
 ### Fixed
-- Classify Performance improvemences
+- Classify Performance improvements
 - Improved stability during clustering processes
 - Improved development process script
 - Improved unit tests for citation generator
 - Removed uuid array
+- Modified MLA citation rules
+- Deduplicated MLA citation generator
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed
