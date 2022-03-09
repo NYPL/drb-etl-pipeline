@@ -105,7 +105,7 @@ class TestCitationBlueprint:
                 )
 
     #* Translated work prepared by an editor successful test
-    def test_citationFetch_no_author_pre1900_trans_editor_success(self, mockUtils, testApp, mocker):
+    def test_citationFetch_trans_editor_success(self, mockUtils, testApp, mocker):
             mockDB = mocker.MagicMock()
             mockDBClient = mocker.patch('api.blueprints.drbCitation.DBClient')
             mockDBClient.return_value = mockDB
@@ -137,7 +137,7 @@ class TestCitationBlueprint:
                 )
 
     #* Translated work not prepared by editor successful test
-    def test_citationFetch__no_author_pre1900_trans_success(self, mockUtils, testApp, mocker):
+    def test_citationFetch_trans_success(self, mockUtils, testApp, mocker):
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbCitation.DBClient')
         mockDBClient.return_value = mockDB
@@ -168,7 +168,7 @@ class TestCitationBlueprint:
                 )
     
     #* Single edition work successful test
-    def test_citationFetch__no_author_pre1900_single_edit_work_success(self, mockUtils, testApp, mocker):
+    def test_citationFetch_single_edit_work_success(self, mockUtils, testApp, mocker):
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbCitation.DBClient')
         mockDBClient.return_value = mockDB
@@ -196,15 +196,15 @@ class TestCitationBlueprint:
                 )
 
     #* Multiple edition work successful test
-    def test_citationFetch_no_author_post1900_mult_edit_success(self, mockUtils, testApp, mocker):
+    def test_citationFetch_mult_edit_success(self, mockUtils, testApp, mocker):
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbCitation.DBClient')
         mockDBClient.return_value = mockDB
 
         editionMocks = [mocker.MagicMock(publication_date=date(2022, 1, 1), publishers=[{'name': 'NYPL'}], \
-                        measurements = [{'type': 'government_document', 'value': '0'}])]
+                        edition_statement = '2nd edition.', measurements = [{'type': 'government_document', 'value': '0'}])]
 
-        mockDB.fetchSingleWork.return_value = mocker.MagicMock(title='testTitle', edition_statement = '2nd edition.', \
+        mockDB.fetchSingleWork.return_value = mocker.MagicMock(title='testTitle', \
                                             editions = editionMocks)           
             
         mockUtils['formatResponseObject'].return_value\
@@ -224,7 +224,7 @@ class TestCitationBlueprint:
                 )
 
     #* Test 1 for work with one author
-    def test_citationFetch__one_author_work(self, mockUtils, testApp, mocker):
+    def test_citationFetch_one_author_work(self, mockUtils, testApp, mocker):
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbCitation.DBClient')
         mockDBClient.return_value = mockDB
@@ -283,9 +283,37 @@ class TestCitationBlueprint:
                 200, 'citation', {'mla': ' '.join('testLastName, testFirstName. testTitle. \
                                 NYPL, 2022.'.split())}
                 )
+    #* Test for work with corporate author/organization
+    def test_citationFetch_corporate_work(self, mockUtils, testApp, mocker):
+        mockDB = mocker.MagicMock()
+        mockDBClient = mocker.patch('api.blueprints.drbCitation.DBClient')
+        mockDBClient.return_value = mockDB
+
+        editionMocks = [mocker.MagicMock(publication_date=date(2022, 1, 1), publishers=[{'name': 'NYPL'}], \
+                        edition_statement = None, measurements = [{'type': 'government_document', 'value': '0'}])]
+
+        mockDB.fetchSingleWork.return_value = mocker.MagicMock(title='testTitle', \
+                                            authors = [{'name': 'NYPL'}], \
+                                            editions = editionMocks) 
+                                                
+        mockUtils['formatResponseObject'].return_value\
+                = 'citationResponse'
+
+        with testApp.test_request_context('/?format=mla'):
+            testAPIResponse = citationFetch('testUUID')
+
+            assert testAPIResponse == 'citationResponse'
+            mockDBClient.assert_called_once_with('testDBClient')
+
+            mockUtils['normalizeQueryParams'].assert_called_once()
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                200, 'citation', {'mla': ' '.join('testTitle. \
+                                NYPL, 2022.'.split())}
+                )
 
     #* Test 1 for work with two authors
-    def test_citationFetch__two_author_work(self, mockUtils, testApp, mocker):
+    def test_citationFetch__two_authors_work(self, mockUtils, testApp, mocker):
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbCitation.DBClient')
         mockDBClient.return_value = mockDB

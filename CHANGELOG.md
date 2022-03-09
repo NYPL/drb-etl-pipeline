@@ -15,6 +15,7 @@
 - Improved unit tests for citation generator
 - Removed uuid array
 - Modified MLA citation rules
+- Deduplicated MLA citation generator
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed
