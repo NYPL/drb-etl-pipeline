@@ -1,6 +1,13 @@
+import newrelic.agent
+import os
+if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
+    newrelic.agent.initialize(
+        environment=os.environ['ENVIRONMENT'],
+        config_file='newrelic.ini'
+    )
+
 import argparse
 import inspect
-import os
 import yaml
 
 from logger import createLog
