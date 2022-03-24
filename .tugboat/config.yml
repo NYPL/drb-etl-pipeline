@@ -1,10 +1,11 @@
 services:
   drb-api:
-    image: tugboatqa/python:3.8
+    image: tugboatqa/python:3.9
     default: true
     expose: 80
     commands:
       build:
+        - pip install --upgrade pip
         - pip install -r requirements.txt
       start:
         - ssh -4NTf ec2-user@$BASTION_HOST -L 9090:$REMOTE_POSTGRES_HOST:5432
