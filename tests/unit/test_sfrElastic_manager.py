@@ -73,7 +73,7 @@ class TestSFRElasticRecordManager:
 
     def test_saveWork_single_timeout(self, testInstance, mocker):
         testInstance.work = mocker.MagicMock()
-        testInstance.work.save.side_effect = [ConnectionTimeout, None]
+        testInstance.work.save.side_effect = [ConnectionTimeout('test'), None]
 
         testInstance.saveWork()
 
@@ -81,7 +81,7 @@ class TestSFRElasticRecordManager:
 
     def test_saveWork_multi_timeout_raise(self, testInstance, mocker):
         testInstance.work = mocker.MagicMock()
-        testInstance.work.save.side_effect = ConnectionTimeout
+        testInstance.work.save.side_effect = ConnectionTimeout('test')
 
         with pytest.raises(ConnectionTimeout):
             testInstance.saveWork()
