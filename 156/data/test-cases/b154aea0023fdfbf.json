@@ -1,0 +1,169 @@
+{
+  "uid" : "b154aea0023fdfbf",
+  "name" : "test_citationFetch_trans_editor_success",
+  "fullName" : "tests.unit.test_api_citation_blueprint.TestCitationBlueprint#test_citationFetch_trans_editor_success",
+  "historyId" : "7f9307e4a7f676dd13481dd17354e6f7",
+  "time" : {
+    "start" : 1648426867249,
+    "stop" : 1648426867256,
+    "duration" : 7
+  },
+  "status" : "passed",
+  "flaky" : false,
+  "newFailed" : false,
+  "beforeStages" : [ {
+    "name" : "pytestconfig",
+    "time" : {
+      "start" : 1648426867181,
+      "stop" : 1648426867181,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "testApp",
+    "time" : {
+      "start" : 1648426867247,
+      "stop" : 1648426867248,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "mocker",
+    "time" : {
+      "start" : 1648426867246,
+      "stop" : 1648426867246,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  }, {
+    "name" : "mockUtils",
+    "time" : {
+      "start" : 1648426867246,
+      "stop" : 1648426867247,
+      "duration" : 1
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "afterStages" : [ {
+    "name" : "mocker::0",
+    "time" : {
+      "start" : 1648426867257,
+      "stop" : 1648426867257,
+      "duration" : 0
+    },
+    "status" : "passed",
+    "steps" : [ ],
+    "attachments" : [ ],
+    "parameters" : [ ],
+    "stepsCount" : 0,
+    "attachmentsCount" : 0,
+    "shouldDisplayMessage" : false,
+    "hasContent" : false
+  } ],
+  "labels" : [ {
+    "name" : "parentSuite",
+    "value" : "tests.unit"
+  }, {
+    "name" : "suite",
+    "value" : "test_api_citation_blueprint"
+  }, {
+    "name" : "subSuite",
+    "value" : "TestCitationBlueprint"
+  }, {
+    "name" : "host",
+    "value" : "fv-az377-405"
+  }, {
+    "name" : "thread",
+    "value" : "2621-MainThread"
+  }, {
+    "name" : "framework",
+    "value" : "pytest"
+  }, {
+    "name" : "language",
+    "value" : "cpython3"
+  }, {
+    "name" : "package",
+    "value" : "tests.unit.test_api_citation_blueprint"
+  }, {
+    "name" : "resultFormat",
+    "value" : "allure2"
+  } ],
+  "parameters" : [ ],
+  "links" : [ ],
+  "hidden" : false,
+  "retry" : false,
+  "extra" : {
+    "severity" : "normal",
+    "retries" : [ ],
+    "categories" : [ ],
+    "history" : {
+      "statistic" : {
+        "failed" : 0,
+        "broken" : 0,
+        "skipped" : 0,
+        "passed" : 4,
+        "unknown" : 0,
+        "total" : 4
+      },
+      "items" : [ {
+        "uid" : "6ac815e870ac0005",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/155//#testresult/6ac815e870ac0005",
+        "status" : "passed",
+        "time" : {
+          "start" : 1647821979755,
+          "stop" : 1647821979760,
+          "duration" : 5
+        }
+      }, {
+        "uid" : "a800f4d9fbc3f93a",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/154//#testresult/a800f4d9fbc3f93a",
+        "status" : "passed",
+        "time" : {
+          "start" : 1647217303204,
+          "stop" : 1647217303211,
+          "duration" : 7
+        }
+      }, {
+        "uid" : "8d4efc2acfb5a648",
+        "reportUrl" : "https://NYPL.github.io/drb-etl-pipeline/153//#testresult/8d4efc2acfb5a648",
+        "status" : "passed",
+        "time" : {
+          "start" : 1646860844700,
+          "stop" : 1646860844707,
+          "duration" : 7
+        }
+      } ]
+    },
+    "tags" : [ ]
+  },
+  "source" : "b154aea0023fdfbf.json",
+  "parameterValues" : [ ]
+}
