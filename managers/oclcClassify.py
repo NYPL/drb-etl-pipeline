@@ -1,10 +1,12 @@
+import fasttext
 from lxml import etree
-import pycld2
-from polyglot.detect import Detector
-from polyglot.detect.base import UnknownLanguage
 import re
 import requests
 from requests.exceptions import HTTPError, ReadTimeout
+
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class ClassifyManager:
@@ -39,6 +41,9 @@ class ClassifyManager:
     TITLE_STOPWORDS = [
         'a', 'an', 'the', 'at', 'on', 'and', 'of', 'from', 'to'
     ]
+
+    # This is a compressed 917kb file that contains a language detection model
+    LANG_MODEL = fasttext.load_model('lid.176.ftz')
 
     def __init__(self, iden=None, idenType=None, title=None, author=None, start=0):
         self.identifier = iden
@@ -143,12 +148,12 @@ class ClassifyManager:
         responseCode = int(responseXML.get('code'))
 
         if responseCode == 102:
-            print('Did not find any information for this query')
+            logger.info('Did not find any information for this query')
             raise ClassifyError(message='No matching Classify records found')
         elif responseCode == 200:
             raise ClassifyError(message='Internal Classify API error encountered')
         elif responseCode == 101:
-            print('Invalid identifier received. Cleaning and retrying')
+            logger.info('Invalid identifier received. Cleaning and retrying')
             oldID = self.identifier
             cleanIdentifier = ClassifyManager.cleanIdentifier(self.identifier)
             if oldID == cleanIdentifier:
@@ -161,11 +166,11 @@ class ClassifyManager:
             )
             return multiRec.getClassifyResponse()
         elif responseCode == 2:
-            print('Got Single Work, parsing work and edition data')
+            logger.info('Got Single Work, parsing work and edition data')
 
             return [parseXML]
         elif responseCode == 4:
-            print('Got Multiwork response, iterate through works to get details')
+            logger.info('Got Multiwork response, iterate through works to get details')
             works = parseXML.findall('.//work', namespaces=self.NAMESPACE)
             outRecords = []
             for work in works:
@@ -173,7 +178,7 @@ class ClassifyManager:
                 oclcTitle = work.get('title', None)
 
                 if self.checkTitle(oclcTitle) is False:
-                    print('Found title mismatch with {}. Skipping'.format(
+                    logger.debug('Found title mismatch with {}. Skipping'.format(
                         oclcTitle
                     ))
                     continue
@@ -188,7 +193,7 @@ class ClassifyManager:
             
             return outRecords
         else:
-            print(responseXML)
+            logger.warning(responseXML)
             raise ClassifyError(message='Got unexpected response code')
     
     def checkTitle(self, oclcTitle):
@@ -232,13 +237,16 @@ class ClassifyManager:
 
             self.addlIds.extend(['{}|oclc'.format(oclc) for oclc in oclcNos])
 
-    @staticmethod
-    def getStrLang(string):
+    @classmethod
+    def getStrLang(cls, string):
         try:
-            langCode = Detector(string).language.code
-        except (UnknownLanguage, AttributeError, pycld2.error):
+            langPredict = cls.LANG_MODEL.predict(string, threshold=0.5)
+            logger.debug(langPredict)
+            langCode = langPredict[0][0].split('__')[2]
+        except (AttributeError, IndexError, ValueError) as e:
+            logger.warn(e)
             langCode = 'unk'
-        
+
         return langCode
 
     @staticmethod
