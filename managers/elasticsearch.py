@@ -3,7 +3,7 @@ import os
 from elasticsearch.client import IngestClient
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
-from elasticsearch_dsl import connections, Search, Index
+from elasticsearch_dsl import connections, Index
 
 from model import ESWork
 from logger import createLog
@@ -12,6 +12,8 @@ logger = createLog(__name__)
 
 
 class ElasticsearchManager:
+    OP_TYPE = 'index'
+
     def __init__(self, index=None):
         self.index = index or os.environ.get('ELASTICSEARCH_INDEX', None)
         self.client = None
@@ -252,7 +254,8 @@ class ElasticsearchManager:
         if saveRes[1]:
             for err in saveRes[1]:
                 logger.error('Type: {}, Reason: {}'.format(
-                    err['update']['error']['type'], err['update']['error']['reason']
+                    err[self.OP_TYPE]['error']['type'],
+                    err[self.OP_TYPE]['error']['reason']
                 ))
 
     def _upsertGenerator(self, works):
@@ -260,13 +263,11 @@ class ElasticsearchManager:
             logger.debug('Saving {}'.format(work))
 
             yield {
-                '_op_type': 'update',
+                '_op_type': self.OP_TYPE,
                 '_index': self.index,
                 '_id': work.uuid,
-                '_type': '_doc',
                 'pipeline': 'language_detector',
-                'doc_as_upsert': True,
-                'doc': work.to_dict()
+                '_source': work.to_dict()
             }
 
     def deleteWorkRecords(self, uuids):
@@ -282,6 +283,5 @@ class ElasticsearchManager:
             yield {
                 '_op_type': 'delete',
                 '_index': self.index,
-                '_id': uuid,
-                '_type': 'doc'
+                '_id': uuid
             }

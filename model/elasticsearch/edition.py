@@ -18,7 +18,7 @@ class Edition(BaseInner):
     table_of_contents = Text()
     volume = Text(fields={'keyword': Keyword()})
     extent = Text()
-    summary = Text() 
+    summary = Text()
     formats = Keyword()
     edition_id = Integer()
 
