@@ -8,13 +8,14 @@
 - Blueprint for a citation generator 
 - MLA Citation rules to citation generator
 - ElasticSearch 7.10+ language per-field indexing & searching
-- Query parameter to manifest muse urls
+- Query parameter to manifest ProjectMuse urls
+
 ### Fixed
 - Classify Performance improvements
 - Improved stability during clustering processes
 - Improved development process script
 - Improved unit tests for citation generator
-- Removed uuid array
+- Removed uuid array for citation generator
 - Modified MLA citation rules
 - Deduplicated MLA citation generator
 
