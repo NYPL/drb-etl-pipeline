@@ -86,7 +86,7 @@ def opdsSearch():
     for res in searchResult.hits:
         editionIds = [e.edition_id for e in res.meta.inner_hits.editions.hits]
 
-        if res.meta.highlight:
+        if getattr(res.meta, 'highlight', None):
             highlights[res.uuid] = {
                 key: list(set(res.meta.highlight[key]))
                 for key in res.meta.highlight
@@ -101,7 +101,7 @@ def opdsSearch():
     )
 
     OPDSUtils.addPagingOptions(
-        searchFeed, request.full_path, searchResult.hits.total,
+        searchFeed, request.full_path, searchResult.hits.total.value,
         page=page+1, perPage=pageSize
     )
 

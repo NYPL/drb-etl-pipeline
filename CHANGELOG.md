@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## unreleased -- v0.10.1
+### Added
+- Query parameter to manifest ProjectMuse url links
+### Fixed
+- JSON Decoder error for interstitial pages script
+- ES 8.x+ timeout configuration and OPDS2 integration
+
 ## 2022-04-04 -- v0.10.0
 ### Added
 - Method in sfrRecord manager to check for reasonable publication dates for editions
@@ -8,7 +15,6 @@
 - Blueprint for a citation generator 
 - MLA Citation rules to citation generator
 - ElasticSearch 7.10+ language per-field indexing & searching
-- Query parameter to manifest ProjectMuse url links
 ### Fixed
 - Classify Performance improvements
 - Improved stability during clustering processes
@@ -18,7 +24,6 @@
 - Modified MLA citation rules
 - Deduplicated MLA citation generator
 - Replaced polyglot with fasttext for language detection
-- JSON Decoder error for interstitial pages script
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed
