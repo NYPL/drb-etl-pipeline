@@ -8,7 +8,7 @@
 - Blueprint for a citation generator 
 - MLA Citation rules to citation generator
 - ElasticSearch 7.10+ language per-field indexing & searching
-- Query parameter to manifest ProjectMuse urls
+- Query parameter to manifest ProjectMuse url links
 ### Fixed
 - Classify Performance improvements
 - Improved stability during clustering processes
