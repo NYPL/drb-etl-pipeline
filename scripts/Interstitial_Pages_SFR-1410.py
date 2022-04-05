@@ -21,14 +21,12 @@ def main():
             update_batch(museObject, bucketName, currKey)
 
 # Loading batches of 1000 ProjectMuse JSON records using a paginator until there are no more batches
-@staticmethod
 def load_batch():
     paginator = s3_client.get_paginator('list_objects_v2')
     page_iterator = paginator.paginate(Bucket= bucketName, Prefix= 'manifests/muse/')
     return page_iterator
     
 # Updating and returning one ProjectMuse JSON file record
-@staticmethod
 def update_batch(museObject, bucketName, currKey):
     # Decode UTF-8 bytes to Unicode, and convert single quotes 
     # to double quotes to make it valid JSON
