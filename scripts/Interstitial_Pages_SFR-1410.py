@@ -31,7 +31,7 @@ def update_batch(museObject, bucketName, currKey):
     # Decode UTF-8 bytes to Unicode, and convert single quotes 
     # to double quotes to make it valid JSON
     for i in museObject['Body'].iter_lines():
-        museStrObject = i.decode('utf8').replace("'", '"')
+        museStrObject = i.decode('utf8')
         # Load the JSON to a Python list and access readingOrder link
         museDictObject = json.loads(museStrObject)
         logging.info(museDictObject['readingOrder'])

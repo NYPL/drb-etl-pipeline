@@ -18,6 +18,7 @@
 - Modified MLA citation rules
 - Deduplicated MLA citation generator
 - Replaced polyglot with fasttext for language detection
+- JSON Decoder error for interstitial pages script
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed
