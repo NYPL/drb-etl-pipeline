@@ -36,7 +36,10 @@ class TestElasticsearchManager:
         )
 
         mockClient.assert_called_once_with(
-            hosts=['http://testUser:testPswd@host:port']
+            hosts=['http://testUser:testPswd@host:port'],
+            timeout=1000,
+            retry_on_timeout=True,
+            max_retries=3
         )
 
     def test_createELasticSearchIndex_execute(self, testInstance, mocker):
