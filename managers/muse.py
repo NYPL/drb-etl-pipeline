@@ -121,12 +121,24 @@ class MUSEManager:
                 pdfManifest.closeSection()
 
             if pdfItem:
-                pdfManifest.addChapter(
-                    '{}{}'.format(
-                        self.MUSE_ROOT, pdfItem.parent.get('href')
-                    ),
-                    titleItem.span.a.string,
-                )
+                #skipCover indicates whether to skip the intersitital cover page by adding a query parameter
+                skipCover = False
+                if skipCover == False:
+                    pdfManifest.addChapter(
+                        '{}{}'.format(
+                            self.MUSE_ROOT, pdfItem.parent.get('href')
+                        ),
+                        titleItem.span.a.string,
+                    )
+                if skipCover == True:
+                    queryParam = '?start=2'
+                    pdfManifest.addChapter(
+                        '{}{}{}'.format(
+                            self.MUSE_ROOT, pdfItem.parent.get('href'), queryParam
+                        ),
+                        titleItem.span.a.string,
+                    )
+            skipCover = True
 
         pdfManifest.closeSection()
 
