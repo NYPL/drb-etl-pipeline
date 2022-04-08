@@ -3,9 +3,12 @@
 ## unreleased -- v0.10.1
 ### Added
 - Query parameter to manifest ProjectMuse url links
+- Updated muse manager to add query parameter for future muse records
+- Updated test_muse_mangager script with query paramater change
 ### Fixed
 - JSON Decoder error for interstitial pages script
 - ES 8.x+ timeout configuration and OPDS2 integration
+- Simplified constructWebpubManifest script in muse manager
 
 ## 2022-04-04 -- v0.10.0
 ### Added
