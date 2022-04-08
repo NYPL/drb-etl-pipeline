@@ -3,7 +3,6 @@
 ## unreleased -- v0.10.1
 ### Added
 - Query parameter to manifest ProjectMuse url links
-- Query parameter to manifest ProjectMuse url links
 - Updated muse manager to add query parameter for future muse records
 - Updated test_muse_mangager script with query paramater change
 ### Fixed
