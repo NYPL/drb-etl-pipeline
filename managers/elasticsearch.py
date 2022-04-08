@@ -4,6 +4,7 @@ from elasticsearch.client import IngestClient
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl import connections, Index
+from elastic_transport import ConnectionTimeout
 
 from model import ESWork
 from logger import createLog
@@ -30,11 +31,15 @@ class ElasticsearchManager:
 
         host = '{}://{}{}:{}'.format(scheme, creds, host, port)
 
-        self.client = connections.create_connection(
-            hosts=[host], timeout=timeout, retry_on_timeout=True, max_retries=3
-        )
+        connectionConfig = {
+            'hosts': [host],
+            'timeout': timeout,
+            'retry_on_timeout': True,
+            'max_retries': 3
+        }
 
-        self.es = Elasticsearch(hosts=[host])
+        self.client = connections.create_connection(**connectionConfig)
+        self.es = Elasticsearch(**connectionConfig)
 
     def createElasticSearchIngestPipeline(self):
         esIngestClient = IngestClient(self.client)
@@ -248,15 +253,22 @@ class ElasticsearchManager:
     def saveWorkRecords(self, works):
         logger.info('Saving {} ES Work Records'.format(len(works)))
 
-        saveRes = bulk(self.es, self._upsertGenerator(works), raise_on_error=False)
-        logger.debug(saveRes)
+        try:
+            saveRes = bulk(
+                self.es, self._upsertGenerator(works), raise_on_error=False
+            )
 
-        if saveRes[1]:
-            for err in saveRes[1]:
-                logger.error('Type: {}, Reason: {}'.format(
-                    err[self.OP_TYPE]['error']['type'],
-                    err[self.OP_TYPE]['error']['reason']
-                ))
+            logger.debug(saveRes)
+
+            if saveRes[1]:
+                for err in saveRes[1]:
+                    logger.error('Type: {}, Reason: {}'.format(
+                        err[self.OP_TYPE]['error']['type'],
+                        err[self.OP_TYPE]['error']['reason']
+                    ))
+        except ConnectionTimeout as e:
+            logger.error('ElasticSearch connection timeout')
+            logger.debug(e)
 
     def _upsertGenerator(self, works):
         for work in works:
