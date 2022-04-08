@@ -21,6 +21,7 @@
 - Deduplicated MLA citation generator
 - Replaced polyglot with fasttext for language detection
 - JSON Decoder error for interstitial pages script
+- Simplified constructWebpubManifest script in muse manager
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed

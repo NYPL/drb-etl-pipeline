@@ -109,7 +109,7 @@ class MUSEManager:
         if not chapterTable:
             raise MUSEError('Book {} unavailable'.format(self.museID))
 
-        skipCover = False
+        skipCover = ''
 
         for card in chapterTable.find_all(class_='card_text'):
             titleItem = card.find('li', class_='title')
@@ -123,23 +123,16 @@ class MUSEManager:
                 pdfManifest.closeSection()
 
             if pdfItem:
-                #skipCover indicates whether to skip the intersitital cover page by adding a query parameter
-                if skipCover == False:
-                    pdfManifest.addChapter(
-                        '{}{}'.format(
-                            self.MUSE_ROOT, pdfItem.parent.get('href')
-                        ),
-                        titleItem.span.a.string,
-                    )
-                if skipCover == True:
-                    queryParam = '?start=2'
-                    pdfManifest.addChapter(
-                        '{}{}{}'.format(
-                            self.MUSE_ROOT, pdfItem.parent.get('href'), queryParam
-                        ),
-                        titleItem.span.a.string,
-                    )
-            skipCover = True
+                #skipCover is iniitally an empty string since the Cover Page doesn't need a query parameter
+                pdfManifest.addChapter(
+                    '{}{}{}'.format(
+                        self.MUSE_ROOT, pdfItem.parent.get('href'), skipCover
+                    ),
+                    titleItem.span.a.string,
+                )
+            #skipCover is updated with a query parameter to skip the intersitital cover page in every future chapter
+            queryParam = '?start=2'
+            skipCover = queryParam
 
         pdfManifest.closeSection()
 
