@@ -9,6 +9,8 @@
 - MLA Citation rules to citation generator
 - ElasticSearch 7.10+ language per-field indexing & searching
 - Query parameter to manifest ProjectMuse url links
+- Updated muse manager to add query parameter for future muse records
+- Updated test_muse_mangager script with query paramter change
 ### Fixed
 - Classify Performance improvements
 - Improved stability during clustering processes

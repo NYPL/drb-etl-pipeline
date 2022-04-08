@@ -109,6 +109,8 @@ class MUSEManager:
         if not chapterTable:
             raise MUSEError('Book {} unavailable'.format(self.museID))
 
+        skipCover = False
+
         for card in chapterTable.find_all(class_='card_text'):
             titleItem = card.find('li', class_='title')
             pdfItem = card.find(alt='Download PDF')
@@ -122,7 +124,6 @@ class MUSEManager:
 
             if pdfItem:
                 #skipCover indicates whether to skip the intersitital cover page by adding a query parameter
-                skipCover = False
                 if skipCover == False:
                     pdfManifest.addChapter(
                         '{}{}'.format(
