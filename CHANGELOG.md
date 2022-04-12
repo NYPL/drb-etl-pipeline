@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.10.1
+## 2022-04-12 -- v0.10.1
 ### Added
 - Query parameter to manifest ProjectMuse url links
 - Updated muse manager to add query parameter for future muse records
