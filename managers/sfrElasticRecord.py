@@ -1,5 +1,4 @@
 from elasticsearch.exceptions import ConnectionTimeout
-import json
 
 from model import (
     ESWork,
@@ -32,7 +31,9 @@ class SFRElasticRecordManager:
         try:
             self.work.save(pipeline='language_detector')
         except ConnectionTimeout as e:
-            if retries >= 2: raise e
+            if retries >= 2:
+                raise e
+
             self.saveWork(retries=retries+1)
     
     def updateWork(self, data):
@@ -108,7 +109,8 @@ class SFRElasticRecordManager:
         newEd.title = PerLanguageField(default=newEd.title)
         newEd.sub_title = PerLanguageField(default=newEd.sub_title)
 
-        newEd.alt_titles = [a for a in edition.alt_titles]
+        if edition.alt_titles:
+            newEd.alt_titles = [a for a in edition.alt_titles]
 
         newEd.identifiers = [ESIdentifier(**dict(i)) for i in edition.identifiers]
 

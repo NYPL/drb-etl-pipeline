@@ -36,7 +36,10 @@ class TestElasticsearchManager:
         )
 
         mockClient.assert_called_once_with(
-            hosts=['http://testUser:testPswd@host:port']
+            hosts=['http://testUser:testPswd@host:port'],
+            timeout=1000,
+            retry_on_timeout=True,
+            max_retries=3
         )
 
     def test_createELasticSearchIndex_execute(self, testInstance, mocker):
@@ -84,9 +87,9 @@ class TestElasticsearchManager:
         deleteStmts = [out for out in testInstance._deleteGenerator([1, 2, 3])]
 
         assert deleteStmts == [
-            {'_op_type': 'delete', '_index': 'testES', '_id': 1, '_type': 'doc'},
-            {'_op_type': 'delete', '_index': 'testES', '_id': 2, '_type': 'doc'},
-            {'_op_type': 'delete', '_index': 'testES', '_id': 3, '_type': 'doc'},
+            {'_op_type': 'delete', '_index': 'testES', '_id': 1},
+            {'_op_type': 'delete', '_index': 'testES', '_id': 2},
+            {'_op_type': 'delete', '_index': 'testES', '_id': 3},
         ]
 
     def test_saveWorkRecords(self, testInstance, mocker):
@@ -95,7 +98,7 @@ class TestElasticsearchManager:
         mockGen = mocker.patch.object(ElasticsearchManager, '_upsertGenerator')
         mockGen.return_value = 'generator'
 
-        mockBulk.return_value = (2, [{'update': {'error': {'type': 'testing', 'reason': 'testing'}}}])
+        mockBulk.return_value = (2, [{'index': {'error': {'type': 'testing', 'reason': 'testing'}}}])
 
         testInstance.saveWorkRecords(['work1', 'work2', 'work3'])
 
@@ -109,12 +112,10 @@ class TestElasticsearchManager:
 
         assert upsertStmts == [
             {
-                '_op_type': 'update',
+                '_op_type': 'index',
                 '_index': 'testES',
                 '_id': 1,
-                '_type': '_doc',
-                'doc': 'mockWork',
-                'doc_as_upsert': True,
+                '_source': 'mockWork',
                 'pipeline': 'language_detector'
             }
         ]

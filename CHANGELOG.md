@@ -1,18 +1,32 @@
 # CHANGELOG
 
-## unreleased -- v0.9.7
+## 2022-04-12 -- v0.10.1
+### Added
+- Query parameter to manifest ProjectMuse url links
+- Updated muse manager to add query parameter for future muse records
+- Updated test_muse_mangager script with query paramater change
+### Fixed
+- JSON Decoder error for interstitial pages script
+- ES 8.x+ timeout configuration and OPDS2 integration
+- Simplified constructWebpubManifest script in muse manager
+
+## 2022-04-04 -- v0.10.0
 ### Added
 - Method in sfrRecord manager to check for reasonable publication dates for editions
 - Tests for publicationDateCheck method in sfrRecord manager
 - Bulk ElasticSearch indexing
 - Blueprint for a citation generator 
+- MLA Citation rules to citation generator
 - ElasticSearch 7.10+ language per-field indexing & searching
 ### Fixed
-- Classify Performance improvemences
+- Classify Performance improvements
 - Improved stability during clustering processes
 - Improved development process script
 - Improved unit tests for citation generator
 - Removed uuid array
+- Modified MLA citation rules
+- Deduplicated MLA citation generator
+- Replaced polyglot with fasttext for language detection
 
 ## 2022-01-25 -- v0.9.6
 ### Fixed

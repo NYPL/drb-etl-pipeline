@@ -178,20 +178,20 @@ class TestMUSEManager:
 
         mockManifest.addChapter.assert_has_calls([
             mocker.call('https://muse.jhu.edu/chapter/440/pdf', 'Cover'),
-            mocker.call('https://muse.jhu.edu/chapter/2183675/pdf', 'Title Page'),
-            mocker.call('https://muse.jhu.edu/chapter/2183674/pdf', 'Copyright'),
-            mocker.call('https://muse.jhu.edu/chapter/2183673/pdf', 'Dedication'),
-            mocker.call('https://muse.jhu.edu/chapter/441/pdf', 'Contents'),
-            mocker.call('https://muse.jhu.edu/chapter/442/pdf', 'Preface'),
-            mocker.call('https://muse.jhu.edu/chapter/444/pdf', 'Chapter 1. Historical Hermeneutics, Reception Theory, and the Social Conditions of Reading in Antebellum America'),
-            mocker.call('https://muse.jhu.edu/chapter/445/pdf', 'Chapter 2. Interpretive Strategies and Informed Reading in the Antebellum Public Sphere'),
-            mocker.call('https://muse.jhu.edu/chapter/6239/pdf', 'Chapter 3. “These Days of Double Dealing”: Informed Response, Reader Appropriation, and the Tales of Poe'),
-            mocker.call('https://muse.jhu.edu/chapter/6240/pdf', 'Chapter 4. Multiple Audiences and Melville’s Fiction: Receptions, Recoveries, and Regressions'),
-            mocker.call('https://muse.jhu.edu/chapter/6241/pdf', 'Chapter 5. Response as (Re)construction: The Reception of Catharine Sedgwick’s Novels'),
-            mocker.call('https://muse.jhu.edu/chapter/6242/pdf', 'Chapter 6. Mercurial Readings: The Making and Unmaking of Caroline Chesebro’'),
-            mocker.call('https://muse.jhu.edu/chapter/6243/pdf', 'Conclusion. American Literary History and the Historical Study of Interpretive Practices'),
-            mocker.call('https://muse.jhu.edu/chapter/6244/pdf', 'Notes'),
-            mocker.call('https://muse.jhu.edu/chapter/6245/pdf', 'Index')
+            mocker.call('https://muse.jhu.edu/chapter/2183675/pdf?start=2', 'Title Page'),
+            mocker.call('https://muse.jhu.edu/chapter/2183674/pdf?start=2', 'Copyright'),
+            mocker.call('https://muse.jhu.edu/chapter/2183673/pdf?start=2', 'Dedication'),
+            mocker.call('https://muse.jhu.edu/chapter/441/pdf?start=2', 'Contents'),
+            mocker.call('https://muse.jhu.edu/chapter/442/pdf?start=2', 'Preface'),
+            mocker.call('https://muse.jhu.edu/chapter/444/pdf?start=2', 'Chapter 1. Historical Hermeneutics, Reception Theory, and the Social Conditions of Reading in Antebellum America'),
+            mocker.call('https://muse.jhu.edu/chapter/445/pdf?start=2', 'Chapter 2. Interpretive Strategies and Informed Reading in the Antebellum Public Sphere'),
+            mocker.call('https://muse.jhu.edu/chapter/6239/pdf?start=2', 'Chapter 3. “These Days of Double Dealing”: Informed Response, Reader Appropriation, and the Tales of Poe'),
+            mocker.call('https://muse.jhu.edu/chapter/6240/pdf?start=2', 'Chapter 4. Multiple Audiences and Melville’s Fiction: Receptions, Recoveries, and Regressions'),
+            mocker.call('https://muse.jhu.edu/chapter/6241/pdf?start=2', 'Chapter 5. Response as (Re)construction: The Reception of Catharine Sedgwick’s Novels'),
+            mocker.call('https://muse.jhu.edu/chapter/6242/pdf?start=2', 'Chapter 6. Mercurial Readings: The Making and Unmaking of Caroline Chesebro’'),
+            mocker.call('https://muse.jhu.edu/chapter/6243/pdf?start=2', 'Conclusion. American Literary History and the Historical Study of Interpretive Practices'),
+            mocker.call('https://muse.jhu.edu/chapter/6244/pdf?start=2', 'Notes'),
+            mocker.call('https://muse.jhu.edu/chapter/6245/pdf?start=2', 'Index')
         ])
 
         mockManifest.closeSection.assert_has_calls([mocker.call(), mocker.call()])

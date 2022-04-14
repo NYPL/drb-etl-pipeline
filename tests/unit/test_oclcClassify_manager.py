@@ -298,6 +298,9 @@ class TestClassifyManager:
     def test_getStrLang_success(self):
         assert ClassifyManager.getStrLang('English') == 'en'
 
+    def test_getStrLang_nonLatin(self):
+        assert ClassifyManager.getStrLang('わかりません') == 'ja'
+
     def test_getStrLang_error(self):
         assert ClassifyManager.getStrLang('01234') == 'unk'
 
