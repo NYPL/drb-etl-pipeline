@@ -8,6 +8,14 @@ from managers import OCLCCatalogManager
 from mappings.oclcCatalog import CatalogMapping
 from logger import createLog
 
+import newrelic.agent
+
+if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
+    newrelic.agent.initialize(
+        config_file='newrelic.ini',
+        environment=os.environ.get('ENVIRONMENT', 'local')
+        )
+
 logger = createLog(__name__)
 
 
@@ -29,6 +37,7 @@ class CatalogProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
+    @newrelic.agent.background_task()
     def receiveAndProcessMessages(self):
         attempts = 1
 
@@ -57,6 +66,7 @@ class CatalogProcess(CoreProcess):
             self.processCatalogQuery(msgBody)
             self.acknowledgeMessageProcessed(msgProps.delivery_tag)
 
+    @newrelic.agent.background_task()
     def processCatalogQuery(self, msgBody):
         message = json.loads(msgBody)
         catalogManager = OCLCCatalogManager(message['oclcNo'])
@@ -64,6 +74,8 @@ class CatalogProcess(CoreProcess):
         if catalogXML:
             self.parseCatalogRecord(catalogXML, message['owiNo'])
 
+
+    @newrelic.agent.background_task()
     def parseCatalogRecord(self, catalogXML, owiNo):
         try:
             parseMARC = etree.fromstring(catalogXML.encode('utf-8'))

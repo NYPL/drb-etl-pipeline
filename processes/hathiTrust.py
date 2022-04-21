@@ -10,6 +10,14 @@ from .core import CoreProcess
 from mappings.hathitrust import HathiMapping
 from logger import createLog
 
+import newrelic.agent
+
+if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
+    newrelic.agent.initialize(
+        config_file='newrelic.ini',
+        environment=os.environ.get('ENVIRONMENT', 'local')
+        )
+
 logger = createLog(__name__)
 
 
@@ -44,6 +52,7 @@ class HathiTrustProcess(CoreProcess):
         hathiReader = csv.reader(hathiFile, delimiter='\t')
         self.readHathiFile(hathiReader)
 
+    @newrelic.agent.background_task()
     def parseHathiDataRow(self, dataRow):
         hathiRec = HathiMapping(dataRow, self.statics)
         hathiRec.applyMapping()

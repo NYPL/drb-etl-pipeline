@@ -1,10 +1,14 @@
 import newrelic.agent
 import os
+
+#NEW_RELIC_LICENSE_KEY = Put license key here
+#ENVIRONMENT = Put environment here
+
 if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
     newrelic.agent.initialize(
-        environment=os.environ['ENVIRONMENT'],
-        config_file='newrelic.ini'
-    )
+        config_file='newrelic.ini',
+        environment=os.environ.get('ENVIRONMENT', 'local')
+        )
 
 import argparse
 import inspect
