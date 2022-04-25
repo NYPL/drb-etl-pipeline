@@ -1,5 +1,3 @@
-import newrelic.agent
-
 from alembic import config
 from .core import CoreProcess
 from logger import createLog
@@ -13,7 +11,6 @@ class MigrationProcess(CoreProcess):
 
         self.options = args[6]
 
-    @newrelic.agent.background_task()
     def runProcess(self):
         logger.info('Running database migration')
 
