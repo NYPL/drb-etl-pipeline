@@ -3,12 +3,12 @@ from io import BytesIO
 from lxml import etree
 import os
 import requests
+import newrelic.agent
 
 from .core import CoreProcess
 from mappings.doab import DOABMapping
 from mappings.core import MappingError
 from managers import DOABLinkManager
-
 
 class DOABProcess(CoreProcess):
     ROOT_NAMESPACE = {None: 'http://www.openarchives.org/OAI/2.0/'}
@@ -39,6 +39,7 @@ class DOABProcess(CoreProcess):
         self.createRabbitConnection()
         self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
+    @newrelic.agent.background_task()
     def runProcess(self):
         if self.process == 'daily':
             self.importOAIRecords()
@@ -51,7 +52,8 @@ class DOABProcess(CoreProcess):
 
         self.saveRecords()
         self.commitChanges()
-    
+
+    @newrelic.agent.background_task()
     def parseDOABRecord(self, oaiRec):
         try:
             doabRec = DOABMapping(oaiRec, self.OAI_NAMESPACES, self.statics)
@@ -73,6 +75,7 @@ class DOABProcess(CoreProcess):
 
         self.addDCDWToUpdateList(doabRec)
 
+    @newrelic.agent.background_task()
     def importSingleOAIRecord(self, recordID):
         urlParams = 'verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:{}'.format(recordID)
         doabURL = '{}{}'.format(os.environ['DOAB_OAI_URL'], urlParams)
@@ -88,6 +91,7 @@ class DOABProcess(CoreProcess):
             except DOABError as e:
                 print('ERROR', e)
     
+    @newrelic.agent.background_task()
     def importOAIRecords(self, fullOrPartial=False, startTimestamp=None):
         resumptionToken = None
 
@@ -116,6 +120,7 @@ class DOABProcess(CoreProcess):
             if not resumptionToken or recordsProcessed >= self.ingestLimit:
                 break
 
+    @newrelic.agent.background_task()
     def getResumptionToken(self, oaiFile):
             try:
                 oaiXML = etree.parse(oaiFile)
@@ -123,6 +128,7 @@ class DOABProcess(CoreProcess):
             except AttributeError:
                 return None
 
+    @newrelic.agent.background_task()
     def downloadOAIRecords(self, fullOrPartial, startTimestamp, resumptionToken=None):
         doabURL = os.environ['DOAB_OAI_URL']
 
@@ -149,9 +155,11 @@ class DOABProcess(CoreProcess):
 
         raise DOABError('Unable to load Project MUSE MARC file')
 
+    @newrelic.agent.background_task()
     def createManifestInS3(self, manifestPath, manifestJSON):
         self.putObjectInBucket(manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket)
     
+    @newrelic.agent.background_task()
     def sendFileToProcessingQueue(self, fileURL, s3Location):
         s3Message = {
             'fileData': {

@@ -1,9 +1,10 @@
 import csv
+import os
 from datetime import datetime, timedelta
 from io import BytesIO
-import os
 from pymarc import MARCReader
 import requests
+import newrelic.agent
 from requests.exceptions import ReadTimeout, HTTPError
 
 from .core import CoreProcess
@@ -11,15 +12,9 @@ from mappings.muse import MUSEMapping
 from managers import MUSEError, MUSEManager
 from logger import createLog
 
-import newrelic.agent
-
-if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
-    newrelic.agent.initialize(
-        config_file='newrelic.ini',
-        environment=os.environ.get('ENVIRONMENT', 'local')
-        )
 
 logger = createLog(__name__)
+
 
 class MUSEProcess(CoreProcess):
     MUSE_ROOT_URL = 'https://muse.jhu.edu'
@@ -40,6 +35,7 @@ class MUSEProcess(CoreProcess):
         self.createRabbitConnection()
         self.createOrConnectQueue(self.fileQueue, self.fileRoute)
         
+    @newrelic.agent.background_task()
     def runProcess(self):
         if self.process == 'daily':
             self.importMARCRecords()

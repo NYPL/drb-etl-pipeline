@@ -4,6 +4,7 @@ import gzip
 import os
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import requests
+import newrelic.agent
 from sqlalchemy.exc import ProgrammingError
 
 from managers.db import DBManager
@@ -12,7 +13,6 @@ from mappings.hathitrust import HathiMapping
 from .oclcClassify import ClassifyProcess
 from .oclcCatalog import CatalogProcess
 from .sfrCluster import ClusterProcess
-
 
 class DevelopmentSetupProcess(CoreProcess):
     def __init__(self, *args):
@@ -27,6 +27,7 @@ class DevelopmentSetupProcess(CoreProcess):
 
         super(DevelopmentSetupProcess, self).__init__(*args[:4])
 
+    @newrelic.agent.background_task()
     def runProcess(self):
         # Setup database if necessary
         self.generateEngine()
@@ -59,6 +60,7 @@ class DevelopmentSetupProcess(CoreProcess):
         clusterProc = ClusterProcess(*procArgs)
         clusterProc.runProcess()
 
+    @newrelic.agent.background_task()
     def initializeDB(self):
         self.adminDBConnection.generateEngine()
         with self.adminDBConnection.engine.connect() as conn:
@@ -80,11 +82,13 @@ class DevelopmentSetupProcess(CoreProcess):
 
         self.adminDBConnection.engine.dispose()
 
+    @newrelic.agent.background_task()
     def fetchHathiSampleData(self):
         self.importFromHathiTrustDataFile()
         self.saveRecords()
         self.commitChanges()
 
+    @newrelic.agent.background_task()
     def importFromHathiTrustDataFile(self):
         fileList = requests.get(os.environ['HATHI_DATAFILES'])
         if fileList.status_code != 200:

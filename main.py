@@ -1,5 +1,11 @@
-import newrelic.agent
 import os
+import newrelic.agent
+
+import argparse
+import inspect
+import yaml
+
+from logger import createLog
 
 #NEW_RELIC_LICENSE_KEY = Put license key here
 #ENVIRONMENT = Put environment here
@@ -9,13 +15,6 @@ if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
         config_file='newrelic.ini',
         environment=os.environ.get('ENVIRONMENT', 'local')
         )
-
-import argparse
-import inspect
-import yaml
-
-from logger import createLog
-
 
 def main(args):
     logger = createLog(__name__)
@@ -41,8 +40,13 @@ def main(args):
     processInstance = procClass(
         procType, customFile, startDate, singleRecord, limit, offset, options
     )
-    processInstance.runProcess()
 
+    if process != 'APIProcess':
+        task = newrelic.agent.BackgroundTaskWrapper(processInstance.runProcess)
+    else:
+        task = processInstance.runProcess
+
+    task()
 
 def registerProcesses():
     import processes

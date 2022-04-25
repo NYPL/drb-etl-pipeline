@@ -1,6 +1,7 @@
 import json
-from lxml import etree
 import os
+import newrelic.agent
+from lxml import etree
 from time import sleep
 
 from .core import CoreProcess
@@ -8,13 +9,6 @@ from managers import OCLCCatalogManager
 from mappings.oclcCatalog import CatalogMapping
 from logger import createLog
 
-import newrelic.agent
-
-if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
-    newrelic.agent.initialize(
-        config_file='newrelic.ini',
-        environment=os.environ.get('ENVIRONMENT', 'local')
-        )
 
 logger = createLog(__name__)
 
