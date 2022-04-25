@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 import json
 import os
+import newrelic.agent
 import requests
 from requests.exceptions import HTTPError, ConnectionError
 
@@ -44,6 +45,7 @@ class METProcess(CoreProcess):
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.createS3Client()
 
+    @newrelic.agent.background_task()
     def runProcess(self):
         self.setStartTime()
         self.importDCRecords()
@@ -51,6 +53,7 @@ class METProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
+    @newrelic.agent.background_task()
     def setStartTime(self):
         if not self.fullImport:
             if not self.ingestPeriod:
@@ -60,6 +63,7 @@ class METProcess(CoreProcess):
                     self.ingestPeriod, '%Y-%m-%dT%H:%M:%S'
                 )
 
+    @newrelic.agent.background_task()
     def importDCRecords(self):
         currentPosition = self.ingestOffset
         pageSize = 50
@@ -78,6 +82,7 @@ class METProcess(CoreProcess):
 
             currentPosition += pageSize
 
+    @newrelic.agent.background_task()
     def processMetBatch(self, metRecords):
         for record in metRecords:
             if (
@@ -94,6 +99,7 @@ class METProcess(CoreProcess):
                     record['pointer'])
                 )
 
+    @newrelic.agent.background_task()
     def processMetRecord(self, record):
         try:
             detailQuery = self.DETAIL_QUERY.format(record['pointer'])
@@ -114,6 +120,7 @@ class METProcess(CoreProcess):
 
         self.addDCDWToUpdateList(metRec)
 
+    @newrelic.agent.background_task()
     def addCoverAndStoreInS3(self, record, filetype):
         recordID = record.identifiers[0].split('|')[0]
 
@@ -135,6 +142,7 @@ class METProcess(CoreProcess):
 
         self.sendFileToProcessingQueue(sourceURL, bucketLocation)
 
+    @newrelic.agent.background_task()
     def setCoverPath(self, filetype, recordID):
         if filetype == 'cpd':
             try:
@@ -157,6 +165,7 @@ class METProcess(CoreProcess):
         else:
             return 'api/singleitem/image/pdf/p15324coll10/{}/default.png'.format(recordID)
 
+    @newrelic.agent.background_task()
     def sendFileToProcessingQueue(self, fileURL, s3Location):
         s3Message = {
             'fileData': {
@@ -166,6 +175,7 @@ class METProcess(CoreProcess):
         }
         self.sendMessageToQueue(self.fileQueue, self.fileRoute, s3Message)
 
+    @newrelic.agent.background_task()
     def storePDFManifest(self, record):
         for link in record.has_part:
             itemNo, uri, source, mediaType, flags = link.split('|')
@@ -193,11 +203,13 @@ class METProcess(CoreProcess):
 
                 break
 
+    @newrelic.agent.background_task()
     def createManifestInS3(self, manifestPath, manifestJSON):
         self.putObjectInBucket(
             manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket
         )
 
+    @newrelic.agent.background_task()
     @staticmethod
     def generateManifest(record, sourceURI, manifestURI):
         manifest = WebpubManifest(sourceURI, 'application/pdf')
@@ -217,6 +229,7 @@ class METProcess(CoreProcess):
 
         return manifest.toJson()
 
+    @newrelic.agent.background_task()
     @staticmethod
     def queryMetAPI(query, method='GET'):
         method = method.upper()

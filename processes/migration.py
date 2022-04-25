@@ -1,5 +1,4 @@
 from alembic import config
-
 from .core import CoreProcess
 from logger import createLog
 

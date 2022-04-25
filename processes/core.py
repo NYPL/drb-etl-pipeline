@@ -1,7 +1,8 @@
+import newrelic.agent
+
 from managers import DBManager, RabbitMQManager, RedisManager, ElasticsearchManager, S3Manager, NyplApiManager
 from model import Record
 from static.manager import StaticManager
-
 
 class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, StaticManager,
                   ElasticsearchManager, S3Manager):
@@ -15,6 +16,7 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
         self.batchSize = batchSize
         self.records = set()
     
+    @newrelic.agent.background_task()
     def addDCDWToUpdateList(self, rec):
         existing = self.session.query(Record)\
             .filter(Record.source_id == rec.record.source_id).first()
@@ -35,7 +37,8 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
         if len(self.records) >= self.batchSize:
             self.saveRecords()
             self.records = set()
-    
+            
+    @newrelic.agent.background_task()
     def windowedQuery(self, table, query, windowSize=100):
         singleEntity = query.is_single_entity
         query = query.add_column(table.date_modified).order_by(table.date_modified)
@@ -61,9 +64,11 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
             for row in queryChunk:
                 yield row[0] if singleEntity else row[0:-2]
     
+    @newrelic.agent.background_task()
     def saveRecords(self):
         self.bulkSaveObjects(self.records)
 
+    @newrelic.agent.background_task()
     def sendFileToProcessingQueue(self, fileURL, s3Location):
         s3Message = {
             'fileData': {

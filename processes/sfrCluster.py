@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from math import ceil
 import re
+import newrelic.agent
 from sqlalchemy.exc import DataError
 from sqlalchemy.orm.exc import StaleDataError
 
@@ -8,6 +9,7 @@ from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
 from model import Record, Work, Edition
 from logger import createLog
+
 
 logger = createLog(__name__)
 
@@ -30,6 +32,7 @@ class ClusterProcess(CoreProcess):
         self.createElasticSearchIngestPipeline()
         self.createElasticSearchIndex()
 
+    @newrelic.agent.background_task()
     def runProcess(self):
         if self.process == 'daily':
             self.clusterRecords()
@@ -38,6 +41,7 @@ class ClusterProcess(CoreProcess):
         elif self.process == 'custom':
             self.clusterRecords(startDateTime=self.ingestPeriod)
 
+    @newrelic.agent.background_task()
     def clusterRecords(self, full=False, startDateTime=None):
         baseQuery = self.session.query(Record)\
             .filter(Record.frbr_status == 'complete')\
@@ -86,6 +90,7 @@ class ClusterProcess(CoreProcess):
         self.session.commit()
         self.closeConnection()
 
+    @newrelic.agent.background_task()
     def clusterRecord(self, rec):
         logger.info('Clustering {}'.format(rec))
 
@@ -111,21 +116,25 @@ class ClusterProcess(CoreProcess):
 
         return dbWork, deletedUUIDs
 
+    @newrelic.agent.background_task()
     def updateMatchedRecordsStatus(self, matchedIDs):
         self.session.query(Record)\
             .filter(Record.id.in_(list(set(matchedIDs))))\
             .update({'cluster_status': True, 'frbr_status': 'complete'})
 
+    @newrelic.agent.background_task()
     def updateElasticSearch(self, indexingWorks, deletingWorks):
         self.deleteWorkRecords(deletingWorks)
         self.indexWorksInElasticSearch(indexingWorks)
 
+    @newrelic.agent.background_task()
     def deleteStaleWorks(self, deletingWorks):
         editionIDTuples = self.session.query(Edition.id).join(Work).filter(Work.uuid.in_(list(deletingWorks))).all()
         editionIDs = [ed[0] for ed in editionIDTuples]
         self.deleteRecordsByQuery(self.session.query(Edition).filter(Edition.id.in_(editionIDs)))
         self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid.in_(list(deletingWorks))))
 
+    @newrelic.agent.background_task()
     def clusterMatchedRecords(self, recIDs):
         records = self.session.query(Record).filter(Record.id.in_(recIDs)).all()
 
@@ -136,11 +145,13 @@ class ClusterProcess(CoreProcess):
 
         return editions, records
 
+    @newrelic.agent.background_task()
     def findAllMatchingRecords(self, identifiers):
         idens = list(filter(lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None, identifiers))
 
         return self.queryIdens(idens)
 
+    @newrelic.agent.background_task()
     def createWorkFromEditions(self, editions, instances):
         recordManager = SFRRecordManager(self.session, self.statics['iso639'])
         logger.debug('BUILDING WORK')
@@ -154,6 +165,7 @@ class ClusterProcess(CoreProcess):
 
         return recordManager.work, deletedRecordUUIDs
 
+    @newrelic.agent.background_task()
     def queryIdens(self, idens):
         matchedIDs = set()
         checkedIdens = set()
@@ -194,6 +206,7 @@ class ClusterProcess(CoreProcess):
 
         return list(matchedIDs)
 
+    @newrelic.agent.background_task()
     def getRecordBatches(self, identifiers, matchedIDs):
         step = 100 
         i = 0
@@ -219,6 +232,7 @@ class ClusterProcess(CoreProcess):
         
         return totalMatches
 
+    @newrelic.agent.background_task()
     def indexWorksInElasticSearch(self, dbWorks):
         esWorks = []
 
@@ -231,6 +245,7 @@ class ClusterProcess(CoreProcess):
         # elasticManager.saveWork()
         self.saveWorkRecords(esWorks)
 
+    @newrelic.agent.background_task()
     def compareTitleTokens(self, recTitle):
         recTitleTokens = self.tokenizeTitle(recTitle)
 
@@ -243,6 +258,7 @@ class ClusterProcess(CoreProcess):
 
         return False
 
+    @newrelic.agent.background_task()
     @staticmethod
     def tokenizeTitle(title):
         try:
@@ -257,6 +273,7 @@ class ClusterProcess(CoreProcess):
 
         return titleTokenSet
 
+    @newrelic.agent.background_task()
     @staticmethod
     def formatIdenArray(identifiers):
         idenStrings = []

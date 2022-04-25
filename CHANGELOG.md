@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased -- v0.10.2
+### Added
+- Python Agent for New Relic Instrumentation
+### Fixed
+- Adjusted NR instrumentation for devSetUp and migration process
+
 ## 2022-04-12 -- v0.10.1
 ### Added
 - Query parameter to manifest ProjectMuse url links

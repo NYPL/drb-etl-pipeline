@@ -3,6 +3,7 @@ from datetime import datetime
 from io import BytesIO
 import gzip
 import os
+import newrelic.agent
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
@@ -11,7 +12,6 @@ from mappings.hathitrust import HathiMapping
 from logger import createLog
 
 logger = createLog(__name__)
-
 
 class HathiTrustProcess(CoreProcess):
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
@@ -31,10 +31,12 @@ class HathiTrustProcess(CoreProcess):
 
         self.saveRecords()
         self.commitChanges()
-    
+        
+    @newrelic.agent.background_task()
     def importRemoteRecords(self, fullOrPartial=False):
         self.importFromHathiTrustDataFile(fullDump=fullOrPartial)
 
+    @newrelic.agent.background_task()
     def importFromSpecificFile(self, filePath):
         try:
             hathiFile = open(filePath, newline='')
@@ -44,11 +46,13 @@ class HathiTrustProcess(CoreProcess):
         hathiReader = csv.reader(hathiFile, delimiter='\t')
         self.readHathiFile(hathiReader)
 
+    @newrelic.agent.background_task()
     def parseHathiDataRow(self, dataRow):
         hathiRec = HathiMapping(dataRow, self.statics)
         hathiRec.applyMapping()
         self.addDCDWToUpdateList(hathiRec)
-    
+
+    @newrelic.agent.background_task()
     def importFromHathiTrustDataFile(self, fullDump=False):
         try:
             fileList = requests.get(os.environ['HATHI_DATAFILES'], timeout=15)
@@ -71,6 +75,7 @@ class HathiTrustProcess(CoreProcess):
                 self.importFromHathiFile(hathiFile['url'])
                 break
 
+    @newrelic.agent.background_task()
     def importFromHathiFile(self, hathiURL):
         try:
             hathiResp = requests.get(hathiURL, stream=True, timeout=30)
@@ -84,6 +89,7 @@ class HathiTrustProcess(CoreProcess):
             hathiTSV = csv.reader(hathiGzip, delimiter='\t')
             self.readHathiFile(hathiTSV)
 
+    @newrelic.agent.background_task()
     def readHathiFile(self, hathiTSV):
         while True:
             try:

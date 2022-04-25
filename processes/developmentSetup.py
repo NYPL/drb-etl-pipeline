@@ -13,7 +13,6 @@ from .oclcClassify import ClassifyProcess
 from .oclcCatalog import CatalogProcess
 from .sfrCluster import ClusterProcess
 
-
 class DevelopmentSetupProcess(CoreProcess):
     def __init__(self, *args):
         self.adminDBConnection = DBManager(
