@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.10.2
+## 2022-04-26 -- v0.10.2
 ### Added
 - Python Agent for New Relic Instrumentation
 - Infrastructure Agent for New Relic Instrumentation
