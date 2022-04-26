@@ -3,6 +3,7 @@
 ## unreleased -- v0.10.2
 ### Added
 - Python Agent for New Relic Instrumentation
+- Infrastructure Agent for New Relic Instrumentation
 ### Fixed
 - Adjusted NR instrumentation for devSetUp and migration process
 
