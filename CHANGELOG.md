@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## unreleased -- v0.10.3
+### Added
+### Fixed
+- ES8 API only counting up to 10,000 results
+
 ## 2022-04-26 -- v0.10.2
 ### Added
 - Python Agent for New Relic Instrumentation

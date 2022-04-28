@@ -12,7 +12,7 @@ logger = createLog(__name__)
 
 class ElasticClient():
     ROLE_ALLOWLIST = [
-        'author of afterwor, colophon, etc.', 'author of dialog',
+        'author of afterword, colophon, etc.', 'author of dialog',
         'author of introduction, etc.', 'author', 'colorist', 'composer',
         'compiler', 'creator', 'contributor', 'editor', 'film director',
         'film producer', 'illustrator', 'illuminator', 'interviewer',
@@ -37,7 +37,9 @@ class ElasticClient():
         self.searchedFields = []
 
     def createSearch(self):
-        return Search(index=os.environ['ELASTICSEARCH_INDEX'])
+        s = Search(index=os.environ['ELASTICSEARCH_INDEX'])
+        SearchES = s.params(track_total_hits=True)
+        return SearchES
 
     def searchQuery(self, params, page=0, perPage=10):
         self.generateSearchQuery(params)
