@@ -58,12 +58,14 @@ class TestElasticClient:
 
     def test_createSearch(self, testInstance, mocker):
         mockSearch = mocker.patch('api.elastic.Search')
-        mockSearch.return_value = 'searchClient'
+        mockSearchClient = mocker.MagicMock(track_total_hits = 'True')
+        mockSearch.return_value = mockSearchClient
 
         searchClient = testInstance.createSearch()
 
-        assert searchClient == 'searchClient'
+        assert searchClient == mockSearchClient.params()
         mockSearch.assert_called_once_with(index='test_es_index')
+        
 
     def test_searchQuery(self, testInstance, mocker):
         mockGenerate = mocker.patch.object(ElasticClient, 'generateSearchQuery')
