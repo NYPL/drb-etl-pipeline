@@ -2,6 +2,7 @@
 
 ## unreleased -- v0.10.3
 ### Added
+- MagicMock for test_createSearch method
 ### Fixed
 - ES8 API only counting up to 10,000 search results
 
