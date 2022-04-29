@@ -38,8 +38,8 @@ class ElasticClient():
 
     def createSearch(self):
         s = Search(index=os.environ['ELASTICSEARCH_INDEX'])
-        SearchES = s.params(track_total_hits=True)
-        return SearchES
+        s = s.params(track_total_hits=True)
+        return s
 
     def searchQuery(self, params, page=0, perPage=10):
         self.generateSearchQuery(params)
