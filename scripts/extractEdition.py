@@ -1,17 +1,21 @@
-from elasticsearch_dsl import Q
-from managers import DBManager
+import os
 
 from model import Edition
+from main import loadEnvFile
+from managers import DBManager
+
 
 #Extracting the edition number from the edition_statement column of the DRB database to fill out the edition column
 def main():
 
+    loadEnvFile('local-qa', fileString='config/{}.yaml')
+
     dbManager = DBManager(
-        user='',
-        pswd='',
-        host='',
-        port='',
-        db=''
+        user= os.environ.get('POSTGRES_USER', None),
+        pswd= os.environ.get('POSTGRES_PSWD', None),
+        host= os.environ.get('POSTGRES_HOST', None),
+        port= os.environ.get('POSTGRES_PORT', None),
+        db= os.environ.get('POSTGRES_NAME', None)
     )
 
     dbManager.generateEngine()
@@ -19,7 +23,7 @@ def main():
     dbManager.createSession()
 
     for edit in dbManager.session.query(Edition) \
-        .filter(Edition.edit_statement != None and Edition.languages[0]['language'] == 'English'):
+        .filter(Edition.edition_statement != None and Edition.languages[0]['language'] == 'English'):
             editStatement = edit.edition_statement
             editDict = {'first': 1, 'second': 2, 'third': 3, 'fourth': 4, 'fifth': 5, \
                         'sixth': 6, 'seventh': 7, 'eigth': 8, 'ninth': 9, 'tenth': 10}

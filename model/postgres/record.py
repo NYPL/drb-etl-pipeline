@@ -1,5 +1,7 @@
 from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
+from sqlalchemy.ext.hybrid import hybrid_property
+from scripts.extractFutureEdition import extract
 
 from .base import Base, Core
 
@@ -57,3 +59,16 @@ class Record(Base, Core):
     def __iter__(self):
         for attr in dir(self):
             yield attr, getattr(self, attr)
+
+    @hybrid_property
+    def hasVersion(self):
+        return self.has_version
+
+    @hybrid_property
+    def getLanguage(self):
+        return self.langauges[0]['language']
+
+    @hasVersion.setter
+    def updateHasVersion(self, langugage):
+        editionNo = extract(self.has_version, langugage)
+        self.has_version = f'self.has_version|{editionNo}'
