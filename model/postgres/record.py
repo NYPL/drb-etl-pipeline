@@ -34,7 +34,7 @@ class Record(Base, Core):
     requires = Column(ARRAY(Unicode, dimensions=1)) # dc:requires, Repeating, Format "value|type"
     spatial = Column(Unicode) # dc:spatial, Non-Repeating
     publisher = Column(ARRAY(Unicode, dimensions=1)) # dc:publisher, Repeating, Format "name|viaf|lcnaf"
-    has_version = Column(Unicode) # dc:hasVersion, Non-Repeating, Format "string|edition_no"
+    _has_version = Column('has_version',Unicode) # dc:hasVersion, Non-Repeating, Format "string|edition_no"
     table_of_contents = Column(Unicode) # dc:tableOfContents, Non-Repeating
     extent = Column(Unicode) # dc:extent, Non-Repeating
     abstract = Column(Unicode) # dc:abstract, Non-Repeating
@@ -61,14 +61,18 @@ class Record(Base, Core):
             yield attr, getattr(self, attr)
 
     @hybrid_property
-    def hasVersion(self):
-        return self.has_version
+    def has_version(self):
+        return self._has_version
 
     @hybrid_property
     def getLanguage(self):
-        return self.langauges[0]['language']
+        return self.languages[0]['language']
 
-    @hasVersion.setter
-    def updateHasVersion(self, langugage):
-        editionNo = extract(self.has_version, langugage)
-        self.has_version = f'self.has_version|{editionNo}'
+    @has_version.setter
+    def has_version(self, versionNum):
+        if self.languages != [] or self.languages != None:
+            editionNo = extract(versionNum, self.languages[0].split('|')[0])
+            self._has_version = f'{versionNum}|{editionNo}'
+        else:
+            editionNo = extract(versionNum, 'english')
+            self._has_version = f'{versionNum}|{editionNo}'
