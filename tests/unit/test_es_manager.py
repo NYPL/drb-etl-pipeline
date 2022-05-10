@@ -1,3 +1,4 @@
+from elastic_transport import ConnectionTimeout
 import pytest
 
 from managers import ElasticsearchManager
@@ -92,7 +93,7 @@ class TestElasticsearchManager:
             {'_op_type': 'delete', '_index': 'testES', '_id': 3},
         ]
 
-    def test_saveWorkRecords(self, testInstance, mocker):
+    def test_saveWorkRecords_success(self, testInstance, mocker):
         testInstance.es = 'mockClient'
         mockBulk = mocker.patch('managers.elasticsearch.bulk')
         mockGen = mocker.patch.object(ElasticsearchManager, '_upsertGenerator')
@@ -104,6 +105,87 @@ class TestElasticsearchManager:
 
         mockGen.assert_called_once_with(['work1', 'work2', 'work3'])
         mockBulk.assert_called_once_with('mockClient', 'generator', raise_on_error=False)
+
+    def test_saveWorkRecords_retry_failure(self, testInstance, mocker):
+        testInstance.es = 'mockClient'
+        mockBulk = mocker.patch('managers.elasticsearch.bulk')
+        mockGen = mocker.patch.object(ElasticsearchManager, '_upsertGenerator')
+        mockGen.return_value = 'generator'
+
+        mockBulk.side_effect = ConnectionTimeout('testing')
+
+        workArray = [f'work{i}' for i in range(6)]
+
+        testInstance.saveWorkRecords(workArray)
+
+        mockGen.assert_has_calls([
+            mocker.call(workArray),
+            mocker.call(workArray[:3]),
+            mocker.call(workArray[:1]),
+            mocker.call(workArray[1:3]),
+            mocker.call(workArray[3:]),
+            mocker.call(workArray[3:4]),
+            mocker.call(workArray[4:]),
+        ])
+        mockBulk.assert_has_calls(
+            [mocker.call('mockClient', 'generator', raise_on_error=False)] * 7
+        )
+
+    def test_saveWorkRecords_retry_success(self, testInstance, mocker):
+        testInstance.es = 'mockClient'
+        mockBulk = mocker.patch('managers.elasticsearch.bulk')
+        mockGen = mocker.patch.object(ElasticsearchManager, '_upsertGenerator')
+        mockGen.return_value = 'generator'
+
+        mockBulk.side_effect = [
+            ConnectionTimeout('testing'),
+            ('testing', False),
+            ('testing', False)
+        ]
+
+        workArray = [f'work{i}' for i in range(5)]
+
+        testInstance.saveWorkRecords(workArray)
+
+        mockGen.assert_has_calls([
+            mocker.call(workArray),
+            mocker.call(workArray[:2]),
+            mocker.call(workArray[2:])
+        ])
+
+        mockBulk.assert_has_calls(
+            [mocker.call('mockClient', 'generator', raise_on_error=False)] * 3
+        )
+
+    def test_saveWorkRecords_retry_partial_failure(self, testInstance, mocker):
+        testInstance.es = 'mockClient'
+        mockBulk = mocker.patch('managers.elasticsearch.bulk')
+        mockGen = mocker.patch.object(ElasticsearchManager, '_upsertGenerator')
+        mockGen.return_value = 'generator'
+
+        mockBulk.side_effect = [
+            ConnectionTimeout('testing'),  # 0, 1, 2, 3, 4
+            ('testing', False),  # 0, 1
+            ConnectionTimeout('testing'),  # 2, 3, 4
+            ConnectionTimeout('testing'),  # 2
+            ('testing', False),  # 3, 4
+        ]
+
+        workArray = [f'work{i}' for i in range(5)]
+
+        testInstance.saveWorkRecords(workArray)
+
+        mockGen.assert_has_calls([
+            mocker.call(workArray),
+            mocker.call(workArray[:2]),
+            mocker.call(workArray[2:]),
+            mocker.call(workArray[2:3]),
+            mocker.call(workArray[3:])
+        ])
+
+        mockBulk.assert_has_calls(
+            [mocker.call('mockClient', 'generator', raise_on_error=False)] * 5
+        )
 
     def test_upsertGenerator(self, testInstance, mocker):
         mockWork = mocker.MagicMock(uuid=1)
@@ -293,3 +375,15 @@ class TestElasticsearchManager:
         mockClient.put_pipeline.assert_called_once_with(
             id='testPipeline', body=testBody
         )
+
+    def test_splitWorkBatch_even(self):
+        firstHalf, secondHalf = ElasticsearchManager._splitWorkBatch([i for i in range(10)])
+
+        assert firstHalf == [i for i in range(5)]
+        assert secondHalf == [i for i in range(5, 10)]
+
+    def test_splitWorkBatch_odd(self):
+        firstHalf, secondHalf = ElasticsearchManager._splitWorkBatch([i for i in range(13)])
+
+        assert firstHalf == [i for i in range(6)]
+        assert secondHalf == [i for i in range(6, 13)]

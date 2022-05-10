@@ -250,7 +250,7 @@ class ElasticsearchManager:
             body=pipelineBody
         )
 
-    def saveWorkRecords(self, works):
+    def saveWorkRecords(self, works, attempt=1):
         logger.info('Saving {} ES Work Records'.format(len(works)))
 
         try:
@@ -269,6 +269,17 @@ class ElasticsearchManager:
         except ConnectionTimeout as e:
             logger.error('ElasticSearch connection timeout')
             logger.debug(e)
+
+            if attempt < 3:
+                logger.info('Retrying batches')
+
+                attempt += 1
+                firstWorkHalf, secondWorkHalf = self._splitWorkBatch(works)
+
+                self.saveWorkRecords(firstWorkHalf, attempt=attempt)
+                self.saveWorkRecords(secondWorkHalf, attempt=attempt)
+            else:
+                logger.warning('Exceeded retry limit for batch {}'.format(works))
 
     def _upsertGenerator(self, works):
         for work in works:
@@ -297,3 +308,10 @@ class ElasticsearchManager:
                 '_index': self.index,
                 '_id': uuid
             }
+
+    @staticmethod
+    def _splitWorkBatch(works):
+        workCount = len(works)
+        pivotPoint = int(workCount / 2)
+
+        return works[:pivotPoint], works[pivotPoint:]
