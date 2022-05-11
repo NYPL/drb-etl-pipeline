@@ -1,5 +1,7 @@
 from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
+from sqlalchemy.ext.hybrid import hybrid_property
+from model.utilities.extractDailyEdition import extract
 
 from .base import Base, Core
 
@@ -32,7 +34,7 @@ class Record(Base, Core):
     requires = Column(ARRAY(Unicode, dimensions=1)) # dc:requires, Repeating, Format "value|type"
     spatial = Column(Unicode) # dc:spatial, Non-Repeating
     publisher = Column(ARRAY(Unicode, dimensions=1)) # dc:publisher, Repeating, Format "name|viaf|lcnaf"
-    has_version = Column(Unicode) # dc:hasVersion, Non-Repeating, Format "string|edition_no"
+    _has_version = Column('has_version',Unicode) # dc:hasVersion, Non-Repeating, Format "string|edition_no"
     table_of_contents = Column(Unicode) # dc:tableOfContents, Non-Repeating
     extent = Column(Unicode) # dc:extent, Non-Repeating
     abstract = Column(Unicode) # dc:abstract, Non-Repeating
@@ -57,3 +59,16 @@ class Record(Base, Core):
     def __iter__(self):
         for attr in dir(self):
             yield attr, getattr(self, attr)
+
+    @hybrid_property
+    def has_version(self):
+        return self._has_version
+
+    @has_version.setter
+    def has_version(self, versionNum):
+        if self.languages != [] and self.languages != None:
+            editionNo = extract(versionNum, self.languages[0].split('|')[0])
+            self._has_version = f'{versionNum}|{editionNo}'
+        else:
+            editionNo = extract(versionNum, 'english')
+            self._has_version = f'{versionNum}|{editionNo}'

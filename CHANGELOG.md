@@ -2,10 +2,14 @@
 
 ## unreleased -- v0.10.3
 ### Added
-- MagicMock for test_createSearch method
+- MagicMock for test_createSearch method in test_api_es.py file
+- Getter and setter method for record model 
+- Script to extract edition number from edition statement for the edition field
+- Script to update future records with edition number in the has_version field
 ### Fixed
 - ES8 API only counting up to 10,000 search results
 - Add bulk retry functionality for ES writes/deletes
+- Edition column for most editions now filled
 
 ## 2022-04-26 -- v0.10.2
 ### Added
