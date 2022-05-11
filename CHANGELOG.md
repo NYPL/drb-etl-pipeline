@@ -2,7 +2,7 @@
 
 ## unreleased -- v0.10.3
 ### Added
-- MagicMock for test_createSearch method in test_api_es file
+- MagicMock for test_createSearch method in test_api_es.py file
 - Getter and setter method for record model 
 - Script to extract edition number from edition statement for the edition field
 - Script to update future records with edition number in the has_version field
