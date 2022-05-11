@@ -66,7 +66,7 @@ class Record(Base, Core):
 
     @hybrid_property
     def getLanguage(self):
-        return self.languages[0]['language']
+        return self.languages[0]
 
     @has_version.setter
     def has_version(self, versionNum):

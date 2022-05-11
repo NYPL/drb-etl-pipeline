@@ -1,7 +1,7 @@
 #Extracting the edition number from the has_version field of records for any future records
 def extract(version : str, language : str):
 
-    editDict = {'first': 1, 'second': 2, 'third': 3, 'fourth': 4, 'fifth': 5, \
+    editEnglishDict = {'first': 1, 'second': 2, 'third': 3, 'fourth': 4, 'fifth': 5, \
                 'sixth': 6, 'seventh': 7, 'eigth': 8, 'ninth': 9, 'tenth': 10}
 
     editFrenchDict = {'premier': 1, 'première': 1, 'deuxième': 2, 'troisième': 3, 'quatrième': 4, 'cinquième': 5, \
@@ -21,49 +21,24 @@ def extract(version : str, language : str):
                 'шестой': 6, 'shestoi': 6, 'седьмой': 7, 'sed’moi': 7, 'восьмой ': 8, \
                 'vos’moi': 8, 'девятый': 9, 'devyatyi': 9, 'десятый': 10, 'desyatyi': 10}
 
+
+    multEditDict = {'english': editEnglishDict, 'en': editEnglishDict, 'eng': editEnglishDict, \
+                    "french": editFrenchDict, 'fr': editFrenchDict, 'fre': editFrenchDict, \
+                    'german': editGermanDict, 'ge': editGermanDict, 'dt': editGermanDict, \
+                    'spanish': editSpanishDict, 'spa': editSpanishDict, 'span': editSpanishDict, \
+                    'dutch': editDutchDict, 'nl': editDutchDict, 'du': editDutchDict, 'dut': editDutchDict, \
+                    'russian': editRussianDict, 'rus': editRussianDict, 'russ': editRussianDict}
+
     editStatement = version
     editNumber = None
 
-    #Edition statements with edition numbers in their English ordinal form 
-    if language.lower() == 'english' or language.lower() == 'en' or language.lower() == 'eng':   
-        for word in editStatement.split():
-            if word in editDict.keys():
-                editNumber = editDict[word]
-                return editNumber
+    singLangDict = multEditDict[language.lower()]
 
-    #Edition statements with edition numbers in their French ordinal form 
-    if language.lower() == 'french' or language.lower() == 'fr' or language.lower() == 'fre':
+    #Edition statements with edition numbers in their ordinal form 
+    if singLangDict != None:  
         for word in editStatement.split():
-            if word in editFrenchDict.keys():
-                editNumber = editFrenchDict[word]
-                return editNumber
-    
-    #Edition statements with edition numbers in their German ordinal form 
-    if language.lower() == 'german' or language.lower() == 'ge' or language.lower() == 'dt':
-        for word in editStatement.split():
-            if word in editGermanDict.keys():
-                editNumber = editGermanDict[word]
-                return editNumber
-
-    #Edition statements with edition numbers in their Spanish ordinal form 
-    if language.lower() == 'spanish' or language.lower() == 'spa' or language.lower() == 'span':
-        for word in editStatement.split():
-            if word in editSpanishDict.keys():
-                editNumber = editSpanishDict[word]
-                return editNumber
-
-    #Edition statements with edition numbers in their English ordinal form 
-    if language.lower() == 'dutch' or language.lower() == 'nl' or language.lower() == 'du' or language.lower() == 'dut':
-        for word in editStatement.split():
-            if word in editDutchDict.keys():
-                editNumber = editDutchDict[word]
-                return editNumber
-
-    #Edition statements with edition numbers in their Russian ordinal form 
-    if language.lower() == 'russian' or language.lower() == 'ru' or language.lower() == 'rus':
-        for word in editStatement.split():
-            if word in editRussianDict.keys():
-                editNumber = editRussianDict[word]
+            if word in singLangDict.keys():
+                editNumber = singLangDict[word]
                 return editNumber
 
     #Edition statements with edition numbers in their numerical form
