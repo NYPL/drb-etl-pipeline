@@ -1,7 +1,7 @@
 from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
-from scripts.extractFutureEdition import extract
+from model.utilities.extractDailyEdition import extract
 
 from .base import Base, Core
 
@@ -70,7 +70,7 @@ class Record(Base, Core):
 
     @has_version.setter
     def has_version(self, versionNum):
-        if self.languages != [] or self.languages != None:
+        if self.languages != [] and self.languages != None:
             editionNo = extract(versionNum, self.languages[0].split('|')[0])
             self._has_version = f'{versionNum}|{editionNo}'
         else:
