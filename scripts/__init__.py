@@ -1,0 +1,1 @@
+from .extractAllEditions import main as editionExtraction
