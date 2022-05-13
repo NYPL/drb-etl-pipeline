@@ -3,7 +3,7 @@ import pytest
 from random import shuffle
 
 from api.utils import APIUtils
-
+from datetime import datetime
 
 class TestAPIUtils:
     @pytest.fixture
@@ -44,7 +44,7 @@ class TestAPIUtils:
                 self.attrs = []
                 for key, value in kwargs.items():
                     self.attrs.append(key)
-                    setattr(self, key, value)
+                    setattr(self, key, value)     
 
             def __iter__(self):
                 for attr in self.attrs:
@@ -72,6 +72,8 @@ class TestAPIUtils:
             contributors=['contrib1', 'contrib2'],
             publisher=['pub1'],
             dates=['date1', 'date2'],
+            date_created = 'Test Created Date',
+            date_modified = 'Test Modified Date',
             languages=['lang1'],
             identifiers=['id1', 'id2', 'id3'],
             has_part=['1|url1|', '2|url2|', '3|url3|']
@@ -142,6 +144,8 @@ class TestAPIUtils:
             uuid='testUUID',
             title='Test Title',
             editions=[testEdition],
+            date_created = datetime.strptime('2022-05-12T10:00:41', '%Y-%m-%dT%H:%M:%S'),
+            date_modified = datetime.strptime('2022-05-13T10:00:44', '%Y-%m-%dT%H:%M:%S'),
         )
 
     def test_normalizeQueryParams(self, mocker):
@@ -302,6 +306,8 @@ class TestAPIUtils:
         assert testWorkDict['editions'][0]['edition_id'] == 'ed1'
         assert testWorkDict['editions'][0]['items'][0] == 'it1'
         assert testWorkDict['edition_count'] == 1
+        assert testWorkDict['date_created'] == '2022-05-12T10:00:41'
+        assert testWorkDict['date_modified'] == '2022-05-13T10:00:44'
         mockFormatEdition.assert_called_once()
 
     def test_formatWork_showAll_false(self, testWork, mocker):
@@ -315,6 +321,8 @@ class TestAPIUtils:
         assert testWorkDict['title'] == 'Test Title'
         assert len(testWorkDict['editions']) == 1
         assert testWorkDict['edition_count'] == 1
+        assert testWorkDict['date_created'] == '2022-05-12T10:00:41'
+        assert testWorkDict['date_modified'] == '2022-05-13T10:00:44'
 
     def test_formatWork_blocked_edition(self, testWork):
         testWork.editions[0].items = []
@@ -324,6 +332,8 @@ class TestAPIUtils:
         assert testWorkDict['title'] == 'Test Title'
         assert len(testWorkDict['editions']) == 0
         assert testWorkDict['edition_count'] == 1
+        assert testWorkDict['date_created'] == '2022-05-12T10:00:41'
+        assert testWorkDict['date_modified'] == '2022-05-13T10:00:44'
 
     def test_formatWork_ordered_editions(self, testWork, mocker):
         testWork.editions = [mocker.MagicMock(id=1), mocker.MagicMock(id=2)]
