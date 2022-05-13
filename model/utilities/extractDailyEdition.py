@@ -32,7 +32,7 @@ def extract(version : str, language : str):
     editStatement = version
     editNumber = None
 
-    singLangDict = multEditDict[language.lower()]
+    singLangDict = multEditDict.get(language.lower(), None)
 
     #Edition statements with edition numbers in their ordinal form 
     if singLangDict != None:  

@@ -24,7 +24,8 @@ def main():
     dbManager.createSession()
 
     for edit in dbManager.session.query(Edition) \
-        .filter(Edition.edition_statement != None and Edition.languages != None):
+        .filter(Edition.edition_statement != None) \
+        .filter(Edition.languages != None).all():
             extract(edit.edition_statement, edit.languages[0]['language'])
 
     dbManager.commitChanges()
