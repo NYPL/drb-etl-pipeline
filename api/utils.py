@@ -155,6 +155,8 @@ class APIUtils():
     def formatWork(cls, work, editionIds, showAll, formats=None, reader=None):
         workDict = dict(work)
         workDict['edition_count'] = len(work.editions)
+        workDict['date_created'] = work.date_created.strftime('%Y-%m-%dT%H:%M:%S')
+        workDict['date_modified'] = work.date_modified.strftime('%Y-%m-%dT%H:%M:%S')
 
         orderedEds = OrderedDict.fromkeys(editionIds)\
             if editionIds else OrderedDict()

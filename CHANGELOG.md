@@ -6,6 +6,7 @@
 - Getter and setter method for record model 
 - Script to extract edition number from edition statement for the edition field
 - Script to update future records with edition number in the has_version field
+- Date created and date modified values visible in API Response for work and search endpoint
 ### Fixed
 - ES8 API only counting up to 10,000 search results
 - Add bulk retry functionality for ES writes/deletes
