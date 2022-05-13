@@ -24,11 +24,7 @@ def workFetch(uuid):
 
     if work:
         statusCode = 200
-        responseBody = {'work': APIUtils.formatWorkOutput(
-                        work, None, showAll=showAll, reader=readerVersion),
-                        'date_created': work.date_created, 
-                        'date_modified': work.date_modified
-                        }
+        responseBody = APIUtils.formatWorkOutput(work, None, showAll=showAll, reader=readerVersion)
         
     else:
         statusCode = 404
