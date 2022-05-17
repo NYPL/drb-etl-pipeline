@@ -65,7 +65,7 @@ class HathiTrustProcess(CoreProcess):
         fileJSON.sort(
             key=lambda x: datetime.strptime(
                 x['created'],
-                '%Y-%m-%dT%H:%M:%S%z'
+                '%Y-%m-%d %H:%M:%S %z'
             ).timestamp(),
             reverse=True
         )

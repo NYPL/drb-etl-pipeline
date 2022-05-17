@@ -25,8 +25,11 @@ def main():
 
     for edit in dbManager.session.query(Edition) \
         .filter(Edition.edition_statement != None) \
-        .filter(Edition.languages != None).all():
-            extract(edit.edition_statement, edit.languages[0]['language'])
+        .filter(Edition.languages != None) \
+        .filter(Edition.languages != []) \
+        .filter(Edition.languages != [{}]).all():
+            editNumber = extract(edit.edition_statement, edit.languages[0]['language'])
+            edit.edition = editNumber
 
     dbManager.commitChanges()
 

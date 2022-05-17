@@ -145,7 +145,7 @@ class TestAPIUtils:
             title='Test Title',
             editions=[testEdition],
             date_created = datetime.strptime('2022-05-12T10:00:41', '%Y-%m-%dT%H:%M:%S'),
-            date_modified = datetime.strptime('2022-05-13T10:00:44', '%Y-%m-%dT%H:%M:%S'),
+            date_modified = datetime.strptime('2022-05-13T10:00:44', '%Y-%m-%dT%H:%M:%S')
         )
 
     def test_normalizeQueryParams(self, mocker):
