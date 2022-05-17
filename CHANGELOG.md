@@ -11,6 +11,7 @@
 - ES8 API only counting up to 10,000 search results
 - Add bulk retry functionality for ES writes/deletes
 - Edition column for most editions now filled
+- HathiTrust data import with new date format
 
 ## 2022-04-26 -- v0.10.2
 ### Added
