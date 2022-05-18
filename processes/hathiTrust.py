@@ -78,7 +78,7 @@ class HathiTrustProcess(CoreProcess):
 
     @staticmethod
     def returnHathiDateFormat(strDate):
-        if 'T' and '-' in strDate:
+        if 'T' in strDate and '-' in strDate:
             return '%Y-%m-%dT%H:%M:%S%z'
         elif 'T' in strDate:
             return '%Y-%m-%dT%H:%M:%S'
