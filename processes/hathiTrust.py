@@ -52,6 +52,7 @@ class HathiTrustProcess(CoreProcess):
         hathiRec.applyMapping()
         self.addDCDWToUpdateList(hathiRec)
 
+
     @newrelic.agent.background_task()
     def importFromHathiTrustDataFile(self, fullDump=False):
         try:
@@ -65,7 +66,7 @@ class HathiTrustProcess(CoreProcess):
         fileJSON.sort(
             key=lambda x: datetime.strptime(
                 x['created'],
-                '%Y-%m-%d %H:%M:%S %z'
+                self.returnHathiDateFormat(x['created'])
             ).timestamp(),
             reverse=True
         )
@@ -74,6 +75,13 @@ class HathiTrustProcess(CoreProcess):
             if hathiFile['full'] == fullDump:
                 self.importFromHathiFile(hathiFile['url'])
                 break
+
+    @staticmethod
+    def returnHathiDateFormat(strDate):
+        if 'T' in strDate:
+            return '%Y-%m-%dT%H:%M:%S'
+        else:
+            return '%Y-%m-%d %H:%M:%S %z'
 
     @newrelic.agent.background_task()
     def importFromHathiFile(self, hathiURL):
