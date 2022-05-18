@@ -66,7 +66,9 @@ class Record(Base, Core):
 
     @has_version.setter
     def has_version(self, versionNum):
-        if self.languages != [] and self.languages != None:
+        if versionNum is None:
+            self._has_version = versionNum
+        elif self.languages != [] and self.languages != None:
             editionNo = extract(versionNum, self.languages[0].split('|')[0])
             self._has_version = f'{versionNum}|{editionNo}'
         else:
