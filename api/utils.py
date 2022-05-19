@@ -18,7 +18,12 @@ class APIUtils():
         'html': ['text/html'],
         'html_edd': ['application/html+edd', 'application/x.html+edd'],
         'pdf': ['application/pdf'],
-        'webpub_json': ['application/webpub+json']
+        'webpub_json': ['application/webpub+json'],
+
+        'readable': ['application/pdf', 'application/epub+zip', 'application/epub+xml'],
+        'downloadable': ['application/pdf', 'application/epub+zip', 'application/epub+xml', 'text/html'],
+        'requestable': ['application/pdf', 'application/epub+zip', 'application/epub+xml', 'text/html', \
+                        'application/html+edd', 'application/x.html+edd', 'application/webpub+json']
     }
 
     SOURCE_PRIORITY = {
