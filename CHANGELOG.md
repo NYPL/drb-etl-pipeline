@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased -- v0.10.4
+### Added
+- Updated format/filter mappings in APIUtils class
+### Fixed
+- 
+
 ## unreleased -- v0.10.3
 ### Added
 - MagicMock for test_createSearch method in test_api_es.py file

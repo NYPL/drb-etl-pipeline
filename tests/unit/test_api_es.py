@@ -693,14 +693,14 @@ class TestElasticClient:
             mocker.call('exists', field='editions.formats'),
             mocker.call(
                 'terms',
-                editions__formats=['application/pdf', 'application/epub+zip', 'application/epub+xml']
+                editions__formats=['application/epub+xml', 'text/html', 'application/webpub+json']
             )
         ])
         mockAgg.assert_has_calls([
             mocker.call('filter', exists={'field': 'editions.formats'}),
             mocker.call(
                 'filter',
-                terms={'editions.formats': ['application/pdf', 'application/epub+zip', 'application/epub+xml']}
+                terms={'editions.formats': ['application/epub+xml', 'text/html', 'application/webpub+json']}
             )
         ])
 
@@ -719,16 +719,14 @@ class TestElasticClient:
             mocker.call('exists', field='editions.formats'),
             mocker.call(
                 'terms',
-                editions__formats=['application/pdf', 'application/epub+zip', 'application/epub+xml', \
-                                    'text/html']
+                editions__formats=['application/pdf', 'application/epub+zip']
             )
         ])
         mockAgg.assert_has_calls([
             mocker.call('filter', exists={'field': 'editions.formats'}),
             mocker.call(
                 'filter',
-                terms={'editions.formats': ['application/pdf', 'application/epub+zip', 'application/epub+xml', \
-                                            'text/html']}
+                terms={'editions.formats': ['application/pdf', 'application/epub+zip', ]}
             )
         ])
 
@@ -747,17 +745,15 @@ class TestElasticClient:
             mocker.call('exists', field='editions.formats'),
             mocker.call(
                 'terms',
-                editions__formats=['application/pdf', 'application/epub+zip', 'application/epub+xml', 'text/html', \
-                                    'application/html+edd', 'application/x.html+edd', 'application/webpub+json']
+                editions__formats=['application/html+edd', 'application/x.html+edd']
             )
         ])
+
         mockAgg.assert_has_calls([
             mocker.call('filter', exists={'field': 'editions.formats'}),
             mocker.call(
                 'filter',
-                terms={'editions.formats': ['application/pdf', 'application/epub+zip', 'application/epub+xml', \
-                                            'text/html', 'application/html+edd', 'application/x.html+edd', \
-                                            'application/webpub+json']}
+                terms={'editions.formats': ['application/html+edd', 'application/x.html+edd']}
             )
         ])
 

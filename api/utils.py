@@ -20,10 +20,9 @@ class APIUtils():
         'pdf': ['application/pdf'],
         'webpub_json': ['application/webpub+json'],
 
-        'readable': ['application/pdf', 'application/epub+zip', 'application/epub+xml'],
-        'downloadable': ['application/pdf', 'application/epub+zip', 'application/epub+xml', 'text/html'],
-        'requestable': ['application/pdf', 'application/epub+zip', 'application/epub+xml', 'text/html', \
-                        'application/html+edd', 'application/x.html+edd', 'application/webpub+json']
+        'readable': ['application/epub+xml', 'text/html', 'application/webpub+json'],
+        'downloadable': ['application/pdf', 'application/epub+zip'],
+        'requestable': ['application/html+edd', 'application/x.html+edd']
     }
 
     SOURCE_PRIORITY = {
