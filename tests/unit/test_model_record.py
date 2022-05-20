@@ -17,6 +17,11 @@ class TestModelRecord:
         testRecord.has_version = 'first edition'
         assert testRecord.has_version == 'first edition|1'
 
+    # Test to assert that the setter properly handles null values
+    def test_no_edition(self, testRecord):
+        testRecord.has_version = None
+        assert testRecord.has_version is None
+
     # Failed Test for setter method
     def test_has_version_failure(self, testRecord):
         testRecord.has_version = 'other edition'
