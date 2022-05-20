@@ -681,6 +681,85 @@ class TestElasticClient:
         assert testInstance.appliedFilters == ['formatFilter', 'displayFilter']
         assert testInstance.appliedAggregations == ['formatAggregation', 'displayAggregation']
 
+    def test_createFilterClausesAndAggregations_w_format_readable(self, testInstance, mocker):
+        mockQuery = mocker.patch('api.elastic.Q')
+        mockQuery.side_effect = ['displayFilter', 'formatFilter']
+        mockAgg = mocker.patch('api.elastic.A')
+        mockAgg.side_effect = ['displayAggregation', 'formatAggregation']
+
+        testInstance.createFilterClausesAndAggregations([('format', 'readable')])
+
+        mockQuery.assert_has_calls([
+            mocker.call('exists', field='editions.formats'),
+            mocker.call(
+                'terms',
+                editions__formats=['application/epub+xml', 'text/html', 'application/webpub+json']
+            )
+        ])
+        mockAgg.assert_has_calls([
+            mocker.call('filter', exists={'field': 'editions.formats'}),
+            mocker.call(
+                'filter',
+                terms={'editions.formats': ['application/epub+xml', 'text/html', 'application/webpub+json']}
+            )
+        ])
+
+        assert testInstance.appliedFilters == ['formatFilter', 'displayFilter']
+        assert testInstance.appliedAggregations == ['formatAggregation', 'displayAggregation']
+
+    def test_createFilterClausesAndAggregations_w_format_downloadable(self, testInstance, mocker):
+        mockQuery = mocker.patch('api.elastic.Q')
+        mockQuery.side_effect = ['displayFilter', 'formatFilter']
+        mockAgg = mocker.patch('api.elastic.A')
+        mockAgg.side_effect = ['displayAggregation', 'formatAggregation']
+
+        testInstance.createFilterClausesAndAggregations([('format', 'downloadable')])
+
+        mockQuery.assert_has_calls([
+            mocker.call('exists', field='editions.formats'),
+            mocker.call(
+                'terms',
+                editions__formats=['application/pdf', 'application/epub+zip']
+            )
+        ])
+        mockAgg.assert_has_calls([
+            mocker.call('filter', exists={'field': 'editions.formats'}),
+            mocker.call(
+                'filter',
+                terms={'editions.formats': ['application/pdf', 'application/epub+zip', ]}
+            )
+        ])
+
+        assert testInstance.appliedFilters == ['formatFilter', 'displayFilter']
+        assert testInstance.appliedAggregations == ['formatAggregation', 'displayAggregation']
+
+    def test_createFilterClausesAndAggregations_w_format_requestable(self, testInstance, mocker):
+        mockQuery = mocker.patch('api.elastic.Q')
+        mockQuery.side_effect = ['displayFilter', 'formatFilter']
+        mockAgg = mocker.patch('api.elastic.A')
+        mockAgg.side_effect = ['displayAggregation', 'formatAggregation']
+
+        testInstance.createFilterClausesAndAggregations([('format', 'requestable')])
+
+        mockQuery.assert_has_calls([
+            mocker.call('exists', field='editions.formats'),
+            mocker.call(
+                'terms',
+                editions__formats=['application/html+edd', 'application/x.html+edd']
+            )
+        ])
+
+        mockAgg.assert_has_calls([
+            mocker.call('filter', exists={'field': 'editions.formats'}),
+            mocker.call(
+                'filter',
+                terms={'editions.formats': ['application/html+edd', 'application/x.html+edd']}
+            )
+        ])
+
+        assert testInstance.appliedFilters == ['formatFilter', 'displayFilter']
+        assert testInstance.appliedAggregations == ['formatAggregation', 'displayAggregation']
+
     def test_createFilterClausesAndAggregations_w_format_error(self, testInstance):
         with pytest.raises(ElasticClientError):
             testInstance.createFilterClausesAndAggregations([('format', 'test')])
