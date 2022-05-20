@@ -6,7 +6,7 @@
 ### Fixed
 - 
 
-## unreleased -- v0.10.3
+## 2022-05-19 -- v0.10.3
 ### Added
 - MagicMock for test_createSearch method in test_api_es.py file
 - Getter and setter method for record model 
@@ -17,8 +17,9 @@
 ### Fixed
 - ES8 API only counting up to 10,000 search results
 - Add bulk retry functionality for ES writes/deletes
-- Edition column for most editions now filled
+- Edition field for some editions now filled
 - HathiTrust data import with new date formats
+- Hotfix for setter method of record model
 
 ## 2022-04-26 -- v0.10.2
 ### Added
