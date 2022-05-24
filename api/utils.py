@@ -199,6 +199,14 @@ class APIUtils():
             edition, records, showAll=showAll, reader=reader
         )
 
+    # Return a list of authors to formatEdition method
+    @staticmethod
+    def workAuthorInfo(edition):
+        workAuthors = []
+        for i in edition.work.authors:
+            workAuthors.append(i['name'])
+        return workAuthors
+
     @classmethod
     def formatEdition(
         cls, edition, records=None, formats=None, showAll=False, reader=None
@@ -208,6 +216,8 @@ class APIUtils():
         editionDict['work_uuid'] = edition.work.uuid
         editionDict['publication_date'] = edition.publication_date.year\
             if edition.publication_date else None
+        editionDict['work_title'] = edition.work.title
+        editionDict['work_authors'] = cls.workAuthorInfo(edition)
 
         editionDict['links'] = [
             {'link_id': link.id, 'mediaType': link.media_type, 'url': link.url}
