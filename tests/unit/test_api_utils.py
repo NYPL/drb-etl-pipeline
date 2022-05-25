@@ -353,12 +353,20 @@ class TestAPIUtils:
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
         mockFormatEdition.return_value = 'testEdition'
 
+        mockDB = mocker.MagicMock()
+        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockEdition = mocker.MagicMock(dcdw_uuids='testUUID')
+
+        mockDB.fetchSingleEdition.return_value = mockEdition
+
         assert APIUtils.formatEditionOutput(
-            1, editionWorkTitle=None, editionWorkAuthors=None, records='testRecords', showAll=True
+            mockEdition, records = 'testRecords', showAll=True
         ) == 'testEdition'
 
         mockFormatEdition.assert_called_once_with(
-            1, None, None, 'testRecords', showAll=True, reader=None
+            mockEdition, mockEdition.work.title, [], 'testRecords', showAll=True, reader=None
         )
 
     def test_formatEdition_no_records(self, testEdition):

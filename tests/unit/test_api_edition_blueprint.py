@@ -47,7 +47,7 @@ class TestEditionBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockUtils['formatEditionOutput'].assert_called_once_with(
-                mockEdition, mockEdition.work.title, [], records='testRecords', showAll=True, reader='test'
+                mockEdition, records='testRecords', showAll=True, reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleEdition', 'testEdition'

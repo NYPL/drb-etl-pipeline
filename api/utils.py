@@ -193,11 +193,21 @@ class APIUtils():
 
     @classmethod
     def formatEditionOutput(
-        cls, edition, editionWorkTitle, editionWorkAuthors, records=None, showAll=False, reader=None
+        cls, edition, records=None, showAll=False, reader=None
     ):
+        editionWorkTitle = edition.work.title
+        editionWorkAuthors = cls.workAuthorInfo(edition)
+        
         return cls.formatEdition(
             edition, editionWorkTitle, editionWorkAuthors, records, showAll=showAll, reader=reader
         )
+    
+    def workAuthorInfo(edition):
+        '''Return a list of authors to editionFetch method'''
+        workAuthors = []
+        for i in edition.work.authors:
+            workAuthors.append(i['name'])
+        return workAuthors
 
     @classmethod
     def formatEdition(

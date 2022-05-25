@@ -25,10 +25,9 @@ def editionFetch(editionID):
     if edition:
         statusCode = 200
         records = dbClient.fetchRecordsByUUID(edition.dcdw_uuids)
-        editionWorkTitle = edition.work.title
-        editionWorkAuthors = workAuthorInfo(edition)
+
         responseBody = APIUtils.formatEditionOutput(
-            edition, editionWorkTitle, editionWorkAuthors, records=records, showAll=showAll, reader=readerVersion
+            edition, records=records, showAll=showAll, reader=readerVersion
         )
     else:
         statusCode = 404
@@ -45,10 +44,3 @@ def editionFetch(editionID):
     return APIUtils.formatResponseObject(
         statusCode, 'singleEdition', responseBody
     )
-
-# Return a list of authors to formatEdition method
-def workAuthorInfo(edition):
-    workAuthors = []
-    for i in edition.work.authors:
-        workAuthors.append(i['name'])
-    return workAuthors
