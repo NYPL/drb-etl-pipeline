@@ -130,7 +130,7 @@ class TestAPIUtils:
     def testEdition(self, MockDBObject, testItem, mocker):
         return MockDBObject(
             id='ed1',
-            work=mocker.MagicMock(uuid='uuid1', title='Test Title', authors = [{'name':'Test Author'}]),
+            work=mocker.MagicMock(uuid='uuid1'),
             publication_date=mocker.MagicMock(year=2000),
             items=[testItem],
             links=[mocker.MagicMock(
@@ -365,8 +365,6 @@ class TestAPIUtils:
         formattedEdition = APIUtils.formatEdition(testEdition)
 
         assert formattedEdition['work_uuid'] == 'uuid1'
-        assert formattedEdition['work_title'] == 'Test Title'
-        assert formattedEdition['work_authors'] == ['Test Author']
         assert formattedEdition['edition_id'] == 'ed1'
         assert formattedEdition['publication_date'] == 2000
         assert formattedEdition['links'][0]['link_id'] == 'co1'

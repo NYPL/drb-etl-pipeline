@@ -5,7 +5,7 @@
 - Updated format/filter mappings in APIUtils class
 - Work title and author info to edition endpoint
 ### Fixed
-- 
+- Work title and author info only shows up in edition endpoint now
 
 ## 2022-05-19 -- v0.10.3
 ### Added

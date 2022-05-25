@@ -29,7 +29,7 @@ class TestEditionBlueprint:
         mockDBClient.return_value = mockDB
 
         mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
-        
+
         mockEdition = mocker.MagicMock(dcdw_uuids='testUUID')
 
         mockDB.fetchSingleEdition.return_value = mockEdition
@@ -47,7 +47,7 @@ class TestEditionBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockUtils['formatEditionOutput'].assert_called_once_with(
-                mockEdition, records='testRecords', showAll=True, reader='test'
+                mockEdition, mockEdition.work.title, [], records='testRecords', showAll=True, reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleEdition', 'testEdition'

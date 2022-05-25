@@ -193,31 +193,25 @@ class APIUtils():
 
     @classmethod
     def formatEditionOutput(
-        cls, edition, records=None, showAll=False, reader=None
+        cls, edition, editionWorkTitle, editionWorkAuthors, records=None, showAll=False, reader=None
     ):
         return cls.formatEdition(
-            edition, records, showAll=showAll, reader=reader
+            edition, editionWorkTitle, editionWorkAuthors, records, showAll=showAll, reader=reader
         )
-
-    # Return a list of authors to formatEdition method
-    @staticmethod
-    def workAuthorInfo(edition):
-        workAuthors = []
-        for i in edition.work.authors:
-            workAuthors.append(i['name'])
-        return workAuthors
 
     @classmethod
     def formatEdition(
-        cls, edition, records=None, formats=None, showAll=False, reader=None
+        cls, edition, editionWorkTitle=None, editionWorkAuthors=None, records=None, formats=None, showAll=False, reader=None
     ):
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
         editionDict['work_uuid'] = edition.work.uuid
         editionDict['publication_date'] = edition.publication_date.year\
             if edition.publication_date else None
-        editionDict['work_title'] = edition.work.title
-        editionDict['work_authors'] = cls.workAuthorInfo(edition)
+
+        if editionWorkTitle != None or editionWorkAuthors != None:
+            editionDict['work_title'] = editionWorkTitle
+            editionDict['work_authors'] = editionWorkAuthors
 
         editionDict['links'] = [
             {'link_id': link.id, 'mediaType': link.media_type, 'url': link.url}
