@@ -21,13 +21,12 @@ def editionFetch(editionID):
         or current_app.config['READER_VERSION']
 
     edition = dbClient.fetchSingleEdition(editionID)
-
-    editionWorkTitle = edition.work.title
-    editionWorkAuthors = workAuthorInfo(edition)
             
     if edition:
         statusCode = 200
         records = dbClient.fetchRecordsByUUID(edition.dcdw_uuids)
+        editionWorkTitle = edition.work.title
+        editionWorkAuthors = workAuthorInfo(edition)
         responseBody = APIUtils.formatEditionOutput(
             edition, editionWorkTitle, editionWorkAuthors, records=records, showAll=showAll, reader=readerVersion
         )

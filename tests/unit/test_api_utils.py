@@ -349,16 +349,16 @@ class TestAPIUtils:
         assert testWorkDict['editions'][0]['edition_id'] == 'ed2'
         assert testWorkDict['editions'][1]['edition_id'] == 'ed1'
 
-    def test_formatEditionOputput(self, mocker):
+    def test_formatEditionOutput(self, mocker):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
         mockFormatEdition.return_value = 'testEdition'
 
         assert APIUtils.formatEditionOutput(
-            1, records='testRecords', showAll=True
+            1, None, None, showAll=True
         ) == 'testEdition'
 
         mockFormatEdition.assert_called_once_with(
-            1, 'testRecords', showAll=True, reader=None
+            1, None, None, 'testRecords', showAll=True, reader=None
         )
 
     def test_formatEdition_no_records(self, testEdition):
