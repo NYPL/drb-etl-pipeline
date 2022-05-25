@@ -29,7 +29,7 @@ class TestEditionBlueprint:
         mockDBClient.return_value = mockDB
 
         mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
-        
+
         mockEdition = mocker.MagicMock(dcdw_uuids='testUUID')
 
         mockDB.fetchSingleEdition.return_value = mockEdition

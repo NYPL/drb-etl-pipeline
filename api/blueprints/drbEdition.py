@@ -21,10 +21,11 @@ def editionFetch(editionID):
         or current_app.config['READER_VERSION']
 
     edition = dbClient.fetchSingleEdition(editionID)
-
+            
     if edition:
         statusCode = 200
         records = dbClient.fetchRecordsByUUID(edition.dcdw_uuids)
+
         responseBody = APIUtils.formatEditionOutput(
             edition, records=records, showAll=showAll, reader=readerVersion
         )

@@ -195,19 +195,33 @@ class APIUtils():
     def formatEditionOutput(
         cls, edition, records=None, showAll=False, reader=None
     ):
+        editionWorkTitle = edition.work.title
+        editionWorkAuthors = cls.workAuthorInfo(edition)
+        
         return cls.formatEdition(
-            edition, records, showAll=showAll, reader=reader
+            edition, editionWorkTitle, editionWorkAuthors, records, showAll=showAll, reader=reader
         )
+    
+    def workAuthorInfo(edition):
+        '''Return a list of authors to editionFetch method'''
+        workAuthors = []
+        for i in edition.work.authors:
+            workAuthors.append(i['name'])
+        return workAuthors
 
     @classmethod
     def formatEdition(
-        cls, edition, records=None, formats=None, showAll=False, reader=None
+        cls, edition, editionWorkTitle=None, editionWorkAuthors=None, records=None, formats=None, showAll=False, reader=None
     ):
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
         editionDict['work_uuid'] = edition.work.uuid
         editionDict['publication_date'] = edition.publication_date.year\
             if edition.publication_date else None
+
+        if editionWorkTitle != None or editionWorkAuthors != None:
+            editionDict['work_title'] = editionWorkTitle
+            editionDict['work_authors'] = editionWorkAuthors
 
         editionDict['links'] = [
             {'link_id': link.id, 'mediaType': link.media_type, 'url': link.url}

@@ -135,7 +135,7 @@ class TestAPIUtils:
             items=[testItem],
             links=[mocker.MagicMock(
                 id='co1', media_type='image/png', url='testCover'
-            )]
+            )],
         )
 
     @pytest.fixture
@@ -349,16 +349,24 @@ class TestAPIUtils:
         assert testWorkDict['editions'][0]['edition_id'] == 'ed2'
         assert testWorkDict['editions'][1]['edition_id'] == 'ed1'
 
-    def test_formatEditionOputput(self, mocker):
+    def test_formatEditionOutput(self, mocker):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
         mockFormatEdition.return_value = 'testEdition'
 
+        mockDB = mocker.MagicMock()
+        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockEdition = mocker.MagicMock(dcdw_uuids='testUUID')
+
+        mockDB.fetchSingleEdition.return_value = mockEdition
+
         assert APIUtils.formatEditionOutput(
-            1, records='testRecords', showAll=True
+            mockEdition, records = 'testRecords', showAll=True
         ) == 'testEdition'
 
         mockFormatEdition.assert_called_once_with(
-            1, 'testRecords', showAll=True, reader=None
+            mockEdition, mockEdition.work.title, [], 'testRecords', showAll=True, reader=None
         )
 
     def test_formatEdition_no_records(self, testEdition):
@@ -392,7 +400,7 @@ class TestAPIUtils:
         ]
 
         formattedEdition = APIUtils.formatEdition(
-            testEdition, ['rec1', 'rec2'], showAll=False
+            testEdition, editionWorkTitle=None, editionWorkAuthors=None, records = ['rec1', 'rec2'], showAll=False
         )
 
         assert len(formattedEdition['instances']) == 1
