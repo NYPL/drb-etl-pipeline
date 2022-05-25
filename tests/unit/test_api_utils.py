@@ -354,7 +354,7 @@ class TestAPIUtils:
         mockFormatEdition.return_value = 'testEdition'
 
         assert APIUtils.formatEditionOutput(
-            1, None, None, showAll=True
+            1, editionWorkTitle=None, editionWorkAuthors=None, records='testRecords', showAll=True
         ) == 'testEdition'
 
         mockFormatEdition.assert_called_once_with(
@@ -392,7 +392,7 @@ class TestAPIUtils:
         ]
 
         formattedEdition = APIUtils.formatEdition(
-            testEdition, ['rec1', 'rec2'], showAll=False
+            testEdition, editionWorkTitle=None, editionWorkAuthors=None, records = ['rec1', 'rec2'], showAll=False
         )
 
         assert len(formattedEdition['instances']) == 1
