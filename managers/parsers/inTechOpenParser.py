@@ -2,8 +2,8 @@ from managers.parsers.abstractParser import AbstractParser
 from managers.webpubManifest import WebpubManifest
 
 
-class DefaultParser(AbstractParser):
-    ORDER = 7
+class inTechOpenParser(AbstractParser):
+    ORDER = 6
 
     def __init__(self, uri, mediaType, record):
         super().__init__(uri, mediaType, record)
@@ -41,6 +41,14 @@ class DefaultParser(AbstractParser):
                 (webpubReadURI, {'reader': True}, 'application/webpub+json', None, None),
                 (ePubReadURI, {'reader': True}, 'application/epub+xml', None, None),
                 (ePubDownloadURI, {'download': True}, self.mediaType, None, (ePubDownloadPath, self.uri))
+            ]
+
+        elif self.mediaType == 'text/html':
+            htmlPath = 'text/{}/{}.html'.format(self.source, self.identifier)
+            htmlURI = '{}{}'.format(s3Root, htmlPath)
+
+            return [
+                (htmlURI, {'reader': False}, 'text/html', None, None)
             ]
 
         return super().createLinks()
