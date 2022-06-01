@@ -54,8 +54,32 @@ def update_batch(museObject, bucketName, currKey):
 
         # Updating old url link with new link
         museDictObject['readingOrder'][r]['href'] = urlunparse(url_parts)
+        logging.info(museDictObject['readingOrder'])
 
         r += 1
+
+
+    j = 1
+    while j < len(museDictObject['toc']):
+
+        urlLink = museDictObject['toc'][r]['href']
+        logging.info(urlLink)
+
+        # Convert ParseResponse to List object to modify data
+        url_parts = list(urlparse(urlLink))
+        query = dict(parse_qsl(url_parts[4]))
+        logging.info(query)
+
+        # Updating query parameter of url
+        params = {'start': 2}
+        query.update(params)
+        url_parts[4] = urlencode(query)
+
+        # Updating old url link with new link
+        museDictObject['toc'][r]['href'] = urlunparse(url_parts)
+        logging.info(museDictObject['toc'])
+
+        j += 1
 
     return s3_client.put_object(Bucket= bucketName, Key= f'{currKey}', \
                                 Body = json.dumps(museDictObject), ACL= 'public-read', \
