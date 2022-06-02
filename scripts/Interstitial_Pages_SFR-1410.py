@@ -10,8 +10,9 @@ s3_client = boto3.client("s3")
 
 bucketName = 'drb-files-qa'
 
-# Loading and updating batches of ProjectMuse JSON records with a query parameter to skip interstitial pages
 def main():
+    '''Loading and updating batches of ProjectMuse JSON records with a query parameter to skip interstitial pages'''
+    
     batches = load_batch()
     for batch in batches:
         # Iterating through all the Content objects to access the JSON muse objects
@@ -20,26 +21,38 @@ def main():
             museObject = s3_client.get_object(Bucket= bucketName, Key= f'{currKey}')
             update_batch(museObject, bucketName, currKey)
 
-# Loading batches of 1000 ProjectMuse JSON records using a paginator until there are no more batches
 def load_batch():
+    '''# Loading batches of 1000 ProjectMuse JSON records using a paginator until there are no more batches'''
     paginator = s3_client.get_paginator('list_objects_v2')
     page_iterator = paginator.paginate(Bucket= bucketName, Prefix= 'manifests/muse/')
     return page_iterator
     
-# Updating and returning one ProjectMuse JSON file record
+
 def update_batch(museObject, bucketName, currKey):
+    '''Updating and returning one ProjectMuse JSON file record'''
+    
     # Decode UTF-8 bytes to Unicode, and convert single quotes 
     # to double quotes to make it valid JSON
     for i in museObject['Body'].iter_lines():
         museStrObject = i.decode('utf8')
         # Load the JSON to a Python list and access readingOrder link
         museDictObject = json.loads(museStrObject)
+        museDictObject['readingOrder'] = parseURL(museDictObject['readingOrder'])
+        museDictObject['toc'] = parseURL(museDictObject['toc'])
         logging.info(museDictObject['readingOrder'])
 
-    r = 1
-    while r < len(museDictObject['readingOrder']):
+    return s3_client.put_object(Bucket= bucketName, Key= f'{currKey}', \
+                                Body = json.dumps(museDictObject), ACL= 'public-read', \
+                                ContentType = 'application/json')
 
-        urlLink = museDictObject['readingOrder'][r]['href']
+def parseURL(museDict):
+    '''Parsing and updating links in readingOrder and toc objects with query parameter'''
+
+    r = 1
+
+    while r < len(museDict):
+
+        urlLink = museDict[r]['href']
         logging.info(urlLink)
 
         # Convert ParseResponse to List object to modify data
@@ -53,14 +66,12 @@ def update_batch(museObject, bucketName, currKey):
         url_parts[4] = urlencode(query)
 
         # Updating old url link with new link
-        museDictObject['readingOrder'][r]['href'] = urlunparse(url_parts)
+        museDict[r]['href'] = urlunparse(url_parts)
+        logging.info(museDict)
 
         r += 1
 
-    return s3_client.put_object(Bucket= bucketName, Key= f'{currKey}', \
-                                Body = json.dumps(museDictObject), ACL= 'public-read', \
-                                ContentType = 'application/json')
-
+    return museDict
 
 if __name__ == '__main__':
     main()
