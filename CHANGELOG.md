@@ -8,6 +8,7 @@
 - Work title and authors info only show up in edition endpoint now
 - Editions and utils tests updated and fixed
 - All toc object url links in ProjectMuse manifests have a query parameter now
+- Update DOAB single record import to reflect new OAI-PMH structure
 
 ## 2022-05-19 -- v0.10.3
 ### Added
