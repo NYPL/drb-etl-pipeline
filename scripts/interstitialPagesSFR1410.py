@@ -54,20 +54,22 @@ def parseURL(museDict):
 
         urlLink = museDict[r]['href']
         logging.info(urlLink)
+        
+        if urlLink != '':
 
-        # Convert ParseResponse to List object to modify data
-        url_parts = list(urlparse(urlLink))
-        query = dict(parse_qsl(url_parts[4]))
-        logging.info(query)
+            # Convert ParseResponse to List object to modify data
+            url_parts = list(urlparse(urlLink))
+            query = dict(parse_qsl(url_parts[4]))
+            logging.info(query)
 
-        # Updating query parameter of url
-        params = {'start': 2}
-        query.update(params)
-        url_parts[4] = urlencode(query)
+            # Updating query parameter of url
+            params = {'start': 2}
+            query.update(params)
+            url_parts[4] = urlencode(query)
 
-        # Updating old url link with new link
-        museDict[r]['href'] = urlunparse(url_parts)
-        logging.info(museDict)
+            # Updating old url link with new link
+            museDict[r]['href'] = urlunparse(url_parts)
+            logging.info(museDict)
 
         r += 1
 
