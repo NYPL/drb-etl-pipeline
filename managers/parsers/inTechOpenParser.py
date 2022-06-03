@@ -1,8 +1,8 @@
 from managers.parsers.abstractParser import AbstractParser
 from managers.webpubManifest import WebpubManifest
+import re
 
-
-class inTechOpenParser(AbstractParser):
+class InTechOpenParser(AbstractParser):
     ORDER = 6
 
     def __init__(self, uri, mediaType, record):
@@ -23,35 +23,39 @@ class inTechOpenParser(AbstractParser):
 
             manifestJSON = self.generateManifest(self.uri, manifestURI)
 
+            htmlURI = self.createHTMLURI()
+
+            # TODO
+            # 1. Add regex to extract page identifier from PDF (e.g. r'intechopen.com\/books\/([\d]+)')
+            # 2. Construct HTML URI using extracted identifier
+            # 3. Add HTML URI to return array below
+            #
+            # QUESTIONS
+            # 1. Do all Intechopen books have PDF links?
+            # 2. How do we handle potential errors/add a fallback condition
+            # 3. Are PDF links formatted consistently?
+
             return [
                 (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
-                (self.uri, {'reader': False, 'download': True}, self.mediaType, None, None)
+                (self.uri, {'reader': False, 'download': True}, self.mediaType, None, None),
+                (htmlURI, {'reader': False}, 'text/html', self.mediaType, None, None)
             ]
-        elif self.mediaType == 'application/epub+zip':
-            ePubDownloadPath = 'epubs/{}/{}.epub'.format(self.source, self.identifier)
-            ePubDownloadURI = '{}{}'.format(s3Root, ePubDownloadPath)
-
-            ePubReadPath = 'epubs/{}/{}/META-INF/container.xml'.format(self.source, self.identifier)
-            ePubReadURI = '{}{}'.format(s3Root, ePubReadPath)
-
-            webpubReadPath = 'epubs/{}/{}/manifest.json'.format(self.source, self.identifier)
-            webpubReadURI = '{}{}'.format(s3Root, webpubReadPath)
-
-            return [
-                (webpubReadURI, {'reader': True}, 'application/webpub+json', None, None),
-                (ePubReadURI, {'reader': True}, 'application/epub+xml', None, None),
-                (ePubDownloadURI, {'download': True}, self.mediaType, None, (ePubDownloadPath, self.uri))
-            ]
-
         elif self.mediaType == 'text/html':
-            htmlPath = 'text/{}/{}.html'.format(self.source, self.identifier)
-            htmlURI = '{}{}'.format(s3Root, htmlPath)
+            return []
 
-            return [
-                (htmlURI, {'reader': False}, 'text/html', None, None)
-            ]
+        return []
 
-        return super().createLinks()
+
+    def createHTMLURI(self):
+        '''Using regular expressions to search for identifier in PDF and parse it into HTML URI'''
+        
+        identRegex = r'intechopen.com\/storage\/books\/([\d]+)'
+        match = re.search(identRegex, self.uri)
+        identifier = match.group(1) 
+
+        htmlURI = f'www.intechopen.com/books/{identifier}'
+
+        return htmlURI
 
     def generateManifest(self, sourceURI, manifestURI):
         return super().generateManifest(sourceURI, manifestURI)
