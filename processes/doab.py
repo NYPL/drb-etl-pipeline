@@ -84,7 +84,8 @@ class DOABProcess(CoreProcess):
 
         if doabResponse.status_code == 200:
             content = BytesIO(doabResponse.content)
-            oaidcRecord = etree.parse(content)
+            oaidcXML = etree.parse(content)
+            oaidcRecord = oaidcXML.xpath('//oai_dc:dc', namespaces=self.OAI_NAMESPACES)[0]
 
             try:
                 self.parseDOABRecord(oaidcRecord)
