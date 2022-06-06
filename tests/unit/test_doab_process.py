@@ -110,8 +110,10 @@ class TestDOABProcess:
         mockGet = mocker.patch.object(requests, 'get')
         mockGet.return_value = mockResponse
 
+        mockXML = mocker.MagicMock()
+        mockXML.xpath.return_value = ['mockOAIRecord']
         mockEtree = mocker.patch('processes.doab.etree')
-        mockEtree.parse.return_value = 'mockOAIRecord'
+        mockEtree.parse.return_value = mockXML
 
         mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
 
@@ -130,8 +132,10 @@ class TestDOABProcess:
         mockGet = mocker.patch.object(requests, 'get')
         mockGet.return_value = mockResponse
 
+        mockXML = mocker.MagicMock()
+        mockXML.xpath.return_value = ['mockOAIRecord']
         mockEtree = mocker.patch('processes.doab.etree')
-        mockEtree.parse.return_value = 'mockOAIRecord'
+        mockEtree.parse.return_value = mockXML
 
         mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
         mockParseRecord.side_effect = DOABError('test')
