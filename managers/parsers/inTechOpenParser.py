@@ -48,8 +48,12 @@ class InTechOpenParser(AbstractParser):
                     (self.uri, {'reader': False, 'download': True}, None, None),
                     (htmlURI, {'reader': False}, 'text/html', None, None)
                 ]
+            else:
 
-            return []
+                return [
+                    (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
+                    (self.uri, {'reader': False, 'download': True}, None, None)
+                ]
 
         elif self.mediaType == 'text/html':
             return []
@@ -69,6 +73,9 @@ class InTechOpenParser(AbstractParser):
             identifier = match.group(1) 
 
             htmlURI = f'www.intechopen.com/books/{identifier}'
+
+        else:
+            htmlURI = None
 
         return htmlURI
 

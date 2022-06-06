@@ -12,7 +12,7 @@
 - All toc object url links in ProjectMuse manifests have a query parameter now
 - Update DOAB single record import to reflect new OAI-PMH structure
 - Deleted extra urls in toc object of Muse manifests 
-- Read Online links for books from intechopen website
+- Read Online links for books from IntechOpen website
 
 
 ## 2022-05-19 -- v0.10.3
