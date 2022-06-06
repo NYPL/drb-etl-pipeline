@@ -31,11 +31,6 @@ class InTechOpenParser(AbstractParser):
 
             htmlURI = self.createHTMLURI()
 
-            # TODO
-            # 1. Add regex to extract page identifier from PDF (e.g. r'intechopen.com\/books\/([\d]+)')
-            # 2. Construct HTML URI using extracted identifier
-            # 3. Add HTML URI to return array below
-            #
             # QUESTIONS
             # 1. Do all Intechopen books have PDF links?
             # 2. How do we handle potential errors/add a fallback condition

@@ -5,7 +5,7 @@
 - Updated format/filter mappings in APIUtils class
 - Work title and author info to edition endpoint
 - Added intechopen parser 
-- Updated tests for DOAB link manager
+- Updated tests for DOAB Link Manager
 ### Fixed
 - Work title and authors info only show up in edition details endpoint now
 - Editions and utils tests updated and fixed
