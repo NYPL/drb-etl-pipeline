@@ -3,7 +3,7 @@ from managers.webpubManifest import WebpubManifest
 
 
 class DefaultParser(AbstractParser):
-    ORDER = 6
+    ORDER = 7
 
     def __init__(self, uri, mediaType, record):
         super().__init__(uri, mediaType, record)
