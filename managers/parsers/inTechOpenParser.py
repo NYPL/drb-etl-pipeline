@@ -12,7 +12,13 @@ class InTechOpenParser(AbstractParser):
         self.identifier = list(self.record.identifiers[0].split('|'))[0]
 
     def validateURI(self):
-        return super().validateURI()
+        inTechRegex = r'intechopen.com'
+        match = re.search(inTechRegex, self.uri)
+
+        if match:
+            return True
+        else:
+            return False
 
     def createLinks(self):
         s3Root = self.generateS3Root()
@@ -35,11 +41,16 @@ class InTechOpenParser(AbstractParser):
             # 2. How do we handle potential errors/add a fallback condition
             # 3. Are PDF links formatted consistently?
 
-            return [
-                (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
-                (self.uri, {'reader': False, 'download': True}, self.mediaType, None, None),
-                (htmlURI, {'reader': False}, 'text/html', self.mediaType, None, None)
-            ]
+            if htmlURI != None:
+
+                return [
+                    (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
+                    (self.uri, {'reader': False, 'download': True}, None, None),
+                    (htmlURI, {'reader': False}, 'text/html', None, None)
+                ]
+
+            return []
+
         elif self.mediaType == 'text/html':
             return []
 
@@ -47,13 +58,17 @@ class InTechOpenParser(AbstractParser):
 
 
     def createHTMLURI(self):
-        '''Using regular expressions to search for identifier in PDF and parse it into HTML URI'''
+        '''
+        Using regular expressions to search for identifier in PDF and parse it into HTML URI
+        '''
         
         identRegex = r'intechopen.com\/storage\/books\/([\d]+)'
         match = re.search(identRegex, self.uri)
-        identifier = match.group(1) 
 
-        htmlURI = f'www.intechopen.com/books/{identifier}'
+        if match != None:
+            identifier = match.group(1) 
+
+            htmlURI = f'www.intechopen.com/books/{identifier}'
 
         return htmlURI
 

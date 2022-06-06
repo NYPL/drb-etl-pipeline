@@ -4,9 +4,11 @@
 ### Added
 - Updated format/filter mappings in APIUtils class
 - Work title and author info to edition endpoint
+- Added intechopen parser 
 ### Fixed
-- Work title and authors info only show up in edition endpoint now
+- Work title and authors info only show up in edition details endpoint now
 - Editions and utils tests updated and fixed
+- Read Online links for books from intechopen website
 
 ## 2022-05-19 -- v0.10.3
 ### Added
