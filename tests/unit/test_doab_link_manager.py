@@ -19,9 +19,9 @@ class TestDOABLinkManager:
         ]
 
     def test_loadParsers(self, testManager):
-        assert len(testManager.parsers) == 6
+        assert len(testManager.parsers) == 7
         assert testManager.parsers[0].__name__ == 'SpringerParser'
-        assert testManager.parsers[5].__name__ == 'DefaultParser'
+        assert testManager.parsers[6].__name__ == 'DefaultParser'
 
     def test_selectParser(self, testManager, mocker):
         mockFindURI = mocker.patch.object(DOABLinkManager, 'findFinalURI')
