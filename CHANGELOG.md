@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased -- v0.10.4
+## 2022-06-09 -- v0.10.4
 ### Added
 - Updated format/filter mappings in APIUtils class
 - Work title and author info to edition endpoint
