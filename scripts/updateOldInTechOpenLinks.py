@@ -26,15 +26,19 @@ def main():
 
     dbManager.createSession()
 
-    doabProcess = DOABProcess('single', None, None, None)
+    doabProcess = DOABProcess('single', None, None, None, None, None)
 
-    identRegex = r'intechopen.com\/storage\/books\/([\d]+)'
+    identRegex = r'intechopen.com\/books\/([\d]+)'
 
     for record in dbManager.session.query(Record) \
-        .filter(Record.source != 'doab') \
+        .filter(Record.source == 'doab') \
+        .filter(Record.source_id == '20.500.12854/66288') \
         .filter(Record.publisher == '{IntechOpen||,IntechOpen||}').all():
             
-            match = re.search(identRegex, record.has_part)
+            for i in record.has_part:
+                match = re.search(identRegex, i)
+                if match != None:
+                    break
 
             if match == None:
                 doabProcess.importSingleOAIRecord(record.source_id)
