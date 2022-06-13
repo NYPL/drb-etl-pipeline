@@ -2,7 +2,7 @@
 
 ## unreleased -- v0.10.5
 ### Added
-- 
+- Added work links and author(s) links to edition detail page
 ### Fixed
 -
 

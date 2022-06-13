@@ -366,7 +366,9 @@ class TestAPIUtils:
         ) == 'testEdition'
 
         mockFormatEdition.assert_called_once_with(
-            mockEdition, mockEdition.work.title, [], 'testRecords', showAll=True, reader=None
+            mockEdition, mockEdition.work.title, \
+            f'https://digital-research-books-beta.nypl.org/work/{mockEdition.work.uuid}', 
+            [], APIUtils.workAuthorLink(mockEdition), 'testRecords', showAll=True, reader=None
         )
 
     def test_formatEdition_no_records(self, testEdition):

@@ -196,32 +196,48 @@ class APIUtils():
         cls, edition, records=None, showAll=False, reader=None
     ):
         editionWorkTitle = edition.work.title
+        editionWorkLink = f'https://digital-research-books-beta.nypl.org/work/{edition.work.uuid}'
         editionWorkAuthors = cls.workAuthorInfo(edition)
+        editionWorkAuthorsLink = cls.workAuthorLink(edition)
         
         return cls.formatEdition(
-            edition, editionWorkTitle, editionWorkAuthors, records, showAll=showAll, reader=reader
+            edition, editionWorkTitle, editionWorkLink, editionWorkAuthors, editionWorkAuthorsLink, \
+            records, showAll=showAll, reader=reader
         )
     
     def workAuthorInfo(edition):
-        '''Return a list of authors to editionFetch method'''
+        '''Return a list of authors to formatEditionOutput method'''
         workAuthors = []
         for i in edition.work.authors:
             workAuthors.append(i['name'])
         return workAuthors
 
+    def workAuthorLink(edition):
+        '''Return a list of search link to authors to formatEditionOutput method'''
+        authorsLinkArray = []
+        for i in edition.work.authors:
+            authorsLinkArray.append(f"https://digital-research-books-beta.nypl.org/search?query=author%3A{i['name']}")
+        return authorsLinkArray
+
     @classmethod
     def formatEdition(
-        cls, edition, editionWorkTitle=None, editionWorkAuthors=None, records=None, formats=None, showAll=False, reader=None
+        cls, edition, editionWorkTitle=None, editionWorkLink=None, \
+        editionWorkAuthors=None, editionWorkAuthorsLink=None, records=None, \
+        formats=None, showAll=False, reader=None
     ):
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
         editionDict['work_uuid'] = edition.work.uuid
+        editionDict['work_link'] = editionWorkLink
         editionDict['publication_date'] = edition.publication_date.year\
             if edition.publication_date else None
 
         if editionWorkTitle != None or editionWorkAuthors != None:
             editionDict['work_title'] = editionWorkTitle
             editionDict['work_authors'] = editionWorkAuthors
+
+        if editionWorkAuthorsLink != None:
+            editionDict['work_authors_link'] = editionWorkAuthorsLink
 
         editionDict['links'] = [
             {'link_id': link.id, 'mediaType': link.media_type, 'url': link.url}
