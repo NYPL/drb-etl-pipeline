@@ -2,7 +2,7 @@
 
 ## unreleased -- v0.10.5
 ### Added
-- 
+- New script to update old IntechOpen records with new HTML links
 ### Fixed
 -
 

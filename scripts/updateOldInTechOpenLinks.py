@@ -32,7 +32,6 @@ def main():
 
     for record in dbManager.session.query(Record) \
         .filter(Record.source == 'doab') \
-        .filter(Record.source_id == '20.500.12854/66288') \
         .filter(Record.publisher == '{IntechOpen||,IntechOpen||}').all():
             
             for i in record.has_part:
@@ -42,8 +41,10 @@ def main():
 
             if match == None:
                 doabProcess.importSingleOAIRecord(record.source_id)
-                
-            
+                doabProcess.saveRecords()
+                #Make session record a set after updating record in database to reduce memory space
+                record = set()
+
     dbManager.commitChanges()
 
 if __name__ == '__main__':
