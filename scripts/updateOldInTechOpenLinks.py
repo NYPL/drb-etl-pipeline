@@ -42,8 +42,7 @@ def main():
             if match == None:
                 doabProcess.importSingleOAIRecord(record.source_id)
                 doabProcess.saveRecords()
-                #Make session record a set after updating record in database to reduce memory space
-                record = set()
+                doabProcess.records = set()     #Clears memory space for process class after each import
 
     dbManager.commitChanges()
 
