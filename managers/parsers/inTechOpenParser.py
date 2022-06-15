@@ -40,14 +40,14 @@ class InTechOpenParser(AbstractParser):
 
                 return [
                     (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
-                    (self.uri, {'reader': False, 'download': True}, None, None),
+                    (self.uri, {'reader': False, 'download': True}, 'application/pdf',  None, None),
                     (htmlURI, {'reader': False}, 'text/html', None, None)
                 ]
             else:
 
                 return [
                     (manifestURI, {'reader': True}, 'application/webpub+json', (manifestPath, manifestJSON), None),
-                    (self.uri, {'reader': False, 'download': True}, None, None)
+                    (self.uri, {'reader': False, 'download': True}, 'application/pdf', None, None)
                 ]
 
         elif self.mediaType == 'text/html':

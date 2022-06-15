@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## unreleased -- v0.10.5
+### Added
+- New script to update past IntechOpen records with new HTML links
+- Exposed entire authors object to the edition details page
+### Fixed
+- 
+
 ## 2022-06-09 -- v0.10.4
 ### Added
 - Updated format/filter mappings in APIUtils class
