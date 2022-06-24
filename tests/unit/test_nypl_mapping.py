@@ -103,6 +103,6 @@ class TestNYPLMapping:
         assert testMapping.record.contributors == ['Contributor|1234|n9876|Tester']
         assert testMapping.record.coverage == ['tst|Test|2']
         assert testMapping.record.has_part == [
-            '1|https://www.nypl.org/research/collections/shared-collection-catalog/bib/b1|nypl|text/html|{"catalog": true, "download": false, "reader": false}',
+            '1|https://www.nypl.org/research/collections/shared-collection-catalog/bib/b1|nypl|application/html+catalog|{"catalog": true, "download": false, "reader": false}',
             '2|http://www.nypl.org/research/collections/shared-collection-catalog/hold/request/b1-i1|nypl|application/x.html+edd|{"edd": true, "catalog": false, "download": false, "reader": false}'
         ]
