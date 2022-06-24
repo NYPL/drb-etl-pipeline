@@ -17,7 +17,7 @@ class APIUtils():
         'epub_xml': ['application/epub+zip', 'application/epub+xml'],
         'html': ['text/html'],
         'html_edd': ['application/html+edd', 'application/x.html+edd'],
-        'html_catalog': ['application/html/catalog'],
+        'html_catalog': ['application/html+catalog'],
         'pdf': ['application/pdf'],
         'webpub_json': ['application/webpub+json'],
 
