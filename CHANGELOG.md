@@ -5,7 +5,7 @@
 - New script to update past IntechOpen records with new HTML links
 - Exposed entire authors object to the edition details page
 ### Fixed
-- 
+- Added improved error handling around unexpected `media_type` values
 
 ## 2022-06-09 -- v0.10.4
 ### Added
