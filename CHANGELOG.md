@@ -6,6 +6,7 @@
 - Exposed entire authors object to the edition details page
 ### Fixed
 - Added improved error handling around unexpected `media_type` values
+- Improve handling of NYPL Catalog records without EDD links
 
 ## 2022-06-09 -- v0.10.4
 ### Added
