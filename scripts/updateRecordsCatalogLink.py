@@ -29,12 +29,21 @@ def main():
     linkRegex = r'text\/html'
 
     for record in dbManager.session.query(Record) \
-        .filter(Record.source == 'nypl').all():
+        .filter(Record.source == 'nypl') \
+        .filter(Record.id == 4925).all():
+
+            recordArray = []
             
             for i, elem in enumerate(record.has_part):
                 if re.search(linkRegex, elem) != None:
                     if re.search(catalogRegex, elem) != None:
-                        record.has_part = [record.has_part[i].replace('text/html', 'application/html+catalog')]
+                        recordArray.append(record.has_part[i].replace('text/html', 'application/html+catalog'))
+                    else:
+                        recordArray.append(record.has_part[i])
+                else:
+                    recordArray.append(record.has_part[i])
+
+            record.has_part = recordArray
 
     dbManager.commitChanges()
     
