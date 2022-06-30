@@ -29,8 +29,7 @@ def main():
     linkRegex = r'text\/html'
 
     for record in dbManager.session.query(Record) \
-        .filter(Record.source == 'nypl') \
-        .filter(Record.id == 4925).all():
+        .filter(Record.source == 'nypl').all():
 
             recordArray = []
             
@@ -38,8 +37,6 @@ def main():
                 if re.search(linkRegex, elem) != None:
                     if re.search(catalogRegex, elem) != None:
                         recordArray.append(record.has_part[i].replace('text/html', 'application/html+catalog'))
-                    else:
-                        recordArray.append(record.has_part[i])
                 else:
                     recordArray.append(record.has_part[i])
 
