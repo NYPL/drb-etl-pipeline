@@ -57,6 +57,21 @@ def main():
 
 
 def getEditionFormats(items):
+    '''Accepts an array that represent all the Items associated with an Edition
+    from the database. It builds a unique array of all the media_types of all
+    the links associated with all of the items.
+
+    In this process it replaces the media_type for any link that represents a 
+    catalog URL with the value of application/html+catalog. This more specific
+    media_type allows consuming application to distinguish catalog links from
+    other links that resolve to web pages.
+
+    Parametes:
+    items -- an array of Item ORM records, drawn from a single Edition record
+
+    Response:
+    Unique array of media_type strings or None
+    '''
     formats = set()
 
     for item in items:
@@ -80,6 +95,19 @@ def getEditionFormats(items):
 
 
 def linkCriteriaChecker(links, flag, value):
+    '''Takes the provided Link object and, if it has a media_type of text/html, 
+    evaluates it for the presence/value of a specified flag. This allows us to
+    evaluate links that have ambiguous media_types and assert whether or not it
+    meets certain criteria based on the more specific flag object.
+
+    Parameters:
+    link -- a ORM Link object
+    flag -- a key in the flag JSON object of the Link
+    value -- a boolean value that validates the expected value of the flag
+
+    Response:
+    Boolean
+    '''
     return len(list(filter(lambda x: x.flags[flag] == value and x.media_type == 'text/html', links))) > 0
 
 
