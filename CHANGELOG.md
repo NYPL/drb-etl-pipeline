@@ -4,6 +4,8 @@
 ### Added
 - New script to update past IntechOpen records with new HTML links
 - Exposed entire authors object to the edition details page
+- Two new scripts to update NYPL catalogs links in Record and Link table
+- Updated NYPL mapping and formats in APIUtils with new catalog link
 ### Fixed
 - Added improved error handling around unexpected `media_type` values
 
