@@ -1,5 +1,5 @@
 import os
-import re
+from elasticsearch.exceptions import NotFoundError
 
 from model import Work, Item, Edition, ESWork
 from main import loadEnvFile
@@ -39,17 +39,25 @@ def main():
         for edition in work.editions:
             workEdFormats[edition.id] = getEditionFormats(edition.items)
 
-        workRec = ESWork.get(work.uuid, index=esManager.index)
+        try:
+            workRec = ESWork.get(work.uuid, index=esManager.index)
+        except NotFoundError:
+            print('Work not indexed, skipping')
+            continue
+
         saveWork = False
 
         for edition in workRec.editions:
+            if edition.edition_id not in workEdFormats.keys():
+                continue
+
             if edition.formats != workEdFormats[edition.edition_id]:
                 print('REPLACE')
                 edition.formats = workEdFormats[edition.edition_id]
                 saveWork = True
             else:
                 print('SKIP')
-        
+
         if saveWork:
             workRec.save()
 
