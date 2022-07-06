@@ -8,6 +8,7 @@
 - Updated NYPL mapping and formats in APIUtils with new catalog link
 ### Fixed
 - Added improved error handling around unexpected `media_type` values
+- Improve handling of NYPL Catalog records without EDD links
 
 ## 2022-06-09 -- v0.10.4
 ### Added
