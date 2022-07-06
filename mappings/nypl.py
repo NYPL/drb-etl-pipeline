@@ -126,7 +126,7 @@ class NYPLMapping(SQLMapping):
 
         # Add catalog link derived from nypl identifier if 856 field is not present
         if len(self.record.has_part) < 1:
-            self.record.has_part.append('1|{}|nypl|text/html|{{"catalog": true, "download": false, "reader": false}}'.format(
+            self.record.has_part.append('1|{}|nypl|application/html+catalog|{{"catalog": true, "download": false, "reader": false}}'.format(
                 'https://www.nypl.org/research/collections/shared-collection-catalog/bib/b{}'.format(self.source['id'])
             ))
 
