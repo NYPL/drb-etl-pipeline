@@ -9,7 +9,7 @@ import re
 class APIUtils():
     QUERY_TERMS = [
         'keyword', 'title', 'author', 'subject', 'viaf', 'lcnaf',
-        'date', 'startYear', 'endYear', 'language', 'format', 'showAll'
+        'date', 'startYear', 'endYear', 'language', 'format', 'govDoc', 'noGovDoc', 'showAll'
     ]
 
     FORMAT_CROSSWALK = {

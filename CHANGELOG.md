@@ -6,6 +6,7 @@
 - Exposed entire authors object to the edition details page
 - Two new scripts to update NYPL catalogs links in Record and Link table
 - Updated NYPL mapping and formats in APIUtils with new catalog link
+- Gov document filter for advanced search page
 ### Fixed
 - Added improved error handling around unexpected `media_type` values
 - Improve handling of NYPL Catalog records without EDD links
