@@ -76,7 +76,7 @@ class SFRElasticRecordManager:
         ]
         
         self.work.is_government_document = SFRElasticRecordManager.addGovDocStatus(
-            self.dbWork.measurements
+            self.work.editions.measurements
         )
 
         self.work.editions = [self.createEdition(e) for e in self.dbWork.editions]
