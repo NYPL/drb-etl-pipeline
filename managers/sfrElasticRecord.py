@@ -89,13 +89,10 @@ class SFRElasticRecordManager:
     
     @staticmethod
     def addGovDocStatus(measurements):
-        govDocMeasurement = list(filter(
-            lambda x: x.quantity == 'government_document', measurements
-        ))
-        if len(govDocMeasurement) > 0:
-            if int(govDocMeasurement[0].value) == 1:
-                return True
-        
+        for dict in measurements:
+            if dict['type'] == "government_document":
+                if dict['value'] == "1":
+                    return True
         return False
 
     def createEdition(self, edition):

@@ -8,6 +8,8 @@ from managers import DBManager, ElasticsearchManager
 
 def main():
 
+    '''Updating is_government_document field of current gov doc works in ES to be the boolean value True'''
+
     loadEnvFile('local-qa', fileString='config/{}.yaml')
 
     dbManager = DBManager(
@@ -30,20 +32,17 @@ def main():
         .filter(Edition.measurements != None) \
         .filter(Edition.measurements != []) \
         .filter(Edition.measurements != [{}]).all():
-            for dict in work.edit.measurements:
+            for dict in work.edition.measurements:
                 if dict['type'] == "government_document":
                     if dict['value'] == "1":
                         try:
                             workRec = ESWork.get(work.uuid, index=esManager.index)
                             workRec.is_government_document = True
                             workRec.save()
+                            break
                         except NotFoundError:
                             print('Work not indexed, skipping')
                             continue
-                    else:
-                        continue
-                else:
-                    continue
 
     dbManager.closeConnection()
 

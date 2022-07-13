@@ -349,17 +349,9 @@ class ElasticClient():
         displayFilters = list(filter(
             lambda x: x[0] == 'showAll', filterParams)
         )
-        govDocFilters = list(filter(
-            lambda x: x[0] == 'govDoc', filterParams)
-        )
-        noGovDocFilters = list(filter(
-            lambda x: x[0] == 'noGovDoc', filterParams)
-        )
 
         dateFilter, dateAggregation = (None, None)
         formatFilter, formatAggregation = (None, None)
-        govDocFilter, govDocAggregation = (None, None)
-        noGovDocFilter, noGovDocAggregation = (None, None)
         displayFilter, displayAggregation = (
             Q('exists', field='editions.formats'),
             A('filter', **{'exists': {'field': 'editions.formats'}})
@@ -396,10 +388,6 @@ class ElasticClient():
             formatAggregation = A(
                 'filter', **{'terms': {'editions.formats': formats}}
             )
-        
-        #if len(govDocFilters) > 0:
-
-        #if len(noGovDocFilters) > 0:
 
         if len(displayFilters) > 0 and displayFilters[0][1] == 'true':
             displayFilter = None
