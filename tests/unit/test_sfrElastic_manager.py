@@ -141,22 +141,19 @@ class TestSFRElasticRecordManager:
 
     def test_addGovDocStatus_measurement_present_true(self, mocker):
         govMeasure = mocker.MagicMock()
-        govMeasure.quantity = 'government_document'
-        govMeasure.value = '1'
+        govMeasure = {'type': 'government_document', 'value': '1'}
 
         assert SFRElasticRecordManager.addGovDocStatus([govMeasure]) is True
 
     def test_addGovDocStatus_measurement_present_false(self, mocker):
         govMeasure = mocker.MagicMock()
-        govMeasure.quantity = 'government_document'
-        govMeasure.value = '0'
+        govMeasure = {'type': 'government_document', 'value': '0'}
 
         assert SFRElasticRecordManager.addGovDocStatus([govMeasure]) is False 
 
     def test_addGovDocStatus_measurement_not_present(self, mocker):
         govMeasure = mocker.MagicMock()
-        govMeasure.quantity = 'other'
-        govMeasure.value = '1'
+        govMeasure = {'type': 'other', 'value': '1'}
 
         assert SFRElasticRecordManager.addGovDocStatus([govMeasure]) is False 
 
