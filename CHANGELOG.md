@@ -7,7 +7,7 @@
 - Two new scripts to update NYPL catalogs links in Record and Link table
 - Updated NYPL mapping and formats in APIUtils with new catalog link
 - Gov document filter for advanced search page
-- Script to update old works in ES with proper boolean value in their is_government_document field
+- Script to update past works in ES with the proper boolean value in their is_government_document field
 ### Fixed
 - Added improved error handling around unexpected `media_type` values
 - Improve handling of NYPL Catalog records without EDD links
