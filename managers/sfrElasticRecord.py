@@ -76,7 +76,7 @@ class SFRElasticRecordManager:
         ]
         
         self.work.is_government_document = SFRElasticRecordManager.addGovDocStatus(
-            self.work.editions.measurements
+            self.work.editions
         )
 
         self.work.editions = [self.createEdition(e) for e in self.dbWork.editions]
@@ -88,11 +88,13 @@ class SFRElasticRecordManager:
         return agent
     
     @staticmethod
-    def addGovDocStatus(measurements):
-        for dict in measurements:
-            if dict['type'] == "government_document":
-                if dict['value'] == "1":
-                    return True
+    def addGovDocStatus(editions):
+        '''Iterates through each editions' measurement array to return True if a gov doc type exists'''
+        for edit in editions:
+            for measurement in edit.measurements:
+                if measurement['type'] == "government_document":
+                    if measurement['value'] == "1":
+                        return True
         return False
 
     def createEdition(self, edition):

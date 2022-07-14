@@ -32,17 +32,21 @@ def main():
         .filter(Edition.measurements != None) \
         .filter(Edition.measurements != []) \
         .filter(Edition.measurements != [{}]).all():
-            for dict in work.edition.measurements:
-                if dict['type'] == "government_document":
-                    if dict['value'] == "1":
-                        try:
-                            workRec = ESWork.get(work.uuid, index=esManager.index)
-                            workRec.is_government_document = True
-                            workRec.save()
-                            break
-                        except NotFoundError:
-                            print('Work not indexed, skipping')
-                            continue
+            for edition in work.editions:
+                for measurement in edition.measurements:
+                    if measurement['type'] == "government_document":
+                        if measurement['value'] == "1":
+                            try:
+                                workRec = ESWork.get(work.uuid, index=esManager.index)
+                                workRec.is_government_document = True
+                                workRec.save()
+                                break_out_flag = True
+                                break
+                            except NotFoundError:
+                                print('Work not indexed, skipping')
+                                continue
+                if break_out_flag:
+                    break
 
     dbManager.closeConnection()
 
