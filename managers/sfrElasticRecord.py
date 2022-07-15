@@ -75,11 +75,11 @@ class SFRElasticRecordManager:
             for l in list(filter(None, self.dbWork.languages))
         ]
         
-        for editions in self.work.editions:      
+        for edition in self.work.editions:      
             self.work.is_government_document = SFRElasticRecordManager.addGovDocStatus(
-            editions.measurements
+            edition.measurements
             )
-            if self.work.is_government_document == True:
+            if self.work.is_government_document is True:
                 break
 
         self.work.editions = [self.createEdition(e) for e in self.dbWork.editions]

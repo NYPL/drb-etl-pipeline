@@ -27,6 +27,7 @@ class TestSFRElasticRecordManager:
         testWork.languages = [{'language': 'Language 1'}]
         testWork.measurements = ['Measure 1', 'Measure 2']
         testWork.editions = ['Editions 1', 'Editions 2', 'Editions 3']
+        
 
         return testWork
 
@@ -108,7 +109,7 @@ class TestSFRElasticRecordManager:
         managerMocks['addGovDocStatus'].return_value = False
         managerMocks['createEdition'].side_effect = ['Edition 1', 'Edition 2', 'Edition 3']
 
-        testInstance.work = mocker.MagicMock()
+        testInstance.work = mocker.MagicMock(editions=[mocker.MagicMock()] * 3)
         testInstance.enhanceWork()
 
         assert testInstance.work.date_created == 'testCreatedDate'

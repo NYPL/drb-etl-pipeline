@@ -32,6 +32,9 @@ def main():
         .filter(Edition.measurements != None) \
         .filter(Edition.measurements != []) \
         .filter(Edition.measurements != [{}]).all():
+
+            break_out_flag = False
+            
             for edition in work.editions:
                 for measurement in edition.measurements:
                     if measurement['type'] == "government_document":
