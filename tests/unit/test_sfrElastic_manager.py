@@ -27,6 +27,7 @@ class TestSFRElasticRecordManager:
         testWork.languages = [{'language': 'Language 1'}]
         testWork.measurements = ['Measure 1', 'Measure 2']
         testWork.editions = ['Editions 1', 'Editions 2', 'Editions 3']
+        
 
         return testWork
 
@@ -108,7 +109,7 @@ class TestSFRElasticRecordManager:
         managerMocks['addGovDocStatus'].return_value = False
         managerMocks['createEdition'].side_effect = ['Edition 1', 'Edition 2', 'Edition 3']
 
-        testInstance.work = mocker.MagicMock()
+        testInstance.work = mocker.MagicMock(editions=[mocker.MagicMock()] * 3)
         testInstance.enhanceWork()
 
         assert testInstance.work.date_created == 'testCreatedDate'
@@ -141,22 +142,19 @@ class TestSFRElasticRecordManager:
 
     def test_addGovDocStatus_measurement_present_true(self, mocker):
         govMeasure = mocker.MagicMock()
-        govMeasure.quantity = 'government_document'
-        govMeasure.value = '1'
+        govMeasure = {'type': 'government_document', 'value': '1'}
 
         assert SFRElasticRecordManager.addGovDocStatus([govMeasure]) is True
 
     def test_addGovDocStatus_measurement_present_false(self, mocker):
         govMeasure = mocker.MagicMock()
-        govMeasure.quantity = 'government_document'
-        govMeasure.value = '0'
+        govMeasure = {'type': 'government_document', 'value': '0'}
 
         assert SFRElasticRecordManager.addGovDocStatus([govMeasure]) is False 
 
     def test_addGovDocStatus_measurement_not_present(self, mocker):
         govMeasure = mocker.MagicMock()
-        govMeasure.quantity = 'other'
-        govMeasure.value = '1'
+        govMeasure = {'type': 'other', 'value': '1'}
 
         assert SFRElasticRecordManager.addGovDocStatus([govMeasure]) is False 
 

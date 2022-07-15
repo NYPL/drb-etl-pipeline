@@ -343,7 +343,9 @@ class ElasticClient():
         languageFilters = list(filter(
             lambda x: x[0] == 'language', filterParams)
         )
-        formatFilters = list(filter(lambda x: x[0] == 'format', filterParams))
+        formatFilters = list(filter(
+            lambda x: x[0] == 'format', filterParams)
+        )
         displayFilters = list(filter(
             lambda x: x[0] == 'showAll', filterParams)
         )

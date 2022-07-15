@@ -75,9 +75,12 @@ class SFRElasticRecordManager:
             for l in list(filter(None, self.dbWork.languages))
         ]
         
-        self.work.is_government_document = SFRElasticRecordManager.addGovDocStatus(
-            self.dbWork.measurements
-        )
+        for edition in self.work.editions:      
+            self.work.is_government_document = SFRElasticRecordManager.addGovDocStatus(
+            edition.measurements
+            )
+            if self.work.is_government_document is True:
+                break
 
         self.work.editions = [self.createEdition(e) for e in self.dbWork.editions]
 
@@ -89,14 +92,19 @@ class SFRElasticRecordManager:
     
     @staticmethod
     def addGovDocStatus(measurements):
-        govDocMeasurement = list(filter(
-            lambda x: x.quantity == 'government_document', measurements
-        ))
-        if len(govDocMeasurement) > 0:
-            if int(govDocMeasurement[0].value) == 1:
-                return True
-        
-        return False
+        '''
+        Iterates through each dictionary in the measurement arrays to return True if a gov doc type and value exists
+        '''
+
+        if measurements != [] and measurements != [{}]:
+            for measurement in measurements:
+                if measurement['type'] == "government_document":
+                    if measurement['value'] == "1":
+                        return True
+            return False
+
+        else:
+            return False
 
     def createEdition(self, edition):
         newEd = ESEdition(**{
