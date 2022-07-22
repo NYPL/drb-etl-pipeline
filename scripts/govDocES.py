@@ -1,5 +1,6 @@
 import os
 from elasticsearch.exceptions import NotFoundError
+from sqlalchemy.sql.functions import array_agg
 
 from model import Work, Edition, ESWork
 from main import loadEnvFile
@@ -27,20 +28,22 @@ def main():
 
     dbManager.createSession()
 
-    for work in dbManager.session.query(Work) \
+    batchSize = 1000
+    for work in dbManager.session.query(Work.uuid, array_agg(Edition.measurements)) \
         .join(Edition) \
         .filter(Edition.measurements != None) \
         .filter(Edition.measurements != []) \
-        .filter(Edition.measurements != [{}]).all():
+        .filter(Edition.measurements != [{}]) \
+        .group_by(Work.uuid) \
+        .yield_per(batchSize):
 
             break_out_flag = False
-            
-            for edition in work.editions:
-                for measurement in edition.measurements:
+            for editionMeasurements in work[0]:
+                for measurement in editionMeasurements:
                     if measurement['type'] == "government_document":
                         if measurement['value'] == "1":
                             try:
-                                workRec = ESWork.get(work.uuid, index=esManager.index)
+                                workRec = ESWork.get(work[0], index=esManager.index)
                                 workRec.is_government_document = True
                                 workRec.save()
                                 break_out_flag = True
