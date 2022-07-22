@@ -1,5 +1,5 @@
 import os
-from elasticsearch.exceptions import NotFoundError
+from elasticsearch.exceptions import NotFoundError, ConflictError
 from sqlalchemy.sql.functions import array_agg
 
 from model import Work, Edition, ESWork
@@ -48,9 +48,15 @@ def main():
                                 workRec.save()
                                 break_out_flag = True
                                 break
-                            except NotFoundError:
-                                print('Work not indexed, skipping')
+                            except NotFoundError or ValueError or ConflictError:
+                                if ValueError:
+                                    print('Empty value')
+                                elif ConflictError:
+                                    print('Version number error')
+                                else:
+                                    print('Work not indexed, skipping')
                                 continue
+                            
                 if break_out_flag:
                     break
 
