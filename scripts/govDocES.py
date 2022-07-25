@@ -36,14 +36,15 @@ def main():
         .filter(Edition.measurements != [{}]) \
         .group_by(Work.uuid) \
         .yield_per(batchSize):
+            uuid, editionMeasurementArray = work
 
             break_out_flag = False
-            for editionMeasurements in work[0]:
+            for editionMeasurements in editionMeasurementArray:
                 for measurement in editionMeasurements:
                     if measurement['type'] == "government_document":
                         if measurement['value'] == "1":
                             try:
-                                workRec = ESWork.get(work[0], index=esManager.index)
+                                workRec = ESWork.get(uuid, index=esManager.index)
                                 workRec.is_government_document = True
                                 workRec.save()
                                 break_out_flag = True
