@@ -349,9 +349,13 @@ class ElasticClient():
         displayFilters = list(filter(
             lambda x: x[0] == 'showAll', filterParams)
         )
+        govDocFilters = list(filter(
+            lambda x: x[0] == 'govDoc', filterParams)
+        )
 
         dateFilter, dateAggregation = (None, None)
         formatFilter, formatAggregation = (None, None)
+        govFilter, govAggregation = (None, None)
         displayFilter, displayAggregation = (
             Q('exists', field='editions.formats'),
             A('filter', **{'exists': {'field': 'editions.formats'}})
@@ -389,16 +393,32 @@ class ElasticClient():
                 'filter', **{'terms': {'editions.formats': formats}}
             )
 
+        if len(govDocFilters) > 0:
+            # onlyGovDoc|noGovDoc|all
+            # if govDocFilter is all: skip
+            # elif govDocFilter is no: is_government_document: false
+            # elif govdocFilter is only: is_gov_doc: true
+            if govFilter is 'noGovDoc':
+                dateFilter = Q('term', **{'is_government_document': False})
+                dateAggregation = A(
+                'filter', **{'term': {'is_government_document': False}}
+                )
+            elif govFilter is 'onlyGovDoc':
+                dateFilter = Q('term', **{'is_government_document': True})
+                dateAggregation = A(
+                'filter', **{'term': {'is_government_document': True}}
+                )
+
         if len(displayFilters) > 0 and displayFilters[0][1] == 'true':
             displayFilter = None
             displayAggregation = None
 
         self.appliedFilters = list(filter(
-            None, [dateFilter, formatFilter, displayFilter])
+            None, [dateFilter, formatFilter, displayFilter, govFilter])
         )
 
         self.appliedAggregations = list(filter(
-            None, [dateAggregation, formatAggregation, displayAggregation])
+            None, [dateAggregation, formatAggregation, displayAggregation, govAggregation])
         )
 
     def addFiltersAndAggregations(self, innerHits):
