@@ -31,6 +31,7 @@ class ElasticClient():
         self.sortReversed = False
 
         self.languageFilters = []
+        self.govDocFilters = []
         self.appliedFilters = []
 
         self.appliedAggregations = []
@@ -355,7 +356,6 @@ class ElasticClient():
 
         dateFilter, dateAggregation = (None, None)
         formatFilter, formatAggregation = (None, None)
-        govFilter, govAggregation = (None, None)
         displayFilter, displayAggregation = (
             Q('exists', field='editions.formats'),
             A('filter', **{'exists': {'field': 'editions.formats'}})
@@ -398,27 +398,29 @@ class ElasticClient():
             # if govDocFilter is all: skip
             # elif govDocFilter is no: is_government_document: false
             # elif govdocFilter is only: is_gov_doc: true
-            if govFilter is 'noGovDoc':
-                dateFilter = Q('term', **{'is_government_document': False})
-                dateAggregation = A(
-                'filter', **{'term': {'is_government_document': False}}
-                )
-            elif govFilter is 'onlyGovDoc':
-                dateFilter = Q('term', **{'is_government_document': True})
-                dateAggregation = A(
-                'filter', **{'term': {'is_government_document': True}}
-                )
+            if govDocFilters[0][1] == 'noGovDoc':
+                self.govDocFilters = [
+                    Q('term', **{'is_government_document': False})
+                ]
+
+            elif govDocFilters[0][1] is 'onlyGovDoc':
+                self.govDocFilters = [
+                    Q('term', **{'is_government_document': True})
+                ]
+                # govAggregation = A(
+                # 'filter', **{'term': {'is_government_document': True}}
+                # )
 
         if len(displayFilters) > 0 and displayFilters[0][1] == 'true':
             displayFilter = None
             displayAggregation = None
 
         self.appliedFilters = list(filter(
-            None, [dateFilter, formatFilter, displayFilter, govFilter])
+            None, [dateFilter, formatFilter, displayFilter])
         )
 
         self.appliedAggregations = list(filter(
-            None, [dateAggregation, formatAggregation, displayAggregation, govAggregation])
+            None, [dateAggregation, formatAggregation, displayAggregation])
         )
 
     def addFiltersAndAggregations(self, innerHits):
@@ -468,6 +470,31 @@ class ElasticClient():
                     )
 
             self.query = self.query.query('bool', must=filters)
+
+        if len(self.govDocFilters) > 0:
+            filters = []
+            for i, govFilter in enumerate(self.govDocFilters):
+                filterSet = self.appliedFilters + [govFilter]
+                if i == 0:
+                    filters.append(
+                        Q(
+                            'term',
+                            path='works',
+                            inner_hits=innerHitsClause,
+                            query=Q('bool', must=filterSet)
+                        )
+                    )
+                else:
+                    filters.append(
+                        Q(
+                            'term',
+                            path='works',
+                            query=Q('bool', must=filterSet)
+                        )
+                    )
+
+            self.query = self.query.query('bool', must=filters)
+
         elif len(self.appliedFilters) > 0:
             self.query = self.query.query(
                 'nested',
@@ -487,6 +514,10 @@ class ElasticClient():
             'editions', A('nested', path='editions')
         )
 
+        # workRootAgg = self.query.aggs.bucket(
+        #     'works', A('term', path='works')
+        # )
+
         lastAgg = rootAgg
         for i, agg in enumerate(self.appliedAggregations):
             currentAgg = 'edition_filter_{}'.format(i)
@@ -498,6 +529,7 @@ class ElasticClient():
                 **{'field': 'editions.languages.language', 'size': 200}
             )\
             .bucket('editions_per', 'reverse_nested')
+
 
         lastAgg.bucket(
             'formats', 'terms',
