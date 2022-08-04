@@ -31,7 +31,7 @@ class ElasticClient():
         self.sortReversed = False
 
         self.languageFilters = []
-        self.govDocFilters = []
+        self.govDocFilter = None
         self.appliedFilters = []
 
         self.appliedAggregations = []
@@ -399,17 +399,12 @@ class ElasticClient():
             # elif govDocFilter is no: is_government_document: false
             # elif govdocFilter is only: is_gov_doc: true
             if govDocFilters[0][1] == 'noGovDoc':
-                self.govDocFilters = [
-                    Q('term', **{'is_government_document': False})
-                ]
+                self.govDocFilter = Q(
+                    'term', **{'is_government_document': False}
+                    )
 
-            elif govDocFilters[0][1] is 'onlyGovDoc':
-                self.govDocFilters = [
-                    Q('term', **{'is_government_document': True})
-                ]
-                # govAggregation = A(
-                # 'filter', **{'term': {'is_government_document': True}}
-                # )
+            elif govDocFilters[0][1] == 'onlyGovDoc':
+                self.govDocFilter = Q('term', **{'is_government_document': True})
 
         if len(displayFilters) > 0 and displayFilters[0][1] == 'true':
             displayFilter = None
@@ -471,30 +466,6 @@ class ElasticClient():
 
             self.query = self.query.query('bool', must=filters)
 
-        if len(self.govDocFilters) > 0:
-            filters = []
-            for i, govFilter in enumerate(self.govDocFilters):
-                filterSet = self.appliedFilters + [govFilter]
-                if i == 0:
-                    filters.append(
-                        Q(
-                            'term',
-                            path='works',
-                            inner_hits=innerHitsClause,
-                            query=Q('bool', must=filterSet)
-                        )
-                    )
-                else:
-                    filters.append(
-                        Q(
-                            'term',
-                            path='works',
-                            query=Q('bool', must=filterSet)
-                        )
-                    )
-
-            self.query = self.query.query('bool', must=filters)
-
         elif len(self.appliedFilters) > 0:
             self.query = self.query.query(
                 'nested',
@@ -509,19 +480,19 @@ class ElasticClient():
                 inner_hits=innerHitsClause, query=Q('match_all')
             )
 
+        if self.govDocFilter != None:
+            self.query = self.query.query(self.govDocFilter)
+
     def applyAggregations(self):
         rootAgg = self.query.aggs.bucket(
             'editions', A('nested', path='editions')
         )
 
-        # workRootAgg = self.query.aggs.bucket(
-        #     'works', A('term', path='works')
-        # )
-
         lastAgg = rootAgg
         for i, agg in enumerate(self.appliedAggregations):
-            currentAgg = 'edition_filter_{}'.format(i)
-            lastAgg = lastAgg.bucket(currentAgg, agg)
+            if agg != A('filter', **{'term': {'is_government_document': False}}) and agg != A('filter', **{'term': {'is_government_document': True}}):
+                currentAgg = 'edition_filter_{}'.format(i)
+                lastAgg = lastAgg.bucket(currentAgg, agg)
 
         lastAgg.bucket('lang_parent', 'nested', path='editions.languages')\
             .bucket(
@@ -536,6 +507,8 @@ class ElasticClient():
             **{'field': 'editions.formats', 'size': 10}
         )\
             .bucket('editions_per', 'reverse_nested')
+
+        self.query.aggs.bucket('govDoc', 'terms', **{'field': 'is_government_document', 'size': 10})
 
     def addSearchHighlighting(self):
         self.query = self.query.highlight_options(

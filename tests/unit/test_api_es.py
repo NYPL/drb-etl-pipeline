@@ -1,5 +1,7 @@
 import pytest
+import pprint
 
+from elasticsearch_dsl import Search, Q, A
 from tests.helper import TestHelpers
 from api.elastic import ElasticClient, ElasticClientError
 
@@ -785,6 +787,46 @@ class TestElasticClient:
         assert testInstance.appliedFilters == ['displayFilter']
         assert testInstance.appliedAggregations == ['displayAggregation']
 
+    def test_createFilterClausesAndAggregations_w_noGovDoc(self, testInstance, mocker):
+        mockQuery = mocker.patch('api.elastic.Q')
+        mockQuery.side_effect = ['displayFilter', 'govDocFilters']
+        mockAgg = mocker.patch('api.elastic.A')
+        mockAgg.side_effect = ['displayAggregation']
+
+        testInstance.createFilterClausesAndAggregations([('govDoc', 'noGovDoc')])
+
+        mockQuery.assert_has_calls([
+            mocker.call('exists', field='editions.formats'),
+            mocker.call('term', **{'is_government_document': False})
+        ])
+        mockAgg.assert_has_calls([
+            mocker.call('filter', exists={'field': 'editions.formats'}),
+        ])
+
+        assert testInstance.govDocFilter == 'govDocFilters'
+        assert testInstance.appliedFilters == ['displayFilter']
+        assert testInstance.appliedAggregations == ['displayAggregation']
+
+    def test_createFilterClausesAndAggregations_w_onlyGovDoc(self, testInstance, mocker):
+        mockQuery = mocker.patch('api.elastic.Q')
+        mockQuery.side_effect = ['displayFilter', 'govDocFilters']
+        mockAgg = mocker.patch('api.elastic.A')
+        mockAgg.side_effect = ['displayAggregation']
+
+        testInstance.createFilterClausesAndAggregations([('govDoc', 'onlyGovDoc')])
+
+        mockQuery.assert_has_calls([
+            mocker.call('exists', field='editions.formats'),
+            mocker.call('term', **{'is_government_document': True})
+        ])
+        mockAgg.assert_has_calls([
+            mocker.call('filter', exists={'field': 'editions.formats'})
+        ])
+
+        assert testInstance.govDocFilter == 'govDocFilters'
+        assert testInstance.appliedFilters == ['displayFilter']
+        assert testInstance.appliedAggregations == ['displayAggregation']
+
     def test_createFilterClausesAndAggregations_no_filters(self, testInstance, mocker):
         mockQuery = mocker.patch('api.elastic.Q')
         mockAgg = mocker.patch('api.elastic.A')
@@ -836,6 +878,7 @@ class TestElasticClient:
         mockQuery.query.return_value = mockQuery
         testInstance.query = mockQuery
         testInstance.dateSort = None
+        testInstance.govDocFilter = None
         testInstance.appliedFilters = ['filter1', 'filter2']
         testInstance.languageFilters = []
 
@@ -856,6 +899,7 @@ class TestElasticClient:
         mockQuery.query.return_value = mockQuery
         testInstance.query = mockQuery
         testInstance.dateSort = None
+        testInstance.govDocFilter = None
         testInstance.appliedFilters = []
         testInstance.languageFilters = ['Lang1', 'Lang2']
 
@@ -869,6 +913,50 @@ class TestElasticClient:
         ])
         mockQuery.query.assert_called_once_with('bool', must=['Lang1Nested', 'Lang2Nested'])
 
+    def test_applyFilters_gov_filter_only(self, testInstance):
+
+        testInstance.query = Search().query(Q())
+        testInstance.dateSort = None
+        testInstance.languageFilters = []
+        testInstance.appliedFilters = []
+        testInstance.govDocFilter = Q('term', **{'is_government_document': True})
+
+        testInstance.applyFilters()
+
+        pprint.pprint(testInstance.query.to_dict(), indent=2)
+        assert testInstance.query.to_dict()['query']['bool']['must'][0] == {'nested': { 
+                                            'inner_hits': {'size': 100},
+                                            'path': 'editions',
+                                            'query': {'match_all': {}}}}
+        assert testInstance.query.to_dict()['query']['bool']['must'][1] == {'term': {
+                                                'is_government_document': True}}
+                                          
+
+
+    def test_applyFilters_gov_and_other_filters(self, testInstance):
+
+        testInstance.query = Search().query(Q())
+        testInstance.dateSort = None
+        testInstance.languageFilters = []
+        testInstance.appliedFilters = [Q('term', editions__formats = 'testFormat')]
+        testInstance.govDocFilter = Q('term', **{'is_government_document': True})
+
+        testInstance.applyFilters()
+
+        pprint.pprint(testInstance.query.to_dict(), indent=2)
+        assert testInstance.query.to_dict()['query']['bool']['must'][0] == {'nested': { 
+                                                'inner_hits': {'size': 100},
+                                                'path': 'editions',
+                                                'query': { 
+                                                'bool': { 
+                                                'must': [{
+                                                'term': { 
+                                                'editions.formats': 'testFormat'}}]
+                                                }}}}
+        assert testInstance.query.to_dict()['query']['bool']['must'][1] == {'term': {
+                                                'is_government_document': True}}
+        
+
     def test_applyFilters_language_and_other_filters(self, testInstance, mocker):
         mockClause = mocker.patch('api.elastic.Q')
         mockClause.side_effect = ['Lang1Filter', 'Lang1Nested']
@@ -877,6 +965,7 @@ class TestElasticClient:
         mockQuery.query.return_value = mockQuery
         testInstance.query = mockQuery
         testInstance.dateSort = None
+        testInstance.govDocFilter = None
         testInstance.appliedFilters = ['formatFilter']
         testInstance.languageFilters = ['Lang1']
 
@@ -896,6 +985,7 @@ class TestElasticClient:
         mockQuery.query.return_value = mockQuery
         testInstance.query = mockQuery
         testInstance.dateSort = {'editions.publication_date': {'test': 'value', 'nested': 'toDelete'}}
+        testInstance.govDocFilter = None
         testInstance.appliedFilters = []
         testInstance.languageFilters = []
 
@@ -921,15 +1011,18 @@ class TestElasticClient:
         testInstance.appliedAggregations = ['testAgg']
         testInstance.applyAggregations()
 
-        mockAgg.assert_called_once_with('nested', path='editions')
-        mockQuery.aggs.bucket.assert_called_once_with('editions', 'baseAgg')
+        mockAgg.assert_has_calls([
+            mocker.call('nested', path='editions'),
+            mocker.call('filter', term={'is_government_document': False}),
+            mocker.call('filter', term={'is_government_document': True})])
+        mockQuery.aggs.bucket.assert_has_calls([mocker.call('editions', 'baseAgg')])
         mockRoot.bucket.assert_has_calls([
             mocker.call('edition_filter_0', 'testAgg'),
             mocker.call('lang_parent', 'nested', path='editions.languages'),
             mocker.call('languages', 'terms', field='editions.languages.language', size=200),
             mocker.call('editions_per', 'reverse_nested'),
             mocker.call('formats', 'terms', field='editions.formats', size=10),
-            mocker.call('editions_per', 'reverse_nested')
+            mocker.call('editions_per', 'reverse_nested'),
         ])
 
     def test_addSearchHighlighting(self, testInstance, mocker):

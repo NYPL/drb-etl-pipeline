@@ -2,7 +2,8 @@
 
 ## unreleased version -- v0.10.6
 ### Added
-- Government Document filter to Elastic API
+- Government Document search filter 
+- Tests for government document filter and aggregations
 ### Fixed
 - Increased processing speed of govDocES script
 
