@@ -32,6 +32,7 @@ class ElasticClient():
 
         self.languageFilters = []
         self.govDocFilter = None
+        self.govDocAgg = None
         self.appliedFilters = []
 
         self.appliedAggregations = []
@@ -394,17 +395,14 @@ class ElasticClient():
             )
 
         if len(govDocFilters) > 0:
-            # onlyGovDoc|noGovDoc|all
-            # if govDocFilter is all: skip
-            # elif govDocFilter is no: is_government_document: false
-            # elif govdocFilter is only: is_gov_doc: true
             if govDocFilters[0][1] == 'noGovDoc':
                 self.govDocFilter = Q(
-                    'term', **{'is_government_document': False}
-                    )
+                    'term', **{'is_government_document': False})
+                self.govDocAgg = A('filter', **{'term': {'is_government_document': False}})
 
             elif govDocFilters[0][1] == 'onlyGovDoc':
                 self.govDocFilter = Q('term', **{'is_government_document': True})
+                self.govDocAgg = A('filter', **{'term': {'is_government_document': True}})
 
         if len(displayFilters) > 0 and displayFilters[0][1] == 'true':
             displayFilter = None
@@ -490,9 +488,9 @@ class ElasticClient():
 
         lastAgg = rootAgg
         for i, agg in enumerate(self.appliedAggregations):
-            if agg != A('filter', **{'term': {'is_government_document': False}}) and agg != A('filter', **{'term': {'is_government_document': True}}):
                 currentAgg = 'edition_filter_{}'.format(i)
                 lastAgg = lastAgg.bucket(currentAgg, agg)
+
 
         lastAgg.bucket('lang_parent', 'nested', path='editions.languages')\
             .bucket(
@@ -508,7 +506,9 @@ class ElasticClient():
         )\
             .bucket('editions_per', 'reverse_nested')
 
-        self.query.aggs.bucket('govDoc', 'terms', **{'field': 'is_government_document', 'size': 10})
+        if self.govDocAgg != None:
+            self.query.aggs.bucket('govDoc_filter', self.govDocAgg)
+        self.query.aggs.bucket('govDoc', 'terms', **{'field': 'is_government_document', 'size': 2})
 
     def addSearchHighlighting(self):
         self.query = self.query.highlight_options(
