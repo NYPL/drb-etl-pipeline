@@ -48,7 +48,10 @@ class Edition(Base, Core):
     links = relationship('Link', secondary=EDITION_LINKS, backref='editions', cascade='all, delete')
     rights = relationship('Rights', secondary=EDITION_RIGHTS, backref='editions', cascade='all, delete')
 
-    __tableargs__ = (Index('ix_editions_dcdw_uuids', dcdw_uuids, postgresql_using="gin"))
+    __tableargs__ = (
+        Index('ix_editions_dcdw_uuids', dcdw_uuids, postgresql_using="gin"),
+        Index('ix_editions_measurements', measurements, postgresql_using='gin')
+    )
 
     def __repr__(self):
         return '<Edition(place={}, date={}, publisher={})>'.format(
