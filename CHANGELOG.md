@@ -3,7 +3,7 @@
 ## unreleased version -- v0.10.6
 ### Added
 - Government document search filter 
-- Unit tests for government document filter and aggregations
+- Unit tests for government document filter and aggregation
 ### Fixed
 - Increased processing speed of govDocES script
 

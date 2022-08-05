@@ -488,8 +488,8 @@ class ElasticClient():
 
         lastAgg = rootAgg
         for i, agg in enumerate(self.appliedAggregations):
-                currentAgg = 'edition_filter_{}'.format(i)
-                lastAgg = lastAgg.bucket(currentAgg, agg)
+            currentAgg = 'edition_filter_{}'.format(i)
+            lastAgg = lastAgg.bucket(currentAgg, agg)
 
 
         lastAgg.bucket('lang_parent', 'nested', path='editions.languages')\
