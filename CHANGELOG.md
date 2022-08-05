@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## unreleased version -- v0.10.6
+### Added
+- Government document search filter 
+- Unit tests for government document filter and aggregation
+### Fixed
+- Increased processing speed of govDocES script
+
 ## 2022-07-21 -- v0.10.5
 ### Added
 - New script to update past IntechOpen records with new HTML links

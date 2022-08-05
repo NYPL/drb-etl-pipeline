@@ -31,6 +31,8 @@ class ElasticClient():
         self.sortReversed = False
 
         self.languageFilters = []
+        self.govDocFilter = None
+        self.govDocAgg = None
         self.appliedFilters = []
 
         self.appliedAggregations = []
@@ -349,6 +351,9 @@ class ElasticClient():
         displayFilters = list(filter(
             lambda x: x[0] == 'showAll', filterParams)
         )
+        govDocFilters = list(filter(
+            lambda x: x[0] == 'govDoc', filterParams)
+        )
 
         dateFilter, dateAggregation = (None, None)
         formatFilter, formatAggregation = (None, None)
@@ -388,6 +393,16 @@ class ElasticClient():
             formatAggregation = A(
                 'filter', **{'terms': {'editions.formats': formats}}
             )
+
+        if len(govDocFilters) > 0:
+            if govDocFilters[0][1] == 'noGovDoc':
+                self.govDocFilter = Q(
+                    'term', **{'is_government_document': False})
+                self.govDocAgg = A('filter', **{'term': {'is_government_document': False}})
+
+            elif govDocFilters[0][1] == 'onlyGovDoc':
+                self.govDocFilter = Q('term', **{'is_government_document': True})
+                self.govDocAgg = A('filter', **{'term': {'is_government_document': True}})
 
         if len(displayFilters) > 0 and displayFilters[0][1] == 'true':
             displayFilter = None
@@ -448,6 +463,7 @@ class ElasticClient():
                     )
 
             self.query = self.query.query('bool', must=filters)
+
         elif len(self.appliedFilters) > 0:
             self.query = self.query.query(
                 'nested',
@@ -462,6 +478,9 @@ class ElasticClient():
                 inner_hits=innerHitsClause, query=Q('match_all')
             )
 
+        if self.govDocFilter != None:
+            self.query = self.query.query(self.govDocFilter)
+
     def applyAggregations(self):
         rootAgg = self.query.aggs.bucket(
             'editions', A('nested', path='editions')
@@ -472,6 +491,7 @@ class ElasticClient():
             currentAgg = 'edition_filter_{}'.format(i)
             lastAgg = lastAgg.bucket(currentAgg, agg)
 
+
         lastAgg.bucket('lang_parent', 'nested', path='editions.languages')\
             .bucket(
                 'languages', 'terms',
@@ -479,11 +499,16 @@ class ElasticClient():
             )\
             .bucket('editions_per', 'reverse_nested')
 
+
         lastAgg.bucket(
             'formats', 'terms',
             **{'field': 'editions.formats', 'size': 10}
         )\
             .bucket('editions_per', 'reverse_nested')
+
+        if self.govDocAgg != None:
+            self.query.aggs.bucket('govDoc_filter', self.govDocAgg)
+        self.query.aggs.bucket('govDoc', 'terms', **{'field': 'is_government_document', 'size': 2})
 
     def addSearchHighlighting(self):
         self.query = self.query.highlight_options(
