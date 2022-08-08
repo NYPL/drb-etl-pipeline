@@ -51,7 +51,7 @@ def validateToken(func):
     return decorator
 
 
-@collection.route('/', methods=['POST'])
+@collection.route('', methods=['POST'])
 @validateToken
 def collectionCreate(user=None):
     logger.info('Creating new collection')

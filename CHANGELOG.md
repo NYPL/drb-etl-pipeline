@@ -18,6 +18,7 @@
 - Added improved error handling around unexpected `media_type` values
 - Improve handling of NYPL Catalog records without EDD links
 - Future government document works in ES now have 'True' boolean value in their is_government_document field
+- Standardized API endpoint to remove trailing slash from `collection` and `search` endpoints
 
 ## 2022-06-09 -- v0.10.4
 ### Added
