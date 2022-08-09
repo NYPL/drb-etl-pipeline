@@ -7,9 +7,8 @@ from managers import DBManager
 
 
 def main():
-    '''
-    Updating NYPL catalog records with new link to replace text/html link
-    '''
+    
+    '''Updating NYPL catalog records with new link to replace text/html link'''
 
     loadEnvFile('local-qa', fileString='config/{}.yaml')
 

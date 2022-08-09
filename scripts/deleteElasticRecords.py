@@ -1,8 +1,10 @@
 import os
 
 from model import Work, ESWork
-from main import loadEnvFile
 from managers import DBManager, ElasticsearchManager
+from elasticsearch_dsl import Search
+from elasticsearch.exceptions import NotFoundError, ConflictError
+from main import loadEnvFile
 
 
 def main():
@@ -26,15 +28,24 @@ def main():
 
     dbManager.createSession()
 
-    batchSize = 1000
-    for work in esManager.session.query(ESWork) \
-        .yield_per(batchSize):       
+    batchSize = 200
+    searchES = Search(index=os.environ['ELASTICSEARCH_INDEX'])
 
-        if dbManager.session.get(Work, {'uuid': work.uuid}) == None:
+    for work in searchES.query('match_all').scan():    
+        if dbManager.session.query(Work) \
+            .group_by(Work.uuid) \
+            .filter(Work.uuid == work.uuid) \
+            .yield_per(batchSize) == None:
+
             try:
                 ESWork.delete(work.uuid)
-            except ValueError:
-                print('Empty value')
+            except NotFoundError or ValueError or ConflictError:
+                if ValueError:
+                    print('Empty value')
+                elif ConflictError:
+                    print('Version number error')
+                else:
+                    print('Work not indexed, skipping')
 
     dbManager.closeConnection()
 
