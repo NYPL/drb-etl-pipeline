@@ -9,7 +9,7 @@ logger = createLog(__name__)
 search = Blueprint('search', __name__, url_prefix='/search')
 
 
-@search.route('/', methods=['GET'])
+@search.route('', methods=['GET'])
 def standardQuery():
     esClient = ElasticClient(current_app.config['REDIS_CLIENT'])
     dbClient = DBClient(current_app.config['DB_CLIENT'])
