@@ -28,9 +28,9 @@ def main():
 
     dbManager.createSession()
 
-    batchSize = 10
+    batchSize = 100
     esWorkUUIDS = []
-    workUUIDTuples = []
+    psqlWorkUUIDTuples = []
     searchES = Search(index=os.environ['ELASTICSEARCH_INDEX'])
 
     for work in searchES.query('match_all').scan():
@@ -40,51 +40,38 @@ def main():
         # what you have left should be a set of UUIDs that are in ES but not in psql
             # that's what you should delete!
 
-        esWorkUUIDS.append(work.uuid) # Initialize the array outside of the loop here   
+        esWorkUUIDS.append(work.uuid) # Initialize the array outside of the loop here  
         if len(esWorkUUIDS) >= batchSize:
-            for uuid in esWorkUUIDS:
-                uuidTuple = dbManager.session.query(Work.uuid) \
-                        .filter(Work.uuid == uuid) \
-                        .filter(Work.uuid.in_(esWorkUUIDS)).first()
-                workUUIDTuples.append(str(uuidTuple[0])) #PSQL work uuids are of type uuid unlike ES work uuids
+            findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDTuples, dbManager, esManager)  
+            esWorkUUIDS = []
 
-            setWorkUUIDS = set(esWorkUUIDS) 
-            setUUIDTuples = set(workUUIDTuples)
-
-            onlyESWorkUUIDS = setWorkUUIDS.difference(setUUIDTuples) #Set should be empty
-
-            print(onlyESWorkUUIDS)
-
-            try:
-                esManager.deleteWorkRecords(onlyESWorkUUIDS)
-            except NotFoundError or ValueError or ConflictError:
-                if ValueError:
-                    print('Empty value')
-                elif ConflictError:
-                    print('Version number error')
-                else:
-                    print('Work not indexed, skipping') 
+    findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDTuples, dbManager, esManager) #For any remainder ES works
     
     dbManager.closeConnection()
 
+def findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDTuples, dbManager, esManager):
+        for uuid in esWorkUUIDS:
+            uuidTuple = dbManager.session.query(Work.uuid) \
+                    .filter(Work.uuid == uuid) \
+                    .filter(Work.uuid.in_(esWorkUUIDS)).first()
+            psqlWorkUUIDTuples.append(str(uuidTuple[0])) #PSQL work uuids are of type uuid unlike ES work uuids
 
-'____________________OLDER CODE BELOW_____________________'
+        setESWorkUUIDS = set(esWorkUUIDS) 
+        setPSQLWorkUUIDS = set(psqlWorkUUIDTuples)
 
+        onlyESWorkUUIDS = setESWorkUUIDS.difference(setPSQLWorkUUIDS) #Set should be empty
 
-        # if dbManager.session.query(Work) \
-        #     .group_by(Work.uuid) \
-        #     .filter(Work.uuid == work.uuid) \
-        #     .yield_per(batchSize) == None:
+        print(onlyESWorkUUIDS)
 
-        #     try:
-        #         ESWork.delete(work.uuid)
-        #     except NotFoundError or ValueError or ConflictError:
-        #         if ValueError:
-        #             print('Empty value')
-        #         elif ConflictError:
-        #             print('Version number error')
-        #         else:
-        #             print('Work not indexed, skipping')
+        try:
+            esManager.deleteWorkRecords(onlyESWorkUUIDS)
+        except NotFoundError or ValueError or ConflictError:
+            if ValueError:
+                print('Empty value')
+            elif ConflictError:
+                 print('Version number error')
+            else:
+                print('Work not indexed, skipping')
 
 
 if __name__ == '__main__':
