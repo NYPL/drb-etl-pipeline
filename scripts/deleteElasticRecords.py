@@ -1,5 +1,6 @@
+from multiprocessing.sharedctypes import Value
 import os
-from collections import deque
+import logging
 
 from model import Work
 from managers import DBManager, ElasticsearchManager
@@ -7,6 +8,7 @@ from elasticsearch_dsl import Search
 from elasticsearch.exceptions import NotFoundError, ConflictError
 from main import loadEnvFile
 
+logging.basicConfig(filename='deleteESRecords.log', encoding='utf-8', level=logging.INFO)
 
 def main():
 
@@ -29,9 +31,9 @@ def main():
 
     dbManager.createSession()
 
-    batchSize = 1000
-    esWorkUUIDS = deque()
-    psqlWorkUUIDTuples = deque()
+    batchSize = 10
+    esWorkUUIDS = set()
+    psqlWorkUUIDS = set()
     searchES = Search(index=os.environ['ELASTICSEARCH_INDEX'])
 
     for work in searchES.query('match_all').scan():
@@ -41,38 +43,35 @@ def main():
         # what you have left should be a set of UUIDs that are in ES but not in psql
             # that's what you should delete!
 
-        esWorkUUIDS.append(work.uuid) # Initialize the array outside of the loop here  
+        esWorkUUIDS.add(work.uuid) # Initialize the array outside of the loop here  
         if len(esWorkUUIDS) >= batchSize:
-            findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDTuples, dbManager, esManager)  
-            psqlWorkUUIDTuples = deque()
-            esWorkUUIDS = deque()
+            findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDS, dbManager, esManager)  
+            psqlWorkUUIDS = set()
+            esWorkUUIDS = set()
 
-    findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDTuples, dbManager, esManager) #For any remainder ES works
+    findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDS, dbManager, esManager) #For any remainder ES works
     
     dbManager.closeConnection()
 
-def findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDTuples, dbManager, esManager):
-        for uuid in esWorkUUIDS:
-            uuidTuple = dbManager.session.query(Work.uuid) \
-                .filter(Work.uuid == uuid) \
-                .filter(Work.uuid.in_(esWorkUUIDS)).first()
-            if uuidTuple != None:
-                psqlWorkUUIDTuples.append(str(uuidTuple[0])) #PSQL work uuids are of type uuid unlike ES work uuids
+def findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDS, dbManager, esManager):
+        uuidTuple = dbManager.session.query(Work.uuid) \
+                    .filter(Work.uuid.in_(esWorkUUIDS)).all()
 
-        setESWorkUUIDS = set(esWorkUUIDS) 
-        setPSQLWorkUUIDS = set(psqlWorkUUIDTuples)
+        psqlWorkUUIDS.update({str(psqlUUID[0]) for psqlUUID in uuidTuple})  #PSQL work uuids are of type uuid unlike ES work uuids
 
-        onlyESWorkUUIDS = setESWorkUUIDS.difference(setPSQLWorkUUIDS) #Set should be empty
+        onlyESWorkUUIDS = esWorkUUIDS.difference(psqlWorkUUIDS) #Set shouldn't be empty when ES work not in PSQL
+
+        logging.info(onlyESWorkUUIDS)
 
         try:
             esManager.deleteWorkRecords(onlyESWorkUUIDS)
         except NotFoundError or ValueError or ConflictError:
             if ValueError:
-                print('Empty value')
+                logging.info('Empty value')
             elif ConflictError:
-                print('Version number error')
+                logging.info('Version number error')
             else:
-                print('Work not indexed, skipping')
+                logging.info('Work not indexed, skipping')
 
 
 if __name__ == '__main__':
