@@ -8,9 +8,8 @@ from processes import DOABProcess
 
 
 def main():
-    '''
-    Updating current IntechOpen records with new HTML Links to fix Read Online links on DRB site
-    '''
+
+    '''Updating current IntechOpen records with new HTML Links to fix Read Online links on DRB site'''
 
     loadEnvFile('local-qa', fileString='config/{}.yaml')
 

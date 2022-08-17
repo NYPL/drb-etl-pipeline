@@ -6,8 +6,8 @@ from managers import DBManager
 from model.utilities.extractDailyEdition import extract
 
 
-#Extracting the edition number from the edition_statement column of the DRB database to fill out the edition column
 def main():
+    '''Extracting the edition number from the edition_statement column of the DRB database to fill out the edition column'''
 
     loadEnvFile('local-qa', fileString='config/{}.yaml')
 

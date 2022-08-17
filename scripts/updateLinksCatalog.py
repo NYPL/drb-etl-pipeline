@@ -6,9 +6,8 @@ from main import loadEnvFile
 from managers import DBManager
 
 def main():
-    '''
-    Updating NYPL Link media type with new link to replace text/html link
-    '''
+    
+    '''Updating NYPL Link media type with new link to replace text/html link'''
 
     loadEnvFile('local-qa', fileString='config/{}.yaml')
 

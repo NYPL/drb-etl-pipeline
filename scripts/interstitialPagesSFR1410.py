@@ -11,6 +11,7 @@ s3_client = boto3.client("s3")
 bucketName = 'drb-files-qa'
 
 def main():
+
     '''Loading and updating batches of ProjectMuse JSON records with a query parameter to skip interstitial pages'''
     
     batches = load_batch()
@@ -22,13 +23,16 @@ def main():
             update_batch(museObject, bucketName, currKey)
 
 def load_batch():
+
     '''# Loading batches of 1000 ProjectMuse JSON records using a paginator until there are no more batches'''
+
     paginator = s3_client.get_paginator('list_objects_v2')
     page_iterator = paginator.paginate(Bucket= bucketName, Prefix= 'manifests/muse/')
     return page_iterator
     
 
 def update_batch(museObject, bucketName, currKey):
+
     '''Updating and returning one ProjectMuse JSON file record'''
     
     # Decode UTF-8 bytes to Unicode, and convert single quotes 
@@ -46,6 +50,7 @@ def update_batch(museObject, bucketName, currKey):
                                 ContentType = 'application/json')
 
 def parseURL(museDict):
+    
     '''Parsing and updating links in readingOrder and toc objects with query parameter'''
 
     r = 1

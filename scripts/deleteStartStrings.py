@@ -6,7 +6,10 @@ s3_client = boto3.client("s3")
 bucketName = 'drb-files-qa'
 
 def main():
-    '''Loading and updating batches of ProjectMuse JSON records with a query parameter to skip interstitial pages'''
+    
+    '''
+    Loading and updating batches of ProjectMuse JSON records with a query parameter to skip interstitial pages
+    '''
     
     batches = load_batch()
     for batch in batches:

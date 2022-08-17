@@ -4,6 +4,7 @@
 ### Added
 - Government document search filter 
 - Unit tests for government document filter and aggregation
+- Script to delete ESC works that don't correspond with works in the PSQL database
 ### Fixed
 - Increased processing speed of govDocES script
 
