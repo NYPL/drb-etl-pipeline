@@ -1,8 +1,9 @@
-from datetime import date, timedelta
+from datetime import datetime, timedelta
 import pytest
 
 from processes import IngestReportProcess
 from model import Work, Edition, Item, Record
+
 
 class TestIngestReportProcess:
     @pytest.fixture
@@ -22,11 +23,12 @@ class TestIngestReportProcess:
         mockGenerate.assert_called_once()
 
     def test_generateReport(self, testInstance, mocker):
-        now = date.today()
-        startTime = now - timedelta(days=1)
-        mockDate = mocker.patch('processes.ingestReport.date')
-        mockDate.today.return_value = now 
-        startStr = startTime.strftime('%Y-%m-%d')
+        now = datetime.today()
+        mockDate = mocker.patch('processes.ingestReport.datetime')
+        mockDate.today.return_value = now
+        startStr = now.strftime('%Y-%m-%d')
+        startTime = now.replace(hour=0, minute=0, second=0)
+        endTime = startTime + timedelta(days=1)
 
         mockGetTable = mocker.patch.object(IngestReportProcess, 'getTableCounts')
         mockGetTable.side_effect = [
@@ -36,23 +38,25 @@ class TestIngestReportProcess:
         testInstance.generateReport()
 
         mockGetTable.assert_has_calls([
-            mocker.call(Work, startTime), mocker.call(Edition, startTime),
-            mocker.call(Item, startTime), mocker.call(Record, startTime)
+            mocker.call(Work, startTime, endTime),
+            mocker.call(Edition, startTime, endTime),
+            mocker.call(Item, startTime, endTime),
+            mocker.call(Record, startTime, endTime)
         ])
         testInstance.smartsheet.insertRow.assert_called_once_with(
             {'Date': {'value': startStr}, 'Works': 'test', 'Editions': 'test', 'Items': 'test', 'Records': 'test'}
         )
 
     def test_getTableCounts(self, testInstance, mocker):
-        testInstance.session.query().count.return_value = 10 # total
-        testInstance.session.query().filter().filter().count.return_value = 3 # modified
-        testInstance.session.query().filter().count.return_value = 2 # created
+        testInstance.session.query().scalar.return_value = 10 # total
+        testInstance.session.query().filter().filter().filter().count.return_value = 3 # modified
+        testInstance.session.query().filter().filter().count.return_value = 2 # created
 
         mockAnomaly = mocker.patch.object(IngestReportProcess, 'setAnomalyStatus')
         mockAnomaly.return_value = {'total': 10, 'modified': 3, 'created': 2}
 
         mockTable = mocker.MagicMock(__name__='Test', id=1, date_modified=1, date_created=1)
-        testCounts = testInstance.getTableCounts(mockTable, 0)
+        testCounts = testInstance.getTableCounts(mockTable, 0, 1)
 
         assert testCounts['Total Tests'] == 10
         assert testCounts['Tests Modified'] == 3
