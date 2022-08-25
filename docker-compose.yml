@@ -1,0 +1,61 @@
+version: '3.9'
+
+services:
+
+  database:
+    container_name: drb_local_db
+    volumes:
+      - drb_local_dbdata:/var/lib/postgresql/data
+    image: postgres:13.8
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: localpsql
+
+  elasticsearch:
+    # Use the latest version of Elasticsearch supported by Amazon AWS ES.
+    container_name: drb_local_es
+    image: bitnami/elasticsearch:8
+    ports:
+      - "9243:9243"
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - ELASTICSEARCH_HEAP_SIZE=512m
+      - ELASTICSEARCH_PLUGINS=analysis-icu
+    volumes:
+      - drb_local_esdata:/bitnami/elasticsearch/data
+
+  webapp:
+    container_name: drb_local_webapp
+    depends_on:
+      - database
+      - elasticsearch
+    build:
+      context: .
+    command: -e local-compose -p APIProcess
+    ports:
+      - 80:80
+    volumes:
+      - type: bind
+        source: .
+        target: /src
+        read_only: true
+
+  devsetup:
+    container_name: drb_local_devSetUp
+    depends_on:
+      - database
+      - elasticsearch
+    build:
+      context: .
+    command: -e local-compose -p DevelopmentSetupProcess
+    volumes:
+      - type: bind
+        source: .
+        target: /src
+        read_only: true
+
+volumes:
+  drb_local_dbdata:
+  drb_local_esdata:

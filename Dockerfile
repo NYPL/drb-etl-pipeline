@@ -12,4 +12,4 @@ RUN pip install elasticsearch>8.0.0
 
 EXPOSE 80
 
-ENTRYPOINT [ "python",  "/src/main.py" ]
+ENTRYPOINT [ "python", "/src/main.py" ]
