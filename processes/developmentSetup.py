@@ -1,10 +1,12 @@
 import csv
 from datetime import datetime
+from elasticsearch.exceptions import ConnectionError
 import gzip
 import os
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import requests
 from sqlalchemy.exc import ProgrammingError
+from time import sleep
 
 from managers.db import DBManager
 from .core import CoreProcess
@@ -33,8 +35,13 @@ class DevelopmentSetupProcess(CoreProcess):
         #Allow Database to be trashed when reinitializing local DevelopmentSetUp
         self.initializeDatabase()
 
+
         # Setup ElasticSearch index if necessary
         self.createElasticConnection()
+        # Wait for ElasticSearch to be available
+        # (Necessary for docker-compose local development)
+        self.waitForElasticSearch()
+        # Initialize ElasticSearch index
         self.createElasticSearchIndex()
         #Allow ElasticSearch to be trashed when reinitializing local DevelopmentSetUp
 
@@ -83,6 +90,19 @@ class DevelopmentSetupProcess(CoreProcess):
         self.importFromHathiTrustDataFile()
         self.saveRecords()
         self.commitChanges()
+
+    def waitForElasticSearch(self):
+        increment = 5
+        totalTime = 0
+        while True and totalTime < 60:
+            try:
+                self.es.info()
+                break
+            except ConnectionError:
+                pass
+
+            totalTime += increment
+            sleep(increment)
 
     def importFromHathiTrustDataFile(self):
         fileList = requests.get(os.environ['HATHI_DATAFILES'])

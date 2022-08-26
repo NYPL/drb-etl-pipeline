@@ -15,4 +15,11 @@ allure-test:
 up:
 	$(compose_command) up -d
 
+up-watch:
+	$(compose_command) up
 
+down:
+	$(compose_command) down
+
+down-clean:
+	$(compose_command) down --volumes

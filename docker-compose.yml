@@ -8,7 +8,7 @@ services:
       - drb_local_dbdata:/var/lib/postgresql/data
     image: postgres:13.8
     ports:
-      - "5432:5432"
+      - 5432:5432
     environment:
       POSTGRES_PASSWORD: localpsql
 
@@ -17,14 +17,30 @@ services:
     container_name: drb_local_es
     image: bitnami/elasticsearch:8
     ports:
-      - "9243:9243"
+      - 9200:9200
     environment:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
       - ELASTICSEARCH_HEAP_SIZE=512m
-      - ELASTICSEARCH_PLUGINS=analysis-icu
+      - ELASTICSEARCH_PLUGINS=analysis-icu,analysis-smartcn,analysis-kuromoji,analysis-stempel
     volumes:
       - drb_local_esdata:/bitnami/elasticsearch/data
+
+  rabbitmq:
+    container_name: drb_local_mq
+    image: rabbitmq:3.10
+    ports:
+      - 5672:5672
+    volumes:
+      - drb_local_mqdata:/var/lib/rabbitmq
+
+  redis:
+    container_name: drb_local_rs
+    image: redis:7.0
+    ports:
+      - 6379:6379
+    volumes:
+      - drb_local_rsdata:/data
 
   webapp:
     container_name: drb_local_webapp
@@ -35,7 +51,7 @@ services:
       context: .
     command: -e local-compose -p APIProcess
     ports:
-      - 80:80
+      - 5000:5000
     volumes:
       - type: bind
         source: .
@@ -59,3 +75,5 @@ services:
 volumes:
   drb_local_dbdata:
   drb_local_esdata:
+  drb_local_mqdata:
+  drb_local_rsdata:
