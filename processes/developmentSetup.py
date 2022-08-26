@@ -104,6 +104,15 @@ class DevelopmentSetupProcess(CoreProcess):
             totalTime += increment
             sleep(increment)
 
+    @staticmethod
+    def returnHathiDateFormat(strDate):
+        if 'T' in strDate and '-' in strDate:
+            return '%Y-%m-%dT%H:%M:%S%z'
+        elif 'T' in strDate:
+            return '%Y-%m-%dT%H:%M:%S'
+        else:
+            return '%Y-%m-%d %H:%M:%S %z'
+
     def importFromHathiTrustDataFile(self):
         fileList = requests.get(os.environ['HATHI_DATAFILES'])
         if fileList.status_code != 200:
@@ -114,7 +123,7 @@ class DevelopmentSetupProcess(CoreProcess):
         fileJSON.sort(
             key=lambda x: datetime.strptime(
                 x['created'],
-                '%Y-%m-%dT%H:%M:%S-%f'
+                self.returnHathiDateFormat(x['created'])
             ).timestamp(),
             reverse=True
         )
