@@ -15,14 +15,19 @@ services:
   elasticsearch:
     # Use the latest version of Elasticsearch supported by Amazon AWS ES.
     container_name: drb_local_es
-    image: bitnami/elasticsearch:8
+    image: elasticsearch:8.4.0
     ports:
       - 9200:9200
     environment:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
-      - ELASTICSEARCH_HEAP_SIZE=512m
-      - ELASTICSEARCH_PLUGINS=analysis-icu,analysis-smartcn,analysis-kuromoji,analysis-stempel
+      - xpack.security.http.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=elastic
+    command:
+      - /bin/sh
+      - -c
+      - elasticsearch-plugin install analysis-icu analysis-smartcn analysis-kuromoji analysis-stempel; /usr/local/bin/docker-entrypoint.sh elasticsearch
     volumes:
       - drb_local_esdata:/bitnami/elasticsearch/data
 
