@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased version -- v0.10.6
+## 2022-09-07 -- v0.10.6
 ### Added
 - Government document search filter 
 - Unit tests for government document filter and aggregation
