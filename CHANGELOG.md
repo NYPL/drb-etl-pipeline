@@ -3,7 +3,7 @@
 ## unreleased version -- v0.10.7
 ### Added
 - Docker Compose file to set up local dev environment
-- Updated README instructions for setting up local dev environment 
+- Updated README steps for setting up local dev environment 
 ### Fixed
 - 
 
