@@ -1,6 +1,13 @@
 # CHANGELOG
 
-## unreleased version -- v0.10.6
+## unreleased version -- v0.10.7
+### Added
+- Docker Compose file to set up local dev environment
+- Updated README instructions for setting up local dev environment 
+### Fixed
+- 
+
+## 2022-09-07 -- v0.10.6
 ### Added
 - Government document search filter 
 - Unit tests for government document filter and aggregation

@@ -23,3 +23,6 @@ down:
 
 down-clean:
 	$(compose_command) down --volumes
+
+stop:
+	$(compose_command) stop

@@ -62,9 +62,11 @@ All services share a single entry point in `main.py` file. This script dynamical
 - `--offset` Skips the first `n` rows of an import process
 - `--singleRecord` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
 
-To set up a local environment there is a special process to initialize a database and search cluster. To set this up run `python main.py --process DevelopmentSetupProcess` which will run a short import process and populate the database with some sample data.
+To set up a local environment there is a special process to initialize a database and search cluster which is the `DevelopmentSetupProcess`. However, it's recommended to run the `DevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. To do so one of these commands should be run: `make up` or `docker compose up`. These commands will run the docker-compose file in the codebase so it's highly recommended to have Docker/Docker Desktop installed locally. After running one of the commands, a short import process will occur and populate the database with some sample data alongside running the API locally. This will allow you to query the API at `localhost:5000` and query the ESC at `localhost:9200`. 
 
-To run the API locally run `python main.py --process APIProcess` which will allow you to query the API at `localhost:5000`
+The docker compose file uses the sample-compose.yaml file in the `config` directory and additional configratuions and dependencies can be added to the file to build upon your local environment.
+
+To run the processes inividually the command should be in this format `python main.py --process APIProcess`.
 
 The currently available processes are:
 

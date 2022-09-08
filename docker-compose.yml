@@ -54,7 +54,7 @@ services:
       - elasticsearch
     build:
       context: .
-    command: -e local-compose -p APIProcess
+    command: -e sample-compose -p APIProcess
     ports:
       - 5000:5000
     volumes:
@@ -70,7 +70,7 @@ services:
       - elasticsearch
     build:
       context: .
-    command: -e local-compose -p DevelopmentSetupProcess
+    command: -e sample-compose -p DevelopmentSetupProcess
     volumes:
       - type: bind
         source: .
