@@ -31,7 +31,7 @@ def main():
 
     dbManager.createSession()
 
-    batchSize = 10
+    batchSize = 1000
     esWorkUUIDS = set()
     psqlWorkUUIDS = set()
     searchES = Search(index=os.environ['ELASTICSEARCH_INDEX'])

@@ -51,6 +51,8 @@ The steps to install the application are:
 
 #### Running services on host machine
 
+It's required to have Docker/Docker Desktop installed locally for setting up a local development environment in this section. Further details on using Docker with this codebase is given in the next section.
+
 All services share a single entry point in `main.py` file. This script dynamically imports available processes from the `processes` directory and executes the selected process. This script accepts the following arguments (these can also be displayed by running `python main.py --help`)
 
 - `--process` The name of the process to execute. This should be the name of the process class
@@ -62,9 +64,19 @@ All services share a single entry point in `main.py` file. This script dynamical
 - `--offset` Skips the first `n` rows of an import process
 - `--singleRecord` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
 
-To set up a local environment there is a special process to initialize a database and search cluster. To set this up run `python main.py --process DevelopmentSetupProcess` which will run a short import process and populate the database with some sample data.
+To set up a local environment there is a special process to initialize a database and search cluster which is the `DevelopmentSetupProcess`. However, it's recommended to run the `DevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. Before running a command, it's required to set these config variables in the sample-compose.yaml file:
 
-To run the API locally run `python main.py --process APIProcess` which will allow you to query the API at `localhost:5000`
+`HATHI_API_KEY`: 
+`HATHI_API_SECRET`:
+`OCLC_API_KEY`:
+
+You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values.
+
+With the configurations set, one of these commands should be run: `make up` or `docker compose up`. These commands will run the docker-compose file in the codebase and this is why it's required to have Docker/Docker Desktop installed locally. After running one of the commands, a short import process will occur and populate the database with some sample data alongside running the API locally. This will allow you to query the API at `localhost:5000` and query the ESC at `localhost:9200`. 
+
+The docker compose file uses the sample-compose.yaml file in the `config` directory and additional configurations and dependencies can be added to the file to build upon your local environment.
+
+To run the processes individually the command should be in this format: `python main.py --process APIProcess`.
 
 The currently available processes are:
 

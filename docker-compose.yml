@@ -1,0 +1,84 @@
+version: '3.9'
+
+services:
+
+  database:
+    container_name: drb_local_db
+    volumes:
+      - drb_local_dbdata:/var/lib/postgresql/data
+    image: postgres:13.8
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: localpsql
+
+  elasticsearch:
+    # Use the latest version of Elasticsearch supported by Amazon AWS ES.
+    container_name: drb_local_es
+    image: elasticsearch:8.4.0
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - xpack.security.http.ssl.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=elastic
+    command:
+      - /bin/sh
+      - -c
+      - elasticsearch-plugin install analysis-icu analysis-smartcn analysis-kuromoji analysis-stempel; /usr/local/bin/docker-entrypoint.sh elasticsearch
+    volumes:
+      - drb_local_esdata:/bitnami/elasticsearch/data
+
+  rabbitmq:
+    container_name: drb_local_mq
+    image: rabbitmq:3.10
+    ports:
+      - 5672:5672
+    volumes:
+      - drb_local_mqdata:/var/lib/rabbitmq
+
+  redis:
+    container_name: drb_local_rs
+    image: redis:7.0
+    ports:
+      - 6379:6379
+    volumes:
+      - drb_local_rsdata:/data
+
+  webapp:
+    container_name: drb_local_webapp
+    depends_on:
+      - database
+      - elasticsearch
+    build:
+      context: .
+    command: -e sample-compose -p APIProcess
+    ports:
+      - 5000:5000
+    volumes:
+      - type: bind
+        source: .
+        target: /src
+        read_only: true
+
+  devsetup:
+    container_name: drb_local_devSetUp
+    depends_on:
+      - database
+      - elasticsearch
+    build:
+      context: .
+    command: -e sample-compose -p DevelopmentSetupProcess
+    volumes:
+      - type: bind
+        source: .
+        target: /src
+        read_only: true
+
+volumes:
+  drb_local_dbdata:
+  drb_local_esdata:
+  drb_local_mqdata:
+  drb_local_rsdata:

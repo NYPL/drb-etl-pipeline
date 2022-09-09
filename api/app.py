@@ -38,7 +38,14 @@ class FlaskAPI:
         self.app.register_blueprint(citation)
 
     def run(self):
-        if 'local' in os.environ['ENVIRONMENT']:
+        if 'local-compose' in os.environ['ENVIRONMENT'] or 'sample-compose' in os.environ['ENVIRONMENT']:
+            logger.debug('Starting dev server on port 5000')
+
+            self.app.config['ENV'] = 'development'
+            self.app.config['DEBUG'] = True
+            self.app.run(host='0.0.0.0')
+
+        elif 'local' in os.environ['ENVIRONMENT']:
             logger.debug('Starting dev server on port 5000')
 
             self.app.config['ENV'] = 'development'

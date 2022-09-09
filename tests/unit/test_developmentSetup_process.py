@@ -22,15 +22,16 @@ class TestDevelopmentSetupProcess:
             def __init__(self, process, customFile, ingestPeriod):
                 self.adminDBConnection = mocker.MagicMock()
                 self.statics = {}
+                self.es = mocker.MagicMock()
         
         return TestDevelopmentProcess('TestProcess', 'testFile', 'testDate')
 
     @pytest.fixture
     def hathiFilesData(self):
         return [
-            {'created': '2020-01-01T00:00:00-0', 'url': 'hathiUrl1'},
-            {'created': '2019-01-01T00:00:00-0', 'url': 'hathiUrl2'},
-            {'created': '2018-01-01T00:00:00-0', 'url': 'hathiUrl3'}
+            {'created': '2020-01-01T00:00:00+0000', 'url': 'hathiUrl1'},
+            {'created': '2019-01-01T00:00:00+0000', 'url': 'hathiUrl2'},
+            {'created': '2018-01-01T00:00:00+0000', 'url': 'hathiUrl3'}
         ]
 
     @pytest.fixture
