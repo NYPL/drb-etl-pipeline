@@ -1,7 +1,6 @@
-from datetime import date, timedelta
-from sqlalchemy import func
-from sqlalchemy.dialects.postgresql import DATE
+from datetime import datetime, timedelta
 import newrelic.agent
+from sqlalchemy import func
 
 from .core import CoreProcess
 from model import Work, Edition, Item, Record
@@ -9,6 +8,7 @@ from managers import SmartSheetManager
 from logger import createLog
 
 logger = createLog(__name__)
+
 
 class IngestReportProcess(CoreProcess):
     def __init__(self, *args):
@@ -27,28 +27,32 @@ class IngestReportProcess(CoreProcess):
 
     @newrelic.agent.background_task()
     def generateReport(self):
-        ingestDate = date.today() - timedelta(days=1)
+        ingestDate = datetime.today()
+        ingestDateStart = ingestDate.replace(hour=0, minute=0, second=0)
+        ingestDateEnd = ingestDateStart + timedelta(days=1)
 
         dailyRow = {'Date': {'value': ingestDate.strftime('%Y-%m-%d')}}
         for table in [Work, Edition, Item, Record]:
-            totals = self.getTableCounts(table, ingestDate)
+            totals = self.getTableCounts(table, ingestDateStart, ingestDateEnd)
             dailyRow = {**dailyRow, **totals}
 
         self.smartsheet.insertRow(dailyRow)
 
     @newrelic.agent.background_task()
-    def getTableCounts(self, table, ingestPeriod):
+    def getTableCounts(self, table, ingestStart, ingestEnd):
         logger.info('Getting Totals for {}'.format(table.__name__))
 
-        totalCount = self.session.query(table.id).count()
+        totalCount = self.session.query(func.count(table.id)).scalar()
 
         modifiedCount = self.session.query(table.id)\
-            .filter(func.cast(table.date_modified, DATE) == ingestPeriod)\
-            .filter(func.cast(table.date_created, DATE) < ingestPeriod)\
+            .filter(table.date_modified > ingestStart)\
+            .filter(table.date_modified < ingestEnd)\
+            .filter(table.date_created < ingestStart)\
             .count()
 
         createdCount = self.session.query(table.id)\
-            .filter(func.cast(table.date_created, DATE) == ingestPeriod)\
+            .filter(table.date_modified > ingestStart)\
+            .filter(table.date_modified < ingestEnd)\
             .count()
 
         totals = self.setAnomalyStatus(totalCount, modifiedCount, createdCount)
