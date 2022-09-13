@@ -6,6 +6,7 @@
 - Updated README steps for setting up local dev environment 
 ### Fixed
 - Updated unit tests for developmentSetup process
+- Removed front end configurations from tugboat
 
 ## 2022-09-07 -- v0.10.6
 ### Added
