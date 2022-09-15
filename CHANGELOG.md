@@ -7,6 +7,8 @@
 ### Fixed
 - Updated unit tests for developmentSetup process
 - Removed front end configurations from tugboat
+- Slack incoming webhook now passes in regression tests
+- Improved CI/CD process with all regression tests passing succesfully
 
 ## 2022-09-07 -- v0.10.6
 ### Added
