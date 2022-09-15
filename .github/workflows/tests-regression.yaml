@@ -58,7 +58,7 @@ jobs:
         uses: rtCamp/action-slack-notify@v2
         env: 
           SLACK_CHANNEL: test_reports
-          SLACK_MESSAGE: 'https://nypl.github.io/drb-etl-pipeline'
+          #SLACK_MESSAGE: 'https://nypl.github.io/drb-etl-pipeline'
           SLACK_TITLE: DRB Pipeline Test Results
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_USERNAME: nyplorgBot
