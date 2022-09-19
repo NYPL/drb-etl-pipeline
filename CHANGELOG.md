@@ -3,7 +3,8 @@
 ## unreleased version -- v0.10.7
 ### Added
 - Docker Compose file to set up local dev environment
-- Updated README steps for setting up local dev environment 
+- Updated README steps for setting up local dev environment
+- Identifier & Authority as query terms in APIUtils class 
 ### Fixed
 - Updated unit tests for developmentSetup process
 - Removed front end configurations from tugboat
