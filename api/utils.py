@@ -8,7 +8,7 @@ import re
 
 class APIUtils():
     QUERY_TERMS = [
-        'keyword', 'title', 'author', 'subject', 'viaf', 'lcnaf',
+        'keyword', 'title', 'author', 'subject', 'lccn', 'isbn', 'viaf', 'lcnaf',
         'date', 'startYear', 'endYear', 'language', 'format', 'govDoc', 'showAll'
     ]
 

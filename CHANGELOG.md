@@ -4,6 +4,7 @@
 ### Added
 - Docker Compose file to set up local dev environment
 - Updated README steps for setting up local dev environment 
+- Updated search endpoint to include identifier and authority as keywords
 ### Fixed
 - Updated unit tests for developmentSetup process
 - Removed front end configurations from tugboat
