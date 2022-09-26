@@ -29,14 +29,28 @@ class ElasticsearchManager:
 
         creds = '{}:{}@'.format(user, pswd) if user and pswd else ''
 
-        host = '{}://{}{}:{}'.format(scheme, creds, host, port)
+        multHosts = []
 
-        connectionConfig = {
-            'hosts': [host],
-            'timeout': timeout,
-            'retry_on_timeout': True,
-            'max_retries': 3
-        }
+        if hasattr(host, '__len__'):
+            for i in host:
+                multHosts.append('{}://{}{}:{}'.format(scheme, creds, i, port))
+            
+            connectionConfig = {
+                'hosts': multHosts,
+                'timeout': timeout,
+                'retry_on_timeout': True,
+                'max_retries': 3
+            }
+
+        else:
+            host = '{}://{}{}:{}'.format(scheme, creds, host, port)
+
+            connectionConfig = {
+                'hosts': [host],
+                'timeout': timeout,
+                'retry_on_timeout': True,
+                'max_retries': 3
+            }
 
         self.client = connections.create_connection(**connectionConfig)
         self.es = Elasticsearch(**connectionConfig)
