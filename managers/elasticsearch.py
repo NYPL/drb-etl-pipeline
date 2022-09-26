@@ -31,7 +31,11 @@ class ElasticsearchManager:
 
         multHosts = []
 
-        if hasattr(host, '__len__'):
+        if isinstance(host, list) or \
+            isinstance(host, dict) or \
+            isinstance(host, set) or \
+            isinstance(host, tuple):
+            
             for i in host:
                 multHosts.append('{}://{}{}:{}'.format(scheme, creds, i, port))
             
