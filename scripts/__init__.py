@@ -5,3 +5,4 @@ from .updateLinksCatalog import main as updateLinks
 from .updateRecordsCatalogLink import main as updateRecordCatalogs
 from .govDocES import main as govDocUpdate
 from .deleteElasticRecords import main as deleteESCRecords
+from .esReIndex import main as esIndex
