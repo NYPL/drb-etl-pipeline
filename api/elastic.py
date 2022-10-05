@@ -61,9 +61,7 @@ class ElasticClient():
                 searchClauses.append(Q('bool', should=[
                     self.titleQuery(escapedQuery),
                     self.authorQuery(escapedQuery),
-                    self.subjectQuery(escapedQuery),
-                    self.identifierQuery(escapedQuery),
-                    self.authorityQuery(escapedQuery)
+                    self.subjectQuery(escapedQuery)
                 ]))
             elif field == 'title':
                 searchClauses.append(self.titleQuery(escapedQuery))
@@ -75,6 +73,8 @@ class ElasticClient():
                 searchClauses.append(self.authorityQuery(field, escapedQuery))
             elif field == 'identifier':
                 searchClauses.append(self.identifierQuery(escapedQuery))
+            elif field == 'authority':
+                searchClauses.append(self.authIdentQuery(authorityList, escapedQuery))
             else:
                 searchClauses.append(Q('match', **{field: escapedQuery}))
 
@@ -255,6 +255,39 @@ class ElasticClient():
             )
         ])
 
+    def authIdentQuery(self, authorityList, authIdentText):
+        self.searchedFields.extend(['identifiers', 'editions.identifiers'])
+
+        authIdentList = authIdentText.split(': ')
+
+        if len(authIdentList) < 2:
+            if authIdentList[0] in authorityList:
+
+                return Q('bool', should=[
+                    Q(
+                        'query_string',
+                        query=authIdentList[0],
+                        fields=['identifiers.authority'],
+                        default_operator='and'
+                    ),
+                    Q(
+                        'query_string',
+                        query=authIdentList[1],
+                        fields=['identifiers.identifier'],
+                        default_operator='and'
+                    ),
+                    Q(
+                        'nested',
+                        path='editions',
+                        query=Q(
+                            'query_string',
+                            query=authIdentList[1],
+                            fields=['editions.identifiers.identifier'],
+                            default_operator='and'
+                        )
+                    )
+                ])
+
     def authorQuery(self, authorText):
         self.searchedFields.extend(['agents.name', 'editions.agents.name'])
 
@@ -281,28 +314,6 @@ class ElasticClient():
         return Q('bool', should=[
             Q('nested', path='agents', query=workAgentQuery),
             Q('nested', path='editions.agents', query=editionAgentQuery)
-        ])
-
-    def identifierQuery(self, identifierText):
-        self.searchedFields.extend(['identifiers', 'editions.identifiers'])
-
-        return Q('bool', should=[
-            Q(
-                'query_string',
-                query=identifierText,
-                fields=['identifiers.*'],
-                default_operator='and'
-            ),
-            Q(
-                'nested',
-                path='editions',
-                query=Q(
-                    'query_string',
-                    query=identifierText,
-                    fields=['editions.identifiers.*'],
-                    default_operator='and'
-                )
-            )
         ])
 
 
