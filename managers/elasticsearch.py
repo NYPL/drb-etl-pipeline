@@ -29,32 +29,27 @@ class ElasticsearchManager:
 
         creds = '{}:{}@'.format(user, pswd) if user and pswd else ''
 
+        #Allowing multple hosts for a ES connection
         multHosts = []
 
-        if isinstance(host, list) or \
-            isinstance(host, dict) or \
-            isinstance(host, set) or \
-            isinstance(host, tuple):
+        if ',' not in host:
+            host = '{}://{}{}:{}'.format(scheme, creds, host, port)
+
+            multHosts.append(host)
+
+        else:
+            hostList = host.split(', ')
             
-            for i in host:
+            for i in hostList:
                 multHosts.append('{}://{}{}:{}'.format(scheme, creds, i, port))
             
-            connectionConfig = {
+        connectionConfig = {
                 'hosts': multHosts,
                 'timeout': timeout,
                 'retry_on_timeout': True,
                 'max_retries': 3
             }
 
-        else:
-            host = '{}://{}{}:{}'.format(scheme, creds, host, port)
-
-            connectionConfig = {
-                'hosts': [host],
-                'timeout': timeout,
-                'retry_on_timeout': True,
-                'max_retries': 3
-            }
 
         self.client = connections.create_connection(**connectionConfig)
         self.es = Elasticsearch(**connectionConfig)

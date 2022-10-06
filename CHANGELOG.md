@@ -4,7 +4,7 @@
 ### Added
 - Docker Compose file to set up local dev environment
 - Updated README steps for setting up local dev environment
-- Multi-host configuration for ES
+- Multi-host configuration for ES connection
 ### Fixed
 - Updated unit tests for developmentSetup process
 - Removed front end configurations from tugboat
