@@ -49,7 +49,8 @@ class ElasticClient():
         return self.executeSearchQuery(params, page, perPage)
 
     def generateSearchQuery(self, params):
-        authorityList =['isbn', 'lccn']
+        authorityList =['isbn', 'issn', 'lcc', 'lccn', 'oclc', 'nypl', 'hathi', 'gutenberg', 'doab']
+
         search = self.createSearch()
         search.source(['uuid', 'editions'])
 
@@ -69,11 +70,11 @@ class ElasticClient():
                 searchClauses.append(self.authorQuery(escapedQuery))
             elif field == 'subject':
                 searchClauses.append(self.subjectQuery(escapedQuery))
-            elif field == 'viaf' or field == 'lcnaf' or field in authorityList:
+            elif field == 'viaf' or field == 'lcnaf':
                 searchClauses.append(self.authorityQuery(field, escapedQuery))
             elif field == 'identifier':
                 searchClauses.append(self.identifierQuery(escapedQuery))
-            elif field == 'authority':
+            elif field == 'authority: identifier':
                 searchClauses.append(self.authIdentQuery(authorityList, escapedQuery))
             else:
                 searchClauses.append(Q('match', **{field: escapedQuery}))
@@ -233,6 +234,7 @@ class ElasticClient():
             )
         ])
     
+    #Query for the identifier value
     def identifierQuery(self, identifierText):
         self.searchedFields.extend(['identifiers', 'editions.identifiers'])
 
@@ -255,24 +257,27 @@ class ElasticClient():
             )
         ])
 
+    #Query for the identifier authority followed up with the identifier value
     def authIdentQuery(self, authorityList, authIdentText):
         self.searchedFields.extend(['identifiers', 'editions.identifiers'])
 
         authIdentList = authIdentText.split(': ')
+        authority = authIdentList[0]
+        identifier = authIdentList[1]
 
-        if len(authIdentList) < 2:
-            if authIdentList[0] in authorityList:
+        if len(authIdentList) < 3:
+            if authority in authorityList:
 
                 return Q('bool', should=[
                     Q(
                         'query_string',
-                        query=authIdentList[0],
+                        query=authority,
                         fields=['identifiers.authority'],
                         default_operator='and'
                     ),
                     Q(
                         'query_string',
-                        query=authIdentList[1],
+                        query=identifier,
                         fields=['identifiers.identifier'],
                         default_operator='and'
                     ),
@@ -281,7 +286,7 @@ class ElasticClient():
                         path='editions',
                         query=Q(
                             'query_string',
-                            query=authIdentList[1],
+                            query=identifier,
                             fields=['editions.identifiers.identifier'],
                             default_operator='and'
                         )
