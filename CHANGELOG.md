@@ -5,11 +5,15 @@
 - Docker Compose file to set up local dev environment
 - Updated README steps for setting up local dev environment
 - Multi-host configuration for ES connection
+- Identifier & Authority as query terms in APIUtils class 
+
 ### Fixed
 - Updated unit tests for developmentSetup process
 - Removed front end configurations from tugboat
 - Slack incoming webhook now passes in regression tests
 - Improved CI/CD process with all regression tests passing succesfully
+- Score for jaro_winkler search change from 0.9 to 0.85 in agentParser method
+- Specified version 0.20.4 of python-levenshtein in requirements file
 
 ## 2022-09-07 -- v0.10.6
 ### Added
