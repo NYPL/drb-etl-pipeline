@@ -6,6 +6,7 @@
 - Updated README steps for setting up local dev environment
 - Multi-host configuration for ES connection
 - Identifier & Authority as query terms in APIUtils class 
+- Script to reindex ES works into new ES cluster
 
 ### Fixed
 - Updated unit tests for developmentSetup process
