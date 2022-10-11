@@ -20,6 +20,20 @@ class TestElasticsearchManager:
 
         return ElasticsearchManager()
 
+    @pytest.fixture
+    def testInstance2(self, mocker):
+        mocker.patch.dict('os.environ', {
+            'ELASTICSEARCH_INDEX': 'testES',
+            'ELASTICSEARCH_HOST': 'host1, host2, host3',
+            'ELASTICSEARCH_PORT': 'port',
+            'ELASTICSEARCH_TIMEOUT': '1000',
+            'ELASTICSEARCH_SCHEME': 'http',
+            'ELASTICSEARCH_USER': 'testUser',
+            'ELASTICSEARCH_PSWD': 'testPswd'
+        })
+
+        return ElasticsearchManager()
+
     def test_initializer(self, testInstance):
         assert testInstance.index == 'testES'
 
@@ -38,6 +52,30 @@ class TestElasticsearchManager:
 
         mockClient.assert_called_once_with(
             hosts=['http://testUser:testPswd@host:port'],
+            timeout=1000,
+            retry_on_timeout=True,
+            max_retries=3
+        )
+
+    def test_createElasticConnection_multiHostSuccess(self, testInstance2, mocker):
+        mockConnection = mocker.patch('managers.elasticsearch.connections')
+        mockClient = mocker.patch('managers.elasticsearch.Elasticsearch')
+
+        testInstance2.createElasticConnection()
+
+        mockConnection.create_connection.assert_called_once_with(
+            hosts=['http://testUser:testPswd@host1:port', \
+                    'http://testUser:testPswd@host2:port', \
+                    'http://testUser:testPswd@host3:port'],
+            timeout=1000,
+            retry_on_timeout=True,
+            max_retries=3
+        )
+
+        mockClient.assert_called_once_with(
+            hosts=['http://testUser:testPswd@host1:port', \
+                    'http://testUser:testPswd@host2:port', \
+                    'http://testUser:testPswd@host3:port'],
             timeout=1000,
             retry_on_timeout=True,
             max_retries=3

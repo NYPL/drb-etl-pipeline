@@ -547,7 +547,7 @@ class SFRRecordManager:
                         break
 
                 if existingMatch is False:
-                    if jaro_winkler(oaKey, recKey) > 0.9:
+                    if jaro_winkler(oaKey, recKey) > 0.85:
                         SFRRecordManager.mergeAgents(oa, rec)
                         existingMatch = True
                         break
