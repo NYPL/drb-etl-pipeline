@@ -73,9 +73,7 @@ class ElasticClient():
             elif field == 'viaf' or field == 'lcnaf':
                 searchClauses.append(self.authorityQuery(field, escapedQuery))
             elif field == 'identifier':
-                searchClauses.append(self.identifierQuery(escapedQuery))
-            elif field == 'authority: identifier':
-                searchClauses.append(self.authIdentQuery(authorityList, escapedQuery))
+                searchClauses.append(self.identifierQuery(authorityList, escapedQuery))
             else:
                 searchClauses.append(Q('match', **{field: escapedQuery}))
 
@@ -233,15 +231,20 @@ class ElasticClient():
                 )
             )
         ])
-    
-    #Query for the identifier value
-    def identifierQuery(self, identifierText):
+
+    #Query for the identifier authority followed up with the identifier value
+    def identifierQuery(self, authorityList, authIdentText):
         self.searchedFields.extend(['identifiers', 'editions.identifiers'])
 
-        return Q('bool', should=[
+        authIdentList = authIdentText.split(': ')
+
+        #When user only types in the identifier in the search bar
+        if len(authIdentList) < 2:
+
+            return Q('bool', should=[
             Q(
                 'query_string',
-                query=identifierText,
+                query=authIdentText,
                 fields=['identifiers.*'],
                 default_operator='and'
             ),
@@ -250,22 +253,19 @@ class ElasticClient():
                 path='editions',
                 query=Q(
                     'query_string',
-                    query=identifierText,
+                    query=authIdentText,
                     fields=['editions.identifiers.*'],
                     default_operator='and'
                 )
             )
-        ])
+            ])
 
-    #Query for the identifier authority followed up with the identifier value
-    def authIdentQuery(self, authorityList, authIdentText):
-        self.searchedFields.extend(['identifiers', 'editions.identifiers'])
+        #When user types in the authority and identifier in the search bar
+        else:
 
-        authIdentList = authIdentText.split(': ')
-        authority = authIdentList[0]
-        identifier = authIdentList[1]
+            authority = authIdentList[0]
+            identifier = authIdentList[1]
 
-        if len(authIdentList) < 3:
             if authority in authorityList:
 
                 return Q('bool', should=[

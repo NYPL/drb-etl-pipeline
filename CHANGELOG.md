@@ -4,7 +4,7 @@
 ### Added
 - Docker Compose file to set up local dev environment
 - Updated README steps for setting up local dev environment 
-- Updated search endpoint to add identifier value and authority as keywords
+- Updated search endpoint to add identifier as a keyword
 - Identifier & Authority as query terms in APIUtils class 
 ### Fixed
 - Updated unit tests for developmentSetup process
