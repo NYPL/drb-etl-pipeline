@@ -6,7 +6,7 @@
 - Updated README steps for setting up local dev environment 
 - Updated search endpoint to add identifier as a keyword
 - Identifier & Authority as query terms in APIUtils class 
-- Multi-host configuration for ES connection
+- Multi-host configuration for ES connections
 
 ### Fixed
 - Updated unit tests for developmentSetup process

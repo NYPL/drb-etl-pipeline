@@ -234,30 +234,37 @@ class ElasticClient():
 
     #Query for the identifier authority followed up with the identifier value
     def identifierQuery(self, authorityList, authIdentText):
-        self.searchedFields.extend(['identifiers', 'editions.identifiers'])
+        self.searchedFields.extend(['identifiers.identifier', 'editions.identifiers.identifier',
+                                    'identifiers.authority', 'editions.identifiers.authority'])
 
         authIdentList = authIdentText.split(': ')
 
         #When user only types in the identifier in the search bar
         if len(authIdentList) < 2:
 
-            return Q('bool', should=[
-            Q(
-                'query_string',
-                query=authIdentText,
-                fields=['identifiers.*'],
-                default_operator='and'
-            ),
-            Q(
-                'nested',
-                path='editions',
-                query=Q(
-                    'query_string',
-                    query=authIdentText,
-                    fields=['editions.identifiers.*'],
+            identifier = authIdentText
+
+            workIdentQuery = Q('bool', must=[
+                Q(
+                    'term',
+                    query=identifier,
+                    fields=['identifiers.identifier'],
                     default_operator='and'
                 )
-            )
+            ])
+
+            editionIdentQuery = Q('bool', must=[
+                Q(
+                    'term',
+                    query=identifier,
+                    fields=['editions.identifiers.identifier'],
+                    default_operator='and'
+                )
+            ])
+
+            return Q('bool', should=[
+                Q('nested', path='identifiers', query=workIdentQuery),
+                Q('nested', path='editions.identifiers', query=editionIdentQuery)
             ])
 
         #When user types in the authority and identifier in the search bar
@@ -268,29 +275,47 @@ class ElasticClient():
 
             if authority in authorityList:
 
-                return Q('bool', should=[
+                workAuthQuery = Q('bool', must=[
                     Q(
-                        'query_string',
+                        'term',
                         query=authority,
                         fields=['identifiers.authority'],
                         default_operator='and'
-                    ),
+                    )
+                ])
+
+                editionAuthQuery = Q('bool', must=[
                     Q(
-                        'query_string',
+                        'term',
+                        query=authority,
+                        fields=['editions.identifiers.authority'],
+                        default_operator='and'
+                    )
+                ])
+
+                workIdentQuery = Q('bool', must=[
+                Q(
+                    'term',
+                    query=identifier,
+                    fields=['identifiers.identifier'],
+                    default_operator='and'
+                )
+                ])
+
+                editionIdentQuery = Q('bool', must=[
+                    Q(
+                        'term',
                         query=identifier,
-                        fields=['identifiers.identifier'],
+                        fields=['editions.identifiers.identifier'],
                         default_operator='and'
                     ),
-                    Q(
-                        'nested',
-                        path='editions',
-                        query=Q(
-                            'query_string',
-                            query=identifier,
-                            fields=['editions.identifiers.identifier'],
-                            default_operator='and'
-                        )
-                    )
+                ])
+
+                return Q('bool', should=[
+                    Q('nested', path='identifiers', query=workAuthQuery),
+                    Q('nested', path='editions.identifiers', query=editionAuthQuery),
+                    Q('nested', path='identifiers', query=workIdentQuery),
+                    Q('nested', path='editions.identifiers', query=editionIdentQuery)
                 ])
 
     def authorQuery(self, authorText):
