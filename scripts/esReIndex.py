@@ -2,6 +2,7 @@ import os
 
 from managers import ElasticsearchManager
 from main import loadEnvFile
+from model import ESWork
 
 def main():
 
@@ -12,6 +13,7 @@ def main():
     esManager = ElasticsearchManager()
     esManager.createElasticConnection()
     esManager.createElasticSearchIndex()
+    ESWork.init()
 
 
 # POST _reindex
