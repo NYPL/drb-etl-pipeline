@@ -535,11 +535,9 @@ class TestElasticClient:
         assert testInstance.searchedFields == ['identifiers.identifier', 'editions.identifiers.identifier',
                                                 'identifiers.authority', 'editions.identifiers.authority']
         assert testQuery['bool']['should'][0]['nested']['path'] == 'identifiers'
-        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term']['query'] == 'testIdent'
-        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term']['fields'] == ['identifiers.identifier']
+        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term'] == {'identifiers.identifier': 'testIdent'}
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions.identifiers'
-        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term']['query'] == 'testIdent'
-        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term']['fields'] == ['editions.identifiers.identifier']
+        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term'] == {'editions.identifiers.identifier': 'testIdent'}
 
 
     def test_identifierQuery_AuthIdent(self, testInstance):
@@ -549,18 +547,12 @@ class TestElasticClient:
         assert testInstance.searchedFields == ['identifiers.identifier', 'editions.identifiers.identifier',
                                                 'identifiers.authority', 'editions.identifiers.authority']
         assert testQuery['bool']['should'][0]['nested']['path'] == 'identifiers'
-        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term']['query'] == 'testAuth'
-        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term']['fields'] == ['identifiers.authority']
+        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term']== {'identifiers.authority': 'testAuth'}
+        testQuery['bool']['should'][0]['nested']['query']['bool']['must'][1]['term']== {'identifiers.identifier': 'testIdent'}  
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions.identifiers'
-        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term']['query'] == 'testAuth'
-        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term']['fields'] == ['editions.identifiers.authority']
-        assert testQuery['bool']['should'][2]['nested']['path'] == 'identifiers'
-        assert testQuery['bool']['should'][2]['nested']['query']['bool']['must'][0]['term']['query'] == 'testIdent'
-        assert testQuery['bool']['should'][2]['nested']['query']['bool']['must'][0]['term']['fields'] == ['identifiers.identifier']
-        assert testQuery['bool']['should'][3]['nested']['path'] == 'editions.identifiers'
-        assert testQuery['bool']['should'][3]['nested']['query']['bool']['must'][0]['term']['query'] == 'testIdent'
-        assert testQuery['bool']['should'][3]['nested']['query']['bool']['must'][0]['term']['fields'] == ['editions.identifiers.identifier']
-
+        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term'] == {'editions.identifiers.authority': 'testAuth'}
+        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][1]['term'] == {'editions.identifiers.identifier': 'testIdent'}
+        
     def test_getFromSize(self):
         startPosition, endPosition = ElasticClient.getFromSize(3, 15)
 

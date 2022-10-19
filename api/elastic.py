@@ -245,22 +245,12 @@ class ElasticClient():
             identifier = authIdentText
 
             workIdentQuery = Q('bool', must=[
-                Q(
-                    'term',
-                    query=identifier,
-                    fields=['identifiers.identifier'],
-                    default_operator='and'
-                )
-            ])
+                Q('term', **{'identifiers.identifier': identifier})
+                ])
 
             editionIdentQuery = Q('bool', must=[
-                Q(
-                    'term',
-                    query=identifier,
-                    fields=['editions.identifiers.identifier'],
-                    default_operator='and'
-                )
-            ])
+                Q('term', **{'editions.identifiers.identifier': identifier})
+                ])
 
             return Q('bool', should=[
                 Q('nested', path='identifiers', query=workIdentQuery),
@@ -275,47 +265,19 @@ class ElasticClient():
 
             if authority in authorityList:
 
-                workAuthQuery = Q('bool', must=[
-                    Q(
-                        'term',
-                        query=authority,
-                        fields=['identifiers.authority'],
-                        default_operator='and'
-                    )
+                workIdentAuthQuery = Q('bool', must=[
+                    Q('term', **{'identifiers.authority': authority}),
+                    Q('term', **{'identifiers.identifier': identifier})
                 ])
 
-                editionAuthQuery = Q('bool', must=[
-                    Q(
-                        'term',
-                        query=authority,
-                        fields=['editions.identifiers.authority'],
-                        default_operator='and'
-                    )
-                ])
-
-                workIdentQuery = Q('bool', must=[
-                Q(
-                    'term',
-                    query=identifier,
-                    fields=['identifiers.identifier'],
-                    default_operator='and'
-                )
-                ])
-
-                editionIdentQuery = Q('bool', must=[
-                    Q(
-                        'term',
-                        query=identifier,
-                        fields=['editions.identifiers.identifier'],
-                        default_operator='and'
-                    ),
+                editionIdentAuthQuery = Q('bool', must=[
+                    Q('term', **{'editions.identifiers.authority': authority}),
+                    Q('term', **{'editions.identifiers.identifier': identifier})
                 ])
 
                 return Q('bool', should=[
-                    Q('nested', path='identifiers', query=workAuthQuery),
-                    Q('nested', path='editions.identifiers', query=editionAuthQuery),
-                    Q('nested', path='identifiers', query=workIdentQuery),
-                    Q('nested', path='editions.identifiers', query=editionIdentQuery)
+                    Q('nested', path='identifiers', query=workIdentAuthQuery),
+                    Q('nested', path='editions.identifiers', query=editionIdentAuthQuery)
                 ])
 
     def authorQuery(self, authorText):
