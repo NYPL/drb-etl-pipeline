@@ -1,14 +1,9 @@
-import os
-
 from managers import ElasticsearchManager
-from main import loadEnvFile
 from model import ESWork
 
 def main():
 
     '''Re-indexing works into new ES cluster'''
-
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
 
     esManager = ElasticsearchManager()
     esManager.createElasticConnection()

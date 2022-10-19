@@ -1,5 +1,8 @@
 import inspect
 import sys
+from main import loadEnvFile
+
+loadEnvFile('local-qa', fileString='config/{}.yaml')
 
 import scripts
 
