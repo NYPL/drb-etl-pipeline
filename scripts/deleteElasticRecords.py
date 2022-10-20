@@ -8,9 +8,9 @@ from elasticsearch_dsl import Search
 from elasticsearch.exceptions import NotFoundError, ConflictError
 from main import loadEnvFile
 
-logging.basicConfig(filename='deleteESRecords.log', encoding='utf-8', level=logging.INFO)
-
 def main():
+
+    logging.basicConfig(filename='deleteESRecords.log', encoding='utf-8', level=logging.INFO)
 
     '''Deleting ESC works that don't appear in the Postgresql database based on uuid'''
 
