@@ -10,7 +10,11 @@ from main import loadEnvFile
 
 def main():
 
+    '''Deleting ESC works that don't appear in the Postgresql database based on uuid'''
+    
     logging.basicConfig(filename='deleteESRecords.log', encoding='utf-8', level=logging.INFO)
+
+    loadEnvFile('local-qa', fileString='config/{}.yaml')
 
     dbManager = DBManager(
         user= os.environ.get('POSTGRES_USER', None),

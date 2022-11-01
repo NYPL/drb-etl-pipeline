@@ -49,6 +49,8 @@ class ElasticClient():
         return self.executeSearchQuery(params, page, perPage)
 
     def generateSearchQuery(self, params):
+        authorityList =['isbn', 'issn', 'lcc', 'lccn', 'oclc', 'nypl', 'hathi', 'gutenberg', 'doab']
+
         search = self.createSearch()
         search.source(['uuid', 'editions'])
 
@@ -70,6 +72,8 @@ class ElasticClient():
                 searchClauses.append(self.subjectQuery(escapedQuery))
             elif field == 'viaf' or field == 'lcnaf':
                 searchClauses.append(self.authorityQuery(field, escapedQuery))
+            elif field == 'identifier':
+                searchClauses.append(self.identifierQuery(authorityList, escapedQuery))
             else:
                 searchClauses.append(Q('match', **{field: escapedQuery}))
 
@@ -228,6 +232,54 @@ class ElasticClient():
             )
         ])
 
+    #Query for the identifier authority followed up with the identifier value
+    def identifierQuery(self, authorityList, authIdentText):
+        self.searchedFields.extend(['identifiers.identifier', 'editions.identifiers.identifier',
+                                    'identifiers.authority', 'editions.identifiers.authority'])
+
+        authIdentList = authIdentText.split(': ')
+
+        #When user only types in the identifier in the search bar
+        if len(authIdentList) < 2:
+
+            identifier = authIdentText
+
+            workIdentQuery = Q('bool', must=[
+                Q('term', **{'identifiers.identifier': identifier})
+                ])
+
+            editionIdentQuery = Q('bool', must=[
+                Q('term', **{'editions.identifiers.identifier': identifier})
+                ])
+
+            return Q('bool', should=[
+                Q('nested', path='identifiers', query=workIdentQuery),
+                Q('nested', path='editions.identifiers', query=editionIdentQuery)
+            ])
+
+        #When user types in the authority and identifier in the search bar
+        else:
+
+            authority = authIdentList[0]
+            identifier = authIdentList[1]
+
+            if authority in authorityList:
+
+                workIdentAuthQuery = Q('bool', must=[
+                    Q('term', **{'identifiers.authority': authority}),
+                    Q('term', **{'identifiers.identifier': identifier})
+                ])
+
+                editionIdentAuthQuery = Q('bool', must=[
+                    Q('term', **{'editions.identifiers.authority': authority}),
+                    Q('term', **{'editions.identifiers.identifier': identifier})
+                ])
+
+                return Q('bool', should=[
+                    Q('nested', path='identifiers', query=workIdentAuthQuery),
+                    Q('nested', path='editions.identifiers', query=editionIdentAuthQuery)
+                ])
+
     def authorQuery(self, authorText):
         self.searchedFields.extend(['agents.name', 'editions.agents.name'])
 
@@ -255,6 +307,7 @@ class ElasticClient():
             Q('nested', path='agents', query=workAgentQuery),
             Q('nested', path='editions.agents', query=editionAgentQuery)
         ])
+
 
     def authorityQuery(self, authority, authorityID):
         workAgentField = 'agents.{}'.format(authority)

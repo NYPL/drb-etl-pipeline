@@ -38,7 +38,7 @@ class TestElasticClient:
         return mockSearch
 
     @pytest.fixture
-    def searchMocks(self, mockSearch, mocker):
+    def searchMocks(self, mocker):
         return mocker.patch.multiple(
             ElasticClient,
             getFromSize=mocker.DEFAULT,
@@ -47,6 +47,7 @@ class TestElasticClient:
             authorQuery=mocker.DEFAULT,
             subjectQuery=mocker.DEFAULT,
             authorityQuery=mocker.DEFAULT,
+            identifierQuery=mocker.DEFAULT,
             createFilterClausesAndAggregations=mocker.DEFAULT,
             addSortClause=mocker.DEFAULT,
             addFiltersAndAggregations=mocker.DEFAULT,
@@ -228,6 +229,39 @@ class TestElasticClient:
         searchMocks['addSortClause'].assert_called_once_with(['sort'])
         searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
         searchMocks['addSearchHighlighting'].assert_called_once()
+
+    def test_generateSearchQuery_identifier_search(self, testInstance, mockSearch, searchMocks, mocker):
+        searchMocks['createSearch'].return_value = mockSearch
+        searchMocks['escapeSearchQuery'].return_value = 'escapedQuery'
+        searchMocks['identifierQuery'].return_value = 'identifierQuery'
+        searchMocks['createFilterClausesAndAggregations'].return_value = mockSearch
+        searchMocks['addSortClause'].return_value = mockSearch
+
+        mockQuery = mocker.patch('api.elastic.Q')
+        mockQuery.side_effect = ['searchClauses']
+
+        testInstance.generateSearchQuery({
+            'query': [('identifier', 'test'),], 'sort': ['sort'], 'filter': ['filter']
+        })
+
+        mockQuery.assert_called_once_with('bool', must=['identifierQuery'])
+        searchMocks['escapeSearchQuery'].assert_called_once_with('test')
+        searchMocks['titleQuery'].assert_not_called()
+        searchMocks['authorQuery'].assert_not_called()
+        searchMocks['subjectQuery'].assert_not_called()
+        searchMocks['authorityQuery'].assert_not_called()
+        searchMocks['identifierQuery'].assert_called_once_with(['isbn', 'issn', 'lcc', 'lccn', \
+                                                            'oclc', 'nypl', 'hathi', 'gutenberg', \
+                                                            'doab'], 'escapedQuery')
+
+
+        mockSearch.query.assert_called_once_with('searchClauses')
+
+        searchMocks['createFilterClausesAndAggregations'].assert_called_once_with(['filter'])
+        searchMocks['addSortClause'].assert_called_once_with(['sort'])
+        searchMocks['addFiltersAndAggregations'].assert_called_once_with(3)
+        searchMocks['addSearchHighlighting'].assert_called_once()
+
 
     def test_generateSearchQuery_generic_search(self, testInstance, mockSearch, searchMocks, mocker):
         searchMocks['createSearch'].return_value = mockSearch
@@ -494,6 +528,31 @@ class TestElasticClient:
         assert testQuery['nested']['query']['query_string']['query'] == 'testSubject'
         assert testQuery['nested']['query']['query_string']['fields'] == ['subjects.heading.*']
 
+    def test_identifierQuery_OnlyIdentifier(self, testInstance):
+        testQueryES = testInstance.identifierQuery(['testIdent'], 'testIdent')
+        testQuery = testQueryES.to_dict()
+
+        assert testInstance.searchedFields == ['identifiers.identifier', 'editions.identifiers.identifier',
+                                                'identifiers.authority', 'editions.identifiers.authority']
+        assert testQuery['bool']['should'][0]['nested']['path'] == 'identifiers'
+        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term'] == {'identifiers.identifier': 'testIdent'}
+        assert testQuery['bool']['should'][1]['nested']['path'] == 'editions.identifiers'
+        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term'] == {'editions.identifiers.identifier': 'testIdent'}
+
+
+    def test_identifierQuery_AuthIdent(self, testInstance):
+        testQueryES = testInstance.identifierQuery(['testAuth'], 'testAuth: testIdent')
+        testQuery = testQueryES.to_dict()
+
+        assert testInstance.searchedFields == ['identifiers.identifier', 'editions.identifiers.identifier',
+                                                'identifiers.authority', 'editions.identifiers.authority']
+        assert testQuery['bool']['should'][0]['nested']['path'] == 'identifiers'
+        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term']== {'identifiers.authority': 'testAuth'}
+        testQuery['bool']['should'][0]['nested']['query']['bool']['must'][1]['term']== {'identifiers.identifier': 'testIdent'}  
+        assert testQuery['bool']['should'][1]['nested']['path'] == 'editions.identifiers'
+        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term'] == {'editions.identifiers.authority': 'testAuth'}
+        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][1]['term'] == {'editions.identifiers.identifier': 'testIdent'}
+        
     def test_getFromSize(self):
         startPosition, endPosition = ElasticClient.getFromSize(3, 15)
 
