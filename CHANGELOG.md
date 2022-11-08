@@ -7,7 +7,7 @@
 - Updated search endpoint to add 'identifier' as a keyword
 - Identifier & Authority as query terms in APIUtils class 
 - Multi-host configuration for ES connections
-- Script to reindex ES works into new ES cluster
+- Script to reindex ES records into new ES cluster
 - Logstash file for reindexing ES works for new cluster
 
 ### Fixed
