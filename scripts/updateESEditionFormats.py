@@ -10,8 +10,6 @@ def main():
 
     '''Updating NYPL catalog records with new link to replace text/html link'''
 
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
-
     dbManager = DBManager(
         user=os.environ.get('POSTGRES_USER', None),
         pswd=os.environ.get('POSTGRES_PSWD', None),

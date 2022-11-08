@@ -14,8 +14,6 @@ def main():
     
     logging.basicConfig(filename='deleteESRecords.log', encoding='utf-8', level=logging.INFO)
 
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
-
     dbManager = DBManager(
         user= os.environ.get('POSTGRES_USER', None),
         pswd= os.environ.get('POSTGRES_PSWD', None),

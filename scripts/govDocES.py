@@ -11,8 +11,6 @@ def main():
 
     '''Updating is_government_document field of current gov doc works in ES to be the boolean value True'''
 
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
-
     dbManager = DBManager(
         user= os.environ.get('POSTGRES_USER', None),
         pswd= os.environ.get('POSTGRES_PSWD', None),

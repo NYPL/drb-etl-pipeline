@@ -9,6 +9,7 @@
 - Multi-host configuration for ES connections
 - Script to reindex ES works into new ES cluster
 - Logstash file for reindexing ES works for new cluster
+- Updated links array for collectionFetch endpoint with Read Online link
 
 ### Fixed
 - Updated unit tests for developmentSetup process
