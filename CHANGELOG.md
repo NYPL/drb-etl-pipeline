@@ -10,7 +10,7 @@
 - Script to reindex ES works into new ES cluster
 - Logstash file for reindexing ES works for new cluster
 - Updated links array for collectionFetch endpoint with Read Online link
-- Replaced sklearn dependency with scikit-learn
+- Replaced sklearn dependency with scikit-learn dependency
 
 ### Fixed
 - Updated unit tests for developmentSetup process

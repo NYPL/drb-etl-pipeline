@@ -236,11 +236,6 @@ def constructOPDSFeed(
             'href': 'https://{}.nypl.org/edition/{}'.format(host, ed.id),
             'type': 'text/html'
         })
-        pub.addLink({
-            'rel': 'alternate',
-            'href': 'https://{}.nypl.org/read/{}'.format(host, ed.id),
-            'type': 'application/pdf'
-        })
 
         opdsPubs.append(pub)
 
