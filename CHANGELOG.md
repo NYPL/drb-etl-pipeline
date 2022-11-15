@@ -11,6 +11,7 @@
 - Logstash file for reindexing ES works for new cluster
 - Updated links array for collectionFetch endpoint with Read Online link
 - Replaced sklearn dependency with scikit-learn dependency
+- Replaced fasttext dependency with gensim dependency
 
 ### Fixed
 - Updated unit tests for developmentSetup process
