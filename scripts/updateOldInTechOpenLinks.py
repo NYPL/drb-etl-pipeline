@@ -11,8 +11,6 @@ def main():
 
     '''Updating current IntechOpen records with new HTML Links to fix Read Online links on DRB site'''
 
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
-
     dbManager = DBManager(
         user= os.environ.get('POSTGRES_USER', None),
         pswd= os.environ.get('POSTGRES_PSWD', None),
