@@ -9,6 +9,7 @@
 - Multi-host configuration for ES connections
 - Script to reindex ES works into new ES cluster
 - Logstash file for reindexing ES works for new cluster
+- Replaced fasttext dependency with gensim dependency
 
 ### Fixed
 - Updated unit tests for developmentSetup process
