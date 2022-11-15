@@ -1,15 +1,12 @@
 import os
 
 from model import Edition
-from main import loadEnvFile
 from managers import DBManager
 from model.utilities.extractDailyEdition import extract
 
 
 def main():
     '''Extracting the edition number from the edition_statement column of the DRB database to fill out the edition column'''
-
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
 
     dbManager = DBManager(
         user= os.environ.get('POSTGRES_USER', None),

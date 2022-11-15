@@ -165,6 +165,16 @@ class Publication:
         # Covers
         self.findAndAddCover(editionRecord)
 
+        host = 'digital-research-books-beta'\
+        if os.environ['ENVIRONMENT'] == 'production' else 'drb-qa'
+
+        # Read Online Link
+        self.addLink({
+                'href': 'https://{}.nypl.org/read/{}'.format(host, editionRecord.id),
+                'rel': 'alternate',
+                'type': 'application/pdf'
+            })
+
         # Acquisition Links
         for item in editionRecord.items:
             for link in item.links:

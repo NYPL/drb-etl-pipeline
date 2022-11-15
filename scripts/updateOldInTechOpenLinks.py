@@ -2,7 +2,6 @@ import os
 import re
 
 from model import Record
-from main import loadEnvFile
 from managers import DBManager
 from processes import DOABProcess
 
@@ -10,8 +9,6 @@ from processes import DOABProcess
 def main():
 
     '''Updating current IntechOpen records with new HTML Links to fix Read Online links on DRB site'''
-
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
 
     dbManager = DBManager(
         user= os.environ.get('POSTGRES_USER', None),

@@ -3,15 +3,12 @@ from elasticsearch.exceptions import NotFoundError, ConflictError
 from sqlalchemy.sql.functions import array_agg
 
 from model import Work, Edition, ESWork
-from main import loadEnvFile
 from managers import DBManager, ElasticsearchManager
 
 
 def main():
 
     '''Updating is_government_document field of current gov doc works in ES to be the boolean value True'''
-
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
 
     dbManager = DBManager(
         user= os.environ.get('POSTGRES_USER', None),

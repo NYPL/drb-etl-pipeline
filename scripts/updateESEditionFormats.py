@@ -2,15 +2,12 @@ import os
 from elasticsearch.exceptions import NotFoundError
 
 from model import Work, Item, Edition, ESWork
-from main import loadEnvFile
 from managers import DBManager, ElasticsearchManager
 
 
 def main():
 
     '''Updating NYPL catalog records with new link to replace text/html link'''
-
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
 
     dbManager = DBManager(
         user=os.environ.get('POSTGRES_USER', None),
