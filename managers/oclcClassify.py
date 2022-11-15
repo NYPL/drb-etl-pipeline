@@ -1,4 +1,4 @@
-from gensim.models import Word2Vec
+import fasttext
 from lxml import etree
 import re
 import requests
@@ -43,7 +43,7 @@ class ClassifyManager:
     ]
 
     # This is a compressed 917kb file that contains a language detection model
-    LANG_MODEL = Word2Vec.load('lid.176.ftz')
+    LANG_MODEL = fasttext.load_model('lid.176.ftz')
 
     def __init__(self, iden=None, idenType=None, title=None, author=None, start=0):
         self.identifier = iden
@@ -240,9 +240,9 @@ class ClassifyManager:
     @classmethod
     def getStrLang(cls, string):
         try:
-            langPredict = cls.LANG_MODEL.predict_output_word([string], topn = 1)
+            langPredict = cls.LANG_MODEL.predict(string, threshold=0.5)
             logger.debug(langPredict)
-            langCode = langPredict[0][1]
+            langCode = langPredict[0][0].split('__')[2]
         except (AttributeError, IndexError, ValueError) as e:
             logger.warn(e)
             langCode = 'unk'
