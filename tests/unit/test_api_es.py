@@ -251,7 +251,7 @@ class TestElasticClient:
         searchMocks['subjectQuery'].assert_not_called()
         searchMocks['authorityQuery'].assert_not_called()
         searchMocks['identifierQuery'].assert_called_once_with(['isbn', 'issn', 'lcc', 'lccn', \
-                                                            'oclc', 'nypl', 'hathi', 'gutenberg', \
+                                                            'oclc', 'owi', 'nypl', 'hathi', 'gutenberg', \
                                                             'doab'], 'escapedQuery')
 
 
@@ -541,7 +541,7 @@ class TestElasticClient:
 
 
     def test_identifierQuery_AuthIdent(self, testInstance):
-        testQueryES = testInstance.identifierQuery(['testAuth'], 'testAuth: testIdent')
+        testQueryES = testInstance.identifierQuery(['testAuth'], 'testAuth|testIdent')
         testQuery = testQueryES.to_dict()
 
         assert testInstance.searchedFields == ['identifiers.identifier', 'editions.identifiers.identifier',

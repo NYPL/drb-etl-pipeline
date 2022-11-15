@@ -49,7 +49,7 @@ class ElasticClient():
         return self.executeSearchQuery(params, page, perPage)
 
     def generateSearchQuery(self, params):
-        authorityList =['isbn', 'issn', 'lcc', 'lccn', 'oclc', 'nypl', 'hathi', 'gutenberg', 'doab']
+        authorityList =['isbn', 'issn', 'lcc', 'lccn', 'oclc', 'owi', 'nypl', 'hathi', 'gutenberg', 'doab']
 
         search = self.createSearch()
         search.source(['uuid', 'editions'])
@@ -237,7 +237,7 @@ class ElasticClient():
         self.searchedFields.extend(['identifiers.identifier', 'editions.identifiers.identifier',
                                     'identifiers.authority', 'editions.identifiers.authority'])
 
-        authIdentList = authIdentText.split(': ')
+        authIdentList = authIdentText.split('|')
 
         #When user only types in the identifier in the search bar
         if len(authIdentList) < 2:
