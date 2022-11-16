@@ -165,8 +165,8 @@ class Publication:
         # Covers
         self.findAndAddCover(editionRecord)
 
-        host = 'digital-research-books-beta'\
-            if os.environ['ENVIRONMENT'] == 'production' else 'drb-qa'
+        #host = 'digital-research-books-beta'\
+            #if os.environ['ENVIRONMENT'] == 'production' else 'drb-qa'
 
         # Acquisition Links
         for item in editionRecord.items:
@@ -180,7 +180,7 @@ class Publication:
                 if 'reader' in link.flags:
                     if link.flags['reader'] == True:
                         self.addLink({
-                        'href': 'https://{}.nypl.org/read/{}'.format(host, link.id),
+                        'href': 'https://drb-qa.nypl.org/read/{}'.format(link.id),
                         'type': link.media_type,
                         'rel': 'http://opds-spec.org/acquisition/open-access'
                     })
