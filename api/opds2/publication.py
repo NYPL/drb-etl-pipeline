@@ -166,14 +166,7 @@ class Publication:
         self.findAndAddCover(editionRecord)
 
         host = 'digital-research-books-beta'\
-        if os.environ['ENVIRONMENT'] == 'production' else 'drb-qa'
-
-        # Read Online Link
-        self.addLink({
-                'href': 'https://{}.nypl.org/read/{}'.format(host, editionRecord.id),
-                'rel': 'alternate',
-                'type': 'application/pdf'
-            })
+            if os.environ['ENVIRONMENT'] == 'production' else 'drb-qa'
 
         # Acquisition Links
         for item in editionRecord.items:
@@ -182,6 +175,14 @@ class Publication:
                     'href': link.url,
                     'type': link.media_type,
                     'rel': 'http://opds-spec.org/acquisition/open-access'
+                })
+                # Read Online Link
+                if 'reader' in link.flags:
+                    if link.flags['reader'] == True:
+                        self.addLink({
+                        'href': 'https://{}.nypl.org/read/{}'.format(host, link.id),
+                        'type': link.media_type,
+                        'rel': 'http://opds-spec.org/acquisition/open-access',
                 })
 
     def parseEditions(self, editions):

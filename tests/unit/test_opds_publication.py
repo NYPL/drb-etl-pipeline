@@ -193,7 +193,7 @@ class TestOPDSPublication:
             languages=[None, {'iso_3': 'tst'}, {'iso_3': 'oth'}],
             date_created='testCreated',
             date_modified='testModified',
-            items=[mocker.MagicMock(links=[mocker.MagicMock(url='testURL', media_type='testType')])],
+            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': True})])],
             work=mocker.MagicMock(authors=[{'name': 'Test Author'}])
         )
 
@@ -222,7 +222,8 @@ class TestOPDSPublication:
             mocker.call('modified', 'testModified'),
         ])
 
-        pubMocks['addLink'].assert_called_once_with({'href': 'testURL', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})
+        pubMocks['addLink'].assert_any_call({'href': 'testURL', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})
+        pubMocks['addLink'].assert_any_call({'href': 'https://drb-qa.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})
         pubMocks['setContributors'].assert_called_once_with([{'name': 'Test Contrib'}])
         pubMocks['setBestIdentifier'].assert_called_once_with(['id1', 'id2', 'id3'])
         pubMocks['findAndAddCover'].assert_called_once_with(testEdition)
