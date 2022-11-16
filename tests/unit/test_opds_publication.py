@@ -223,7 +223,7 @@ class TestOPDSPublication:
         ])
 
         pubMocks['addLink'].assert_any_call({'href': 'testURL', 'rel': 'http://opds-spec.org/acquisition/open-access', 'type': 'testType'})
-        pubMocks['addLink'].assert_any_call({'href': 'https://drb-qa.nypl.org/read/testID', 'rel': 'http://opds-spec.org/acquisition/open-access', 'type': 'testType'})
+        pubMocks['addLink'].assert_any_call({'href': 'https://drb-qa.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})
         pubMocks['setContributors'].assert_called_once_with([{'name': 'Test Contrib'}])
         pubMocks['setBestIdentifier'].assert_called_once_with(['id1', 'id2', 'id3'])
         pubMocks['findAndAddCover'].assert_called_once_with(testEdition)
