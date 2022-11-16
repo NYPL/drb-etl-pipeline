@@ -182,8 +182,8 @@ class Publication:
                         self.addLink({
                         'href': 'https://{}.nypl.org/read/{}'.format(host, link.id),
                         'type': link.media_type,
-                        'rel': 'http://opds-spec.org/acquisition/open-access',
-                })
+                        'rel': 'http://opds-spec.org/acquisition/open-access'
+                    })
 
     def parseEditions(self, editions):
         for edition in editions:
