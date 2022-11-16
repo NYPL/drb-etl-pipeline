@@ -5,7 +5,7 @@
 - Docker Compose file to set up local dev environment
 - Updated README steps for setting up local dev environment 
 - Updated search endpoint to add 'identifier' as a keyword
-- Identifier & Authority as query terms in APIUtils class 
+- Identifier type and value as query terms in APIUtils class 
 - Multi-host configuration for ES connections
 - Script to reindex ES records into new ES cluster
 - Logstash file for reindexing ES works for new cluster

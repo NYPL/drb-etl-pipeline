@@ -237,7 +237,9 @@ class ElasticClient():
         self.searchedFields.extend(['identifiers.identifier', 'editions.identifiers.identifier',
                                     'identifiers.authority', 'editions.identifiers.authority'])
 
-        authIdentList = authIdentText.split('|')
+        #User will type in authority|identifier in the url
+        #Need backslash to avoid the pipe character from being escaped due to the escapeSearchQuery method
+        authIdentList = authIdentText.split('\|')
 
         #When user only types in the identifier in the search bar
         if len(authIdentList) < 2:
