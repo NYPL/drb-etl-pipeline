@@ -17,7 +17,7 @@
 - Removed front end configurations from tugboat
 - Slack incoming webhook now passes in regression tests
 - Improved CI/CD process with all regression tests passing succesfully
-- Score for jaro_winkler search change from 0.9 to 0.85 in agentParser method
+- Score for jaro_winkler search changed from 0.9 to 0.85 in agentParser method
 - Specified version 0.20.4 of python-levenshtein in requirements file
 
 ## 2022-09-07 -- v0.10.6

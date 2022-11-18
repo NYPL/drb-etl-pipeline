@@ -177,7 +177,7 @@ class TestOPDSPublication:
         pubMocks['findAndAddCover'].assert_called_once_with(testWork)
         pubMocks['parseEditions'].assert_called_once_with(['ed1', 'ed2', 'ed3'])
 
-    def test_parseEditionToPublication(self, testPubEls, mocker):
+    def test_parseEditionToPublication_ReaderFlagFalse(self, testPubEls, mocker):
         testPub, _ = testPubEls
 
         testEdition = mocker.MagicMock(
@@ -193,7 +193,7 @@ class TestOPDSPublication:
             languages=[None, {'iso_3': 'tst'}, {'iso_3': 'oth'}],
             date_created='testCreated',
             date_modified='testModified',
-            items=[mocker.MagicMock(links=[mocker.MagicMock(url='testURL', media_type='testType')])],
+            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': False})])],
             work=mocker.MagicMock(authors=[{'name': 'Test Author'}])
         )
 
@@ -222,7 +222,57 @@ class TestOPDSPublication:
             mocker.call('modified', 'testModified'),
         ])
 
-        pubMocks['addLink'].assert_called_once_with({'href': 'testURL', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})
+        pubMocks['addLink'].assert_called_with({'href': 'testURL', 'rel': 'http://opds-spec.org/acquisition/open-access', 'type': 'testType'})
+        pubMocks['setContributors'].assert_called_once_with([{'name': 'Test Contrib'}])
+        pubMocks['setBestIdentifier'].assert_called_once_with(['id1', 'id2', 'id3'])
+        pubMocks['findAndAddCover'].assert_called_once_with(testEdition)
+
+    def test_parseEditionToPublication_ReaderFlagTrue(self, testPubEls, mocker):
+        testPub, _ = testPubEls
+
+        testEdition = mocker.MagicMock(
+            title='Test Title',
+            sub_title='Test Sub',
+            alt_titles=['alt1', 'alt2'],
+            identifiers=['id1', 'id2', 'id3'],
+            publishers=[{'name': 'Test Pub'}, {'name': 'Other Pub'}],
+            publication_date=mocker.MagicMock(year=2000),
+            publication_place='Test Place',
+            contributors=[{'name': 'Test Contrib'}],
+            summary='Test Description',
+            languages=[None, {'iso_3': 'tst'}, {'iso_3': 'oth'}],
+            date_created='testCreated',
+            date_modified='testModified',
+            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': True})])],
+            work=mocker.MagicMock(authors=[{'name': 'Test Author'}])
+        )
+
+        pubMocks = mocker.patch.multiple(
+            Publication,
+            setBestIdentifier=mocker.DEFAULT,
+            setContributors=mocker.DEFAULT,
+            addLink=mocker.DEFAULT,
+            findAndAddCover=mocker.DEFAULT,
+        )
+
+        testPub.parseEditionToPublication(testEdition)
+
+        testPub.metadata.addField.assert_has_calls([
+            mocker.call('title', 'Test Title'),
+            mocker.call('sortAs', 'test title'),
+            mocker.call('subtitle', 'Test Sub'),
+            mocker.call('alternate', ['alt1', 'alt2']),
+            mocker.call('creator', 'Test Author'),
+            mocker.call('publisher', 'Test Pub, Other Pub'),
+            mocker.call('published', 2000),
+            mocker.call('locationCreated', 'Test Place'),
+            mocker.call('description', 'Test Description'),
+            mocker.call('language', 'tst,oth'),
+            mocker.call('created', 'testCreated'),
+            mocker.call('modified', 'testModified'),
+        ])
+
+        pubMocks['addLink'].assert_called_with({'href': 'https://digital-research-books-beta.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})
         pubMocks['setContributors'].assert_called_once_with([{'name': 'Test Contrib'}])
         pubMocks['setBestIdentifier'].assert_called_once_with(['id1', 'id2', 'id3'])
         pubMocks['findAndAddCover'].assert_called_once_with(testEdition)

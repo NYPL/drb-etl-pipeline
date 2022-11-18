@@ -2,14 +2,11 @@ import os
 import re
 
 from model import Link
-from main import loadEnvFile
 from managers import DBManager
 
 def main():
     
     '''Updating NYPL Link media type with new link to replace text/html link'''
-
-    loadEnvFile('local-qa', fileString='config/{}.yaml')
 
     dbManager = DBManager(
         user= os.environ.get('POSTGRES_USER', None),

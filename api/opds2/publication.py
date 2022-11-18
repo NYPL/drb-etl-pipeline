@@ -165,10 +165,31 @@ class Publication:
         # Covers
         self.findAndAddCover(editionRecord)
 
+        host = 'digital-research-books-beta'\
+            if os.environ['ENVIRONMENT'] == 'production' else 'drb-qa'
+
         # Acquisition Links
         for item in editionRecord.items:
             for link in item.links:
-                self.addLink({
+                # Read Online Link
+                if 'reader' in link.flags:
+                    if link.flags['reader'] == True:
+                        self.addLink({
+                        'href': 'https://{}.nypl.org/read/{}'.format(host, link.id),
+                        'type': link.media_type,
+                        'rel': 'http://opds-spec.org/acquisition/open-access'
+                    })
+                    # Non-readable links
+                    else:
+                        self.addLink({
+                        'href': link.url,
+                        'type': link.media_type,
+                        'rel': 'http://opds-spec.org/acquisition/open-access'
+                        })
+
+                # Non-readable links
+                else:
+                    self.addLink({
                     'href': link.url,
                     'type': link.media_type,
                     'rel': 'http://opds-spec.org/acquisition/open-access'
