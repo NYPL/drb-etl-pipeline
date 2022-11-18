@@ -9,7 +9,7 @@
 - Multi-host configuration for ES connections
 - Script to reindex ES records into new ES cluster
 - Logstash file for reindexing ES works for new cluster
-- Updated links array for collectionFetch endpoint with Read Online link
+- Updated links array in collectionFetch endpoint with Read Online link
 - Replaced sklearn dependency with scikit-learn dependency
 
 ### Fixed
