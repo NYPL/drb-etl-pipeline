@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased version -- v0.10.7
+## 2022-11-28 -- v0.11.0
 ### Added
 - Docker Compose file to set up local dev environment
 - Updated README steps for setting up local dev environment 
@@ -11,7 +11,6 @@
 - Logstash file for reindexing ES works for new cluster
 - Updated links array for collectionFetch endpoint with Read Online link
 - Replaced sklearn dependency with scikit-learn dependency
-
 ### Fixed
 - Updated unit tests for developmentSetup process
 - Removed front end configurations from tugboat
