@@ -366,7 +366,7 @@ class TestAPIUtils:
         ) == 'testEdition'
 
         mockFormatEdition.assert_called_once_with(
-            mockEdition, mockEdition.work.title, mockEdition.work.authors, 'testRecords', showAll=True, reader=None
+            mockEdition, mockEdition.work.title, mockEdition.work.authors, 'testRecords', None, showAll=True, reader=None
         )
 
     def test_formatEdition_no_records(self, testEdition):

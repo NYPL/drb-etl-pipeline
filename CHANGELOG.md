@@ -1,5 +1,11 @@
 # CHANGELOG
 
+
+## unreleased version -- v0.11.1
+### Added
+- Filter parameter for formats on work and edition detail pages
+### Fixed
+-
 ## 2022-11-28 -- v0.11.0
 ### Added
 - Docker Compose file to set up local dev environment
