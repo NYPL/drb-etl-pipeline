@@ -100,6 +100,16 @@ class APIUtils():
                 }
 
         return aggs
+        
+    @staticmethod
+    def formatFilters(terms):
+        formats = [
+        mediaType for f in list(filter(
+            lambda x: x[0] == 'format', terms['filter']
+         ))
+         for mediaType in APIUtils.FORMAT_CROSSWALK[f[1]]
+     ]
+        return formats
 
     @staticmethod
     def formatPagingOptions(page, pageSize, totalHits):
@@ -122,7 +132,7 @@ class APIUtils():
         cls, works, identifiers, showAll=True, formats=None, reader=None
     ):
         #Multiple formatted works with formats specified
-        if isinstance(works, list) and identifiers != None:
+        if isinstance(works, list):
             outWorks = []
             workDict = {str(work.uuid): work for work in works}
 
@@ -148,7 +158,7 @@ class APIUtils():
         #Formatted work with a specific format given
         elif formats != None and identifiers == None:
             formattedWork = cls.formatWork(
-                works, None, showAll, formats, reader=reader
+                works, None, showAll, formats=formats, reader=reader
             )
 
             formattedWork['editions'].sort(

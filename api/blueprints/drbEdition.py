@@ -25,12 +25,7 @@ def editionFetch(editionID):
     readerVersion = searchParams.get('readerVersion', [None])[0]\
         or current_app.config['READER_VERSION']
 
-    filteredFormats = [
-        mediaType for f in list(filter(
-            lambda x: x[0] == 'format', terms['filter']
-         ))
-         for mediaType in APIUtils.FORMAT_CROSSWALK[f[1]]
-     ]
+    filteredFormats = APIUtils.formatFilters(terms)
 
     edition = dbClient.fetchSingleEdition(editionID) 
     if edition:

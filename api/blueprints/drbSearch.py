@@ -61,12 +61,7 @@ def standardQuery():
     if esClient.sortReversed is True:
         results = [r for r in reversed(results)]
 
-    filteredFormats = [
-        mediaType for f in list(filter(
-            lambda x: x[0] == 'format', terms['filter']
-        ))
-        for mediaType in APIUtils.FORMAT_CROSSWALK[f[1]]
-    ]
+    filteredFormats = APIUtils.formatFilters(terms)
 
     logger.info('Executing DB Query for {} editions'.format(len(results)))
 
