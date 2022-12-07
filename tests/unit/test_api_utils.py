@@ -221,6 +221,15 @@ class TestAPIUtils:
         assert testAggregations['formats'][0] ==\
             {'value': 'Format1', 'count': 5}
 
+    def test_formatFilters(self):
+        testReadFormats = APIUtils.formatFilters({'filter': [('format', 'readable')]})
+        testDownloadFormats = APIUtils.formatFilters({'filter': [('format', 'downloadable')]})
+        testRequestFormats = APIUtils.formatFilters({'filter': [('format', 'requestable')]})
+        
+        assert testReadFormats == ['application/epub+xml', 'text/html', 'application/webpub+json']
+        assert testDownloadFormats == ['application/pdf', 'application/epub+zip']
+        assert testRequestFormats == ['application/html+edd', 'application/x.html+edd']
+
     def test_formatPagingOptions_previous_null(self):
         testPagingOptions = APIUtils.formatPagingOptions(1, 10, 50)
 
@@ -366,7 +375,7 @@ class TestAPIUtils:
         ) == 'testEdition'
 
         mockFormatEdition.assert_called_once_with(
-            mockEdition, mockEdition.work.title, mockEdition.work.authors, 'testRecords', showAll=True, reader=None
+            mockEdition, mockEdition.work.title, mockEdition.work.authors, 'testRecords', None, showAll=True, reader=None
         )
 
     def test_formatEdition_no_records(self, testEdition):

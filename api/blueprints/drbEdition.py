@@ -16,18 +16,24 @@ def editionFetch(editionID):
     dbClient.createSession()
 
     searchParams = APIUtils.normalizeQueryParams(request.args)
+
+    terms = {}
+    for param in ['filter']:
+        terms[param] = APIUtils.extractParamPairs(param, searchParams)
+
     showAll = searchParams.get('showAll', ['true'])[0].lower() != 'false'
     readerVersion = searchParams.get('readerVersion', [None])[0]\
         or current_app.config['READER_VERSION']
 
-    edition = dbClient.fetchSingleEdition(editionID)
-            
+    filteredFormats = APIUtils.formatFilters(terms)
+
+    edition = dbClient.fetchSingleEdition(editionID) 
     if edition:
         statusCode = 200
         records = dbClient.fetchRecordsByUUID(edition.dcdw_uuids)
 
         responseBody = APIUtils.formatEditionOutput(
-            edition, records=records, showAll=showAll, reader=readerVersion
+            edition, records=records, showAll=showAll, formats=filteredFormats, reader=readerVersion
         )
     else:
         statusCode = 404

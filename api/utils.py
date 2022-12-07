@@ -100,6 +100,16 @@ class APIUtils():
                 }
 
         return aggs
+        
+    @staticmethod
+    def formatFilters(terms):
+        formats = [
+            mediaType for f in list(filter(
+                lambda x: x[0] == 'format', terms['filter']
+            ))
+            for mediaType in APIUtils.FORMAT_CROSSWALK[f[1]]
+        ]
+        return formats
 
     @staticmethod
     def formatPagingOptions(page, pageSize, totalHits):
@@ -121,6 +131,7 @@ class APIUtils():
     def formatWorkOutput(
         cls, works, identifiers, showAll=True, formats=None, reader=None
     ):
+        #Multiple formatted works with formats specified
         if isinstance(works, list):
             outWorks = []
             workDict = {str(work.uuid): work for work in works}
@@ -144,6 +155,19 @@ class APIUtils():
                 outWorks.append(outWork)
 
             return outWorks
+        #Formatted work with a specific format given
+        elif formats != None and identifiers == None:
+            formattedWork = cls.formatWork(
+                works, None, showAll, formats=formats, reader=reader
+            )
+
+            formattedWork['editions'].sort(
+                key=lambda x: x['publication_date']
+                if x['publication_date'] else 9999
+            )
+
+            return formattedWork
+        #Formatted work with no format specified
         else:
             formattedWork = cls.formatWork(
                 works, None, showAll, reader=reader
@@ -194,13 +218,13 @@ class APIUtils():
 
     @classmethod
     def formatEditionOutput(
-        cls, edition, records=None, showAll=False, reader=None
+        cls, edition, records=None, showAll=False, formats=None, reader=None
     ):
         editionWorkTitle = edition.work.title
         editionWorkAuthors = edition.work.authors
         
         return cls.formatEdition(
-            edition, editionWorkTitle, editionWorkAuthors, records, showAll=showAll, reader=reader
+            edition, editionWorkTitle, editionWorkAuthors, records, formats, showAll=showAll, reader=reader
         )
     
 

@@ -16,15 +16,21 @@ def workFetch(uuid):
     dbClient.createSession()
 
     searchParams = APIUtils.normalizeQueryParams(request.args)
+
+    terms = {}
+    for param in ['filter']:
+        terms[param] = APIUtils.extractParamPairs(param, searchParams)
+    
     showAll = searchParams.get('showAll', ['true'])[0].lower() != 'false'
     readerVersion = searchParams.get('readerVersion', [None])[0]\
         or current_app.config['READER_VERSION']
 
-    work = dbClient.fetchSingleWork(uuid)
+    filteredFormats = APIUtils.formatFilters(terms)
 
+    work = dbClient.fetchSingleWork(uuid)
     if work:
         statusCode = 200
-        responseBody = APIUtils.formatWorkOutput(work, None, showAll=showAll, reader=readerVersion)
+        responseBody = APIUtils.formatWorkOutput(work, None, showAll=showAll, formats=filteredFormats, reader=readerVersion)
         
     else:
         statusCode = 404
