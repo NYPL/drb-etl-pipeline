@@ -3,7 +3,7 @@
 
 ## unreleased version -- v0.11.1
 ### Added
-- Format filter parameter for work and edition detail pages
+- Format filter parameters for work and edition detail pages
 ### Fixed
 -
 ## 2022-11-28 -- v0.11.0

@@ -104,11 +104,11 @@ class APIUtils():
     @staticmethod
     def formatFilters(terms):
         formats = [
-        mediaType for f in list(filter(
-            lambda x: x[0] == 'format', terms['filter']
-         ))
-         for mediaType in APIUtils.FORMAT_CROSSWALK[f[1]]
-     ]
+            mediaType for f in list(filter(
+                lambda x: x[0] == 'format', terms['filter']
+            ))
+            for mediaType in APIUtils.FORMAT_CROSSWALK[f[1]]
+        ]
         return formats
 
     @staticmethod
