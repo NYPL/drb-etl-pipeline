@@ -4,6 +4,7 @@
 ## unreleased version -- v0.11.1
 ### Added
 - Format filter parameters for work and edition detail pages
+- Updated GET Request for finding single work or edition with filter parameter
 ### Fixed
 -
 ## 2022-11-28 -- v0.11.0
