@@ -139,6 +139,16 @@
                         "required": false,
                         "type": "string",
                         "enum": ["v1", "v2"]
+                    },
+                    {
+                        "name": "filter",
+                        "in": "query",
+                        "description": "Fiter option field/term pair (e.g. format:readable). Valid options are readable, downloadable, and requestable",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                             "type": "string"
+                        }
                     }
                 ],
                 "responses": {
@@ -196,6 +206,16 @@
                         "required": false,
                         "type": "string",
                         "enum": ["v1", "v2"]
+                    },
+                    {
+                        "name": "filter",
+                        "in": "query",
+                        "description": "Fiter option field/term pair (e.g. format:readable). Valid options are readable, downloadable, and requestable",
+                        "required": false,
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 ],
                 "responses": {
