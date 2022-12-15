@@ -239,7 +239,6 @@ class ElasticClient():
 
         #User will type in authority|identifier in the url
         authIdentList = authIdentText.split('|')
-        print(authIdentList)
 
         #When user only types in the identifier in the search bar
         if len(authIdentList) < 2:

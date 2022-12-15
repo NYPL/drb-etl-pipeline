@@ -5,7 +5,7 @@
 ### Added
 - Format filter parameters for work and edition detail pages
 ### Fixed
-- Identifier search for identifiers with special characters now work
+- Identifier search for identifiers with special characters work now
 
 ## 2022-11-28 -- v0.11.0
 ### Added
