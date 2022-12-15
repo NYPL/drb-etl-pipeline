@@ -5,7 +5,8 @@
 ### Added
 - Format filter parameters for work and edition detail pages
 ### Fixed
--
+- Identifier search for identifiers with special characters now work
+
 ## 2022-11-28 -- v0.11.0
 ### Added
 - Docker Compose file to set up local dev environment
