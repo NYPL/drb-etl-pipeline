@@ -49,7 +49,7 @@ class ElasticClient():
         return self.executeSearchQuery(params, page, perPage)
 
     def generateSearchQuery(self, params):
-        authorityList =['isbn', 'issn', 'lcc', 'lccn', 'oclc', 'owi', 'nypl', 'hathi', 'gutenberg', 'doab']
+        authorityList =['isbn', 'issn', 'lcc', 'lccn', 'oclc', 'owi', 'nypl', 'hathi', 'gutenberg', 'doab', 'doi']
 
         search = self.createSearch()
         search.source(['uuid', 'editions'])
@@ -71,9 +71,9 @@ class ElasticClient():
             elif field == 'subject':
                 searchClauses.append(self.subjectQuery(escapedQuery))
             elif field == 'viaf' or field == 'lcnaf':
-                searchClauses.append(self.authorityQuery(field, escapedQuery))
+                searchClauses.append(self.authorityQuery(field, query))
             elif field == 'identifier':
-                searchClauses.append(self.identifierQuery(authorityList, escapedQuery))
+                searchClauses.append(self.identifierQuery(authorityList, query))
             else:
                 searchClauses.append(Q('match', **{field: escapedQuery}))
 
@@ -238,8 +238,7 @@ class ElasticClient():
                                     'identifiers.authority', 'editions.identifiers.authority'])
 
         #User will type in authority|identifier in the url
-        #Need backslash to avoid the pipe character from being escaped due to the escapeSearchQuery method
-        authIdentList = authIdentText.split('\|')
+        authIdentList = authIdentText.split('|')
 
         #When user only types in the identifier in the search bar
         if len(authIdentList) < 2:

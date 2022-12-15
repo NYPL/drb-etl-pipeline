@@ -221,7 +221,8 @@ class TestElasticClient:
         searchMocks['titleQuery'].assert_not_called()
         searchMocks['authorQuery'].assert_not_called()
         searchMocks['subjectQuery'].assert_not_called()
-        searchMocks['authorityQuery'].assert_called_once_with('viaf', 'escapedQuery')
+        searchMocks['authorityQuery'].assert_called_once_with('viaf', 'test')
+        searchMocks['identifierQuery'].assert_not_called()
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
@@ -252,7 +253,7 @@ class TestElasticClient:
         searchMocks['authorityQuery'].assert_not_called()
         searchMocks['identifierQuery'].assert_called_once_with(['isbn', 'issn', 'lcc', 'lccn', \
                                                             'oclc', 'owi', 'nypl', 'hathi', 'gutenberg', \
-                                                            'doab'], 'escapedQuery')
+                                                            'doab', 'doi'], 'test')
 
 
         mockSearch.query.assert_called_once_with('searchClauses')
@@ -315,7 +316,8 @@ class TestElasticClient:
         searchMocks['titleQuery'].assert_called_once_with('escapedQuery')
         searchMocks['authorQuery'].assert_not_called()
         searchMocks['subjectQuery'].assert_not_called()
-        searchMocks['authorityQuery'].assert_called_once_with('lcnaf', 'escapedQuery')
+        searchMocks['authorityQuery'].assert_called_once_with('lcnaf', 'test')
+        searchMocks['identifierQuery'].assert_not_called()
 
         mockSearch.query.assert_called_once_with('searchClauses')
 
@@ -547,9 +549,11 @@ class TestElasticClient:
         assert testInstance.searchedFields == ['identifiers.identifier', 'editions.identifiers.identifier',
                                                 'identifiers.authority', 'editions.identifiers.authority']
         assert testQuery['bool']['should'][0]['nested']['path'] == 'identifiers'
-        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term']== {'identifiers.identifier': 'testAuth|testIdent'}
+        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][0]['term'] == {'identifiers.authority': 'testAuth'}
+        assert testQuery['bool']['should'][0]['nested']['query']['bool']['must'][1]['term'] == {'identifiers.identifier': 'testIdent'}
         assert testQuery['bool']['should'][1]['nested']['path'] == 'editions.identifiers'
-        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term'] == {'editions.identifiers.identifier': 'testAuth|testIdent'}
+        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][0]['term'] == {'editions.identifiers.authority': 'testAuth'}
+        assert testQuery['bool']['should'][1]['nested']['query']['bool']['must'][1]['term'] == {'editions.identifiers.identifier': 'testIdent'}
        
         
     def test_getFromSize(self):

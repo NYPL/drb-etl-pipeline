@@ -6,7 +6,8 @@
 - Format filter parameters for work and edition detail pages
 - Updated GET Request for finding single work or edition with filter parameter
 ### Fixed
--
+- Identifier search for identifiers with special characters work now
+
 ## 2022-11-28 -- v0.11.0
 ### Added
 - Docker Compose file to set up local dev environment
