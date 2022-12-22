@@ -1,7 +1,7 @@
 # CHANGELOG
 
 
-## unreleased version -- v0.11.1
+## 2022-12-22 -- v0.11.1
 ### Added
 - Format filter parameters for work and edition detail pages
 - Updated GET Request for finding single work or edition with filter parameter
