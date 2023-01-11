@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## unreleased version -- v0.11.2
+### Added
+- 
+### Fixed
+- drb_local_devSetUp Docker container exiting out due to ES authentication error
 
 ## 2022-12-22 -- v0.11.1
 ### Added
