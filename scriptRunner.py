@@ -2,7 +2,7 @@ import inspect
 import sys
 from main import loadEnvFile
 
-loadEnvFile('local-qa-old', fileString='config/{}.yaml')
+loadEnvFile('sample-compose', fileString='config/{}.yaml')
 
 import scripts
 
