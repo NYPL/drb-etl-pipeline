@@ -44,7 +44,7 @@ class TestSearchBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=True, formats=[], reader='test'
+                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=[], reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'
@@ -78,7 +78,7 @@ class TestSearchBlueprint:
                 mocker.call('filter', queryParams)
             ])
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=True, formats=['application/html+edd', 'application/x.html+edd'], reader='test'
+                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=['application/html+edd', 'application/x.html+edd'], reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'
@@ -104,7 +104,7 @@ class TestSearchBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=False, formats=[], reader='test'
+                'dbWorkRecord', None, showAll=False, dbClient=mockDB, formats=[], reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'

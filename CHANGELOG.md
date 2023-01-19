@@ -2,7 +2,7 @@
 
 ## unreleased version -- v0.11.2
 ### Added
-- 
+- inColection property to the work and edition API responses
 ### Fixed
 - drb_local_devSetUp Docker container exiting out due to ES authentication error
 
