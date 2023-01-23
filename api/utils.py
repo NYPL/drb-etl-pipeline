@@ -3,12 +3,9 @@ from datetime import datetime
 from hashlib import scrypt
 from flask import jsonify
 from math import ceil
-from managers import DBManager
 from model import Collection, Edition
 import re
-import os
 from model.postgres.collection import COLLECTION_EDITIONS
-from .opds2 import Feed
 
 class APIUtils():
     QUERY_TERMS = [
@@ -244,44 +241,31 @@ class APIUtils():
         if work != None:
             for edit in dbClient.session.query(Edition) \
                 .filter(Edition.work_id == work.id):
-                    for collectEdit in dbClient.session.query(COLLECTION_EDITIONS) \
-                        .filter(COLLECTION_EDITIONS.c.edition_id == edit.id):
-                            #Avoiding duplicate collection ids
-                            if collectEdit.collection_id not in collectionIDs:
-                                for collection in dbClient.session.query(Collection) \
-                                .filter(Collection.id == collectEdit.collection_id):
-                                    numOfItems = 0
-                                    for edit in collection.editions:
-                                        numOfItems += 1
-                                    metadataOBJ = {
-                                        'id': collection.id,
-                                        'title': collection.title,
-                                        'creator': collection.creator,
-                                        'description': collection.description,
-                                        'numberOfItems': numOfItems
-                                    }
-                                    collectionIDs.append(metadataOBJ)
-                            
-        else:
-            for collectEdit in dbClient.session.query(COLLECTION_EDITIONS) \
-                .filter(COLLECTION_EDITIONS.c.edition_id == edition.id):
                     for collection in dbClient.session.query(Collection) \
-                        .filter(Collection.id == collectEdit.collection_id):
-                            numOfItems = 0
-                            for edit in collection.editions:
-                                numOfItems += 1
+                        .join(COLLECTION_EDITIONS) \
+                        .filter(COLLECTION_EDITIONS.c.edition_id == edit.id):
                             metadataOBJ = {
                                 'id': collection.id,
                                 'title': collection.title,
                                 'creator': collection.creator,
                                 'description': collection.description,
-                                'numberOfItems': numOfItems
-                            }
+                                'numberOfItems': len(collection.editions)
+                                }
                             collectionIDs.append(metadataOBJ)
+                            
+        else:          
+            for collection in dbClient.session.query(Collection) \
+                .join(COLLECTION_EDITIONS) \
+                .filter(COLLECTION_EDITIONS.c.edition_id == edition.id):
+                    metadataOBJ = {
+                        'id': collection.id,
+                        'title': collection.title,
+                        'creator': collection.creator,
+                        'description': collection.description,
+                        'numberOfItems': len(collection.editions)
+                        }
+                    collectionIDs.append(metadataOBJ)
 
-        dbClient.closeConnection()
-
-        
         return collectionIDs
 
     @classmethod
