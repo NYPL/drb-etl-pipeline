@@ -7,14 +7,15 @@ import yaml
 
 from logger import createLog
 
-#NEW_RELIC_LICENSE_KEY = Put license key here
-#ENVIRONMENT = Put environment here
-
-if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
-    newrelic.agent.initialize(
-        config_file='newrelic.ini',
-        environment=os.environ.get('ENVIRONMENT', 'local')
-        )
+# The prod and QA environments get a `NEW_RELIC_LICENSE_KEY` env var injected
+# during the build. For testing against new relic in dev, either set that env
+# directly or update the `license_key` field in `newrelic.ini`. In either case,
+# to actually send data to newrelic, you'll need to ensure your environment's
+# 'monitor_enabled' entry is set to `true` in `newrelic.ini`
+newrelic.agent.initialize(
+    config_file='newrelic.ini',
+    environment=os.environ.get('ENVIRONMENT', 'local'),
+)
 
 def main(args):
     logger = createLog(__name__)
