@@ -73,7 +73,7 @@ def createArgParser():
     parser.add_argument('-r', '--singleRecord',
                         help='Single record ID for ingesting an individual record (only applicable for DOAB)')
     parser.add_argument('options', nargs='*', help='Additional arguments')
-    
+
     return parser
 
 
@@ -111,11 +111,11 @@ def loadEnvFile(runType, fileString=None):
     if envDict:
         for key, value in envDict.items():
             os.environ[key] = value
-    
+
 
 if __name__ == '__main__':
     parser = createArgParser()
-    args = parser.parse_args() 
+    args = parser.parse_args()
 
     loadEnvFile(args.environment, './config/{}.yaml')
     os.environ['ENVIRONMENT'] = args.environment
