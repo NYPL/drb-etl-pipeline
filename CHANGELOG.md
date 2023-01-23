@@ -2,7 +2,7 @@
 
 ## unreleased version -- v0.11.2
 ### Added
-- 
+- Updated .gitignore to ignore vim generated `.swp` files and `ctags` file
 ### Fixed
 - drb_local_devSetUp Docker container exiting out due to ES authentication error
 
