@@ -2,7 +2,7 @@
 
 ## unreleased version -- v0.11.2
 ### Added
-- 
+- Sort and Perpage parameters for collection/uuid endpoint in swagger file
 ### Fixed
 - drb_local_devSetUp Docker container exiting out due to ES authentication error
 
