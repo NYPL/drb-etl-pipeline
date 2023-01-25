@@ -2,6 +2,7 @@
 
 ## unreleased version -- v0.11.2
 ### Added
+- inCollection property to the work and edition API responses
 - Sort and PerPage parameters for collection/uuid endpoint in swagger file
 - Updated .gitignore to ignore vim generated `.swp` files and `ctags` file
 ### Fixed

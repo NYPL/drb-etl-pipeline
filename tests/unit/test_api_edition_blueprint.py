@@ -48,7 +48,7 @@ class TestEditionBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockUtils['formatEditionOutput'].assert_called_once_with(
-                mockEdition, records='testRecords', showAll=True, formats=[], reader='test'
+                mockEdition, records='testRecords', dbClient=mockDB, showAll=True, formats=[], reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleEdition', 'testEdition'
@@ -86,7 +86,7 @@ class TestEditionBlueprint:
                 mocker.call('filter', queryParams)
             ])
             mockUtils['formatEditionOutput'].assert_called_once_with(
-                mockEdition, records='testRecords', showAll=True, 
+                mockEdition, records='testRecords', showAll=True, dbClient=mockDB, 
                                     formats=['application/html+edd', 'application/x.html+edd'], reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(

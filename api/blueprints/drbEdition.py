@@ -33,7 +33,7 @@ def editionFetch(editionID):
         records = dbClient.fetchRecordsByUUID(edition.dcdw_uuids)
 
         responseBody = APIUtils.formatEditionOutput(
-            edition, records=records, showAll=showAll, formats=filteredFormats, reader=readerVersion
+            edition, records=records, dbClient=dbClient, showAll=showAll, formats=filteredFormats, reader=readerVersion
         )
     else:
         statusCode = 404

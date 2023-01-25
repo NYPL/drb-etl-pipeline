@@ -3,8 +3,9 @@ from datetime import datetime
 from hashlib import scrypt
 from flask import jsonify
 from math import ceil
+from model import Collection, Edition
 import re
-
+from model.postgres.collection import COLLECTION_EDITIONS
 
 class APIUtils():
     QUERY_TERMS = [
@@ -129,7 +130,7 @@ class APIUtils():
 
     @classmethod
     def formatWorkOutput(
-        cls, works, identifiers, showAll=True, formats=None, reader=None
+        cls, works, identifiers, showAll=True, dbClient=None, formats=None, reader=None
     ):
         #Multiple formatted works with formats specified
         if isinstance(works, list):
@@ -146,6 +147,7 @@ class APIUtils():
                     work,
                     editionIds,
                     showAll,
+                    dbClient,
                     formats=formats,
                     reader=reader
                 )
@@ -158,7 +160,7 @@ class APIUtils():
         #Formatted work with a specific format given
         elif formats != None and identifiers == None:
             formattedWork = cls.formatWork(
-                works, None, showAll, formats=formats, reader=reader
+                works, None, showAll, dbClient, formats=formats, reader=reader
             )
 
             formattedWork['editions'].sort(
@@ -170,7 +172,7 @@ class APIUtils():
         #Formatted work with no format specified
         else:
             formattedWork = cls.formatWork(
-                works, None, showAll, reader=reader
+                works, None, showAll, dbClient, reader=reader
             )
 
             formattedWork['editions'].sort(
@@ -181,9 +183,10 @@ class APIUtils():
             return formattedWork
 
     @classmethod
-    def formatWork(cls, work, editionIds, showAll, formats=None, reader=None):
+    def formatWork(cls, work, editionIds, showAll, dbClient=None, formats=None, reader=None):
         workDict = dict(work)
         workDict['edition_count'] = len(work.editions)
+        workDict['inCollections'] = cls.checkEditionInCollection(work, None, dbClient=dbClient)
         workDict['date_created'] = work.date_created.strftime('%Y-%m-%dT%H:%M:%S')
         workDict['date_modified'] = work.date_modified.strftime('%Y-%m-%dT%H:%M:%S')
 
@@ -194,8 +197,10 @@ class APIUtils():
             if editionIds and edition.id not in editionIds:
                 continue
 
+            editInCollection = cls.checkEditionInCollection(None, edition, dbClient)
+
             editionDict = cls.formatEdition(
-                edition, formats=formats, reader=reader
+                edition, editionInCollection=editInCollection, formats=formats, reader=reader
             )
 
             if (
@@ -218,23 +223,59 @@ class APIUtils():
 
     @classmethod
     def formatEditionOutput(
-        cls, edition, records=None, showAll=False, formats=None, reader=None
+        cls, edition, records=None, dbClient=None, showAll=False, formats=None, reader=None
     ):
         editionWorkTitle = edition.work.title
         editionWorkAuthors = edition.work.authors
+        editionInCollection = cls.checkEditionInCollection(None, edition, dbClient)
         
         return cls.formatEdition(
-            edition, editionWorkTitle, editionWorkAuthors, records, formats, showAll=showAll, reader=reader
+            edition, editionWorkTitle, editionWorkAuthors, editionInCollection, records, formats, showAll=showAll, reader=reader
         )
-    
+
+    @classmethod
+    def checkEditionInCollection(cls, work, edition, dbClient):
+
+        collectionIDs = []
+
+        if work != None:
+            for edit in dbClient.session.query(Edition) \
+                .filter(Edition.work_id == work.id):
+                    for collection in dbClient.session.query(Collection) \
+                        .join(COLLECTION_EDITIONS) \
+                        .filter(COLLECTION_EDITIONS.c.edition_id == edit.id):
+                            metadataOBJ = {
+                                'id': collection.id,
+                                'title': collection.title,
+                                'creator': collection.creator,
+                                'description': collection.description,
+                                'numberOfItems': len(collection.editions)
+                                }
+                            collectionIDs.append(metadataOBJ)
+                            
+        else:          
+            for collection in dbClient.session.query(Collection) \
+                .join(COLLECTION_EDITIONS) \
+                .filter(COLLECTION_EDITIONS.c.edition_id == edition.id):
+                    metadataOBJ = {
+                        'id': collection.id,
+                        'title': collection.title,
+                        'creator': collection.creator,
+                        'description': collection.description,
+                        'numberOfItems': len(collection.editions)
+                        }
+                    collectionIDs.append(metadataOBJ)
+
+        return collectionIDs
 
     @classmethod
     def formatEdition(
-        cls, edition, editionWorkTitle=None, editionWorkAuthors=None, records=None, formats=None, showAll=False, reader=None
+        cls, edition, editionWorkTitle=None, editionWorkAuthors=None, editionInCollection=None, records=None, formats=None, showAll=False, reader=None
     ):
         editionDict = dict(edition)
         editionDict['edition_id'] = edition.id
         editionDict['work_uuid'] = edition.work.uuid
+        editionDict['inCollections'] = editionInCollection
         editionDict['publication_date'] = edition.publication_date.year\
             if edition.publication_date else None
 
