@@ -2,6 +2,7 @@
 
 ## unreleased version -- v0.11.2
 ### Added
+- Sort and PerPage parameters for collection/uuid endpoint in swagger file
 - Updated .gitignore to ignore vim generated `.swp` files and `ctags` file
 ### Fixed
 - drb_local_devSetUp Docker container exiting out due to ES authentication error
