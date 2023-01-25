@@ -681,6 +681,20 @@
                         "description": "UUID for publication record",
                         "type": "string",
                         "required": true
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Method of sorting collections. Either title or creator",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "description": "Number of collections to load per page",
+                        "type": "integer",
+                        "required": false
                     }
                 ],
                 "responses": {
