@@ -1,6 +1,5 @@
 import json
 import os
-import newrelic.agent
 from lxml import etree
 from time import sleep
 
@@ -31,7 +30,6 @@ class CatalogProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
-    @newrelic.agent.background_task()
     def receiveAndProcessMessages(self):
         attempts = 1
 
@@ -60,7 +58,6 @@ class CatalogProcess(CoreProcess):
             self.processCatalogQuery(msgBody)
             self.acknowledgeMessageProcessed(msgProps.delivery_tag)
 
-    @newrelic.agent.background_task()
     def processCatalogQuery(self, msgBody):
         message = json.loads(msgBody)
         catalogManager = OCLCCatalogManager(message['oclcNo'])
@@ -69,7 +66,6 @@ class CatalogProcess(CoreProcess):
             self.parseCatalogRecord(catalogXML, message['owiNo'])
 
 
-    @newrelic.agent.background_task()
     def parseCatalogRecord(self, catalogXML, owiNo):
         try:
             parseMARC = etree.fromstring(catalogXML.encode('utf-8'))

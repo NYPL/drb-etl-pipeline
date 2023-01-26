@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from pymarc import MARCReader
 import requests
-import newrelic.agent
 from requests.exceptions import ReadTimeout, HTTPError
 
 from .core import CoreProcess
@@ -18,7 +17,7 @@ logger = createLog(__name__)
 
 class MUSEProcess(CoreProcess):
     MUSE_ROOT_URL = 'https://muse.jhu.edu'
-    
+
     def __init__(self, *args):
         super(MUSEProcess, self).__init__(*args[:4])
 
@@ -34,8 +33,7 @@ class MUSEProcess(CoreProcess):
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
         self.createRabbitConnection()
         self.createOrConnectQueue(self.fileQueue, self.fileRoute)
-        
-    @newrelic.agent.background_task()
+
     def runProcess(self):
         if self.process == 'daily':
             self.importMARCRecords()
@@ -49,7 +47,6 @@ class MUSEProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
-    @newrelic.agent.background_task()
     def parseMuseRecord(self, marcRec):
         museRec = MUSEMapping(marcRec)
         museRec.applyMapping()
@@ -82,7 +79,6 @@ class MUSEProcess(CoreProcess):
 
         self.addDCDWToUpdateList(museRec)
 
-    @newrelic.agent.background_task()
     def importMARCRecords(self, full=False, startTimestamp=None, recID=None):
         self.downloadRecordUpdates()
 
@@ -109,7 +105,6 @@ class MUSEProcess(CoreProcess):
                 logger.warning('Unable to parse MUSE record')
                 logger.debug(e)
 
-    @newrelic.agent.background_task()
     def downloadMARCRecords(self):
         marcURL = os.environ['MUSE_MARC_URL']
 
@@ -127,7 +122,6 @@ class MUSEProcess(CoreProcess):
 
         return BytesIO(content)
 
-    @newrelic.agent.background_task()
     def downloadRecordUpdates(self):
         marcCSVURL = os.environ['MUSE_CSV_URL']
 
@@ -156,7 +150,6 @@ class MUSEProcess(CoreProcess):
                 logger.warning('Unable to parse MUSE')
                 logger.debug(row)
 
-    @newrelic.agent.background_task()
     def recordToBeUpdated(self, record, startDate, recID):
         recordURL = record.get_fields('856')[0]['u']
 
