@@ -5,6 +5,7 @@
 - Updated .gitignore to ignore vim generated `.swp` files and `ctags` file
 ### Fixed
 - drb_local_devSetUp Docker container exiting out due to ES authentication error
+- Fixed newrelic instrumentation for OCLC Classification process
 
 ## 2022-12-22 -- v0.11.1
 ### Added
@@ -16,9 +17,9 @@
 ## 2022-11-28 -- v0.11.0
 ### Added
 - Docker Compose file to set up local dev environment
-- Updated README steps for setting up local dev environment 
+- Updated README steps for setting up local dev environment
 - Updated search endpoint to add 'identifier' as a keyword
-- Identifier type and value as query terms in APIUtils class 
+- Identifier type and value as query terms in APIUtils class
 - Multi-host configuration for ES connections
 - Script to reindex ES records into new ES cluster
 - Logstash file for reindexing ES works for new cluster
@@ -34,7 +35,7 @@
 
 ## 2022-09-07 -- v0.10.6
 ### Added
-- Government document search filter 
+- Government document search filter
 - Unit tests for government document filter and aggregation
 - Script to delete ESC works that don't correspond with works in the PSQL database
 - Maintenance script for routine database maintenance processes
@@ -58,21 +59,21 @@
 ### Added
 - Updated format/filter mappings in APIUtils class
 - Work title and author info to edition endpoint
-- Added intechopen parser 
+- Added intechopen parser
 - Updated tests for DOAB Link Manager
 ### Fixed
 - Work title and authors info only show up in edition details endpoint now
 - Editions and utils tests updated and fixed
 - All toc object url links in ProjectMuse manifests have a query parameter now
 - Update DOAB single record import to reflect new OAI-PMH structure
-- Deleted extra urls in toc object of Muse manifests 
+- Deleted extra urls in toc object of Muse manifests
 - Read Online links for books from IntechOpen website
 
 
 ## 2022-05-19 -- v0.10.3
 ### Added
 - MagicMock for test_createSearch method in test_api_es.py file
-- Getter and setter method for record model 
+- Getter and setter method for record model
 - Script to extract edition number from edition statement for the edition field
 - Script to update future records with edition number in the has_version field
 - Date created and date modified values visible in API Response for work and search endpoint
@@ -106,7 +107,7 @@
 - Method in sfrRecord manager to check for reasonable publication dates for editions
 - Tests for publicationDateCheck method in sfrRecord manager
 - Bulk ElasticSearch indexing
-- Blueprint for a citation generator 
+- Blueprint for a citation generator
 - MLA Citation rules to citation generator
 - ElasticSearch 7.10+ language per-field indexing & searching
 ### Fixed
