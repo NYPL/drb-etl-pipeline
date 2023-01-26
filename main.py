@@ -41,12 +41,17 @@ def main(args):
         procType, customFile, startDate, singleRecord, limit, offset, options
     )
 
-    if process != 'APIProcess':
-        task = newrelic.agent.BackgroundTaskWrapper(processInstance.runProcess)
+    if process in (
+        "APIProcess", # Covered by newrelic's automatic Flask integration
+        "DevelopmentSetupProcess",
+        "MigrationProcess",
+    ):
+        processInstance.runProcess()
     else:
-        task = processInstance.runProcess
+        app = newrelic.agent.register_application()
+        with newrelic.agent.BackgroundTask(app, name=process):
+            processInstance.runProcess()
 
-    task()
 
 def registerProcesses():
     import processes
@@ -73,7 +78,7 @@ def createArgParser():
     parser.add_argument('-r', '--singleRecord',
                         help='Single record ID for ingesting an individual record (only applicable for DOAB)')
     parser.add_argument('options', nargs='*', help='Additional arguments')
-    
+
     return parser
 
 
@@ -111,11 +116,11 @@ def loadEnvFile(runType, fileString=None):
     if envDict:
         for key, value in envDict.items():
             os.environ[key] = value
-    
+
 
 if __name__ == '__main__':
     parser = createArgParser()
-    args = parser.parse_args() 
+    args = parser.parse_args()
 
     loadEnvFile(args.environment, './config/{}.yaml')
     os.environ['ENVIRONMENT'] = args.environment
