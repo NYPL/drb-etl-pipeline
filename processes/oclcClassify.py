@@ -34,7 +34,6 @@ class ClassifyProcess(CoreProcess):
 
         self.classifiedRecords = {}
 
-    @newrelic.agent.background_task()
     def runProcess(self):
         if self.process == 'daily':
             self.classifyRecords()
@@ -47,7 +46,6 @@ class ClassifyProcess(CoreProcess):
         self.updateClassifiedRecordsStatus()
         self.commitChanges()
 
-    @newrelic.agent.background_task()
     def classifyRecords(self, full=False, startDateTime=None):
         baseQuery = self.session.query(Record)\
             .filter(
@@ -84,11 +82,9 @@ class ClassifyProcess(CoreProcess):
                 self.updateClassifiedRecordsStatus()
                 self.classifiedRecords = {}
 
-    @newrelic.agent.background_task()
     def updateClassifiedRecordsStatus(self):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
-    @newrelic.agent.background_task()
     def frbrizeRecord(self, record):
         queryableIDs = ClassifyManager.getQueryableIdentifiers(
             record.identifiers
@@ -123,7 +119,6 @@ class ClassifyProcess(CoreProcess):
                 logger.warning('Unable to Classify {}'.format(record))
                 logger.debug(err.message)
 
-    @newrelic.agent.background_task()
     def classifyRecordByMetadata(self, identifier, idType, author, title):
         classifier = ClassifyManager(
             iden=identifier, idenType=idType, author=author, title=title
@@ -144,7 +139,6 @@ class ClassifyProcess(CoreProcess):
                 classifyXML, classifier.addlIds, identifier, idType
             )
 
-    @newrelic.agent.background_task()
     def createClassifyDCDWRecord(
         self, classifyXML, additionalOCLCs, identifier, idType
     ):
@@ -163,7 +157,6 @@ class ClassifyProcess(CoreProcess):
 
         self.fetchOCLCCatalogRecords(classifyRec.record.identifiers)
 
-    @newrelic.agent.background_task()
     def fetchOCLCCatalogRecords(self, identifiers):
         owiNo, _ = tuple(identifiers[0].split('|'))
 
@@ -187,7 +180,6 @@ class ClassifyProcess(CoreProcess):
         if counter > 0:
             self.setIncrementerRedis('oclcCatalog', 'API', amount=counter)
 
-    @newrelic.agent.background_task()
     def sendCatalogLookupMessage(self, oclcNo, owiNo):
         logger.debug('Sending OCLC# {} to queue'.format(oclcNo))
         self.sendMessageToQueue(
@@ -196,7 +188,6 @@ class ClassifyProcess(CoreProcess):
             {'oclcNo': oclcNo, 'owiNo': owiNo}
         )
 
-    @newrelic.agent.background_task()
     def checkIfClassifyWorkFetched(self, classifyXML):
         workOWI = classifyXML.find(
             './/work', namespaces=ClassifyManager.NAMESPACE
