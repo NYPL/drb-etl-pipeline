@@ -31,7 +31,7 @@ class TestAPIUtils:
 
     @pytest.fixture
     def testHitObject(self, mocker):
-        mockHits = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()] 
+        mockHits = [mocker.MagicMock(), mocker.MagicMock(), mocker.MagicMock()]
         mockHits[0].meta.sort = ('firstSort',)
         mockHits[-1].meta.sort = ('lastSort',)
 
@@ -44,7 +44,7 @@ class TestAPIUtils:
                 self.attrs = []
                 for key, value in kwargs.items():
                     self.attrs.append(key)
-                    setattr(self, key, value)     
+                    setattr(self, key, value)
 
             def __iter__(self):
                 for attr in self.attrs:
@@ -225,7 +225,7 @@ class TestAPIUtils:
         testReadFormats = APIUtils.formatFilters({'filter': [('format', 'readable')]})
         testDownloadFormats = APIUtils.formatFilters({'filter': [('format', 'downloadable')]})
         testRequestFormats = APIUtils.formatFilters({'filter': [('format', 'requestable')]})
-        
+
         assert testReadFormats == ['application/epub+xml', 'text/html', 'application/webpub+json']
         assert testDownloadFormats == ['application/pdf', 'application/epub+zip']
         assert testRequestFormats == ['application/html+edd', 'application/x.html+edd']
@@ -265,12 +265,12 @@ class TestAPIUtils:
             ]
         }
 
-        outWork = APIUtils.formatWorkOutput('testWork', None)
+        outWork = APIUtils.formatWorkOutput('testWork', None, mocker.sentinel.dbClient)
 
         assert outWork['uuid'] == 1
         assert outWork['editions'][0]['id'] == 'ed3'
         assert outWork['editions'][2]['id'] == 'ed1'
-        mockFormat.assert_called_once_with('testWork', None, True, None, reader=None)
+        mockFormat.assert_called_once_with('testWork', None, True, mocker.sentinel.dbClient, reader=None)
 
     def test_formatWorkOutput_multiple_works(self, mocker):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
@@ -288,13 +288,14 @@ class TestAPIUtils:
                 ('uuid1', 1, 'highlight1'),
                 ('uuid2', 2, 'highlight2'),
                 ('uuid3', 3, 'highlight3')
-            ]
+            ],
+            dbClient=mocker.sentinel.dbClient,
         )
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
         mockFormat.assert_has_calls([
-            mocker.call(testWorks[0], 1, True, None, formats=None, reader=None),
-            mocker.call(testWorks[1], 2, True, None, formats=None, reader=None)
+            mocker.call(testWorks[0], 1, True, mocker.sentinel.dbClient, formats=None, reader=None),
+            mocker.call(testWorks[1], 2, True, mocker.sentinel.dbClient, formats=None, reader=None),
         ])
 
         mockAddMeta.assert_has_calls([

@@ -88,7 +88,7 @@ class APIUtils():
                 print(key, value)
                 aggs[parentKey] = [
                     {'value': b['key'], 'count': b['editions_per']['doc_count']}
-                    if 'editions_per' in b.keys() else 
+                    if 'editions_per' in b.keys() else
                     {'value': b['key_as_string'],'count': b['doc_count']}
                     for b in value
                 ]
@@ -101,7 +101,7 @@ class APIUtils():
                 }
 
         return aggs
-        
+
     @staticmethod
     def formatFilters(terms):
         formats = [
@@ -130,7 +130,7 @@ class APIUtils():
 
     @classmethod
     def formatWorkOutput(
-        cls, works, identifiers, showAll=True, dbClient=None, formats=None, reader=None
+        cls, works, identifiers, dbClient, showAll=True, formats=None, reader=None
     ):
         #Multiple formatted works with formats specified
         if isinstance(works, list):
@@ -228,7 +228,7 @@ class APIUtils():
         editionWorkTitle = edition.work.title
         editionWorkAuthors = edition.work.authors
         editionInCollection = cls.checkEditionInCollection(None, edition, dbClient)
-        
+
         return cls.formatEdition(
             edition, editionWorkTitle, editionWorkAuthors, editionInCollection, records, formats, showAll=showAll, reader=reader
         )
@@ -252,8 +252,8 @@ class APIUtils():
                                 'numberOfItems': len(collection.editions)
                                 }
                             collectionIDs.append(metadataOBJ)
-                            
-        else:          
+
+        else:
             for collection in dbClient.session.query(Collection) \
                 .join(COLLECTION_EDITIONS) \
                 .filter(COLLECTION_EDITIONS.c.edition_id == edition.id):
