@@ -137,6 +137,7 @@ class TestSearchBlueprint:
             mockUtils['formatWorkOutput'].assert_called_once_with(
                 ['work1', 'work2', 'work3', 'work4', 'work5'],
                 testResultIds,
+                dbClient=mockDB,
                 formats=['text/html'],
                 reader='test'
             )
