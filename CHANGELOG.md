@@ -8,6 +8,7 @@
 ### Fixed
 - drb_local_devSetUp Docker container exiting out due to ES authentication error
 - Fixed newrelic instrumentation for OCLC Classification process
+- Handle `ConnectTimeout` from OCLC Classify API
 
 ## 2022-12-22 -- v0.11.1
 ### Added
