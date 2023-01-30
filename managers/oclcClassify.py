@@ -2,7 +2,7 @@ import fasttext
 from lxml import etree
 import re
 import requests
-from requests.exceptions import HTTPError, ReadTimeout
+from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
 
 from logger import createLog
 
@@ -59,7 +59,7 @@ class ClassifyManager:
 
         try:
             self.execQuery()
-        except (HTTPError, ReadTimeout):
+        except (ConnectTimeout, HTTPError, ReadTimeout):
             raise ClassifyError('Unable execute query to Classify service')
 
         return self.parseXMLResponse()
@@ -129,7 +129,7 @@ class ClassifyManager:
         classifyResp.raise_for_status()
 
         self.rawXML = classifyResp.text
-    
+
     def parseXMLResponse(self):
         try:
             parseXML = etree.fromstring(self.rawXML.encode('utf-8'))
@@ -190,12 +190,12 @@ class ClassifyManager:
                     author=self.author
                 )
                 outRecords.append(multiRec.getClassifyResponse()[0])
-            
+
             return outRecords
         else:
             logger.warning(responseXML)
             raise ClassifyError(message='Got unexpected response code')
-    
+
     def checkTitle(self, oclcTitle):
         oclcCode = ClassifyManager.getStrLang(oclcTitle)
         sourceCode = ClassifyManager.getStrLang(self.title)
@@ -211,7 +211,7 @@ class ClassifyManager:
                 return True
             else:
                 return False
-        
+
         return True
 
     def checkAndFetchAdditionalEditions(self, classifyXML):
@@ -256,11 +256,11 @@ class ClassifyManager:
             lambda x: x not in ClassifyManager.TITLE_STOPWORDS and x != '',
             [re.sub(r'[^\w]+', '', token.lower()) for token in wordTokens]
         ))
-    
+
     @staticmethod
     def cleanIdentifier(identifier):
         return re.sub(r'[\D]+', '', identifier)
-    
+
     @staticmethod
     def getQueryableIdentifiers(identifiers):
         return list(filter(
