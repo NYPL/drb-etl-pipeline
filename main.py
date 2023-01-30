@@ -48,7 +48,7 @@ def main(args):
     ):
         processInstance.runProcess()
     else:
-        app = newrelic.agent.register_application()
+        app = newrelic.agent.register_application(timeout=10.0)
         with newrelic.agent.BackgroundTask(app, name=process):
             processInstance.runProcess()
 
