@@ -1,5 +1,3 @@
-import newrelic.agent
-
 from .core import CoreProcess
 from logger import createLog
 
@@ -24,7 +22,6 @@ class DatabaseMaintenanceProcess(CoreProcess):
 
         self.closeConnection()
 
-    @newrelic.agent.background_task()
     def vacuumTables(self):
         logger.info('Starting Vacuum of in-use tables')
         with self.engine.connect() as conn:

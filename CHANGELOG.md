@@ -7,8 +7,8 @@
 - Updated .gitignore to ignore vim generated `.swp` files and `ctags` file
 ### Fixed
 - drb_local_devSetUp Docker container exiting out due to ES authentication error
-- Fixed newrelic instrumentation for OCLC Classification process
 - Handle `ConnectTimeout` from OCLC Classify API
+- Updated newrelic instrumentation to encompass all background jobs
 
 ## 2022-12-22 -- v0.11.1
 ### Added

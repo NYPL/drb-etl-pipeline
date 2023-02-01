@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import newrelic.agent
 from sqlalchemy import func
 
 from .core import CoreProcess
@@ -25,7 +24,6 @@ class IngestReportProcess(CoreProcess):
     def runProcess(self):
         self.generateReport()
 
-    @newrelic.agent.background_task()
     def generateReport(self):
         ingestDate = datetime.today()
         ingestDateStart = ingestDate.replace(hour=0, minute=0, second=0)
@@ -38,7 +36,6 @@ class IngestReportProcess(CoreProcess):
 
         self.smartsheet.insertRow(dailyRow)
 
-    @newrelic.agent.background_task()
     def getTableCounts(self, table, ingestStart, ingestEnd):
         logger.info('Getting Totals for {}'.format(table.__name__))
 
@@ -60,10 +57,9 @@ class IngestReportProcess(CoreProcess):
         return {
             'Total {}s'.format(table.__name__): totals['total'],
             '{}s Modified'.format(table.__name__): totals['modified'],
-            '{}s Created'.format(table.__name__): totals['created'] 
+            '{}s Created'.format(table.__name__): totals['created']
         }
 
-    @newrelic.agent.background_task()
     @staticmethod
     def setAnomalyStatus(total, modified, created):
         anomalyThreshold = total / 10
