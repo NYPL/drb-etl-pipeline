@@ -9,6 +9,7 @@
 - drb_local_devSetUp Docker container exiting out due to ES authentication error
 - Handle `ConnectTimeout` from OCLC Classify API
 - Updated newrelic instrumentation to encompass all background jobs
+- Bumped to python 3.9 for CI testing to match production
 
 ## 2022-12-22 -- v0.11.1
 ### Added
