@@ -89,6 +89,50 @@ def collectionCreate(user=None):
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
+@collection.route('/update/<uuid>', methods=['POST'])
+@validateToken
+def collectionUpdate(uuid, user=None):
+    logger.info('Updating current collection')
+
+    collectionData = request.json
+    dataKeys = collectionData.keys()
+
+    if len(set(dataKeys) & set(['title', 'creator', 'description'])) < 3\
+            or len(set(dataKeys) & set(['workUUIDs', 'editionIDs'])) == 0:
+        errMsg = {
+            'message':
+                'title, creator and description fields are required'
+                ', with one of workUUIDs or editionIDs to create a collection'
+        }
+
+        return APIUtils.formatResponseObject(400, 'createCollection', errMsg)
+
+    dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
+
+    #Getting the collection the user wants to replace
+    collection = dbClient.fetchSingleCollection(uuid)
+
+    #Creating the new collection that will replace the old collection
+    updatedCollection = dbClient.createCollection(
+        collectionData['title'],
+        collectionData['creator'],
+        collectionData['description'],
+        user,
+        workUUIDs=collectionData.get('workUUIDs', []),
+        editionIDs=collectionData.get('editionIDs', [])
+    )
+
+    collection = updatedCollection
+
+    dbClient.session.commit()
+
+    logger.info('Replaced collection {}'.format(collection))
+
+    opdsFeed = constructOPDSFeed(collection.uuid, dbClient)
+
+    return APIUtils.formatOPDS2Object(201, opdsFeed)
+
 
 @collection.route('/<uuid>', methods=['GET'])
 def collectionFetch(uuid):
