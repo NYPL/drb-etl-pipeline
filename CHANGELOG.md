@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased version -- v0.11.2
+## 2023-02-02 -- v0.11.2
 ### Added
 - inCollection property to the work and edition API responses
 - Sort and PerPage parameters for collection/uuid endpoint in swagger file
