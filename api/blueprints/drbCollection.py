@@ -92,12 +92,12 @@ def collectionCreate(user=None):
 @collection.route('/update/<uuid>', methods=['POST'])
 @validateToken
 def collectionUpdate(uuid, user=None):
-    logger.info('Updating current collection')
+    logger.info('Handling collection update request')
 
     collectionData = request.json
     dataKeys = collectionData.keys()
 
-    if len(set(dataKeys) & set(['title', 'creator', 'description'])) < 3\
+    if {'title', 'creator', 'description'}.issubset(set(dataKeys))\
             or len(set(dataKeys) & set(['workUUIDs', 'editionIDs'])) == 0:
         errMsg = {
             'message':
@@ -111,7 +111,11 @@ def collectionUpdate(uuid, user=None):
     dbClient.createSession()
 
     #Getting the collection the user wants to replace
-    collection = dbClient.fetchSingleCollection(uuid)
+    try:
+        collection = dbClient.fetchSingleCollection(uuid)
+    except NoResultFound:
+        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
+        return APIUtils.formatResponseObject(404, 'fetchSingleCollection', errMsg)
 
     #Creating the new collection that will replace the old collection
     updatedCollection = dbClient.createCollection(

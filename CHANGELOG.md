@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased version -- v0.11.3
+### Added
+- New endpoint to update whole collection objects
+### Fixed
+- 
+
 ## 2023-02-02 -- v0.11.2
 ### Added
 - inCollection property to the work and edition API responses
