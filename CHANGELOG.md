@@ -1,14 +1,15 @@
 # CHANGELOG
 
-## unreleased version -- v0.11.2
+## 2023-02-02 -- v0.11.2
 ### Added
 - inCollection property to the work and edition API responses
 - Sort and PerPage parameters for collection/uuid endpoint in swagger file
 - Updated .gitignore to ignore vim generated `.swp` files and `ctags` file
 ### Fixed
 - drb_local_devSetUp Docker container exiting out due to ES authentication error
-- Fixed newrelic instrumentation for OCLC Classification process
 - Handle `ConnectTimeout` from OCLC Classify API
+- Updated newrelic instrumentation to encompass all background jobs
+- Bumped to python 3.9 for CI testing to match production
 
 ## 2022-12-22 -- v0.11.1
 ### Added

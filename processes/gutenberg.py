@@ -3,7 +3,6 @@ import json
 import mimetypes
 import os
 import re
-import newrelic.agent
 
 from .core import CoreProcess
 from managers import GutenbergManager
@@ -42,7 +41,6 @@ class GutenbergProcess(CoreProcess):
         # S3 Configuration
         self.s3Bucket = os.environ['FILE_BUCKET']
 
-    @newrelic.agent.background_task()
     def runProcess(self):
         if self.process == 'daily':
             self.importRDFRecords()
@@ -53,8 +51,7 @@ class GutenbergProcess(CoreProcess):
 
         self.saveRecords()
         self.commitChanges()
-    
-    @newrelic.agent.background_task()
+
     def importRDFRecords(self, fullImport=False, startTimestamp=None):
         orderDirection = 'DESC'
         orderField = 'PUSHED_AT'
@@ -85,7 +82,6 @@ class GutenbergProcess(CoreProcess):
 
             if not continuation or currentPosition >= self.ingestLimit: break
 
-    @newrelic.agent.background_task()
     def processGutenbergBatch(self, dataFiles):
         for (gutenbergRDF, gutenbergYAML) in dataFiles:
             gutenbergRec = GutenbergMapping(
@@ -102,10 +98,9 @@ class GutenbergProcess(CoreProcess):
                 self.addCoverAndStoreInS3(gutenbergRec, gutenbergYAML)
             except (KeyError, AttributeError):
                 logger.warning('Unable to store cover for {}'.format(gutenbergRec.record.source_id))
-            
+
             self.addDCDWToUpdateList(gutenbergRec)
 
-    @newrelic.agent.background_task()
     def storeEpubsInS3(self, gutenbergRec):
         newParts = []
         for epubItem in gutenbergRec.record.has_part:
@@ -141,13 +136,11 @@ class GutenbergProcess(CoreProcess):
 
         gutenbergRec.record.has_part = newParts
 
-    @newrelic.agent.background_task()
     def addNewPart(self, parts, pos, source, flagStr, mediaType, location):
             s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, location)
 
             parts.append('|'.join([pos, s3URL, source, mediaType, flagStr]))
 
-    @newrelic.agent.background_task()
     def addCoverAndStoreInS3(self, gutenbergRec, yamlData):
         for coverData in yamlData['covers']:
             if coverData['cover_type'] == 'generated': continue

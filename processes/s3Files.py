@@ -2,7 +2,6 @@ import json
 from multiprocessing import Process
 import os
 import requests
-import newrelic.agent
 from time import sleep
 from urllib.parse import quote_plus
 
@@ -18,11 +17,9 @@ class S3Process(CoreProcess):
     def __init__(self, *args):
         super(S3Process, self).__init__(*args[:4])
 
-    @newrelic.agent.background_task()
     def runProcess(self):
         self.receiveAndProcessMessages()
 
-    @newrelic.agent.background_task()
     def receiveAndProcessMessages(self):
         processes = 4
         epubProcesses = []
@@ -33,8 +30,7 @@ class S3Process(CoreProcess):
 
         for proc in epubProcesses:
             proc.join()
-    
-    @newrelic.agent.background_task()
+
     @staticmethod
     def storeFilesInS3():
         storageManager = S3Manager()
@@ -60,7 +56,7 @@ class S3Process(CoreProcess):
                     continue
                 else:
                     break
-            
+
             attempts = 1
 
             fileMeta = json.loads(msgBody)['fileData']
@@ -74,7 +70,7 @@ class S3Process(CoreProcess):
                 storageManager.putObjectInBucket(epubB, filePath, bucket)
 
                 if '.epub' in filePath:
-                    fileRoot = '.'.join(filePath.split('.')[:-1]) 
+                    fileRoot = '.'.join(filePath.split('.')[:-1])
 
                     webpubManifest = S3Process.generateWebpub(
                         epubConverterURL, fileRoot, bucket
@@ -95,7 +91,6 @@ class S3Process(CoreProcess):
                 logger.error('Unable to store file in S3')
                 logger.debug(e)
 
-    @newrelic.agent.background_task()
     @staticmethod
     def getFileContents(epubURL):
         timeout = 15
@@ -112,10 +107,9 @@ class S3Process(CoreProcess):
                 content += byteChunk
 
             return content
-        
+
         raise Exception('Unable to fetch ePub file')
 
-    @newrelic.agent.background_task()
     @staticmethod
     def generateWebpub(converterRoot, fileRoot, bucket):
         s3Path = 'https://{}.s3.amazonaws.com/{}/META-INF/container.xml'.format(

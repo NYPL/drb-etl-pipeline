@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
 import os
 import requests
-import newrelic.agent
 
 from .core import CoreProcess
 from managers.db import DBManager
@@ -31,11 +30,9 @@ class NYPLProcess(CoreProcess):
         self.locationCodes = self.loadLocationCodes()
         self.cceAPI = os.environ['BARDO_CCE_API']
 
-    @newrelic.agent.background_task()
     def loadLocationCodes(self):
         return requests.get(os.environ['NYPL_LOCATIONS_BY_CODE']).json()
 
-    @newrelic.agent.background_task()
     def isPDResearchBib(self, bib):
         currentYear = datetime.today().year
         try:
@@ -55,7 +52,6 @@ class NYPLProcess(CoreProcess):
 
         return True if bibStatus.get('isResearch', False) is True else False
 
-    @newrelic.agent.background_task()
     def getCopyrightStatus(self, varFields):
         lccnData = list(filter(lambda x: x.get('marcTag', None) == '010', varFields))
         if not len(lccnData) == 1:
@@ -71,16 +67,14 @@ class NYPLProcess(CoreProcess):
         copyrightRegData = copyrightRegResponse.json()
         if len(copyrightRegData['data']['results']) > 0:
             return False if len(copyrightRegData['data']['results'][0]['renewals']) > 0 else True
-        
+
         return False
 
-    @newrelic.agent.background_task()
     def fetchBibItems(self, bib):
         return self.queryApi('bibs/{}/{}/items'.format(
             bib['nypl_source'], bib['id']
         )).get('data', [])
 
-    @newrelic.agent.background_task()
     def runProcess(self):
         if self.process == 'daily':
             self.importBibRecords()
@@ -91,16 +85,14 @@ class NYPLProcess(CoreProcess):
 
         self.saveRecords()
         self.commitChanges()
-    
-    @newrelic.agent.background_task()
+
     def parseNYPLDataRow(self, dataRow):
         if self.isPDResearchBib(dict(dataRow)):
             bibItems = self.fetchBibItems(dict(dataRow))
             nyplRec = NYPLMapping(dataRow, bibItems, self.statics, self.locationCodes)
             nyplRec.applyMapping()
             self.addDCDWToUpdateList(nyplRec)
-    
-    @newrelic.agent.background_task()
+
     def importBibRecords(self, fullOrPartial=False, startTimestamp=None):
         nyplBibQuery = 'SELECT * FROM bib'
 
@@ -117,7 +109,7 @@ class NYPLProcess(CoreProcess):
 
         if self.ingestLimit:
             nyplBibQuery += ' LIMIT {}'.format(self.ingestLimit)
-        
+
         with self.bibDBConnection.engine.connect() as conn:
             bibResults = conn.execution_options(stream_results=True).execute(nyplBibQuery)
             for bib in bibResults:

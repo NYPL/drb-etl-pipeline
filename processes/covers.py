@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta
 import os
-import newrelic.agent
 
 from .core import CoreProcess
 from managers import CoverManager
@@ -27,7 +26,6 @@ class CoverProcess(CoreProcess):
         self.ingestLimit = None
         self.runTime = datetime.utcnow()
 
-    @newrelic.agent.background_task()
     def runProcess(self):
         coverQuery = self.generateQuery()
 
@@ -36,7 +34,6 @@ class CoverProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
-    @newrelic.agent.background_task()
     def generateQuery(self):
         baseQuery = self.session.query(Edition)
 
@@ -57,7 +54,6 @@ class CoverProcess(CoreProcess):
 
         return baseQuery.filter(*filters)
 
-    @newrelic.agent.background_task()
     def fetchEditionCovers(self, coverQuery):
         for edition in self.windowedQuery(Edition, coverQuery, windowSize=self.batchSize):
             coverManager = self.searchForCover(edition)
@@ -66,7 +62,6 @@ class CoverProcess(CoreProcess):
 
             if (self.runTime + timedelta(hours=12)) < datetime.utcnow(): break
 
-    @newrelic.agent.background_task()
     def searchForCover(self, edition):
         identifiers = [i for i in self.getEditionIdentifiers(edition)]
         manager = CoverManager(identifiers, self.session)
@@ -77,16 +72,14 @@ class CoverProcess(CoreProcess):
 
             return manager if manager.coverContent else None
 
-    @newrelic.agent.background_task()
     def getEditionIdentifiers(self, edition):
         for iden in edition.identifiers:
             if self.checkSetRedis('sfrCovers', iden.identifier, iden.authority, expirationTime=60*60*24*30):
                 logger.debug('{} recently queried. Skipping'.format(iden))
                 continue
-            
+
             yield (iden.identifier, iden.authority)
 
-    @newrelic.agent.background_task()
     def storeFoundCover(self, manager, edition):
         coverPath = 'covers/{}/{}.{}'.format(
             manager.fetcher.SOURCE,
