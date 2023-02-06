@@ -236,7 +236,7 @@ class APIUtils():
     @classmethod
     def checkEditionInCollection(cls, work, edition, dbClient):
 
-        collectionIDs = []
+        collectionMetadata = []
 
         if work != None:
             for edit in dbClient.session.query(Edition) \
@@ -245,28 +245,28 @@ class APIUtils():
                         .join(COLLECTION_EDITIONS) \
                         .filter(COLLECTION_EDITIONS.c.edition_id == edit.id):
                             metadataOBJ = {
-                                'id': collection.id,
+                                'uuid': collection.uuid,
                                 'title': collection.title,
                                 'creator': collection.creator,
                                 'description': collection.description,
                                 'numberOfItems': len(collection.editions)
                                 }
-                            collectionIDs.append(metadataOBJ)
+                            collectionMetadata.append(metadataOBJ)
 
         else:
             for collection in dbClient.session.query(Collection) \
                 .join(COLLECTION_EDITIONS) \
                 .filter(COLLECTION_EDITIONS.c.edition_id == edition.id):
                     metadataOBJ = {
-                        'id': collection.id,
+                        'uuid': collection.uuid,
                         'title': collection.title,
                         'creator': collection.creator,
                         'description': collection.description,
                         'numberOfItems': len(collection.editions)
                         }
-                    collectionIDs.append(metadataOBJ)
+                    collectionMetadata.append(metadataOBJ)
 
-        return collectionIDs
+        return collectionMetadata
 
     @classmethod
     def formatEdition(
