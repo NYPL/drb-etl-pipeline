@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## unreleased version -- v0.11.3
+### Added
+- Add new DB entities for automatic collections
+### Fixed
+
 ## 2023-02-02 -- v0.11.2
 ### Added
 - inCollection property to the work and edition API responses
