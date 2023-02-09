@@ -119,6 +119,37 @@ class DBClient():
             editionsQuery.offset(offset).limit(perPage).all(),
         )
 
+    def fetchEditions(self, editionIDs):
+        """Fetch the editions in the given list, respecting the order
+        of the passed in list
+        """
+
+        # First build a CTE of the passed in ids and their index in the
+        # given list
+        editionIdCTE = sa.select(
+            sa.values(
+                sa.column("idx", sa.Integer),
+                sa.column("edition_id", sa.Integer),
+                name="subquery",
+            ).data(list(enumerate(editionIDs)))
+        ).cte("edition_ids")
+        return (
+            self.session.query(Edition)
+                .options(
+                    joinedload(Edition.links),
+                    joinedload(Edition.items),
+                    joinedload(Edition.items, Item.links),
+                    joinedload(Edition.items, Item.rights),
+                )
+                # join on the defined CTE and order below by the index
+                .join(
+                    editionIdCTE,
+                    Edition.id == editionIdCTE.c.edition_id,
+                )
+                .order_by(editionIdCTE.c.idx)
+                .all()
+        )
+
     def fetchSingleLink(self, linkID):
         return self.session.query(Link).filter(Link.id == linkID).first()
 
