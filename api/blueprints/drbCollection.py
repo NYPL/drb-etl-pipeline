@@ -5,6 +5,7 @@ import os
 import re
 from sqlalchemy.orm.exc import NoResultFound
 
+from ..automaticCollectionUtils import fetchAutomaticCollectionEditions
 from ..db import DBClient
 from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
@@ -227,7 +228,11 @@ def constructOPDSFeed(
         if os.environ['ENVIRONMENT'] == 'production' else 'drb-qa'
 
     opdsPubs = []
-    for ed in collection.editions:
+    editions = (
+        collection.editions if collection.type == "static"
+        else fetchAutomaticCollectionEditions(dbClient, collection.id)
+    )
+    for ed in editions:
         pub = Publication()
 
         pub.parseEditionToPublication(ed)

@@ -3,7 +3,7 @@ from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.sql import text
 from uuid import uuid4
 
-from model import Work, Edition, Link, Item, Record, Collection, User
+from model import Work, Edition, Link, Item, Record, Collection, User, AutomaticCollection
 from .utils import APIUtils
 
 
@@ -56,6 +56,29 @@ class DBClient():
             )\
             .filter(Edition.id == editionID).first()
 
+    def fetchSortedEditions(self, sortField: str, sortDirection: str, limit: int):
+        sortClause = {
+            "title": Edition.title,
+            "date": Edition.date_created,
+        }.get(sortField)
+        if not sortClause:
+            raise ValueError(f"Invalid sort param {sortField}")
+        if sortDirection == "DESC":
+            sortClause = sortClause.desc()
+
+        return (
+            self.session.query(Edition)
+                .options(
+                    joinedload(Edition.links),
+                    joinedload(Edition.items),
+                    joinedload(Edition.items, Item.links),
+                    joinedload(Edition.items, Item.rights),
+                )
+                .order_by(sortClause)
+                .limit(limit)
+                .all()
+        )
+
     def fetchSingleLink(self, linkID):
         return self.session.query(Link).filter(Link.id == linkID).first()
 
@@ -97,6 +120,13 @@ class DBClient():
             .offset(offset)\
             .limit(perPage)\
             .all()
+
+    def fetchAutomaticCollection(self, collection_id: int):
+        return (
+            self.session.query(AutomaticCollection)
+                .filter(AutomaticCollection.collection_id == collection_id)
+                .one()
+        )
 
     def createCollection(
         self, title, creator, description, owner, workUUIDs=[], editionIDs=[]

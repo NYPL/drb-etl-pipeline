@@ -3,6 +3,7 @@
 ## unreleased version -- v0.11.3
 ### Added
 - Add new DB entities for automatic collections
+- Add support for 'Most Recent' automatic collection
 ### Fixed
 
 ## 2023-02-02 -- v0.11.2

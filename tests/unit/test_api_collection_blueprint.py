@@ -377,7 +377,8 @@ class TestCollectionBlueprint:
             description='Test Description',
             editions=[
                 mocker.MagicMock(id=1), mocker.MagicMock(id=2)
-            ]
+            ],
+            type="static",
         )
 
         mocker.patch.dict(os.environ, {'ENVIRONMENT': 'test'})
