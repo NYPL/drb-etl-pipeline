@@ -36,7 +36,7 @@ def test_fetchAutomaticCollectionEditions_searchBased(mocker):
         sort_direction="DESC",
         limit=100,
     )
-    dbClient.fetchAllPreferredEditions.return_value = mocker.sentinel.sortedEditions
+   dbClient.fetchAllPreferredEditions.return_value = (20, mocker.sentinel.sortedEditions)
     with pytest.raises(ValueError):
         fetchAutomaticCollectionEditions(
             dbClient,
