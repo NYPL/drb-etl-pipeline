@@ -9,7 +9,6 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-
 # revision identifiers, used by Alembic.
 revision = 'e46b30dd3ff5'
 down_revision = '9e33fa16ba82'
@@ -18,10 +17,8 @@ depends_on = None
 
 
 def upgrade():
-    # TODO: Maybe add some CHECK constraints around some of these fields? Or just
-    # enforce in code upon creation.
     op.create_table(
-        "automatic_collection_definition",
+        "automatic_collection",
         sa.Column(
             'collection_id',
             sa.Integer,
@@ -29,16 +26,30 @@ def upgrade():
             primary_key=True,
         ),
         sa.Column(
-            'query',
-            sa.ARRAY(sa.String),
+            'keyword_query',
+            sa.String,
         ),
         sa.Column(
-            'sort',
-            sa.ARRAY(sa.String),
+            'author_query',
+            sa.String,
         ),
         sa.Column(
-            'filter',
-            sa.ARRAY(sa.String),
+            'title_query',
+            sa.String,
+        ),
+        sa.Column(
+            'subject_query',
+            sa.String,
+        ),
+        sa.Column(
+            'sort_field',
+            sa.String,
+            sa.CheckConstraint(r"sort_field is NULL OR sort_field IN ('title', 'author', 'date')"),
+        ),
+        sa.Column(
+            'sort_direction',
+            sa.String,
+            sa.CheckConstraint(r"sort_direction is NULL OR sort_direction IN ('ASC', 'DESC')"),
         ),
         sa.Column(
             'limit',
@@ -60,6 +71,6 @@ def upgrade():
 
 def downgrade():
     op.drop_column("collections", "type")
-    op.drop_table("automatic_collection_definition")
+    op.drop_table("automatic_collection")
     collection_type = postgresql.ENUM('static', 'automatic', name="collection_type")
     collection_type.drop(op.get_bind())
