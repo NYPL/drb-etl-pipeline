@@ -14,8 +14,13 @@ def test_fetchAutomaticCollectionEditions_mostRecent(mocker):
         sort_direction="DESC",
         limit=100,
     )
-    dbClient.fetchSortedEditions.return_value = mocker.sentinel.sortedEditions
-    editions = fetchAutomaticCollectionEditions(dbClient, mocker.sentinel.collectionId)
+    dbClient.fetchAllPreferredEditions.return_value = mocker.sentinel.sortedEditions
+    editions = fetchAutomaticCollectionEditions(
+        dbClient,
+        mocker.sentinel.collectionId,
+        perPage=mocker.sentinel.perPage,
+        page=mocker.sentinel.page,
+    )
     assert editions == mocker.sentinel.sortedEditions
 
 
@@ -30,6 +35,11 @@ def test_fetchAutomaticCollectionEditions_searchBased(mocker):
         sort_direction="DESC",
         limit=100,
     )
-    dbClient.fetchSortedEditions.return_value = mocker.sentinel.sortedEditions
+    dbClient.fetchAllPreferredEditions.return_value = mocker.sentinel.sortedEditions
     with pytest.raises(ValueError):
-        fetchAutomaticCollectionEditions(dbClient, mocker.sentinel.collectionId)
+        fetchAutomaticCollectionEditions(
+            dbClient,
+            mocker.sentinel.collectionId,
+            perPage=mocker.sentinel.perPage,
+            page=mocker.sentinel.page,
+        )

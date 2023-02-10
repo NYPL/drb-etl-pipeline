@@ -30,8 +30,8 @@ COLLECTION_EDITIONS = Table(
 
 
 class CollectionType(str, enum.Enum):
-    static = 1
-    automatic = 2
+    static = "static"
+    automatic = "automatic"
 
 
 class AutomaticCollection(Base):

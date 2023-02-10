@@ -224,14 +224,50 @@ def constructOPDSFeed(
         'rel': 'self', 'href': path, 'type': 'application/opds+json'
     })
 
+    if collection.type == "static":
+        _addStaticPubsToFeed(opdsFeed, collection, path, page, perPage, sort)
+    elif collection.type == "automatic":
+        _addAutomaticPubsToFeed(opdsFeed, dbClient, collection.id, path, page, perPage)
+    else:
+        raise ValueError(f"Encountered collection with unhandleable type {collection.type}")
+
+    return opdsFeed
+
+
+def _addStaticPubsToFeed(opdsFeed, collection, path, page, perPage, sort):
+    opdsPubs = _buildPublications(collection.editions)
+    if sort:
+        sorter, reversed_ = constructSortMethod(sort)
+        opdsPubs.sort(key=sorter, reverse=reversed_)
+
+    start = (page - 1) * perPage
+    end = start + perPage
+    opdsFeed.addPublications(opdsPubs[start:end])
+
+    OPDSUtils.addPagingOptions(
+        opdsFeed, path, len(opdsPubs), page=page, perPage=perPage
+    )
+
+
+def _addAutomaticPubsToFeed(opdsFeed, dbClient, collectionId, path, page, perPage):
+    totalCount, editions = fetchAutomaticCollectionEditions(
+        dbClient,
+        collectionId,
+        page=page,
+        perPage=perPage,
+    )
+    opdsPubs = _buildPublications(editions)
+    opdsFeed.addPublications(opdsPubs)
+    OPDSUtils.addPagingOptions(
+        opdsFeed, path, totalCount, page=page, perPage=perPage
+    )
+
+
+def _buildPublications(editions):
     host = 'digital-research-books-beta'\
         if os.environ['ENVIRONMENT'] == 'production' else 'drb-qa'
 
     opdsPubs = []
-    editions = (
-        collection.editions if collection.type == "static"
-        else fetchAutomaticCollectionEditions(dbClient, collection.id)
-    )
     for ed in editions:
         pub = Publication()
 
@@ -244,16 +280,4 @@ def constructOPDSFeed(
 
         opdsPubs.append(pub)
 
-    if sort:
-        sorter, reversed = constructSortMethod(sort)
-        opdsPubs.sort(key=sorter, reverse=reversed)
-
-    start = (page - 1) * perPage
-    end = start + perPage
-    opdsFeed.addPublications(opdsPubs[start:end])
-
-    OPDSUtils.addPagingOptions(
-        opdsFeed, path, len(opdsPubs), page=page, perPage=perPage
-    )
-
-    return opdsFeed
+    return opdsPubs
