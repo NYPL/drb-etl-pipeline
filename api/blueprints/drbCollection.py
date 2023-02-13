@@ -10,6 +10,9 @@ from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
 from ..opds2 import Feed, Publication
 from logger import createLog
+from model import Work
+from model.postgres.collection import COLLECTION_EDITIONS
+from datetime import date
 
 logger = createLog(__name__)
 
@@ -97,7 +100,7 @@ def collectionUpdate(uuid, user=None):
     collectionData = request.json
     dataKeys = collectionData.keys()
 
-    if {'title', 'creator', 'description'}.issubset(set(dataKeys))\
+    if {'title', 'creator', 'description'}.issubset(set(dataKeys)) == False\
             or len(set(dataKeys) & set(['workUUIDs', 'editionIDs'])) == 0:
         errMsg = {
             'message':
@@ -117,17 +120,38 @@ def collectionUpdate(uuid, user=None):
         errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
         return APIUtils.formatResponseObject(404, 'fetchSingleCollection', errMsg)
 
-    #Creating the new collection that will replace the old collection
-    updatedCollection = dbClient.createCollection(
-        collectionData['title'],
-        collectionData['creator'],
-        collectionData['description'],
-        user,
-        workUUIDs=collectionData.get('workUUIDs', []),
-        editionIDs=collectionData.get('editionIDs', [])
-    )
+    workUUIDs=collectionData.get('workUUIDs', [])
+    editionIDs=collectionData.get('editionIDs', [])
 
-    collection = updatedCollection
+    collection.title = collectionData['title']
+    collection.creator = collectionData['creator']
+    collection.description = collectionData['description']
+
+    #Deleting the rows of collection_editions that were in the original collection
+    dbClient.session.execute(COLLECTION_EDITIONS.delete().where(COLLECTION_EDITIONS.c.collection_id == collection.id))
+
+    #Inserting rows of collection_editions based on workUUIDs/editionIDs arrays
+    if len(editionIDs) > 0:
+        for editID in editionIDs:
+            dbClient.session.execute(COLLECTION_EDITIONS.insert().values \
+                (collection_id = collection.id, edition_id = editID))
+
+    if len(workUUIDs) > 0:
+        collectionWorks = dbClient.session.query(Work)\
+            .join(Work.editions)\
+            .filter(Work.uuid.in_(workUUIDs))\
+            .all()
+
+        for work in collectionWorks:
+            editions = list(sorted(
+                    [ed for ed in work.editions],
+                    key=lambda x: x.publication_date
+                    if x.publication_date else date.today()
+            ))
+        
+            for edition in editions:
+                dbClient.session.execute(COLLECTION_EDITIONS.insert().values \
+                    (collection_id = collection.id, edition_id = edition.id))
 
     dbClient.session.commit()
 
@@ -136,7 +160,6 @@ def collectionUpdate(uuid, user=None):
     opdsFeed = constructOPDSFeed(collection.uuid, dbClient)
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
-
 
 @collection.route('/<uuid>', methods=['GET'])
 def collectionFetch(uuid):

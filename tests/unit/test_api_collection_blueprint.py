@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
 from api.blueprints.drbCollection import (
-    collectionCreate, collectionFetch, collectionDelete, collectionList,
+    collectionCreate, collectionFetch, collectionUpdate, collectionDelete, collectionList,
     constructSortMethod, constructOPDSFeed, validateToken
 )
 from api.utils import APIUtils
@@ -27,6 +27,112 @@ class TestCollectionBlueprint:
         flaskApp.config['DB_CLIENT'] = 'testDBClient'
 
         return flaskApp
+
+    def test_collectionUpdate_success(self, testApp, mockUtils, mocker):
+        mockDB = mocker.MagicMock(session=mocker.MagicMock())
+        mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockDB.fetchUser.return_value = mocker.MagicMock(
+            user='testUser', password='testPswd', salt='testSalt'
+        )
+
+        mockDB.fetchSingleCollection\
+            .return_value = mocker.MagicMock(uuid='testUUID')
+
+        mockFeedConstruct = mocker.patch(
+            'api.blueprints.drbCollection.constructOPDSFeed'
+        )
+        mockFeedConstruct.return_value = 'testOPDS2Feed'
+
+        testUpdatedCollection = {
+            'title': 'Updated Test Collection',
+            'creator': 'Updated Test Creator',
+            'description': 'Updated Test Description',
+            'editionIDs': ['ed11', 'ed22']
+        }
+
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockBase64 = mocker.patch('api.blueprints.drbCollection.b64decode')
+        mockBase64.return_value = b'testUser:testPswd'
+
+        mockUtils['validatePassword'].return_value = True
+
+        mockUtils['formatOPDS2Object'].return_value = 'testOPDS2Response'
+
+        with testApp.test_request_context(
+            '/update/testUUID',
+            json=testUpdatedCollection,
+            headers={'Authorization': 'Basic testAuth'}
+        ):
+            testAPIResponse = collectionUpdate('testUUID')
+
+            assert testAPIResponse == 'testOPDS2Response'
+
+            assert mockDBClient.call_count == 2
+            assert mockDB.createSession.call_count == 2
+            assert mockDB.session.execute.call_count == 3
+            mockDB.fetchSingleCollection.assert_called_once_with('testUUID')
+            mockDB.session.commit.assert_called_once()
+
+            mockFeedConstruct.assert_called_once_with(
+                'testUUID', mockDB
+            )
+
+            mockBase64.assert_called_once_with(b'testAuth')
+
+            mockUtils['formatOPDS2Object'].assert_called_once_with(
+                201, 'testOPDS2Feed'
+            )
+
+    def test_collectionUpdate_fail(self, testApp, mockUtils, mocker):
+        mockDB = mocker.MagicMock(session=mocker.MagicMock())
+        mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockDB.fetchUser.return_value = mocker.MagicMock(
+            user='testUser', password='testPswd', salt='testSalt'
+        )
+
+        mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
+
+        mockDB.fetchSingleCollection\
+            .return_value = mocker.MagicMock(uuid='testUUID')
+
+        testFailCollection = {
+            'title': 'Updated Test Collection',
+            'creator': 'Updated Test Creator'
+        }
+
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockBase64 = mocker.patch('api.blueprints.drbCollection.b64decode')
+        mockBase64.return_value = b'testUser:testPswd'
+
+        mockUtils['validatePassword'].return_value = True
+
+        with testApp.test_request_context(
+            '/update/testUUID',
+            json=testFailCollection,
+            headers={'Authorization': 'Basic testAuth'}
+        ):
+
+            testAPIResponse = collectionUpdate('testUUID')
+
+            assert testAPIResponse == 'testErrorResponse'
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                400,
+                'createCollection',
+                {
+                    'message':
+                    'title, creator and description fields are required'
+                    ', with one of workUUIDs or editionIDs to create a'
+                    ' collection'
+
+                }
+            )
 
     def test_collectionCreate_success(self, testApp, mockUtils, mocker):
         mockDB = mocker.MagicMock(session=mocker.MagicMock())
