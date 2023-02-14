@@ -44,17 +44,21 @@ def upgrade():
         sa.Column(
             'sort_field',
             sa.String,
-            sa.CheckConstraint(r"sort_field is NULL OR sort_field IN ('title', 'author', 'date')"),
+            sa.CheckConstraint(r"sort_field IN ('uuid', 'title', 'author', 'date')"),
+            server_default='uuid',
+            nullable=False,
         ),
         sa.Column(
             'sort_direction',
             sa.String,
-            sa.CheckConstraint(r"sort_direction is NULL OR sort_direction IN ('ASC', 'DESC')"),
+            sa.CheckConstraint(r"sort_direction IN ('ASC', 'DESC')"),
+            server_default='ASC',
+            nullable=False,
         ),
         sa.Column(
             'limit',
             sa.Integer,
-            nullable=False,
+            sa.CheckConstraint(r'"limit" IS NULL OR "limit" > 0'),
         ),
     )
     collection_type = postgresql.ENUM('static', 'automatic', name="collection_type")
@@ -64,7 +68,8 @@ def upgrade():
         sa.Column(
             "type",
             collection_type,
-            default="static",
+            server_default="static",
+            nullable=False,
         ),
     )
 
