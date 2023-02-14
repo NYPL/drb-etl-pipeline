@@ -72,7 +72,7 @@ class TestCollectionBlueprint:
 
             assert mockDBClient.call_count == 2
             assert mockDB.createSession.call_count == 2
-            assert mockDB.session.execute.call_count == 3
+            assert mockDB.session.execute.call_count == 2
             mockDB.fetchSingleCollection.assert_called_once_with('testUUID')
             mockDB.session.commit.assert_called_once()
 

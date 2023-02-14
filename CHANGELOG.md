@@ -2,7 +2,7 @@
 
 ## unreleased version -- v0.11.3
 ### Added
-- New endpoint to update whole collection JSON objects
+- New endpoint to update whole collection JSON objects in the API response
 ### Fixed
 - 
 

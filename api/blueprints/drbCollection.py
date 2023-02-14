@@ -127,35 +127,17 @@ def collectionUpdate(uuid, user=None):
     collection.creator = collectionData['creator']
     collection.description = collectionData['description']
 
-    #Deleting the rows of collection_editions that were in the original collection
-    dbClient.session.execute(COLLECTION_EDITIONS.delete().where(COLLECTION_EDITIONS.c.collection_id == collection.id))
+    removeEditionsFromCollection(dbClient, collection)
 
-    #Inserting rows of collection_editions based on workUUIDs/editionIDs arrays
-    if len(editionIDs) > 0:
-        for editID in editionIDs:
-            dbClient.session.execute(COLLECTION_EDITIONS.insert().values \
-                (collection_id = collection.id, edition_id = editID))
+    if editionIDs:
+        addEditionsToCollection(dbClient, collection, editionIDs)
 
-    if len(workUUIDs) > 0:
-        collectionWorks = dbClient.session.query(Work)\
-            .join(Work.editions)\
-            .filter(Work.uuid.in_(workUUIDs))\
-            .all()
-
-        for work in collectionWorks:
-            editions = list(sorted(
-                    [ed for ed in work.editions],
-                    key=lambda x: x.publication_date
-                    if x.publication_date else date.today()
-            ))
-        
-            for edition in editions:
-                dbClient.session.execute(COLLECTION_EDITIONS.insert().values \
-                    (collection_id = collection.id, edition_id = edition.id))
+    if workUUIDs:
+        addWorkEditionsToCollection(dbClient, collection, workUUIDs)
 
     dbClient.session.commit()
 
-    logger.info('Replaced collection {}'.format(collection))
+    logger.info('Replaced collection {}'.format(collection.uuid))
 
     opdsFeed = constructOPDSFeed(collection.uuid, dbClient)
 
@@ -323,3 +305,30 @@ def constructOPDSFeed(
     )
 
     return opdsFeed
+
+#Deleting the rows of collection_editions that were in the original collection
+def removeEditionsFromCollection(dbClient, collection):
+    dbClient.session.execute(COLLECTION_EDITIONS.delete().where(COLLECTION_EDITIONS.c.collection_id == collection.id))
+
+#Inserting rows of collection_editions based on editionIDs array
+def addEditionsToCollection(dbClient, collection, editionIDs):
+    dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
+        {"collection_id": collection.id, "edition_id": eid} \
+        for eid in editionIDs \
+    ]))
+
+#Inserting rows of collection_editions based on workUUIDs array
+def addWorkEditionsToCollection(dbClient, collection, workUUIDs):
+    collectionWorks = dbClient.session.query(Work)\
+            .join(Work.editions)\
+            .filter(Work.uuid.in_(workUUIDs))\
+            .all()
+
+    for work in collectionWorks:
+        editions = [ed for ed in work.editions]
+        
+
+        dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
+        {"collection_id": collection.id, "edition_id": edition.id} \
+        for edition in editions \
+    ]))
