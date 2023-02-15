@@ -60,7 +60,6 @@ class DBClient():
         self,
         sortField: str,
         sortDirection: str,
-        limit: int,
         page: int,
         perPage: int,
     ):
@@ -84,10 +83,6 @@ class DBClient():
         ).subquery()
 
         offset = (page - 1) * perPage
-        # Normally, we grab the `perPage` amount, but once we're on the
-        # last page, meaning, we're coming up on the total limit, we just
-        # fetch enough items to reach the page limit.
-        pageLimit = min(limit - offset, perPage) if limit else perPage
 
         sortClause = {
             "title": workQuery.c.title,
@@ -118,8 +113,8 @@ class DBClient():
         )
 
         return (
-            min(editionsQuery.count(), limit),
-            editionsQuery.offset(offset).limit(pageLimit).all(),
+            editionsQuery.count(),
+            editionsQuery.offset(offset).limit(perPage).all(),
         )
 
     def fetchSingleLink(self, linkID):

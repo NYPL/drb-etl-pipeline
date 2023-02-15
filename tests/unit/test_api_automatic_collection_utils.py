@@ -14,13 +14,14 @@ def test_fetchAutomaticCollectionEditions_mostRecent(mocker):
         sort_direction="DESC",
         limit=100,
     )
-    dbClient.fetchAllPreferredEditions.return_value = mocker.sentinel.sortedEditions
-    editions = fetchAutomaticCollectionEditions(
+    dbClient.fetchAllPreferredEditions.return_value = (20, mocker.sentinel.sortedEditions)
+    total, editions = fetchAutomaticCollectionEditions(
         dbClient,
         mocker.sentinel.collectionId,
-        perPage=mocker.sentinel.perPage,
-        page=mocker.sentinel.page,
+        perPage=10,
+        page=1,
     )
+    assert total == 20
     assert editions == mocker.sentinel.sortedEditions
 
 
@@ -40,6 +41,6 @@ def test_fetchAutomaticCollectionEditions_searchBased(mocker):
         fetchAutomaticCollectionEditions(
             dbClient,
             mocker.sentinel.collectionId,
-            perPage=mocker.sentinel.perPage,
-            page=mocker.sentinel.page,
+            perPage=10,
+            page=1,
         )
