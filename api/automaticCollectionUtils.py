@@ -3,7 +3,7 @@ from logger import createLog
 logger = createLog(__name__)
 
 
-def fetchAutomaticCollectionEditions(dbClient, collectionId, page: int, perPage: int):
+def fetchAutomaticCollectionEditions(dbClient, esClient, collectionId, page: int, perPage: int):
     """Given a collection id for an automatic collection, perform the given
     search and return a list of collection editions
     """
@@ -23,11 +23,48 @@ def fetchAutomaticCollectionEditions(dbClient, collectionId, page: int, perPage:
             perPage=nextPageSize,
         )
 
-    # TODO: Hit ES for query based collections
     else:
-        raise ValueError("Automatic collection search is not yet implemented")
+        (totalCount, editionIds) = _doAutoCollectionSearch(esClient, automaticCollection, page, nextPageSize)
+        editions = dbClient.fetchEditions(editionIds)
 
     return (min(totalCount, automaticCollection.limit), editions)
+
+
+def _doAutoCollectionSearch(esClient, automaticCollection, page, perPage):
+        searchParams = {
+            "query": _buildQueryTerms(automaticCollection),
+            "sort": [(automaticCollection.sort_field, automaticCollection.sort_direction)],
+            "filter": [],
+            "show_all": True,
+        }
+        searchResult = esClient.searchQuery(searchParams, page=page, perPage=perPage)
+        editionIds = []
+        for res in searchResult.hits:
+            editionIds.extend(e.edition_id for e in res.meta.inner_hits.editions.hits)
+
+        totalCount = searchResult.hits.total.value
+        return (totalCount, editionIds)
+
+
+def _nextPageSize(totalLimit, page, perPage):
+    if not totalLimit:
+        return perPage
+
+    offset = (page - 1) * perPage
+    return min(limit - offset, perPage)
+
+
+def _buildQueryTerms(automaticCollection) -> list[tuple[str, str]]:
+    return [
+        (field, query)
+        for field, query in [
+            ("keyword", automaticCollection.keyword_query),
+            ("author", automaticCollection.author_query),
+            ("title", automaticCollection.title_query),
+            ("subject", automaticCollection.subject_query),
+        ]
+        if query
+    ]
 
 
 def _requiresSearch(automaticCollection) -> bool:

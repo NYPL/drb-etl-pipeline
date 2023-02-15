@@ -443,6 +443,7 @@ class TestCollectionBlueprint:
             description='Test Description',
             type="automatic",
         )
+        mockES = mocker.MagicMock()
 
         mocker.patch(
             "api.blueprints.drbCollection.fetchAutomaticCollectionEditions",
@@ -452,7 +453,11 @@ class TestCollectionBlueprint:
             ),
         )
 
-        mocker.patch.dict(os.environ, {'ENVIRONMENT': 'test'})
+        mocker.patch.dict(
+            os.environ,
+            {'ENVIRONMENT': 'test', 'ELASTICSEARCH_INDEX': 'test_es_index'},
+        )
+        testApp.config['REDIS_CLIENT'] = 'test_redis_client'
 
         mockPaging = mocker.patch.object(OPDSUtils, 'addPagingOptions')
 

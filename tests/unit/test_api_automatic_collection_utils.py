@@ -17,6 +17,7 @@ def test_fetchAutomaticCollectionEditions_mostRecent(mocker):
     dbClient.fetchAllPreferredEditions.return_value = (20, mocker.sentinel.sortedEditions)
     total, editions = fetchAutomaticCollectionEditions(
         dbClient,
+        mocker.sentinel.esClient,
         mocker.sentinel.collectionId,
         perPage=10,
         page=1,
@@ -36,11 +37,61 @@ def test_fetchAutomaticCollectionEditions_searchBased(mocker):
         sort_direction="DESC",
         limit=100,
     )
-   dbClient.fetchAllPreferredEditions.return_value = (20, mocker.sentinel.sortedEditions)
-    with pytest.raises(ValueError):
-        fetchAutomaticCollectionEditions(
-            dbClient,
-            mocker.sentinel.collectionId,
-            perPage=10,
-            page=1,
+    dbClient.fetchEditions.return_value = mocker.sentinel.editions
+    esClient = mocker.MagicMock()
+    def _mockHit(*editionIds):
+        return mocker.MagicMock(
+            meta=mocker.MagicMock(
+                inner_hits=mocker.MagicMock(
+                    editions=mocker.MagicMock(
+                        hits=[
+                            mocker.MagicMock(edition_id=eid)
+                            for eid in editionIds
+                        ],
+                    )
+                ),
+            ),
         )
+
+    class _mockHits(list):
+
+        def __init__(self, totalCount, *items):
+            self.total = mocker.MagicMock(value=totalCount)
+            super().__init__(items)
+
+    esClient.searchQuery.return_value = mocker.MagicMock(
+        hits=_mockHits(
+            20,
+            _mockHit(mocker.sentinel.edition1, mocker.sentinel.edition2),
+            _mockHit(mocker.sentinel.edition3),
+        ),
+    )
+    assert fetchAutomaticCollectionEditions(
+        dbClient,
+        esClient,
+        mocker.sentinel.collectionId,
+        perPage=10,
+        page=1,
+    ) == (20, mocker.sentinel.editions)
+    esClient.searchQuery.assert_called_once_with(
+        {
+            "query": [
+                ("keyword", mocker.sentinel.keyword_query),
+                ("author", mocker.sentinel.author_query),
+                ("title", mocker.sentinel.title_query),
+                ("subject", mocker.sentinel.subject_query),
+            ],
+            "filter": [],
+            "sort": [("date", "DESC")],
+            "show_all": True,
+        },
+        page=1,
+        perPage=10,
+    )
+    dbClient.fetchEditions.assert_called_once_with(
+        [
+            mocker.sentinel.edition1,
+            mocker.sentinel.edition2,
+            mocker.sentinel.edition3,
+        ],
+    )

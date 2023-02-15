@@ -7,6 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from ..automaticCollectionUtils import fetchAutomaticCollectionEditions
 from ..db import DBClient
+from ..elastic import ElasticClient
 from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
 from ..opds2 import Feed, Publication
@@ -227,7 +228,8 @@ def constructOPDSFeed(
     if collection.type == "static":
         _addStaticPubsToFeed(opdsFeed, collection, path, page, perPage, sort)
     elif collection.type == "automatic":
-        _addAutomaticPubsToFeed(opdsFeed, dbClient, collection.id, path, page, perPage)
+        esClient = ElasticClient(current_app.config["REDIS_CLIENT"])
+        _addAutomaticPubsToFeed(opdsFeed, dbClient, esClient, collection.id, path, page, perPage)
     else:
         raise ValueError(f"Encountered collection with unhandleable type {collection.type}")
 
@@ -249,7 +251,7 @@ def _addStaticPubsToFeed(opdsFeed, collection, path, page, perPage, sort):
     )
 
 
-def _addAutomaticPubsToFeed(opdsFeed, dbClient, collectionId, path, page, perPage):
+def _addAutomaticPubsToFeed(opdsFeed, dbClient, esClient, collectionId, path, page, perPage):
     totalCount, editions = fetchAutomaticCollectionEditions(
         dbClient,
         collectionId,
