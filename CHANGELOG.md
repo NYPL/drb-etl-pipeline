@@ -10,6 +10,7 @@
 - Handle `ConnectTimeout` from OCLC Classify API
 - Updated newrelic instrumentation to encompass all background jobs
 - Bumped to python 3.9 for CI testing to match production
+- Set DEFAULT_COVER_URL for docker environments
 
 ## 2022-12-22 -- v0.11.1
 ### Added
