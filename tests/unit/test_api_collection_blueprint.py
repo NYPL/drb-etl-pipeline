@@ -377,7 +377,8 @@ class TestCollectionBlueprint:
             description='Test Description',
             editions=[
                 mocker.MagicMock(id=1), mocker.MagicMock(id=2)
-            ]
+            ],
+            type="static",
         )
 
         mocker.patch.dict(os.environ, {'ENVIRONMENT': 'test'})
@@ -424,6 +425,70 @@ class TestCollectionBlueprint:
 
             mockPaging.assert_called_once_with(
                 mockFeed, '/collection/testUUID', 2, page=1, perPage=10
+            )
+
+    def test_constructOPDSFeed_success_autoCollection(self, testApp, mockUtils, mocker):
+        mockFeed = mocker.MagicMock()
+        mockFeedInit = mocker.patch('api.blueprints.drbCollection.Feed')
+        mockFeedInit.return_value = mockFeed
+
+        mockPub = mocker.MagicMock()
+        mockPubInit = mocker.patch('api.blueprints.drbCollection.Publication')
+        mockPubInit.return_value = mockPub
+
+        mockDB = mocker.MagicMock()
+        mockDB.fetchSingleCollection.return_value = mocker.MagicMock(
+            title='Test Collection',
+            creator='Test Creator',
+            description='Test Description',
+            type="automatic",
+        )
+
+        mocker.patch(
+            "api.blueprints.drbCollection.fetchAutomaticCollectionEditions",
+            return_value=(
+                mocker.sentinel.totalCount,
+                [mocker.MagicMock(id=1), mocker.MagicMock(id=2)],
+            ),
+        )
+
+        mocker.patch.dict(os.environ, {'ENVIRONMENT': 'test'})
+
+        mockPaging = mocker.patch.object(OPDSUtils, 'addPagingOptions')
+
+        with testApp.test_request_context('/collections/test'):
+            testOPDSFeed = constructOPDSFeed('testUUID', mockDB, sort='test')
+
+            assert testOPDSFeed == mockFeed
+
+            mockFeed.addMetadata.assert_called_once_with({
+                'title': 'Test Collection',
+                'creator': 'Test Creator',
+                'description': 'Test Description'
+            })
+            mockFeed.addLink.assert_called_once_with({
+                'rel': 'self',
+                'href': '/collection/testUUID',
+                'type': 'application/opds+json'
+            })
+            mockFeed.addPublications.assert_called_once()
+
+            assert mockPub.parseEditionToPublication.call_count == 2
+            mockPub.addLink.assert_has_calls([
+                mocker.call({
+                    'rel': 'alternate',
+                    'href': 'https://drb-qa.nypl.org/edition/1',
+                    'type': 'text/html'
+                }),
+                mocker.call({
+                    'rel': 'alternate',
+                    'href': 'https://drb-qa.nypl.org/edition/2',
+                    'type': 'text/html'
+                })
+            ])
+
+            mockPaging.assert_called_once_with(
+                mockFeed, '/collection/testUUID', mocker.sentinel.totalCount, page=1, perPage=10
             )
 
     def test_validateToken_success(self, testApp, mockUtils, mocker):
