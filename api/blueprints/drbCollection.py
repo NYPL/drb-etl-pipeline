@@ -327,8 +327,9 @@ def addWorkEditionsToCollection(dbClient, collection, workUUIDs):
         collectionEditions = dbClient.session.query(Edition)\
             .filter(Edition.work_id == work.id)\
             .order_by(Edition.date_created.asc())\
-            .all()
+            .limit(1)\
+            .scalar()
 
         dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
-        {"collection_id": collection.id, "edition_id": collectionEditions[0].id} \
+        {"collection_id": collection.id, "edition_id": collectionEditions.id} \
     ]))
