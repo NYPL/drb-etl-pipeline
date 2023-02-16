@@ -4,7 +4,8 @@
 ### Added
 - New endpoint to update whole collection JSON objects in the API response
 ### Fixed
--
+- Add new DB entities for automatic collections
+- Add support for 'Most Recent' automatic collection
 
 ## 2023-02-02 -- v0.11.2
 ### Added
@@ -16,6 +17,7 @@
 - Handle `ConnectTimeout` from OCLC Classify API
 - Updated newrelic instrumentation to encompass all background jobs
 - Bumped to python 3.9 for CI testing to match production
+- Set DEFAULT_COVER_URL for docker environments
 
 ## 2022-12-22 -- v0.11.1
 ### Added

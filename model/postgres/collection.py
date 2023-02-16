@@ -1,4 +1,14 @@
-from sqlalchemy import Unicode, Integer, Column, Table, ForeignKey
+import enum
+
+from sqlalchemy import (
+    Column,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Table,
+    Unicode,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -19,6 +29,33 @@ COLLECTION_EDITIONS = Table(
 )
 
 
+class CollectionType(str, enum.Enum):
+    static = "static"
+    automatic = "automatic"
+
+
+class AutomaticCollection(Base):
+
+    __tablename__ = 'automatic_collection'
+
+    collection_id = Column(
+        'collection_id',
+        Integer,
+        ForeignKey('collections.id', ondelete='CASCADE'),
+        primary_key=True,
+    )
+
+    keyword_query = Column('keyword_query', String)
+    author_query = Column('author_query', String)
+    title_query = Column('title_query', String)
+    subject_query = Column('subject_query', String)
+
+    sort_field = Column('sort_field', String, nullable=False)
+    sort_direction = Column('sort_direction', String, nullable=False)
+
+    limit = Column('limit', Integer)
+
+
 class Collection(Base, Core):
     __tablename__ = 'collections'
 
@@ -28,6 +65,7 @@ class Collection(Base, Core):
     creator = Column(Unicode, index=True)
     description = Column(Unicode)
     owner = Column(Unicode)
+    type = Column(Enum(CollectionType))
 
     editions = relationship(
         'Edition',

@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, date
 from sqlalchemy.orm import joinedload, sessionmaker
-from sqlalchemy.sql import text
+from sqlalchemy.sql import func, text
 from uuid import uuid4
 
-from model import Work, Edition, Link, Item, Record, Collection, User
+from model import Work, Edition, Link, Item, Record, Collection, User, AutomaticCollection
 from .utils import APIUtils
 
 
@@ -56,6 +56,67 @@ class DBClient():
             )\
             .filter(Edition.id == editionID).first()
 
+    def fetchAllPreferredEditions(
+        self,
+        sortField: str,
+        sortDirection: str,
+        page: int,
+        perPage: int,
+    ):
+        """Fetch up to `limit` editions, sorting by the given sort fields and
+        respecting the given page fields (using basic limit / offset paging
+
+        Note, we only accept sorting by title, date or uuid for now. We may want
+        to consider opening that up.
+        """
+        # Sort all the `Work`s and rank their editions by oldest
+        workQuery = (
+            self.session.query(
+                Work,
+                Edition.id.label("edition_id"),
+                func.rank().over(
+                    order_by=(Edition.date_created.asc(), Edition.id.asc()),
+                    partition_by=Work.id,
+                ).label("rnk"),
+            )
+            .join(Edition)
+        ).subquery()
+
+        offset = (page - 1) * perPage
+
+        sortClause = {
+            "title": workQuery.c.title,
+            "date": workQuery.c.date_created,
+            "uuid": workQuery.c.uuid,
+        }.get(sortField)
+
+        if sortClause is None:
+            raise ValueError(f"Invalid sort param {sortField}")
+
+        if sortDirection == "DESC":
+            sortClause = sortClause.desc()
+
+        editionsQuery = (
+            self.session.query(Edition)
+                .options(
+                    joinedload(Edition.links),
+                    joinedload(Edition.items),
+                    joinedload(Edition.items, Item.links),
+                    joinedload(Edition.items, Item.rights),
+                )
+                # Get the editions from the sorted works
+                .join(workQuery, Edition.id == workQuery.c.edition_id)
+                # And filter to only the oldest edition per work to get
+                # the 'preferred' edition
+                .where(workQuery.c.rnk == 1)
+                .order_by(sortClause)
+        )
+
+        return (
+            editionsQuery.count(),
+            editionsQuery.offset(offset).limit(perPage).all(),
+        )
+
     def fetchSingleLink(self, linkID):
         return self.session.query(Link).filter(Link.id == linkID).first()
 
@@ -97,6 +158,13 @@ class DBClient():
             .offset(offset)\
             .limit(perPage)\
             .all()
+
+    def fetchAutomaticCollection(self, collection_id: int):
+        return (
+            self.session.query(AutomaticCollection)
+                .filter(AutomaticCollection.collection_id == collection_id)
+                .one()
+        )
 
     def createCollection(
         self, title, creator, description, owner, workUUIDs=[], editionIDs=[]
