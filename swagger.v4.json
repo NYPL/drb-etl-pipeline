@@ -771,7 +771,7 @@
             }
         },
         "/collection/update/{uuid}": {
-            "get": {
+            "post": {
                 "tags": ["digital-research-books"],
                 "summary": "Update a DRB Collection",
                 "description": "Return an updated collection of selected edition records as a formatted OPDS2 feed",

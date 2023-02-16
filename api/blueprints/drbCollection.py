@@ -10,9 +10,8 @@ from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
 from ..opds2 import Feed, Publication
 from logger import createLog
-from model import Work
+from model import Work, Edition
 from model.postgres.collection import COLLECTION_EDITIONS
-from datetime import date
 
 logger = createLog(__name__)
 
@@ -325,10 +324,11 @@ def addWorkEditionsToCollection(dbClient, collection, workUUIDs):
             .all()
 
     for work in collectionWorks:
-        editions = [ed for ed in work.editions]
-        
+        collectionEditions = dbClient.session.query(Edition)\
+            .filter(Edition.work_id == work.id)\
+            .order_by(Edition.date_created.asc())\
+            .all()
 
         dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
-        {"collection_id": collection.id, "edition_id": edition.id} \
-        for edition in editions \
+        {"collection_id": collection.id, "edition_id": collectionEditions[0].id} \
     ]))

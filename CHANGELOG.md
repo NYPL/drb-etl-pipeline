@@ -4,7 +4,7 @@
 ### Added
 - New endpoint to update whole collection JSON objects in the API response
 ### Fixed
-- 
+-
 
 ## 2023-02-02 -- v0.11.2
 ### Added
