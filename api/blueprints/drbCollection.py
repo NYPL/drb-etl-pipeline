@@ -11,6 +11,8 @@ from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
 from ..opds2 import Feed, Publication
 from logger import createLog
+from model import Work, Edition
+from model.postgres.collection import COLLECTION_EDITIONS
 
 logger = createLog(__name__)
 
@@ -90,6 +92,56 @@ def collectionCreate(user=None):
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
+@collection.route('/update/<uuid>', methods=['POST'])
+@validateToken
+def collectionUpdate(uuid, user=None):
+    logger.info('Handling collection update request')
+
+    collectionData = request.json
+    dataKeys = collectionData.keys()
+
+    if {'title', 'creator', 'description'}.issubset(set(dataKeys)) == False\
+            or len(set(dataKeys) & set(['workUUIDs', 'editionIDs'])) == 0:
+        errMsg = {
+            'message':
+                'title, creator and description fields are required'
+                ', with one of workUUIDs or editionIDs to create a collection'
+        }
+
+        return APIUtils.formatResponseObject(400, 'createCollection', errMsg)
+
+    dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
+
+    #Getting the collection the user wants to replace
+    try:
+        collection = dbClient.fetchSingleCollection(uuid)
+    except NoResultFound:
+        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
+        return APIUtils.formatResponseObject(404, 'fetchSingleCollection', errMsg)
+
+    workUUIDs=collectionData.get('workUUIDs', [])
+    editionIDs=collectionData.get('editionIDs', [])
+
+    collection.title = collectionData['title']
+    collection.creator = collectionData['creator']
+    collection.description = collectionData['description']
+
+    removeEditionsFromCollection(dbClient, collection)
+
+    if editionIDs:
+        addEditionsToCollection(dbClient, collection, editionIDs)
+
+    if workUUIDs:
+        addWorkEditionsToCollection(dbClient, collection, workUUIDs)
+
+    dbClient.session.commit()
+
+    logger.info('Replaced collection {}'.format(collection.uuid))
+
+    opdsFeed = constructOPDSFeed(collection.uuid, dbClient)
+
+    return APIUtils.formatOPDS2Object(201, opdsFeed)
 
 @collection.route('/<uuid>', methods=['GET'])
 def collectionFetch(uuid):
@@ -279,5 +331,34 @@ def _buildPublications(editions):
         })
 
         opdsPubs.append(pub)
-
+        
     return opdsPubs
+
+#Deleting the rows of collection_editions that were in the original collection
+def removeEditionsFromCollection(dbClient, collection):
+    dbClient.session.execute(COLLECTION_EDITIONS.delete().where(COLLECTION_EDITIONS.c.collection_id == collection.id))
+
+#Inserting rows of collection_editions based on editionIDs array
+def addEditionsToCollection(dbClient, collection, editionIDs):
+    dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
+        {"collection_id": collection.id, "edition_id": eid} \
+        for eid in editionIDs \
+    ]))
+
+#Inserting rows of collection_editions based on workUUIDs array
+def addWorkEditionsToCollection(dbClient, collection, workUUIDs):
+    collectionWorks = dbClient.session.query(Work)\
+            .join(Work.editions)\
+            .filter(Work.uuid.in_(workUUIDs))\
+            .all()
+
+    for work in collectionWorks:
+        collectionEditions = dbClient.session.query(Edition)\
+            .filter(Edition.work_id == work.id)\
+            .order_by(Edition.date_created.asc())\
+            .limit(1)\
+            .scalar()
+
+        dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
+        {"collection_id": collection.id, "edition_id": collectionEditions.id} \
+    ]))

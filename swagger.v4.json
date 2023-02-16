@@ -770,6 +770,85 @@
                 }
             }
         },
+        "/collection/update/{uuid}": {
+            "post": {
+                "tags": ["digital-research-books"],
+                "summary": "Update a DRB Collection",
+                "description": "Return an updated collection of selected edition records as a formatted OPDS2 feed",
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "description": "UUID for publication record",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "collection",
+                        "in": "body",
+                        "description": "The collection to create",
+                        "schema": {
+                            "type": "object",
+                            "properties": [
+                                {
+                                    "title": {
+                                        "type": "string"
+                                    },
+                                    "creator": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "workUUIDs": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "editionIDs": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ],              
+                "responses": {
+                    "201": {
+                        "description": "A basic OPDS2 feed response",
+                        "schema": {
+                            "$ref": "#/definitions/OPDSFeedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Collection not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    } 
+                }
+            },
         "/collection/list": {
             "get": {
                 "tags": ["digital-research-books"],
@@ -1773,4 +1852,5 @@
             }
         }
     }
+}
 }
