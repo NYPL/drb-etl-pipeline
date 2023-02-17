@@ -69,6 +69,10 @@ class DBClient():
         Note, we only accept sorting by title, date or uuid for now. We may want
         to consider opening that up.
         """
+
+        # For perf reasons, filter to the last 100 days.  We might be able to tune the
+        # query to improve this...
+        startDate = datetime.utcnow().date() - timedelta(days=100)
         # Sort all the `Work`s and rank their editions by oldest
         workQuery = (
             self.session.query(
@@ -80,6 +84,10 @@ class DBClient():
                 ).label("rnk"),
             )
             .join(Edition)
+            .where(
+                (Edition.date_created > startDate)
+                & (Work.date_created > startDate)
+            )
         ).subquery()
 
         offset = (page - 1) * perPage
@@ -98,12 +106,6 @@ class DBClient():
 
         editionsQuery = (
             self.session.query(Edition)
-                .options(
-                    joinedload(Edition.links),
-                    joinedload(Edition.items),
-                    joinedload(Edition.items, Item.links),
-                    joinedload(Edition.items, Item.rights),
-                )
                 # Get the editions from the sorted works
                 .join(workQuery, Edition.id == workQuery.c.edition_id)
                 # And filter to only the oldest edition per work to get
