@@ -106,12 +106,6 @@ class DBClient():
 
         editionsQuery = (
             self.session.query(Edition)
-                .options(
-                    joinedload(Edition.links),
-                    joinedload(Edition.items),
-                    joinedload(Edition.items, Item.links),
-                    joinedload(Edition.items, Item.rights),
-                )
                 # Get the editions from the sorted works
                 .join(workQuery, Edition.id == workQuery.c.edition_id)
                 # And filter to only the oldest edition per work to get
