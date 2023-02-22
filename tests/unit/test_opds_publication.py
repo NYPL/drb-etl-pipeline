@@ -9,7 +9,8 @@ class TestOPDSPublication:
         pubMocks = mocker.patch.multiple('api.opds2.publication',
             Metadata=mocker.DEFAULT,
             Link=mocker.DEFAULT,
-            Image=mocker.DEFAULT
+            Image=mocker.DEFAULT,
+            Rights=mocker.DEFAULT
         )
         return Publication(), pubMocks
 
@@ -31,6 +32,7 @@ class TestOPDSPublication:
         assert testPub.links == []
         assert testPub.images == []
         assert testPub.editions == []
+        assert testPub.rights == []
         pubMocks['Metadata'].assert_called_once()
 
     def test_addMetadata(self, testPubEls):
@@ -105,10 +107,10 @@ class TestOPDSPublication:
         mockPub.return_value = 'testEdition'
 
 
-        testPub.addEdition({'metadata': 'testMeta', 'links': 'testLinks'})
+        testPub.addEdition({'metadata': 'testMeta', 'links': 'testLinks', 'rights': 'testRights'})
 
         assert testPub.editions[0] == 'testEdition'
-        mockPub.assert_called_once_with(metadata='testMeta', links='testLinks')
+        mockPub.assert_called_once_with(metadata='testMeta', links='testLinks', rights='testRights')
 
     def test_addEdition_object(self, testPubEls, mocker):
         testPub, _ = testPubEls
@@ -361,7 +363,7 @@ class TestOPDSPublication:
     def test_dir(self, testPubEls):
         testPub, _ = testPubEls
 
-        assert dir(testPub) == ['editions', 'images', 'links', 'metadata', 'type']
+        assert dir(testPub) == ['editions', 'images', 'links', 'metadata', 'rights', 'type']
 
     def test_iter_success(self, testIterableClass):
         testPub = Publication()
@@ -369,12 +371,14 @@ class TestOPDSPublication:
         testPub.metadata = 'testMetadataBlock'
         testPub.images = [testIterableClass('img1'), testIterableClass('img2')]
         testPub.links = [testIterableClass('link1')]
+        testPub.rights = [testIterableClass('right1'), testIterableClass('right2'), testIterableClass('right3')]
 
         assert dict(testPub) == {
             'metadata': 'testMetadataBlock',
             'images': [{'name': 'img1'}, {'name': 'img2'}],
             'links': [{'name': 'link1'}],
             'editions': [],
+            'rights': [{'name': 'right1'}, {'name': 'right2'}, {'name': 'right3'}],
             'type': 'application/opds-publication+json'
         }
 

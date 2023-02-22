@@ -334,19 +334,25 @@ def _buildPublications(editions):
         
     return opdsPubs
 
-#Deleting the rows of collection_editions that were in the original collection
 def removeEditionsFromCollection(dbClient, collection):
+
+    '''Deleting the rows of collection_editions that were in the original collection'''
+
     dbClient.session.execute(COLLECTION_EDITIONS.delete().where(COLLECTION_EDITIONS.c.collection_id == collection.id))
 
-#Inserting rows of collection_editions based on editionIDs array
 def addEditionsToCollection(dbClient, collection, editionIDs):
+
+    '''Inserting rows of collection_editions based on editionIDs array'''
+
     dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
         {"collection_id": collection.id, "edition_id": eid} \
         for eid in editionIDs \
     ]))
 
-#Inserting rows of collection_editions based on workUUIDs array
 def addWorkEditionsToCollection(dbClient, collection, workUUIDs):
+
+    '''Inserting rows of collection_editions based on workUUIDs array'''
+
     collectionWorks = dbClient.session.query(Work)\
             .join(Work.editions)\
             .filter(Work.uuid.in_(workUUIDs))\
