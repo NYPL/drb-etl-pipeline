@@ -26,11 +26,11 @@ class Rights:
     def __iter__(self):
         for reqField in self.REQUIRED_FIELDS:
             if getattr(self, reqField, None) is None:
-                raise OPDS2LinkException('{} must be present in Rights'.format(reqField))
+                raise OPDS2RightsException('{} must be present in Rights'.format(reqField))
 
         if len(self.attrs - set(self.ALLOWED_FIELDS)) > 1:
             unpermittedAttrs = self.attrs - set(self.ALLOWED_FIELDS)
-            raise OPDS2LinkException('{} fields are not permitted in Rights'.format(','.join(list(unpermittedAttrs))))
+            raise OPDS2RightsException('{} fields are not permitted in Rights'.format(','.join(list(unpermittedAttrs))))
 
         for field in self.ALLOWED_FIELDS:
             try:
@@ -41,5 +41,5 @@ class Rights:
     def __repr__(self):
         return '<Rights(license={}, rightsStatement={}, source={})>'.format(self.license, self.rightsStatement, self.source)
 
-class OPDS2LinkException(Exception):
+class OPDS2RightsException(Exception):
     pass

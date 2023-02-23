@@ -70,6 +70,35 @@ class TestOPDSPublication:
         testPub.addLinks(['link1', 'link2'])
 
         mockAdd.assert_has_calls([mocker.call('link1'), mocker.call('link2')])
+    
+    def test_addRight_dict(self, testPubEls):
+        testPub, pubMocks = testPubEls
+
+        pubMocks['Rights'].return_value = 'testRights'
+
+        testPub.addRight({'license': 'test1', 'rightsStatement': 'test2', 'source': 'test3'})
+
+        assert testPub.rights[0] == 'testRights'
+        pubMocks['Rights'].assert_called_once_with(license='test1', rightsStatement='test2', source='test3')
+
+    def test_addRight_object(self, testPubEls, mocker):
+        testPub, pubMocks = testPubEls
+
+        mockLink = mocker.MagicMock(license='test1', rightsStatement='test2', source='test3')
+
+        testPub.addRight(mockLink)
+
+        assert testPub.rights[0] == mockLink
+        pubMocks['Rights'].assert_not_called()
+
+    def test_addRights(self, testPubEls, mocker):
+        testPub, _ = testPubEls
+
+        mockAdd = mocker.patch.object(Publication, 'addRight')
+
+        testPub.addRights(['right1', 'right2'])
+
+        mockAdd.assert_has_calls([mocker.call('right1'), mocker.call('right2')])
 
     def test_addImage_dict(self, testPubEls):
         testPub, pubMocks = testPubEls
