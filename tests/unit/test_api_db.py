@@ -155,7 +155,7 @@ class TestDBClient:
 
         testNewCollection = testInstance.createCollection(
             'Test Coll', 'Test Creator', 'Test Description', 'testOwner',
-            workUUIDs=['testUUID'], editionIDs=['ed1', 'ed2']
+            workUUIDs=['testUUID'], editionIDs=['ed1', 'ed2'], type='static'
         )
 
         assert len(testNewCollection.editions) == 3
@@ -164,7 +164,7 @@ class TestDBClient:
 
         mockCollection.assert_called_once_with(
             uuid='testUUID', title='Test Coll', creator='Test Creator',
-            description='Test Description', owner='testOwner'
+            description='Test Description', owner='testOwner', type='static'
         )
 
         testInstance.session.query().join().filter().all.assert_called_once()

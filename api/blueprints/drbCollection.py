@@ -81,7 +81,8 @@ def collectionCreate(user=None):
         collectionData['description'],
         user,
         workUUIDs=collectionData.get('workUUIDs', []),
-        editionIDs=collectionData.get('editionIDs', [])
+        editionIDs=collectionData.get('editionIDs', []),
+        type='static'
     )
 
     dbClient.session.commit()

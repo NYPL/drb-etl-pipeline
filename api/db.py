@@ -169,14 +169,15 @@ class DBClient():
         )
 
     def createCollection(
-        self, title, creator, description, owner, workUUIDs=[], editionIDs=[]
+        self, title, creator, description, owner, workUUIDs=[], editionIDs=[], type=None
     ):
         newCollection = Collection(
             uuid=uuid4(),
             title=title,
             creator=creator,
             description=description,
-            owner=owner
+            owner=owner,
+            type=type
         )
 
         collectionEditions = []

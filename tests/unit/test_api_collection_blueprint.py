@@ -182,7 +182,7 @@ class TestCollectionBlueprint:
             mockDB.createCollection.assert_called_once_with(
                 'Test Collection', 'Test Creator', 'Test Description',
                 'testUser', workUUIDs=['uuid1', 'uuid2'],
-                editionIDs=['ed1', 'ed2', 'ed3']
+                editionIDs=['ed1', 'ed2', 'ed3'], type='static'
             )
             mockDB.session.commit.assert_called_once()
 
