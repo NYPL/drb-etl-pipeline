@@ -3,7 +3,7 @@
 ## unreleased version -- v0.11.3
 ### Added
 - New endpoint to update whole collection JSON objects in the API response
-- Publication rights data object to opds2 directory and collectionFetch API response
+- Publication rights data object to collectionFetch API response
 ### Fixed
 - Add new DB entities for automatic collections
 - Add support for 'Most Recent' automatic collection

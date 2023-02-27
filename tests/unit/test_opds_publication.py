@@ -9,8 +9,7 @@ class TestOPDSPublication:
         pubMocks = mocker.patch.multiple('api.opds2.publication',
             Metadata=mocker.DEFAULT,
             Link=mocker.DEFAULT,
-            Image=mocker.DEFAULT,
-            Rights=mocker.DEFAULT
+            Image=mocker.DEFAULT
         )
         return Publication(), pubMocks
 
@@ -32,7 +31,6 @@ class TestOPDSPublication:
         assert testPub.links == []
         assert testPub.images == []
         assert testPub.editions == []
-        assert testPub.rights == []
         pubMocks['Metadata'].assert_called_once()
 
     def test_addMetadata(self, testPubEls):
@@ -70,35 +68,7 @@ class TestOPDSPublication:
         testPub.addLinks(['link1', 'link2'])
 
         mockAdd.assert_has_calls([mocker.call('link1'), mocker.call('link2')])
-    
-    def test_addRight_dict(self, testPubEls):
-        testPub, pubMocks = testPubEls
 
-        pubMocks['Rights'].return_value = 'testRights'
-
-        testPub.addRight({'license': 'test1', 'rightsStatement': 'test2', 'source': 'test3'})
-
-        assert testPub.rights[0] == 'testRights'
-        pubMocks['Rights'].assert_called_once_with(license='test1', rightsStatement='test2', source='test3')
-
-    def test_addRight_object(self, testPubEls, mocker):
-        testPub, pubMocks = testPubEls
-
-        mockLink = mocker.MagicMock(license='test1', rightsStatement='test2', source='test3')
-
-        testPub.addRight(mockLink)
-
-        assert testPub.rights[0] == mockLink
-        pubMocks['Rights'].assert_not_called()
-
-    def test_addRights(self, testPubEls, mocker):
-        testPub, _ = testPubEls
-
-        mockAdd = mocker.patch.object(Publication, 'addRight')
-
-        testPub.addRights(['right1', 'right2'])
-
-        mockAdd.assert_has_calls([mocker.call('right1'), mocker.call('right2')])
 
     def test_addImage_dict(self, testPubEls):
         testPub, pubMocks = testPubEls
@@ -128,18 +98,6 @@ class TestOPDSPublication:
         testPub.addImages(['img1', 'img2'])
 
         mockAdd.assert_has_calls([mocker.call('img1'), mocker.call('img2')])
-
-    def test_addEdition_dict(self, testPubEls, mocker):
-        testPub, _ = testPubEls
-
-        mockPub = mocker.patch('api.opds2.publication.Publication')
-        mockPub.return_value = 'testEdition'
-
-
-        testPub.addEdition({'metadata': 'testMeta', 'links': 'testLinks', 'rights': 'testRights'})
-
-        assert testPub.editions[0] == 'testEdition'
-        mockPub.assert_called_once_with(metadata='testMeta', links='testLinks', rights='testRights')
 
     def test_addEdition_object(self, testPubEls, mocker):
         testPub, _ = testPubEls
@@ -224,7 +182,8 @@ class TestOPDSPublication:
             languages=[None, {'iso_3': 'tst'}, {'iso_3': 'oth'}],
             date_created='testCreated',
             date_modified='testModified',
-            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': False})])],
+            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': False})],
+                                    rights=[mocker.MagicMock(source='testSource', license='testLicense', rightsStatement='testStatement')])],
             work=mocker.MagicMock(authors=[{'name': 'Test Author'}])
         )
 
@@ -274,8 +233,9 @@ class TestOPDSPublication:
             languages=[None, {'iso_3': 'tst'}, {'iso_3': 'oth'}],
             date_created='testCreated',
             date_modified='testModified',
-            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': True})])],
-            work=mocker.MagicMock(authors=[{'name': 'Test Author'}])
+            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': True})],
+                                    rights=[mocker.MagicMock(source='testSource', license='testLicense', rightsStatement='testStatement',)])],
+            work=mocker.MagicMock(authors=[{'name': 'Test Author'}]),
         )
 
         pubMocks = mocker.patch.multiple(
@@ -300,7 +260,7 @@ class TestOPDSPublication:
             mocker.call('description', 'Test Description'),
             mocker.call('language', 'tst,oth'),
             mocker.call('created', 'testCreated'),
-            mocker.call('modified', 'testModified'),
+            mocker.call('modified', 'testModified')
         ])
 
         pubMocks['addLink'].assert_called_with({'href': 'https://digital-research-books-beta.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})
@@ -392,7 +352,7 @@ class TestOPDSPublication:
     def test_dir(self, testPubEls):
         testPub, _ = testPubEls
 
-        assert dir(testPub) == ['editions', 'images', 'links', 'metadata', 'rights', 'type']
+        assert dir(testPub) == ['editions', 'images', 'links', 'metadata', 'type']
 
     def test_iter_success(self, testIterableClass):
         testPub = Publication()
@@ -400,14 +360,12 @@ class TestOPDSPublication:
         testPub.metadata = 'testMetadataBlock'
         testPub.images = [testIterableClass('img1'), testIterableClass('img2')]
         testPub.links = [testIterableClass('link1')]
-        testPub.rights = [testIterableClass('right1'), testIterableClass('right2'), testIterableClass('right3')]
 
         assert dict(testPub) == {
             'metadata': 'testMetadataBlock',
             'images': [{'name': 'img1'}, {'name': 'img2'}],
             'links': [{'name': 'link1'}],
             'editions': [],
-            'rights': [{'name': 'right1'}, {'name': 'right2'}, {'name': 'right3'}],
             'type': 'application/opds-publication+json'
         }
 

@@ -5,7 +5,6 @@ from model import Edition
 from .metadata import Metadata
 from .link import Link
 from .image import Image
-from .rights import Rights
 
 
 class Publication:
@@ -18,13 +17,12 @@ class Publication:
         'collection', 'position', 'alternate', 'isbn', 'locationCreated'
     ]
 
-    def __init__(self, metadata={}, links=[], images=[], rights=[]):
+    def __init__(self, metadata={}, links=[], images=[]):
         metadata['@type'] = 'http://schema.org/Book'
 
         self.metadata = Metadata(**metadata)
         self.links = [Link(**link) for link in links]
         self.images = [Image(**image) for image in images]
-        self.rights = [Rights(**right) for right in rights]
         self.editions = []
         self.type = 'application/opds-publication+json'
 
@@ -41,16 +39,6 @@ class Publication:
             link = Link(**link)
 
         self.links.append(link)
-
-    def addRight(self, right):
-        if isinstance(right, dict):
-            right = Rights(**right)
-
-        self.rights.append(right)
-
-    def addRights(self, rights):
-        for right in rights:
-            self.addRight(right)
 
     def addImages(self, images):
         for image in images:
@@ -69,7 +57,7 @@ class Publication:
     def addEdition(self, edition):
         if isinstance(edition, dict):
             edition = Publication(
-                metadata=edition['metadata'], links=edition['links'], rights=edition['rights']
+                metadata=edition['metadata'], links=edition['links']
             )
 
         self.editions.append(edition)
@@ -207,11 +195,11 @@ class Publication:
                     'rel': 'http://opds-spec.org/acquisition/open-access'
                 })
             for rights in item.rights:
-                self.addRight({
-                    'source': rights.source,
-                    'license': rights.license,
-                    'rightsStatement': rights.rights_statement
-                })
+                self.metadata.addField('rights', {   
+                        'source': rights.source,
+                        'license': rights.license,
+                        'rightsStatement': rights.rights_statement
+                    })
 
     def parseEditions(self, editions):
         for edition in editions:
@@ -280,7 +268,7 @@ class Publication:
         })
 
     def __dir__(self):
-        return ['type', 'metadata', 'links', 'editions', 'images', 'rights']
+        return ['type', 'metadata', 'links', 'editions', 'images']
 
     def __iter__(self):
         if len(self.images) == 0:

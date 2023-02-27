@@ -3,7 +3,6 @@ from .metadata import Metadata
 from .navigation import Navigation
 from .publication import Publication
 from .link import Link
-from .rights import Rights
 
 
 class Feed:
@@ -12,8 +11,7 @@ class Feed:
         'navigation': Navigation,
         'links': Link,
         'groups': Group,
-        'publications': Publication,
-        'rights': Rights
+        'publications': Publication
     }
 
     def __init__(self, *args, **kwargs):
@@ -24,7 +22,6 @@ class Feed:
         self.groups = kwargs.get('groups', [])
         self.images = kwargs.get('images', [])
         self.facets = kwargs.get('facets', [])
-        self.rights = kwargs.get('rights', [])
 
     def addMetadata(self, metadata):
         self.metadata = self.componentizeObject('metadata', metadata)
@@ -42,13 +39,6 @@ class Feed:
     def addLinks(self, links):
         for link in links:
             self.addLink(link)
-
-    def addRight(self, right):
-        self.addComponent('rights', right)
-
-    def addRights(self, rights):
-        for right in rights:
-            self.addRight(right)
 
     def addPublication(self, publication):
         self.addComponent('publications', publication)
@@ -99,7 +89,7 @@ class Feed:
     def __dir__(self):
         return [
             'metadata', 'navigation', 'links', 'publications', 'groups',
-            'images', 'rights', 'facets'
+            'images', 'facets'
         ]
 
     def __iter__(self):

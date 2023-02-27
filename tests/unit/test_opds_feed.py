@@ -27,7 +27,6 @@ class TestOPDSFacet:
         assert testFeed.groups == []
         assert testFeed.images == []
         assert testFeed.facets == []
-        assert testFeed.rights == []
 
     def test_addMetadata(self, testFeed, mocker):
         mockComponentize = mocker.patch.object(Feed, 'componentizeObject')
@@ -64,21 +63,6 @@ class TestOPDSFacet:
         testFeed.addLinks(['link1', 'link2'])
 
         mockAddLink.assert_has_calls([mocker.call('link1'), mocker.call('link2')])
-
-    def test_addRight(self, testFeed, mocker):
-        mockComponent = mocker.patch.object(Feed, 'addComponent')
-
-        testFeed.addRight('testRight')
-
-        mockComponent.assert_called_once_with('rights', 'testRight')
-
-    def test_addRights(self, testFeed, mocker):
-        mockAddLink = mocker.patch.object(Feed, 'addRight')
-
-        testFeed.addRights(['right1', 'right2'])
-
-        mockAddLink.assert_has_calls([mocker.call('right1'), mocker.call('right2')])
-    
     
     def test_addPublication(self, testFeed, mocker):
         mockComponent = mocker.patch.object(Feed, 'addComponent')
@@ -159,7 +143,7 @@ class TestOPDSFacet:
 
     def test_dir(self, testFeed):
         assert dir(testFeed) == [
-            'facets', 'groups', 'images', 'links', 'metadata', 'navigation', 'publications', 'rights'
+            'facets', 'groups', 'images', 'links', 'metadata', 'navigation', 'publications'
         ]
 
     def test_iter_success(self, testFeed, testIterableClass, mocker):
