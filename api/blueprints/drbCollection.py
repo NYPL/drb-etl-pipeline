@@ -165,6 +165,8 @@ def collectionUpdate(uuid):
     collection.creator = creator
     collection.description = description
 
+    dbClient.session.commit()
+
     try:
         opdsFeed = constructOPDSFeed(uuid, dbClient)
     except NoResultFound:
