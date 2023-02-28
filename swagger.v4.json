@@ -770,11 +770,11 @@
                 }
             }
         },
-        "/collection/update/{uuid}": {
+        "/collection/replace/{uuid}": {
             "post": {
                 "tags": ["digital-research-books"],
-                "summary": "Update a DRB Collection",
-                "description": "Return an updated collection of selected edition records as a formatted OPDS2 feed",
+                "summary": "Replace a DRB Collection",
+                "description": "Replace a collection of selected edition records with a new one as a formatted OPDS2 feed",
                 "security": [
                     {
                         "BasicAuth": []
@@ -820,6 +820,74 @@
                                 }
                             ]
                         }
+                    }
+                ],              
+                "responses": {
+                    "201": {
+                        "description": "A basic OPDS2 feed response",
+                        "schema": {
+                            "$ref": "#/definitions/OPDSFeedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Collection not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    } 
+                }
+            }
+        },
+        "/collection/update/{uuid}": {
+            "post": {
+                "tags": ["digital-research-books"],
+                "summary": "Update a DRB Collection",
+                "description": "Return an updated collection of selected edition records as a formatted OPDS2 feed",
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "description": "UUID for publication record",
+                        "type": "string",
+                        "required": true
+                    },
+                    {
+                        "name": "title",
+                        "in": "query",
+                        "description": "New title of collection",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "name": "creator",
+                        "in": "query",
+                        "description": "New creator of collection",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "name": "description",
+                        "in": "query",
+                        "description": "New description of collection",
+                        "type": "string",
+                        "required": false
                     }
                 ],              
                 "responses": {

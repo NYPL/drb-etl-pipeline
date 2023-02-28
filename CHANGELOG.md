@@ -2,7 +2,8 @@
 
 ## unreleased version -- v0.11.3
 ### Added
-- New endpoint to update whole collection JSON objects in the API response
+- New endpoint to replace collection JSON objects in the API response
+- New endpoint to update specific parts of collection objects in API response
 - Publication rights data object to collectionFetch API response
 ### Fixed
 - Add new DB entities for automatic collections

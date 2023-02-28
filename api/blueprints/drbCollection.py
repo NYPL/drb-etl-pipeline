@@ -94,10 +94,10 @@ def collectionCreate(user=None):
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
-@collection.route('/update/<uuid>', methods=['POST'])
+@collection.route('/replace/<uuid>', methods=['POST'])
 @validateToken
-def collectionUpdate(uuid, user=None):
-    logger.info('Handling collection update request')
+def collectionReplace(uuid, user=None):
+    logger.info('Handling collection replacement request')
 
     collectionData = request.json
     dataKeys = collectionData.keys()
@@ -145,6 +145,49 @@ def collectionUpdate(uuid, user=None):
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
+@collection.route('/update/<uuid>', methods=['POST'])
+def collectionUpdate(uuid):
+    logger.info('Handling collection replacement request')
+
+    dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
+
+    title = request.args.get('title', None)
+    creator = request.args.get('creator', None)
+    description = request.args.get('description', None)
+
+    if len(set(request.args) & set(['title', 'creator', 'description'])) == 0:
+        errMsg = {
+            'message':
+                'At least one of these fields(title, creator and description) are required'
+        }
+
+        return APIUtils.formatResponseObject(400, 'updateCollection', errMsg)
+
+    #Getting the collection the user wants to update
+    try:
+        collection = dbClient.fetchSingleCollection(uuid)
+    except NoResultFound:
+        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
+        return APIUtils.formatResponseObject(404, 'fetchSingleCollection', errMsg)
+
+    if title:
+        collection.title = title
+    if creator:
+        collection.creator = creator
+    if description:
+        collection.description = description
+
+    dbClient.session.commit()
+
+    try:
+        opdsFeed = constructOPDSFeed(uuid, dbClient)
+    except NoResultFound:
+        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
+        return APIUtils.formatResponseObject(404, 'fetchCollection', errMsg)
+
+    return APIUtils.formatOPDS2Object(200, opdsFeed)
+
 @collection.route('/<uuid>', methods=['GET'])
 def collectionFetch(uuid):
     logger.info('Fetching collection identified by {}'.format(uuid))
@@ -165,7 +208,6 @@ def collectionFetch(uuid):
         return APIUtils.formatResponseObject(404, 'fetchCollection', errMsg)
 
     return APIUtils.formatOPDS2Object(200, opdsFeed)
-
 
 @collection.route('/<uuid>', methods=['DELETE'])
 @validateToken
