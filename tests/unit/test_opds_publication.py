@@ -69,6 +69,7 @@ class TestOPDSPublication:
 
         mockAdd.assert_has_calls([mocker.call('link1'), mocker.call('link2')])
 
+
     def test_addImage_dict(self, testPubEls):
         testPub, pubMocks = testPubEls
 
@@ -97,18 +98,6 @@ class TestOPDSPublication:
         testPub.addImages(['img1', 'img2'])
 
         mockAdd.assert_has_calls([mocker.call('img1'), mocker.call('img2')])
-
-    def test_addEdition_dict(self, testPubEls, mocker):
-        testPub, _ = testPubEls
-
-        mockPub = mocker.patch('api.opds2.publication.Publication')
-        mockPub.return_value = 'testEdition'
-
-
-        testPub.addEdition({'metadata': 'testMeta', 'links': 'testLinks'})
-
-        assert testPub.editions[0] == 'testEdition'
-        mockPub.assert_called_once_with(metadata='testMeta', links='testLinks')
 
     def test_addEdition_object(self, testPubEls, mocker):
         testPub, _ = testPubEls
@@ -193,7 +182,8 @@ class TestOPDSPublication:
             languages=[None, {'iso_3': 'tst'}, {'iso_3': 'oth'}],
             date_created='testCreated',
             date_modified='testModified',
-            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': False})])],
+            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': False})],
+                                    rights=[mocker.MagicMock(source='testSource', license='testLicense', rights_statement='testStatement')])],
             work=mocker.MagicMock(authors=[{'name': 'Test Author'}])
         )
 
@@ -220,6 +210,7 @@ class TestOPDSPublication:
             mocker.call('language', 'tst,oth'),
             mocker.call('created', 'testCreated'),
             mocker.call('modified', 'testModified'),
+            mocker.call('rights', {'source': 'testSource', 'license': 'testLicense', 'rightsStatement': 'testStatement'})
         ])
 
         pubMocks['addLink'].assert_called_with({'href': 'testURL', 'rel': 'http://opds-spec.org/acquisition/open-access', 'type': 'testType'})
@@ -243,8 +234,9 @@ class TestOPDSPublication:
             languages=[None, {'iso_3': 'tst'}, {'iso_3': 'oth'}],
             date_created='testCreated',
             date_modified='testModified',
-            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': True})])],
-            work=mocker.MagicMock(authors=[{'name': 'Test Author'}])
+            items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': True})],
+                                    rights=[mocker.MagicMock(source='testSource', license='testLicense', rights_statement='testStatement',)])],
+            work=mocker.MagicMock(authors=[{'name': 'Test Author'}]),
         )
 
         pubMocks = mocker.patch.multiple(
@@ -270,6 +262,7 @@ class TestOPDSPublication:
             mocker.call('language', 'tst,oth'),
             mocker.call('created', 'testCreated'),
             mocker.call('modified', 'testModified'),
+            mocker.call('rights', {'source': 'testSource', 'license': 'testLicense', 'rightsStatement': 'testStatement'})
         ])
 
         pubMocks['addLink'].assert_called_with({'href': 'https://digital-research-books-beta.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})

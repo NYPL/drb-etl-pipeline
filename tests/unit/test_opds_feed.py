@@ -143,7 +143,7 @@ class TestOPDSFacet:
 
     def test_dir(self, testFeed):
         assert dir(testFeed) == [
-            'facets', 'groups', 'images', 'links', 'metadata', 'navigation', 'publications',
+            'facets', 'groups', 'images', 'links', 'metadata', 'navigation', 'publications'
         ]
 
     def test_iter_success(self, testFeed, testIterableClass, mocker):

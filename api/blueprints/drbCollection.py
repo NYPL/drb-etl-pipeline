@@ -7,6 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 
 from ..automaticCollectionUtils import fetchAutomaticCollectionEditions
 from ..db import DBClient
+from ..elastic import ElasticClient
 from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
 from ..opds2 import Feed, Publication
@@ -81,7 +82,8 @@ def collectionCreate(user=None):
         collectionData['description'],
         user,
         workUUIDs=collectionData.get('workUUIDs', []),
-        editionIDs=collectionData.get('editionIDs', [])
+        editionIDs=collectionData.get('editionIDs', []),
+        type='static'
     )
 
     dbClient.session.commit()
@@ -321,7 +323,8 @@ def constructOPDSFeed(
     if collection.type == "static":
         _addStaticPubsToFeed(opdsFeed, collection, path, page, perPage, sort)
     elif collection.type == "automatic":
-        _addAutomaticPubsToFeed(opdsFeed, dbClient, collection.id, path, page, perPage)
+        esClient = ElasticClient(current_app.config["REDIS_CLIENT"])
+        _addAutomaticPubsToFeed(opdsFeed, dbClient, esClient, collection.id, path, page, perPage)
     else:
         raise ValueError(f"Encountered collection with unhandleable type {collection.type}")
 
@@ -343,7 +346,7 @@ def _addStaticPubsToFeed(opdsFeed, collection, path, page, perPage, sort):
     )
 
 
-def _addAutomaticPubsToFeed(opdsFeed, dbClient, collectionId, path, page, perPage):
+def _addAutomaticPubsToFeed(opdsFeed, dbClient, esClient, collectionId, path, page, perPage):
     totalCount, editions = fetchAutomaticCollectionEditions(
         dbClient,
         collectionId,
@@ -376,19 +379,25 @@ def _buildPublications(editions):
         
     return opdsPubs
 
-#Deleting the rows of collection_editions that were in the original collection
 def removeEditionsFromCollection(dbClient, collection):
+
+    '''Deleting the rows of collection_editions that were in the original collection'''
+
     dbClient.session.execute(COLLECTION_EDITIONS.delete().where(COLLECTION_EDITIONS.c.collection_id == collection.id))
 
-#Inserting rows of collection_editions based on editionIDs array
 def addEditionsToCollection(dbClient, collection, editionIDs):
+
+    '''Inserting rows of collection_editions based on editionIDs array'''
+
     dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
         {"collection_id": collection.id, "edition_id": eid} \
         for eid in editionIDs \
     ]))
 
-#Inserting rows of collection_editions based on workUUIDs array
 def addWorkEditionsToCollection(dbClient, collection, workUUIDs):
+
+    '''Inserting rows of collection_editions based on workUUIDs array'''
+
     collectionWorks = dbClient.session.query(Work)\
             .join(Work.editions)\
             .filter(Work.uuid.in_(workUUIDs))\
