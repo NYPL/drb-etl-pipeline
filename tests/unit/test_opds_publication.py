@@ -183,7 +183,7 @@ class TestOPDSPublication:
             date_created='testCreated',
             date_modified='testModified',
             items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': False})],
-                                    rights=[mocker.MagicMock(source='testSource', license='testLicense', rightsStatement='testStatement')])],
+                                    rights=[mocker.MagicMock(source='testSource', license='testLicense', rights_statement='testStatement')])],
             work=mocker.MagicMock(authors=[{'name': 'Test Author'}])
         )
 
@@ -210,6 +210,7 @@ class TestOPDSPublication:
             mocker.call('language', 'tst,oth'),
             mocker.call('created', 'testCreated'),
             mocker.call('modified', 'testModified'),
+            mocker.call('rights', {'source': 'testSource', 'license': 'testLicense', 'rightsStatement': 'testStatement'})
         ])
 
         pubMocks['addLink'].assert_called_with({'href': 'testURL', 'rel': 'http://opds-spec.org/acquisition/open-access', 'type': 'testType'})
@@ -234,7 +235,7 @@ class TestOPDSPublication:
             date_created='testCreated',
             date_modified='testModified',
             items=[mocker.MagicMock(links=[mocker.MagicMock(id='testID', url='testURL', media_type='testType', flags={'reader': True})],
-                                    rights=[mocker.MagicMock(source='testSource', license='testLicense', rightsStatement='testStatement',)])],
+                                    rights=[mocker.MagicMock(source='testSource', license='testLicense', rights_statement='testStatement',)])],
             work=mocker.MagicMock(authors=[{'name': 'Test Author'}]),
         )
 
@@ -260,7 +261,8 @@ class TestOPDSPublication:
             mocker.call('description', 'Test Description'),
             mocker.call('language', 'tst,oth'),
             mocker.call('created', 'testCreated'),
-            mocker.call('modified', 'testModified')
+            mocker.call('modified', 'testModified'),
+            mocker.call('rights', {'source': 'testSource', 'license': 'testLicense', 'rightsStatement': 'testStatement'})
         ])
 
         pubMocks['addLink'].assert_called_with({'href': 'https://digital-research-books-beta.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})

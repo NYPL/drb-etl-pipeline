@@ -7,6 +7,7 @@
 ### Fixed
 - Add new DB entities for automatic collections
 - Add support for 'Most Recent' automatic collection
+- Supported ES backed automatic collections
 
 ## 2023-02-02 -- v0.11.2
 ### Added
