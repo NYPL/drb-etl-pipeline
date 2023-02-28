@@ -194,6 +194,12 @@ class Publication:
                     'type': link.media_type,
                     'rel': 'http://opds-spec.org/acquisition/open-access'
                 })
+            for rights in item.rights:
+                self.metadata.addField('rights', {   
+                        'source': rights.source,
+                        'license': rights.license,
+                        'rightsStatement': rights.rights_statement
+                    })
 
     def parseEditions(self, editions):
         for edition in editions:
