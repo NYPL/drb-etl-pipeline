@@ -182,7 +182,7 @@ class TestCollectionBlueprint:
             mockDB.createCollection.assert_called_once_with(
                 'Test Collection', 'Test Creator', 'Test Description',
                 'testUser', workUUIDs=['uuid1', 'uuid2'],
-                editionIDs=['ed1', 'ed2', 'ed3']
+                editionIDs=['ed1', 'ed2', 'ed3'], type='static'
             )
             mockDB.session.commit.assert_called_once()
 
@@ -549,6 +549,7 @@ class TestCollectionBlueprint:
             description='Test Description',
             type="automatic",
         )
+        mockES = mocker.MagicMock()
 
         mocker.patch(
             "api.blueprints.drbCollection.fetchAutomaticCollectionEditions",
@@ -558,7 +559,11 @@ class TestCollectionBlueprint:
             ),
         )
 
-        mocker.patch.dict(os.environ, {'ENVIRONMENT': 'test'})
+        mocker.patch.dict(
+            os.environ,
+            {'ENVIRONMENT': 'test', 'ELASTICSEARCH_INDEX': 'test_es_index'},
+        )
+        testApp.config['REDIS_CLIENT'] = 'test_redis_client'
 
         mockPaging = mocker.patch.object(OPDSUtils, 'addPagingOptions')
 
