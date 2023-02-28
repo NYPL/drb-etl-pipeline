@@ -154,6 +154,14 @@ def collectionUpdate(uuid):
     creator = request.args.get('creator', None)
     description = request.args.get('description', None)
 
+    if len(set(request.args) & set(['title', 'creator', 'description'])) == 0:
+        errMsg = {
+            'message':
+                'At least one of these fields(title, creator and description) are required'
+        }
+
+        return APIUtils.formatResponseObject(400, 'updateCollection', errMsg)
+
     #Getting the collection the user wants to update
     try:
         collection = dbClient.fetchSingleCollection(uuid)
@@ -161,9 +169,12 @@ def collectionUpdate(uuid):
         errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
         return APIUtils.formatResponseObject(404, 'fetchSingleCollection', errMsg)
 
-    collection.title = title
-    collection.creator = creator
-    collection.description = description
+    if title:
+        collection.title = title
+    if creator:
+        collection.creator = creator
+    if description:
+        collection.description = description
 
     dbClient.session.commit()
 

@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
 from api.blueprints.drbCollection import (
-    collectionCreate, collectionFetch, collectionUpdate, collectionDelete, collectionList,
+    collectionCreate, collectionFetch, collectionReplace, collectionUpdate, collectionDelete, collectionList,
     constructSortMethod, constructOPDSFeed, validateToken
 )
 from api.utils import APIUtils
@@ -28,7 +28,7 @@ class TestCollectionBlueprint:
 
         return flaskApp
 
-    def test_collectionUpdate_success(self, testApp, mockUtils, mocker):
+    def test_collectionReplace_success(self, testApp, mockUtils, mocker):
         mockDB = mocker.MagicMock(session=mocker.MagicMock())
         mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
         mockDBClient.return_value = mockDB
@@ -62,11 +62,11 @@ class TestCollectionBlueprint:
         mockUtils['formatOPDS2Object'].return_value = 'testOPDS2Response'
 
         with testApp.test_request_context(
-            '/update/testUUID',
+            '/replace/testUUID',
             json=testUpdatedCollection,
             headers={'Authorization': 'Basic testAuth'}
         ):
-            testAPIResponse = collectionUpdate('testUUID')
+            testAPIResponse = collectionReplace('testUUID')
 
             assert testAPIResponse == 'testOPDS2Response'
 
@@ -86,7 +86,7 @@ class TestCollectionBlueprint:
                 201, 'testOPDS2Feed'
             )
 
-    def test_collectionUpdate_fail(self, testApp, mockUtils, mocker):
+    def test_collectionReplace_fail(self, testApp, mockUtils, mocker):
         mockDB = mocker.MagicMock(session=mocker.MagicMock())
         mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
         mockDBClient.return_value = mockDB
@@ -113,12 +113,12 @@ class TestCollectionBlueprint:
         mockUtils['validatePassword'].return_value = True
 
         with testApp.test_request_context(
-            '/update/testUUID',
+            '/replace/testUUID',
             json=testFailCollection,
             headers={'Authorization': 'Basic testAuth'}
         ):
 
-            testAPIResponse = collectionUpdate('testUUID')
+            testAPIResponse = collectionReplace('testUUID')
 
             assert testAPIResponse == 'testErrorResponse'
 
@@ -131,6 +131,70 @@ class TestCollectionBlueprint:
                     ', with one of workUUIDs or editionIDs to create a'
                     ' collection'
 
+                }
+            )
+
+    def test_collectionUpdate_success(self, testApp, mockUtils, mocker):
+        mockDB = mocker.MagicMock(session=mocker.MagicMock())
+        mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockDB.fetchSingleCollection\
+            .return_value = mocker.MagicMock(uuid='testUUID')
+
+        mockFeedConstruct = mocker.patch(
+            'api.blueprints.drbCollection.constructOPDSFeed'
+        )
+        mockFeedConstruct.return_value = 'testOPDS2Feed'
+
+        mockUtils['formatOPDS2Object'].return_value = 'testOPDS2Response'
+
+        with testApp.test_request_context(
+            '/update/testUUID?title=newTitle',
+            headers={'Authorization': 'Basic testAuth'}
+        ):
+            testAPIResponse = collectionUpdate('testUUID')
+
+            assert testAPIResponse == 'testOPDS2Response'
+
+            assert mockDBClient.call_count == 1
+            assert mockDB.createSession.call_count == 1
+            mockDB.fetchSingleCollection.assert_called_once_with('testUUID')
+            mockDB.session.commit.assert_called_once()
+
+            mockFeedConstruct.assert_called_once_with(
+                'testUUID', mockDB
+            )
+
+            mockUtils['formatOPDS2Object'].assert_called_once_with(
+                200, 'testOPDS2Feed'
+            )
+
+    def test_collectionUpdate_error(self, testApp, mockUtils, mocker):
+        mockDB = mocker.MagicMock(session=mocker.MagicMock())
+        mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
+
+        mockDB.fetchSingleCollection\
+            .return_value = mocker.MagicMock(uuid='testUUID')
+
+        with testApp.test_request_context(
+            '/update/testUUID',
+            headers={'Authorization': 'Basic testAuth'}
+        ):
+
+            testAPIResponse = collectionUpdate('testUUID')
+
+            assert testAPIResponse == 'testErrorResponse'
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                400,
+                'updateCollection',
+                {
+                    'message':
+                    'At least one of these fields(title, creator and description) are required'
                 }
             )
 
