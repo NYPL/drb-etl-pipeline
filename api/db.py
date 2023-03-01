@@ -200,8 +200,8 @@ class DBClient():
                 .one()
         )
 
-    def createCollection(
-        self, title, creator, description, owner, workUUIDs=[], editionIDs=[], type=None
+    def createStaticCollection(
+        self, title, creator, description, owner, workUUIDs=[], editionIDs=[],
     ):
         newCollection = Collection(
             uuid=uuid4(),
@@ -209,7 +209,7 @@ class DBClient():
             creator=creator,
             description=description,
             owner=owner,
-            type=type
+            type="static",
         )
 
         collectionEditions = []
@@ -242,6 +242,47 @@ class DBClient():
 
         self.session.add(newCollection)
 
+        return newCollection
+
+    def createAutomaticCollection(
+        self,
+        title,
+        creator,
+        description,
+        owner, *,
+        sortField,
+        sortDirection,
+        limit=None,
+        keywordQuery=None,
+        authorQuery=None,
+        titleQuery=None,
+        subjectQuery=None,
+    ):
+        newCollection = Collection(
+            uuid=uuid4(),
+            title=title,
+            creator=creator,
+            description=description,
+            owner=owner,
+            type='automatic',
+        )
+        nonNullKwargs = {
+            k: v for k, v in {
+                "sort_field": sortField,
+                "sort_direction": sortDirection,
+                "limit": limit,
+            }.items()
+            if v
+        }
+        automaticCollection = AutomaticCollection(
+            keyword_query=keywordQuery,
+            author_query=authorQuery,
+            title_query=titleQuery,
+            subject_query=subjectQuery,
+            **nonNullKwargs,
+        )
+        newCollection.auto.append(automaticCollection)
+        self.session.add(automaticCollection)
         return newCollection
 
     def deleteCollection(self, uuid, owner):

@@ -6,10 +6,11 @@
 - New endpoint to update specific parts of collection objects in API response
 - Publication rights data object to fetchCollection API response
 - Identifier value to publication links of fetchCollection API response
-### Fixed
 - Add new DB entities for automatic collections
 - Add support for 'Most Recent' automatic collection
 - Supported ES backed automatic collections
+- Add ability to create automatic collections
+### Fixed
 
 ## 2023-02-02 -- v0.11.2
 ### Added
