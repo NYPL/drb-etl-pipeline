@@ -5,6 +5,7 @@ from model import Edition
 from .metadata import Metadata
 from .link import Link
 from .image import Image
+from ..utils import APIUtils
 
 
 class Publication:
@@ -168,6 +169,8 @@ class Publication:
         host = 'digital-research-books-beta'\
             if os.environ['ENVIRONMENT'] == 'production' else 'drb-qa'
 
+        identifier = ''
+
         # Acquisition Links
         for item in editionRecord.items:
             for link in item.links:
@@ -177,22 +180,27 @@ class Publication:
                         self.addLink({
                         'href': 'https://{}.nypl.org/read/{}'.format(host, link.id),
                         'type': link.media_type,
-                        'rel': 'http://opds-spec.org/acquisition/open-access'
+                        'rel': 'http://opds-spec.org/acquisition/open-access',
+                        'identifier': 'readable'
                     })
                     # Non-readable links
                     else:
+                        identifier = self.getLinkIdentifier(link)
                         self.addLink({
                         'href': link.url,
                         'type': link.media_type,
-                        'rel': 'http://opds-spec.org/acquisition/open-access'
+                        'rel': 'http://opds-spec.org/acquisition/open-access',
+                        'identifier': identifier
                         })
 
                 # Non-readable links
                 else:
+                    identifier = self.getLinkIdentifier(link)
                     self.addLink({
                     'href': link.url,
                     'type': link.media_type,
-                    'rel': 'http://opds-spec.org/acquisition/open-access'
+                    'rel': 'http://opds-spec.org/acquisition/open-access',
+                    'identifier': identifier
                 })
             for rights in item.rights:
                 self.metadata.addField('rights', {   
@@ -242,6 +250,23 @@ class Publication:
             'type': firstLink.media_type,
             'rel': 'http://opds-spec.org/acquisition/open-access'
         })
+    
+    def getLinkIdentifier(self, link):
+
+        '''#Setting identifier value based on link media type when fetching collections'''     
+
+        linkIdent = ''
+        if link.media_type in APIUtils.FORMAT_CROSSWALK['readable']:
+            linkIdent = 'readable'
+        elif link.media_type in APIUtils.FORMAT_CROSSWALK['downloadable']:
+            linkIdent = 'downloadable'
+        elif link.media_type in APIUtils.FORMAT_CROSSWALK['requestable']:
+            linkIdent = 'requestable'
+        elif link.media_type in APIUtils.FORMAT_CROSSWALK['html_catalog']:
+            linkIdent = 'catalog'
+        else:
+            linkIdent = 'other'
+        return linkIdent
 
     def findAndAddCover(self, record):
         if isinstance(record, Edition):

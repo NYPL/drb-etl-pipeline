@@ -372,7 +372,8 @@ def _buildPublications(editions):
         pub.addLink({
             'rel': 'alternate',
             'href': 'https://{}.nypl.org/edition/{}'.format(host, ed.id),
-            'type': 'text/html'
+            'type': 'text/html',
+            'identifier': 'readable'
         })
 
         opdsPubs.append(pub)
