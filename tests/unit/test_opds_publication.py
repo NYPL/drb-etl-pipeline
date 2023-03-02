@@ -213,7 +213,7 @@ class TestOPDSPublication:
             mocker.call('rights', {'source': 'testSource', 'license': 'testLicense', 'rightsStatement': 'testStatement'})
         ])
 
-        pubMocks['addLink'].assert_called_with({'href': 'testURL', 'rel': 'http://opds-spec.org/acquisition/open-access', 'type': 'testType'})
+        pubMocks['addLink'].assert_called_with({'href': 'testURL', 'rel': 'http://opds-spec.org/acquisition/open-access', 'type': 'testType', 'identifier': 'other'})
         pubMocks['setContributors'].assert_called_once_with([{'name': 'Test Contrib'}])
         pubMocks['setBestIdentifier'].assert_called_once_with(['id1', 'id2', 'id3'])
         pubMocks['findAndAddCover'].assert_called_once_with(testEdition)
@@ -265,7 +265,7 @@ class TestOPDSPublication:
             mocker.call('rights', {'source': 'testSource', 'license': 'testLicense', 'rightsStatement': 'testStatement'})
         ])
 
-        pubMocks['addLink'].assert_called_with({'href': 'https://digital-research-books-beta.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})
+        pubMocks['addLink'].assert_called_with({'href': 'https://digital-research-books-beta.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access', 'identifier': 'readable'})
         pubMocks['setContributors'].assert_called_once_with([{'name': 'Test Contrib'}])
         pubMocks['setBestIdentifier'].assert_called_once_with(['id1', 'id2', 'id3'])
         pubMocks['findAndAddCover'].assert_called_once_with(testEdition)
@@ -323,7 +323,7 @@ class TestOPDSPublication:
         ])
 
         mockAdd.assert_called_once_with({'href': 'url1', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access'})
-
+        
     def test_findAndAddCover_present(self, testPubEls, mocker):
         testPub, _ = testPubEls
 

@@ -582,12 +582,14 @@ class TestCollectionBlueprint:
                 mocker.call({
                     'rel': 'alternate',
                     'href': 'https://drb-qa.nypl.org/edition/1',
-                    'type': 'text/html'
+                    'type': 'text/html',
+                    'identifier': 'readable'
                 }),
                 mocker.call({
                     'rel': 'alternate',
                     'href': 'https://drb-qa.nypl.org/edition/2',
-                    'type': 'text/html'
+                    'type': 'text/html',
+                    'identifier': 'readable'
                 })
             ])
 
@@ -653,12 +655,14 @@ class TestCollectionBlueprint:
                 mocker.call({
                     'rel': 'alternate',
                     'href': 'https://drb-qa.nypl.org/edition/1',
-                    'type': 'text/html'
+                    'type': 'text/html',
+                    'identifier': 'readable'
                 }),
                 mocker.call({
                     'rel': 'alternate',
                     'href': 'https://drb-qa.nypl.org/edition/2',
-                    'type': 'text/html'
+                    'type': 'text/html',
+                    'identifier': 'readable'
                 })
             ])
 

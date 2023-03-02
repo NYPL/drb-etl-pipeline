@@ -2,7 +2,7 @@
 
 class Link:
     ALLOWED_FIELDS = [
-        'href', 'type', 'rel', 'title', 'templated', 'language', 'alternate',
+        'href', 'type', 'rel', 'identifier', 'title', 'templated', 'language', 'alternate',
         'children', 'properties', 'height', 'width', 'duration', 'bitrate'
     ]
 
