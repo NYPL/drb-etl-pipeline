@@ -185,7 +185,7 @@ class Publication:
                     })
                     # Non-readable links
                     else:
-                        identifier = self.setLinkIdentifier(link)
+                        identifier = self.getLinkIdentifier(link)
                         self.addLink({
                         'href': link.url,
                         'type': link.media_type,
@@ -195,7 +195,7 @@ class Publication:
 
                 # Non-readable links
                 else:
-                    identifier = self.setLinkIdentifier(link)
+                    identifier = self.getLinkIdentifier(link)
                     self.addLink({
                     'href': link.url,
                     'type': link.media_type,
@@ -251,7 +251,7 @@ class Publication:
             'rel': 'http://opds-spec.org/acquisition/open-access'
         })
     
-    def setLinkIdentifier(self, link):
+    def getLinkIdentifier(self, link):
 
         '''#Setting identifier value based on link media type when fetching collections'''     
 
