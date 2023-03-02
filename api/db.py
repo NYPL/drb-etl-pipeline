@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, date
+from sqlalchemy import Integer
 from sqlalchemy.orm import joinedload, sessionmaker
-from sqlalchemy.sql import func, text
+from sqlalchemy.sql import column, func, select, text, values
 from uuid import uuid4
 
 from model import Work, Edition, Link, Item, Record, Collection, User, AutomaticCollection
@@ -126,10 +127,10 @@ class DBClient():
 
         # First build a CTE of the passed in ids and their index in the
         # given list
-        editionIdCTE = sa.select(
-            sa.values(
-                sa.column("idx", sa.Integer),
-                sa.column("edition_id", sa.Integer),
+        editionIdCTE = select(
+            values(
+                column("idx", Integer),
+                column("edition_id", Integer),
                 name="subquery",
             ).data(list(enumerate(editionIDs)))
         ).cte("edition_ids")

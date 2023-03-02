@@ -27,7 +27,12 @@ def fetchAutomaticCollectionEditions(dbClient, esClient, collectionId, page: int
         (totalCount, editionIds) = _doAutoCollectionSearch(esClient, automaticCollection, page, nextPageSize)
         editions = dbClient.fetchEditions(editionIds)
 
-    return (min(totalCount, automaticCollection.limit), editions)
+    limit = (
+        min(totalCount, automaticCollection.limit)
+        if automaticCollection.limit
+        else totalCount
+    )
+    return (limit, editions)
 
 
 def _doAutoCollectionSearch(esClient, automaticCollection, page, perPage):
