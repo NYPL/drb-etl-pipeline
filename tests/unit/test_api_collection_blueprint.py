@@ -360,11 +360,61 @@ class TestCollectionBlueprint:
             mockDB.createAutomaticCollection.assert_not_called()
             mockUtils['formatResponseObject'].assert_called_once_with(
                 400, "createCollection",
-                "Invalid sort field bad_sort_field",
+                {'message': "Invalid sort field bad_sort_field"},
             )
 
             mockBase64.assert_called_once_with(b'testAuth')
 
+    def test_collectionCreate_invalid(self, testApp, mockUtils, mocker):
+        mockDB = mocker.MagicMock(session=mocker.MagicMock())
+        mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockDB.fetchUser.return_value = mocker.MagicMock(
+            user='testUser', password='testPswd', salt='testSalt'
+        )
+
+        testRequestBody = {
+            'title': 'Test Collection',
+            'creator': 'Test Creator',
+            'description': 'Test Description',
+            'editionIDs': [1, 2, 3],
+            'autoDef': {
+                'sortField': 'bad_sort_field',
+                'keywordQuery': 'bikes',
+            },
+        }
+
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockBase64 = mocker.patch('api.blueprints.drbCollection.b64decode')
+        mockBase64.return_value = b'testUser:testPswd'
+
+        mockUtils['validatePassword'].return_value = True
+
+        mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
+
+        with testApp.test_request_context(
+            '/',
+            json=testRequestBody,
+            headers={'Authorization': 'Basic testAuth'}
+        ):
+            testAPIResponse = collectionCreate()
+
+            assert testAPIResponse == 'testErrorResponse'
+
+            mockDB.createAutomaticCollection.assert_not_called()
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                400, "createCollection",
+                {
+                    'message': (
+                        "Cannot create a collection with both an automatic collection "
+                        "definition and editionIDs or workUUIDs"
+                    ),
+                },
+            )
+
+            mockBase64.assert_called_once_with(b'testAuth')
 
     def test_collectionCreate_error(self, testApp, mockUtils, mocker):
         mockDB = mocker.MagicMock(session=mocker.MagicMock())

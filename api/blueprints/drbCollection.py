@@ -61,14 +61,9 @@ def collectionCreate(user=None):
     logger.info('Creating new collection')
 
     collectionData = request.json
-    dataKeys = collectionData.keys()
-
-    if len(set(dataKeys) & set(['title', 'creator', 'description'])) < 3:
-        errMsg = {
-            'message': 'title, creator and description fields are required',
-        }
-
-        return APIUtils.formatResponseObject(400, 'createCollection', errMsg)
+    errMsg = _validateCollectionCreate(collectionData)
+    if errMsg:
+        return APIUtils.formatResponseObject(400, 'createCollection', {'message': errMsg})
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
@@ -88,7 +83,7 @@ def collectionCreate(user=None):
         queryFields = ["keywordQuery", "authorQuery", "titleQuery", "subjectQuery"]
         errMsg = _validateAutoCollectionDef(autoDef)
         if errMsg:
-            return APIUtils.formatResponseObject(400, "createCollection", errMsg)
+            return APIUtils.formatResponseObject(400, "createCollection", {'message': errMsg})
         newCollection = dbClient.createAutomaticCollection(
             collectionData['title'],
             collectionData['creator'],
@@ -100,14 +95,6 @@ def collectionCreate(user=None):
             **{field: autoDef.get(field) for field in queryFields},
         )
 
-    else:
-        errMsg = {
-            "message": (
-                "Need either workUUIDs, editionIDs, or an automatic collection "
-                "definition to create a collection"
-            ),
-        }
-        return APIUtils.formatResponseObject(400, "createCollection", errMsg)
 
     dbClient.session.commit()
 
@@ -116,6 +103,27 @@ def collectionCreate(user=None):
     opdsFeed = constructOPDSFeed(newCollection.uuid, dbClient)
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
+
+
+def _validateCollectionCreate(data: dict) -> str:
+    """Return an error message if the collection create data is invalid"""
+
+    if len(set(data.keys()) & set(['title', 'creator', 'description'])) < 3:
+        return 'title, creator and description fields are required'
+
+    isAuto = 'autoDef' in data
+    isStatic = 'workUUIDs' in data or 'editionIDs' in data
+    if not isAuto and not isStatic:
+        return (
+            'Need either workUUIDs, editionIDs or an automatic collection definition'
+            'to create a collection'
+        )
+
+    if isAuto and isStatic:
+        return (
+            'Cannot create a collection with both an automatic collection definition '
+            'and editionIDs or workUUIDs'
+        )
 
 
 def _validateAutoCollectionDef(autoDef: dict) -> str:
