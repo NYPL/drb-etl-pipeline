@@ -61,30 +61,40 @@ def collectionCreate(user=None):
     logger.info('Creating new collection')
 
     collectionData = request.json
-    dataKeys = collectionData.keys()
-
-    if len(set(dataKeys) & set(['title', 'creator', 'description'])) < 3\
-            or len(set(dataKeys) & set(['workUUIDs', 'editionIDs'])) == 0:
-        errMsg = {
-            'message':
-                'title, creator and description fields are required'
-                ', with one of workUUIDs or editionIDs to create a collection'
-        }
-
-        return APIUtils.formatResponseObject(400, 'createCollection', errMsg)
+    errMsg = _validateCollectionCreate(collectionData)
+    if errMsg:
+        return APIUtils.formatResponseObject(400, 'createCollection', {'message': errMsg})
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
 
-    newCollection = dbClient.createCollection(
-        collectionData['title'],
-        collectionData['creator'],
-        collectionData['description'],
-        user,
-        workUUIDs=collectionData.get('workUUIDs', []),
-        editionIDs=collectionData.get('editionIDs', []),
-        type='static'
-    )
+    if "workUUIDs" in collectionData or "editionIDs" in collectionData:
+        newCollection = dbClient.createStaticCollection(
+            collectionData['title'],
+            collectionData['creator'],
+            collectionData['description'],
+            user,
+            workUUIDs=collectionData.get('workUUIDs', []),
+            editionIDs=collectionData.get('editionIDs', []),
+        )
+
+    elif "autoDef" in collectionData:
+        autoDef = collectionData["autoDef"]
+        queryFields = ["keywordQuery", "authorQuery", "titleQuery", "subjectQuery"]
+        errMsg = _validateAutoCollectionDef(autoDef)
+        if errMsg:
+            return APIUtils.formatResponseObject(400, "createCollection", {'message': errMsg})
+        newCollection = dbClient.createAutomaticCollection(
+            collectionData['title'],
+            collectionData['creator'],
+            collectionData['description'],
+            owner=user,
+            sortField=autoDef.get("sortField"),
+            sortDirection=autoDef.get("sortDirection"),
+            limit=autoDef.get("limit"),
+            **{field: autoDef.get(field) for field in queryFields},
+        )
+
 
     dbClient.session.commit()
 
@@ -93,6 +103,39 @@ def collectionCreate(user=None):
     opdsFeed = constructOPDSFeed(newCollection.uuid, dbClient)
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
+
+
+def _validateCollectionCreate(data: dict) -> str:
+    """Return an error message if the collection create data is invalid"""
+
+    if len(set(data.keys()) & set(['title', 'creator', 'description'])) < 3:
+        return 'title, creator and description fields are required'
+
+    isAuto = 'autoDef' in data
+    isStatic = 'workUUIDs' in data or 'editionIDs' in data
+    if not isAuto and not isStatic:
+        return (
+            'Need either workUUIDs, editionIDs or an automatic collection definition'
+            'to create a collection'
+        )
+
+    if isAuto and isStatic:
+        return (
+            'Cannot create a collection with both an automatic collection definition '
+            'and editionIDs or workUUIDs'
+        )
+
+
+def _validateAutoCollectionDef(autoDef: dict) -> str:
+    """Return an error message if the definition is not valid"""
+    sortField = autoDef.get("sortField", "uuid")
+    if sortField not in ["uuid", "title", "author", "date"]:
+        return f"Invalid sort field {sortField}"
+
+    sortDirection = autoDef.get("sortDirection", "ASC")
+    if sortDirection not in ["ASC", "DESC"]:
+        return f"Invalid sort direction {sortDirection}"
+
 
 @collection.route('/replace/<uuid>', methods=['POST'])
 @validateToken
@@ -349,6 +392,7 @@ def _addStaticPubsToFeed(opdsFeed, collection, path, page, perPage, sort):
 def _addAutomaticPubsToFeed(opdsFeed, dbClient, esClient, collectionId, path, page, perPage):
     totalCount, editions = fetchAutomaticCollectionEditions(
         dbClient,
+        esClient,
         collectionId,
         page=page,
         perPage=perPage,
@@ -377,7 +421,7 @@ def _buildPublications(editions):
         })
 
         opdsPubs.append(pub)
-        
+
     return opdsPubs
 
 def removeEditionsFromCollection(dbClient, collection):

@@ -50,8 +50,8 @@ class AutomaticCollection(Base):
     title_query = Column('title_query', String)
     subject_query = Column('subject_query', String)
 
-    sort_field = Column('sort_field', String, nullable=False)
-    sort_direction = Column('sort_direction', String, nullable=False)
+    sort_field = Column('sort_field', String, nullable=False, default="uuid")
+    sort_direction = Column('sort_direction', String, nullable=False, default="ASC")
 
     limit = Column('limit', Integer)
 
@@ -73,6 +73,8 @@ class Collection(Base, Core):
         backref='collections',
         cascade='all, delete'
     )
+
+    auto = relationship("AutomaticCollection", backref="collections")
 
     def __repr__(self):
         return '<Collection(uuid={}, title={}, creator={}, items={})>'.format(
