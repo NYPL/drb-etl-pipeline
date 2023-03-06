@@ -871,21 +871,35 @@
                     {
                         "name": "title",
                         "in": "query",
-                        "description": "New title of collection",
+                        "description": "Updated title of collection",
                         "type": "string",
                         "required": false
                     },
                     {
                         "name": "creator",
                         "in": "query",
-                        "description": "New creator of collection",
+                        "description": "Updated creator of collection",
                         "type": "string",
                         "required": false
                     },
                     {
                         "name": "description",
                         "in": "query",
-                        "description": "New description of collection",
+                        "description": "Updated description of collection",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "name": "editionIDs",
+                        "in": "query",
+                        "description": "Adding new editions in this format (1,2,3) with no space after the commas",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "name": "workUUIDs",
+                        "in": "query",
+                        "description": "Adding a preferred edition from each work given in this format (uuid1, uuid2, uuid3) with no space after the commas",
                         "type": "string",
                         "required": false
                     }

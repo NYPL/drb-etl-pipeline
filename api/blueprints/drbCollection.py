@@ -155,11 +155,13 @@ def collectionUpdate(uuid):
     title = request.args.get('title', None)
     creator = request.args.get('creator', None)
     description = request.args.get('description', None)
+    editionIDs = request.args.get('editionIDs', None)
+    workUUIDs = request.args.get('workUUIDs', None)
 
-    if len(set(request.args) & set(['title', 'creator', 'description'])) == 0:
+    if len(set(request.args) & set(['title', 'creator', 'description', 'editionIDs', 'workUUIDs'])) == 0:
         errMsg = {
             'message':
-                'At least one of these fields(title, creator and description) are required'
+                'At least one of these fields(title, creator, description, etc.) are required'
         }
 
         return APIUtils.formatResponseObject(400, 'updateCollection', errMsg)
@@ -177,14 +179,30 @@ def collectionUpdate(uuid):
         collection.creator = creator
     if description:
         collection.description = description
+        
+    if editionIDs:
+        editionIDsList = editionIDs.split(',')
+        #Check if all the editionIDs are actually edition ids in the database 
+        for eid in editionIDsList:
+            if dbClient.fetchSingleEdition(eid) == None:
+                errMsg = {'message': 'Unable to locate edition with id {}'.format(eid)}
+                return APIUtils.formatResponseObject(404, 'fetchSingleEdition', errMsg)
+            
+        addEditionsToCollection(dbClient, collection, editionIDsList)
+
+    if workUUIDs:
+        workUUIDsList = workUUIDs.split(',')
+        #Check if all the workUUIDs are actually work uuids in the database 
+        for workUUID in workUUIDsList:
+            if dbClient.fetchSingleWork(workUUID) == None:
+                errMsg = {'message': 'Unable to locate work with uuid {}'.format(workUUID)}
+                return APIUtils.formatResponseObject(404, 'fetchSingleWork', errMsg)
+            
+        addWorkEditionsToCollection(dbClient, collection, workUUIDsList)
 
     dbClient.session.commit()
 
-    try:
-        opdsFeed = constructOPDSFeed(uuid, dbClient)
-    except NoResultFound:
-        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
-        return APIUtils.formatResponseObject(404, 'fetchCollection', errMsg)
+    opdsFeed = constructOPDSFeed(uuid, dbClient)
 
     return APIUtils.formatOPDS2Object(200, opdsFeed)
 
@@ -390,10 +408,13 @@ def addEditionsToCollection(dbClient, collection, editionIDs):
 
     '''Inserting rows of collection_editions based on editionIDs array'''
 
-    dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
-        {"collection_id": collection.id, "edition_id": eid} \
-        for eid in editionIDs \
-    ]))
+    #This for loop format helps to avoid inserting duplicate editionIDs
+    for eid in editionIDs:
+        if dbClient.session.query(COLLECTION_EDITIONS.c.collection_id)\
+            .filter(COLLECTION_EDITIONS.c.edition_id == eid).first() == None:
+
+            dbClient.session.execute(COLLECTION_EDITIONS.insert()\
+                .values({"collection_id": collection.id, "edition_id": eid}))
 
 def addWorkEditionsToCollection(dbClient, collection, workUUIDs):
 
@@ -405,12 +426,16 @@ def addWorkEditionsToCollection(dbClient, collection, workUUIDs):
             .all()
 
     for work in collectionWorks:
-        collectionEditions = dbClient.session.query(Edition)\
+        collectionEdition = dbClient.session.query(Edition)\
             .filter(Edition.work_id == work.id)\
             .order_by(Edition.date_created.asc())\
             .limit(1)\
             .scalar()
 
-        dbClient.session.execute(COLLECTION_EDITIONS.insert().values([ \
-        {"collection_id": collection.id, "edition_id": collectionEditions.id} \
-    ]))
+        #This for loop format helps to avoid inserting duplicate editionIDs
+        if dbClient.session.query(COLLECTION_EDITIONS.c.collection_id)\
+            .filter(COLLECTION_EDITIONS.c.edition_id == collectionEdition.id)\
+            .first() == None:
+                
+            dbClient.session.execute(COLLECTION_EDITIONS.insert()\
+                .values({"collection_id": collection.id, "edition_id": collectionEdition.id}))

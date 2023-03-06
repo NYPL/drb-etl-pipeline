@@ -3,7 +3,7 @@
 ## unreleased version -- v0.11.3
 ### Added
 - New endpoint to replace collection JSON objects in the API response
-- New endpoint to update specific parts of collection objects in API response
+- New endpoint to update specific parts of collection objects in the sAPI response
 - Publication rights data object to fetchCollection API response
 - Identifier value to publication links of fetchCollection API response
 ### Fixed
