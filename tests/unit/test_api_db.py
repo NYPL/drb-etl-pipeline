@@ -131,7 +131,7 @@ class TestDBClient:
 
         assert testInstance.fetchCollections() == 'testCollections'
 
-    def test_createCollection(self, testInstance, mocker):
+    def test_createStaticCollection(self, testInstance, mocker):
         mockUUID = mocker.patch('api.db.uuid4')
         mockUUID.return_value = 'testUUID'
 
@@ -153,9 +153,9 @@ class TestDBClient:
         mockEditions = [mocker.MagicMock(id=4), mocker.MagicMock(id=5)]
         testInstance.session.query().filter().all.return_value = mockEditions
 
-        testNewCollection = testInstance.createCollection(
+        testNewCollection = testInstance.createStaticCollection(
             'Test Coll', 'Test Creator', 'Test Description', 'testOwner',
-            workUUIDs=['testUUID'], editionIDs=['ed1', 'ed2'], type='static'
+            workUUIDs=['testUUID'], editionIDs=['ed1', 'ed2']
         )
 
         assert len(testNewCollection.editions) == 3

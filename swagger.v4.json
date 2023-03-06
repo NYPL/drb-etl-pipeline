@@ -177,7 +177,7 @@
                         }
                     }
                 }
-           } 
+           }
         },
         "/edition/{id}": {
             "get": {
@@ -422,7 +422,7 @@
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
-                    } 
+                    }
                 }
             }
         },
@@ -450,7 +450,7 @@
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
-                    } 
+                    }
                 }
             }
         },
@@ -550,7 +550,7 @@
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
-                    } 
+                    }
                 }
             }
         },
@@ -594,7 +594,7 @@
                          }
                      }
                  }
-            } 
+            }
         },
         "/collection": {
             "post": {
@@ -635,6 +635,36 @@
                                         "items": {
                                             "type": "string"
                                         }
+                                    },
+                                    "autoDef": {
+                                      "type": "object",
+                                      "properties": {
+                                          "sortField": {
+                                              "type": "string",
+                                              "enum": ["uuid", "title", "author", "date"],
+                                              "default": "uuid"
+                                          },
+                                          "sortDirection": {
+                                              "type": "string",
+                                              "enum": ["ASC", "DESC"],
+                                              "default": "ASC"
+                                          },
+                                          "limit": {
+                                              "type": "number"
+                                          },
+                                          "keywordQuery": {
+                                              "type": "string"
+                                          },
+                                          "authorQuery": {
+                                              "type": "string"
+                                          },
+                                          "titleQuery": {
+                                              "type": "string"
+                                          },
+                                          "subjectQuery": {
+                                              "type": "string"
+                                          }
+                                      }
                                     }
                                 }
                             ]
@@ -665,7 +695,7 @@
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
-                    } 
+                    }
                 }
             }
         },
@@ -721,7 +751,7 @@
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
-                    } 
+                    }
                 }
             },
             "delete": {
@@ -766,7 +796,7 @@
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
-                    } 
+                    }
                 }
             }
         },
@@ -821,7 +851,7 @@
                             ]
                         }
                     }
-                ],              
+                ],
                 "responses": {
                     "201": {
                         "description": "A basic OPDS2 feed response",
@@ -846,7 +876,7 @@
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
-                    } 
+                    }
                 }
             }
         },
@@ -978,7 +1008,7 @@
                         "schema": {
                             "$ref": "#/definitions/ErrorResponse"
                         }
-                    } 
+                    }
                 }
             }
         }
@@ -1462,7 +1492,7 @@
                     "format": "uri"
                 },
                 "flags": {
-                   "type": "object" 
+                   "type": "object"
                 }
             }
         },
