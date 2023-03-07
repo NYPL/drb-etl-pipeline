@@ -72,7 +72,7 @@ class TestCollectionBlueprint:
 
             assert mockDBClient.call_count == 2
             assert mockDB.createSession.call_count == 2
-            assert mockDB.session.execute.call_count == 2
+            assert mockDB.session.execute.call_count == 1
             mockDB.fetchSingleCollection.assert_called_once_with('testUUID')
             mockDB.session.commit.assert_called_once()
 
@@ -195,7 +195,7 @@ class TestCollectionBlueprint:
                 'updateCollection',
                 {
                     'message':
-                    'At least one of these fields(title, creator and description) are required'
+                    'At least one of these fields(title, creator, description, etc.) are required'
                 }
             )
 
