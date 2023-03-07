@@ -225,6 +225,9 @@ def collectionUpdate(uuid):
         
     if editionIDs:
         editionIDsList = editionIDs.split(',')
+        if len(editionIDs) > 10:
+            errMsg = {'message': 'Size of editionIDsList must not exceed 10 IDs'}
+            return APIUtils.formatResponseObject(400, 'collectionUpdate', errMsg)
         #Check if all the editionIDs are actually edition ids in the database 
         for eid in editionIDsList:
             if dbClient.fetchSingleEdition(eid) == None:
@@ -235,6 +238,9 @@ def collectionUpdate(uuid):
 
     if workUUIDs:
         workUUIDsList = workUUIDs.split(',')
+        if len(workUUIDsList) > 10:
+            errMsg = {'message': 'Size of workUUIDsList must not exceed 10 UUIDs'}
+            return APIUtils.formatResponseObject(400, 'collectionUpdate', errMsg)
         #Check if all the workUUIDs are actually work uuids in the database 
         for workUUID in workUUIDsList:
             if dbClient.fetchSingleWork(workUUID) == None:
