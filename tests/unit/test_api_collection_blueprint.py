@@ -4,8 +4,8 @@ import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
 from api.blueprints.drbCollection import (
-    collectionCreate, collectionFetch, collectionReplace, collectionUpdate, collectionDelete, collectionList,
-    constructSortMethod, constructOPDSFeed, validateToken
+    collectionCreate, collectionFetch, collectionReplace, collectionUpdate, collectionDelete, 
+    collectionDeleteWorkEdition, collectionList, constructSortMethod, constructOPDSFeed, validateToken
 )
 from api.utils import APIUtils
 from api.opdsUtils import OPDSUtils
@@ -140,6 +140,10 @@ class TestCollectionBlueprint:
         mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
         mockDBClient.return_value = mockDB
 
+        mockDB.fetchUser.return_value = mocker.MagicMock(
+            user='testUser', password='testPswd', salt='testSalt'
+        )
+
         mockDB.fetchSingleCollection\
             .return_value = mocker.MagicMock(uuid='testUUID')
 
@@ -150,6 +154,11 @@ class TestCollectionBlueprint:
 
         mockUtils['formatOPDS2Object'].return_value = 'testOPDS2Response'
 
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockBase64 = mocker.patch('api.blueprints.drbCollection.b64decode')
+        mockBase64.return_value = b'testUser:testPswd'
+
         with testApp.test_request_context(
             '/update/testUUID?title=newTitle',
             headers={'Authorization': 'Basic testAuth'}
@@ -158,8 +167,8 @@ class TestCollectionBlueprint:
 
             assert testAPIResponse == 'testOPDS2Response'
 
-            assert mockDBClient.call_count == 1
-            assert mockDB.createSession.call_count == 1
+            assert mockDBClient.call_count == 2
+            assert mockDB.createSession.call_count == 2
             mockDB.fetchSingleCollection.assert_called_once_with('testUUID')
             mockDB.session.commit.assert_called_once()
 
@@ -176,10 +185,19 @@ class TestCollectionBlueprint:
         mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
         mockDBClient.return_value = mockDB
 
+        mockDB.fetchUser.return_value = mocker.MagicMock(
+            user='testUser', password='testPswd', salt='testSalt'
+        )
+
         mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
 
         mockDB.fetchSingleCollection\
             .return_value = mocker.MagicMock(uuid='testUUID')
+        
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockBase64 = mocker.patch('api.blueprints.drbCollection.b64decode')
+        mockBase64.return_value = b'testUser:testPswd'
 
         with testApp.test_request_context(
             '/update/testUUID',
@@ -581,6 +599,97 @@ class TestCollectionBlueprint:
                 404,
                 'deleteCollection',
                 {'message': 'No collection with UUID testUUID exists'}
+            )
+
+    def test_collectionDeleteWorkEdition_success(self, testApp, mockUtils, mocker):
+        mockDB = mocker.MagicMock(session=mocker.MagicMock())
+        mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockDB.fetchUser.return_value = mocker.MagicMock(
+            user='testUser', password='testPswd', salt='testSalt'
+        )
+
+        mockDB.fetchSingleCollection\
+            .return_value = mocker.MagicMock(uuid='testUUID')
+
+        mockFeedConstruct = mocker.patch(
+            'api.blueprints.drbCollection.constructOPDSFeed'
+        )
+        mockFeedConstruct.return_value = 'testOPDS2Feed'
+
+        mockRemoveEdition = mocker.patch(
+            'api.blueprints.drbCollection.removeEditionsFromCollection'
+        )
+
+        mockUtils['formatOPDS2Object'].return_value = 'testOPDS2Response'
+
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockBase64 = mocker.patch('api.blueprints.drbCollection.b64decode')
+        mockBase64.return_value = b'testUser:testPswd'
+
+        mockUtils['validatePassword'].return_value = True
+
+        with testApp.test_request_context(
+            '/delete/testUUID?editionIDs=testID',
+            headers={'Authorization': 'Basic testAuth'}
+        ):
+            testAPIResponse = collectionDeleteWorkEdition('testUUID')
+
+            assert testAPIResponse == 'testOPDS2Response'
+
+            assert mockDBClient.call_count == 2
+            assert mockDB.createSession.call_count == 2
+            assert mockRemoveEdition.call_count == 1
+            mockDB.fetchSingleCollection.assert_called_once_with('testUUID')
+            mockDB.session.commit.assert_called_once()
+
+            mockFeedConstruct.assert_called_once_with(
+                'testUUID', mockDB
+            )
+
+            mockUtils['formatOPDS2Object'].assert_called_once_with(
+                200, 'testOPDS2Feed'
+            )
+
+    def test_collectionDeleteWorkEdition_error(self, testApp, mockUtils, mocker):
+        mockDB = mocker.MagicMock(session=mocker.MagicMock())
+        mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
+        mockDBClient.return_value = mockDB
+
+        mockDB.fetchUser.return_value = mocker.MagicMock(
+            user='testUser', password='testPswd', salt='testSalt'
+        )
+
+        mockDB.fetchSingleCollection\
+            .return_value = mocker.MagicMock(uuid='testUUID')
+
+        mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
+
+        mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
+
+        mockBase64 = mocker.patch('api.blueprints.drbCollection.b64decode')
+        mockBase64.return_value = b'testUser:testPswd'
+
+        mockUtils['validatePassword'].return_value = True
+
+        with testApp.test_request_context(
+            '/delete/testUUID',
+            headers={'Authorization': 'Basic testAuth'}
+        ):
+            testAPIResponse = collectionDeleteWorkEdition('testUUID')
+
+            assert testAPIResponse == 'testErrorResponse'
+
+            assert mockDBClient.call_count == 1
+            assert mockDB.createSession.call_count == 1
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                400, 'deleteCollectionWorkEdition', {
+                    'message':
+                        'At least one of these fields(editionIDs & workUUIDs) are required'
+                }
             )
 
     def test_collectionList_success(self, testApp, mockUtils, mocker):

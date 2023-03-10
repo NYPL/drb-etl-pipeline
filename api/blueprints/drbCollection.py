@@ -139,7 +139,7 @@ def _validateAutoCollectionDef(autoDef: dict) -> str:
 
 @collection.route('/replace/<uuid>', methods=['POST'])
 @validateToken
-def collectionReplace(uuid):
+def collectionReplace(uuid, user=None):
     logger.info('Handling collection replacement request')
 
     collectionData = request.json
@@ -190,7 +190,7 @@ def collectionReplace(uuid):
 
 @collection.route('/update/<uuid>', methods=['POST'])
 @validateToken
-def collectionUpdate(uuid):
+def collectionUpdate(uuid, user=None):
     logger.info('Handling collection update request')
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])
@@ -256,49 +256,6 @@ def collectionUpdate(uuid):
 
     return APIUtils.formatOPDS2Object(200, opdsFeed)
 
-@collection.route('/delete/<uuid>', methods=['DELETE'])
-@validateToken
-def collectionDeleteWorkEdition(uuid):
-    logger.info('Handling collection work/edition deletion request')
-
-    editionIDs = request.args.get('editionIDs', None)
-    workUUIDs = request.args.get('workUUIDs', None)
-
-    if len(set(request.args) & set(['editionIDs', 'workUUIDs'])) == 0:
-        errMsg = {
-            'message':
-                'At least one of these fields(editionIDs & workUUIDs) are required'
-        }
-
-        return APIUtils.formatResponseObject(400, 'deleteCollectionWorkEdition', errMsg)
-
-    dbClient = DBClient(current_app.config['DB_CLIENT'])
-    dbClient.createSession()
-
-    #Getting the collection the user wants to replace
-    try:
-        collection = dbClient.fetchSingleCollection(uuid)
-    except NoResultFound:
-        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
-        return APIUtils.formatResponseObject(404, 'fetchSingleCollection', errMsg)
-    
-    if editionIDs:
-        editionIDsList = editionIDs.split(',')
-    else:
-        editionIDsList = None
-    if workUUIDs:
-        workUUIDsList = workUUIDs.split(',')
-    else:
-        workUUIDsList = None
-
-    removeEditionsFromCollection(dbClient, collection, editionIDsList, workUUIDsList)
-
-    dbClient.session.commit()
-
-    opdsFeed = constructOPDSFeed(collection.uuid, dbClient)
-
-    return APIUtils.formatOPDS2Object(201, opdsFeed)
-
 @collection.route('/<uuid>', methods=['GET'])
 def collectionFetch(uuid):
     logger.info('Fetching collection identified by {}'.format(uuid))
@@ -340,6 +297,48 @@ def collectionDelete(uuid, user=None):
 
     return (jsonify({'message': 'Deleted {}'.format(uuid)}), 200)
 
+@collection.route('/delete/<uuid>', methods=['DELETE'])
+@validateToken
+def collectionDeleteWorkEdition(uuid, user=None):
+    logger.info('Handling collection work/edition deletion request')
+
+    editionIDs = request.args.get('editionIDs', None)
+    workUUIDs = request.args.get('workUUIDs', None)
+
+    if len(set(request.args) & set(['editionIDs', 'workUUIDs'])) == 0:
+        errMsg = {
+            'message':
+                'At least one of these fields(editionIDs & workUUIDs) are required'
+        }
+
+        return APIUtils.formatResponseObject(400, 'deleteCollectionWorkEdition', errMsg)
+
+    dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
+
+    #Getting the collection the user wants to replace
+    try:
+        collection = dbClient.fetchSingleCollection(uuid)
+    except NoResultFound:
+        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
+        return APIUtils.formatResponseObject(404, 'fetchSingleCollection', errMsg)
+    
+    if editionIDs:
+        editionIDsList = editionIDs.split(',')
+    else:
+        editionIDsList = None
+    if workUUIDs:
+        workUUIDsList = workUUIDs.split(',')
+    else:
+        workUUIDsList = None
+
+    removeEditionsFromCollection(dbClient, collection, editionIDsList, workUUIDsList)
+
+    dbClient.session.commit()
+
+    opdsFeed = constructOPDSFeed(collection.uuid, dbClient)
+
+    return APIUtils.formatOPDS2Object(200, opdsFeed)
 
 @collection.route('/list', methods=['GET'])
 def collectionList():
