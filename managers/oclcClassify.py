@@ -125,8 +125,8 @@ class ClassifyManager:
             [str] -- A string of XML data comprising of the body of the
             Classify response.
         """
-        classifyResp = requests.get(self.query, \
-            headers={'X-OCLC-API-Key': os.environ['OCLC_API_KEY']}, \
+        classifyResp = requests.get(self.query, 
+            headers={'X-OCLC-API-Key': os.environ['OCLC_CLASSIFY_API_KEY']}, 
             timeout=10
         )
 

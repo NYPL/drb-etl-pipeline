@@ -1,5 +1,6 @@
 from lxml import etree
 import pytest
+import os
 
 from managers.oclcClassify import ClassifyManager, ClassifyError
 
@@ -82,7 +83,7 @@ class TestClassifyManager:
 
         testInstance.generateAuthorTitleURL()
 
-        assert testInstance.query == 'http://classify.oclc.org/classify2/Classify?title=testTitle&author=testAuthor'
+        assert testInstance.query == 'https://metadata.api.oclc.org/classify?title=testTitle&author=testAuthor'
         mockAddOptions.assert_called_once
 
     def test_generateIdentifierURL(self, testInstance, mocker):
@@ -90,7 +91,7 @@ class TestClassifyManager:
 
         testInstance.generateIdentifierURL()
 
-        assert testInstance.query == 'http://classify.oclc.org/classify2/Classify?test=1'
+        assert testInstance.query == 'https://metadata.api.oclc.org/classify?test=1'
         mockAddOptions.assert_called_once
 
     def test_addClassifyOptions(self, testInstance):
@@ -112,7 +113,7 @@ class TestClassifyManager:
         testInstance.execQuery()
 
         assert testInstance.rawXML == 'testXMLResponse'
-        mockRequest.get.assert_called_once_with('testQuery', timeout=10)
+        mockRequest.get.assert_called_once_with('testQuery', headers={'X-OCLC-API-Key': os.environ['OCLC_CLASSIFY_API_KEY']}, timeout=10)
 
     def test_execQuery_error(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()
