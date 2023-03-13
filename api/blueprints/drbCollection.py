@@ -172,7 +172,7 @@ def collectionReplace(uuid, user=None):
     collection.creator = collectionData['creator']
     collection.description = collectionData['description']
 
-    removeEditionsFromCollection(dbClient, collection)
+    removeAllEditionsFromCollection(dbClient, collection)
 
     if editionIDs:
         addEditionsToCollection(dbClient, collection, editionIDs)
@@ -332,7 +332,7 @@ def collectionDeleteWorkEdition(uuid, user=None):
     else:
         workUUIDsList = None
 
-    removeEditionsFromCollection(dbClient, collection, editionIDsList, workUUIDsList)
+    removeWorkEditionsFromCollection(dbClient, editionIDsList, workUUIDsList)
 
     dbClient.session.commit()
 
@@ -491,19 +491,14 @@ def _buildPublications(editions):
 
     return opdsPubs
 
-def removeEditionsFromCollection(dbClient, collection, editionIDs=None, workUUIDs=None):
+def removeWorkEditionsFromCollection(dbClient, editionIDs=None, workUUIDs=None):
 
     '''Deleting the rows of collection_editions that were in the original collection'''
 
-    #Delete every row of the collection
-    if editionIDs == None and workUUIDs == None:
-        dbClient.session.execute(COLLECTION_EDITIONS.delete()\
-            .where(COLLECTION_EDITIONS.c.collection_id == collection.id))
     #Delete the rows that match the editionIDs
     if editionIDs != None:
-        for eid in editionIDs:
-            dbClient.session.execute(COLLECTION_EDITIONS.delete()\
-                .where(COLLECTION_EDITIONS.c.edition_id == eid))
+        dbClient.session.execute(COLLECTION_EDITIONS.delete()\
+            .where(COLLECTION_EDITIONS.c.edition_id.in_(editionIDs)))
     #Delete the rows that match the workUUIDs
     if workUUIDs != None:
         collectionWorks = dbClient.session.query(Work)\
@@ -521,6 +516,12 @@ def removeEditionsFromCollection(dbClient, collection, editionIDs=None, workUUID
             dbClient.session.execute(COLLECTION_EDITIONS.delete()\
                 .where(COLLECTION_EDITIONS.c.edition_id == collectionEdition.id))
 
+def removeAllEditionsFromCollection(dbClient, collection):
+
+    '''Deleting the rows of collection_editions that were in the original collection'''
+    dbClient.session.execute(COLLECTION_EDITIONS.delete()\
+        .where(COLLECTION_EDITIONS.c.collection_id == collection.id))
+        
 def addEditionsToCollection(dbClient, collection, editionIDs):
 
     '''Inserting rows of collection_editions based on editionIDs array'''

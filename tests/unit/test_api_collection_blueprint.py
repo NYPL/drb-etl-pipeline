@@ -619,7 +619,7 @@ class TestCollectionBlueprint:
         mockFeedConstruct.return_value = 'testOPDS2Feed'
 
         mockRemoveEdition = mocker.patch(
-            'api.blueprints.drbCollection.removeEditionsFromCollection'
+            'api.blueprints.drbCollection.removeWorkEditionsFromCollection'
         )
 
         mockUtils['formatOPDS2Object'].return_value = 'testOPDS2Response'
