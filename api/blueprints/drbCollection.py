@@ -172,13 +172,13 @@ def collectionReplace(uuid, user=None):
     collection.creator = collectionData['creator']
     collection.description = collectionData['description']
 
-    removeEditionsFromCollection(dbClient, collection)
+    removeAllEditionsFromCollection(dbClient, collection)
 
     if editionIDs:
         addEditionsToCollection(dbClient, collection, editionIDs)
 
     if workUUIDs:
-        addWorkEditionsToCollection(dbClient, collection, workUUIDs)
+        addWorksToCollection(dbClient, collection, workUUIDs)
 
     dbClient.session.commit()
 
@@ -189,8 +189,9 @@ def collectionReplace(uuid, user=None):
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
 @collection.route('/update/<uuid>', methods=['POST'])
-def collectionUpdate(uuid):
-    logger.info('Handling collection replacement request')
+@validateToken
+def collectionUpdate(uuid, user=None):
+    logger.info('Handling collection update request')
 
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
@@ -247,7 +248,7 @@ def collectionUpdate(uuid):
                 errMsg = {'message': 'Unable to locate work with uuid {}'.format(workUUID)}
                 return APIUtils.formatResponseObject(404, 'fetchSingleWork', errMsg)
             
-        addWorkEditionsToCollection(dbClient, collection, workUUIDsList)
+        addWorksToCollection(dbClient, collection, workUUIDsList)
 
     dbClient.session.commit()
 
@@ -296,6 +297,48 @@ def collectionDelete(uuid, user=None):
 
     return (jsonify({'message': 'Deleted {}'.format(uuid)}), 200)
 
+@collection.route('/delete/<uuid>', methods=['DELETE'])
+@validateToken
+def collectionDeleteWorkEdition(uuid, user=None):
+    logger.info('Handling collection work/edition deletion request')
+
+    editionIDs = request.args.get('editionIDs', None)
+    workUUIDs = request.args.get('workUUIDs', None)
+
+    if len(set(request.args) & set(['editionIDs', 'workUUIDs'])) == 0:
+        errMsg = {
+            'message':
+                'At least one of these fields(editionIDs & workUUIDs) are required'
+        }
+
+        return APIUtils.formatResponseObject(400, 'deleteCollectionWorkEdition', errMsg)
+
+    dbClient = DBClient(current_app.config['DB_CLIENT'])
+    dbClient.createSession()
+
+    #Getting the collection the user wants to replace
+    try:
+        collection = dbClient.fetchSingleCollection(uuid)
+    except NoResultFound:
+        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
+        return APIUtils.formatResponseObject(404, 'fetchSingleCollection', errMsg)
+    
+    if editionIDs:
+        editionIDsList = editionIDs.split(',')
+    else:
+        editionIDsList = None
+    if workUUIDs:
+        workUUIDsList = workUUIDs.split(',')
+    else:
+        workUUIDsList = None
+
+    removeWorkEditionsFromCollection(dbClient, editionIDsList, workUUIDsList)
+
+    dbClient.session.commit()
+
+    opdsFeed = constructOPDSFeed(collection.uuid, dbClient)
+
+    return APIUtils.formatOPDS2Object(200, opdsFeed)
 
 @collection.route('/list', methods=['GET'])
 def collectionList():
@@ -448,12 +491,37 @@ def _buildPublications(editions):
 
     return opdsPubs
 
-def removeEditionsFromCollection(dbClient, collection):
+def removeWorkEditionsFromCollection(dbClient, editionIDs=None, workUUIDs=None):
 
     '''Deleting the rows of collection_editions that were in the original collection'''
 
-    dbClient.session.execute(COLLECTION_EDITIONS.delete().where(COLLECTION_EDITIONS.c.collection_id == collection.id))
+    #Delete the rows that match the editionIDs
+    if editionIDs != None:
+        dbClient.session.execute(COLLECTION_EDITIONS.delete()\
+            .where(COLLECTION_EDITIONS.c.edition_id.in_(editionIDs)))
+    #Delete the rows that match the workUUIDs
+    if workUUIDs != None:
+        collectionWorks = dbClient.session.query(Work)\
+            .join(Work.editions)\
+            .filter(Work.uuid.in_(workUUIDs))\
+            .all()
 
+        for work in collectionWorks:
+            collectionEdition = dbClient.session.query(Edition)\
+                .filter(Edition.work_id == work.id)\
+                .order_by(Edition.date_created.asc())\
+                .limit(1)\
+                .scalar()
+
+            dbClient.session.execute(COLLECTION_EDITIONS.delete()\
+                .where(COLLECTION_EDITIONS.c.edition_id == collectionEdition.id))
+
+def removeAllEditionsFromCollection(dbClient, collection):
+
+    '''Deleting the rows of collection_editions that were in the original collection'''
+    dbClient.session.execute(COLLECTION_EDITIONS.delete()\
+        .where(COLLECTION_EDITIONS.c.collection_id == collection.id))
+        
 def addEditionsToCollection(dbClient, collection, editionIDs):
 
     '''Inserting rows of collection_editions based on editionIDs array'''
@@ -466,7 +534,7 @@ def addEditionsToCollection(dbClient, collection, editionIDs):
             dbClient.session.execute(COLLECTION_EDITIONS.insert()\
                 .values({"collection_id": collection.id, "edition_id": eid}))
 
-def addWorkEditionsToCollection(dbClient, collection, workUUIDs):
+def addWorksToCollection(dbClient, collection, workUUIDs):
 
     '''Inserting rows of collection_editions based on workUUIDs array'''
 
