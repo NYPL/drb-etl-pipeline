@@ -2,6 +2,7 @@ import fasttext
 from lxml import etree
 import re
 import requests
+import os
 from requests.exceptions import ConnectTimeout, HTTPError, ReadTimeout
 
 from logger import createLog
@@ -17,7 +18,7 @@ class ClassifyManager:
     Returns:
         [str] -- A string of XML data comprising of the Classify response body.
     """
-    CLASSIFY_ROOT = 'http://classify.oclc.org/classify2/Classify'
+    CLASSIFY_ROOT = 'https://metadata.api.oclc.org/classify'
 
     LOOKUP_IDENTIFIERS = [
         'oclc', # OCLC Number
@@ -124,7 +125,10 @@ class ClassifyManager:
             [str] -- A string of XML data comprising of the body of the
             Classify response.
         """
-        classifyResp = requests.get(self.query, timeout=10)
+        classifyResp = requests.get(self.query, 
+            headers={'X-OCLC-API-Key': os.environ['OCLC_CLASSIFY_API_KEY']}, 
+            timeout=10
+        )
 
         classifyResp.raise_for_status()
 

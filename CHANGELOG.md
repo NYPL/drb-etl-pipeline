@@ -11,6 +11,7 @@
 - Add support for 'Most Recent' automatic collection
 - Supported ES backed automatic collections
 - Add ability to create automatic collections
+- Updated OCLC Classify manager with new API key and header
 ### Fixed
 
 ## 2023-02-02 -- v0.11.2
