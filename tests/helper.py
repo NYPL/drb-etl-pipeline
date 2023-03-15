@@ -28,6 +28,7 @@ class TestHelpers:
         'FILE_QUEUE': 'test_file_queue',
         'HATHI_DATAFILES': 'test_hathi_url',
         'OCLC_API_KEY': 'test_oclc_key',
+        'OCLC_CLASSIFY_API_KEY': 'test_classify_key',
         'AWS_ACCESS': 'test_aws_key',
         'AWS_SECRET': 'test_aws_secret',
         'AWS_REGION': 'test_aws_region',
