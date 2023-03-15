@@ -962,6 +962,60 @@
                 }
             }
         },
+        "/collection/delete/{uuid}": {
+            "delete": {
+                "tags": ["digital-research-books"],
+                "summary": "Delete a Edition/Work from a DRB Collection",
+                "description": "Return an updated collection with removed edition/works as a formatted OPDS2 feed",
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "editionIDs",
+                        "in": "query",
+                        "description": "Deleting editions in this format (1,2,3) with no space after the commas",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "name": "workUUIDs",
+                        "in": "query",
+                        "description": "Deleting a preferred edition from each work given in this format (uuid1, uuid2, uuid3) with no space after the commas",
+                        "type": "string",
+                        "required": false
+                    }
+                ],              
+                "responses": {
+                    "201": {
+                        "description": "A basic OPDS2 feed response",
+                        "schema": {
+                            "$ref": "#/definitions/OPDSFeedResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Collection not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    } 
+                }
+            }
+        },
         "/collection/list": {
             "get": {
                 "tags": ["digital-research-books"],

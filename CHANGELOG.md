@@ -4,7 +4,8 @@
 ### Added
 - New endpoint to replace collection JSON objects in the API response
 - New endpoint to update specific parts of collection JSON objects in the API response
-- Publication rights data object to the fetchCollection API response
+- New endpoint to delete specific editions/works from collection JSON objects in the API response
+- Publication rights data object to fetchCollection API response
 - Identifier value to publication links of fetchCollection API response
 - Add new DB entities for automatic collections
 - Add support for 'Most Recent' automatic collection
