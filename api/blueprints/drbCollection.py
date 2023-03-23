@@ -100,7 +100,7 @@ def collectionCreate(user=None):
 
     logger.info('Created collection {}'.format(newCollection))
 
-    opdsFeed = constructOPDSFeed(newCollection.uuid, dbClient)
+    opdsFeed = _constructOPDSFeedForCollection(newCollection, dbClient)
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
@@ -379,11 +379,9 @@ def collectionList():
     )
 
     for collection in collections:
-        uuid = collection.uuid
+        path = '/collection/{}'.format(collection.uuid)
 
-        path = '/collection/{}'.format(uuid)
-
-        group = constructOPDSFeed(uuid, dbClient, perPage=5, path=path)
+        group = _constructOPDSFeedForCollection(collection, dbClient, perPage=5, path=path)
 
         opdsFeed.addGroup(group)
 
@@ -413,6 +411,14 @@ def constructOPDSFeed(
     uuid, dbClient, sort=None, page=1, perPage=10, path=None
 ):
     collection = dbClient.fetchSingleCollection(uuid)
+    return _constructOPDSFeedForCollection(
+        collection, dbClient, sort=sort, page=page, perPage=perPage, path=None
+    )
+
+
+def _constructOPDSFeedForCollection(
+    collection, dbClient, sort=None, page=1, perPage=10, path=None
+):
 
     opdsFeed = Feed()
 
@@ -423,8 +429,8 @@ def constructOPDSFeed(
     })
 
     path = request.full_path\
-        if str(uuid) in request.path\
-        else '/collection/{}'.format(uuid)
+        if str(collection.uuid) in request.path\
+        else '/collection/{}'.format(collection.uuid)
 
     opdsFeed.addLink({
         'rel': 'self', 'href': path, 'type': 'application/opds+json'
