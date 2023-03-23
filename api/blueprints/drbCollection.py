@@ -275,6 +275,8 @@ def collectionFetch(uuid):
         errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
         return APIUtils.formatResponseObject(404, 'fetchCollection', errMsg)
 
+    dbClient.closeSession()
+
     return APIUtils.formatOPDS2Object(200, opdsFeed)
 
 @collection.route('/<uuid>', methods=['DELETE'])
@@ -386,6 +388,8 @@ def collectionList():
         group = constructOPDSFeed(uuid, dbClient, perPage=5, path=path)
 
         opdsFeed.addGroup(group)
+
+    dbClient.closeSession()
 
     return APIUtils.formatOPDS2Object(200, opdsFeed)
 

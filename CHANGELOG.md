@@ -13,6 +13,7 @@
 - Add ability to create automatic collections
 - Updated OCLC Classify manager with new API key and header
 ### Fixed
+- Close DB sessions after collection reads
 
 ## 2023-02-02 -- v0.11.2
 ### Added
