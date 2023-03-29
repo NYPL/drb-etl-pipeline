@@ -12,6 +12,7 @@
 - Supported ES backed automatic collections
 - Add ability to create automatic collections
 - Updated OCLC Classify manager with new API key and header
+- Added script to run production DB migration
 ### Fixed
 
 ## 2023-02-02 -- v0.11.2
