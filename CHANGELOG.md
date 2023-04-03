@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased version -- v0.11.3
+## 2023-04-03 -- v0.12.0
 ### Added
 - New endpoint to replace collection JSON objects in the API response
 - New endpoint to update specific parts of collection JSON objects in the API response
