@@ -115,7 +115,27 @@ Any file that contains sensitive details should not be committed to git. These v
 
 This application is deployed via Github Actions to an ECS cluster. Opening a PR will give a temporary testing/QA environment (the IP address for the environment is added as a comment to the PR), which is torn down on merge. Once merged into QA changes are deployed to [the DRB QA Instance](http://drb-api-qa.nypl.org)
 
-Production deployments are to be made when releases are cut against `main`. 
+Production deployments are to be made when releases are cut against `main`.
+
+### Release Process
+
+We use git tags to tag releases and github's release feature to deploy.  The steps are as follows:
+
+  1. Decide on a new version number (assume 0.12.0 for the following steps)
+  2. Make sure your local `main` branch is up to date
+  3. Update the `CHANGELOG.md` 'unreleased version' header with the current date and new version number, e.g. '2023-04-03:
+     v0.12.0'
+  4. Commit your change and push straight to `main`: `git push origin main`
+  5. Create a new tag and name it after the new version number: `git tag -a v0.12.0`
+  6. Push your tag to github: `git push origin v0.12.0`
+  7. In github, navigate to the 'Releases' tab and click on 'Draft a new release'
+  8. Choose your new tag from the dropdown, set `main` as the target, and name your release after the new version number
+     ('v0.12.0')
+  9. Add a quick 1-2 sentence summary, make sure 'Set as the latest release' is enabled and hit 'Publish release'
+  10. Check the repo's `Actions` tab to observe the progress of the deployment to production
+  11. Send a quick message to `#researchnow_aka_sfr` in Slack to notify folks of the newest release
+
+And you're done!
 
 ## TODO
 
