@@ -172,12 +172,12 @@ class TestDBClient:
         testInstance.session.add.assert_called_once_with(mockCollInstance)
 
     def test_deleteCollection(self, testInstance):
-        testInstance.session.query().filter().filter().delete\
+        testInstance.session.query().filter().delete\
             .return_value = 'testDelete'
 
-        assert testInstance.deleteCollection('uuid', 'owner') == 'testDelete'
+        assert testInstance.deleteCollection('uuid') == 'testDelete'
 
-        testInstance.session.query().filter().filter().delete\
+        testInstance.session.query().filter().delete\
             .assert_called_once()
 
     def test_fetchUser(self, testInstance):
