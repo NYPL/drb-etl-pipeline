@@ -287,7 +287,7 @@ def collectionDelete(uuid, user=None):
     dbClient = DBClient(current_app.config['DB_CLIENT'])
     dbClient.createSession()
 
-    deleteCount = dbClient.deleteCollection(uuid, user)
+    deleteCount = dbClient.deleteCollection(uuid)
 
     if deleteCount is None or deleteCount < 1:
         errMsg = {'message': 'No collection with UUID {} exists'.format(uuid)}

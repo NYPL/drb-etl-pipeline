@@ -559,7 +559,7 @@ class TestCollectionBlueprint:
 
             assert mockDB.createSession.call_count == 2
             mockDB.deleteCollection.assert_called_once_with(
-                'testUUID', 'testUser'
+                'testUUID'
             )
             mockDB.session.commit.assert_called_once()
 
@@ -592,7 +592,7 @@ class TestCollectionBlueprint:
 
             assert mockDB.createSession.call_count == 2
             mockDB.deleteCollection.assert_called_once_with(
-                'testUUID', 'testUser'
+                'testUUID'
             )
 
             mockUtils['formatResponseObject'].assert_called_once_with(

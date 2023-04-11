@@ -285,9 +285,8 @@ class DBClient():
         self.session.add(automaticCollection)
         return newCollection
 
-    def deleteCollection(self, uuid, owner):
+    def deleteCollection(self, uuid):
         return self.session.query(Collection)\
-            .filter(Collection.owner == owner)\
             .filter(Collection.uuid == uuid).delete()
 
     def fetchUser(self, user):
