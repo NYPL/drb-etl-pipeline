@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased version -- v0.12.1
+### Added
+- Script to delete current duplicate authors/contributors in the PSQL database
+### Fixed
+- 
+
 ## 2023-04-03 -- v0.12.0
 ### Added
 - New endpoint to replace collection JSON objects in the API response

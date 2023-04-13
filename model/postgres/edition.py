@@ -1,6 +1,7 @@
 from sqlalchemy import Date, Unicode, Integer, Column, Table, ForeignKey, Index
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY, UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.mutable import MutableList
 
 from .base import Base, Core
 
@@ -35,7 +36,7 @@ class Edition(Base, Core):
     extent = Column(Unicode)
     summary = Column(Unicode)
     publishers = Column(JSONB)
-    contributors = Column(JSONB)
+    contributors = Column(MutableList.as_mutable(JSONB))
     dates = Column(JSONB)
     measurements = Column(JSONB)
     languages = Column(JSONB)
