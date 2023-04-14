@@ -1,6 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer, Unicode, Table
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY, UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy.ext.mutable import MutableList
 
 from .base import Base, Core
 
@@ -24,8 +25,8 @@ class Work(Base, Core):
     medium = Column(Unicode)
     series = Column(Unicode)
     series_position = Column(Unicode)
-    authors = Column(JSONB)
-    contributors = Column(JSONB)
+    authors = Column(MutableList.as_mutable(JSONB))
+    contributors = Column(MutableList.as_mutable(JSONB))
     subjects = Column(JSONB)
     measurements = Column(JSONB)
     dates = Column(JSONB)
