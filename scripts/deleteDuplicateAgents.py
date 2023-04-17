@@ -1,7 +1,8 @@
 import os
 import re 
+import logging 
 
-from model import Work
+from model import Work, Edition
 from managers import DBManager
 from Levenshtein import jaro_winkler
 from logger import createLog
@@ -9,7 +10,9 @@ from sqlalchemy import or_, func
 
 logger = createLog(__name__)
 
-def main():
+logging.basicConfig(filename='duplicateAgents.log', encoding='utf-8', level=logging.INFO)
+
+def main(dryRun=True):
 
     '''Deleting current duplicate authors/contributors with improved Levenshtein implementation'''
 
@@ -34,23 +37,37 @@ def main():
         .filter(or_(func.jsonb_array_length(Work.authors) > 1, func.jsonb_array_length(Work.contributors) > 1)) \
         .yield_per(batchSize):
             
+            logging.info('_________Work Duplicate Authors/Contributors Deletion_________')
+
             if work.authors and len(work.authors) > 1:
-                work.authors = deleteDuplicateAgents(work.authors, countAuth, 'author')
+                work.authors = deleteDuplicateAgents(work.id, work.authors, countAuth, 'author')
             if work.contributors and len(work.contributors) > 1:
-                work.contributors = deleteDuplicateAgents(work.contributors, countWorkContrib, \
+                work.contributors = deleteDuplicateAgents(work.id, work.contributors, countWorkContrib, \
                                                           'work contributor')
             dbManager.session.add(work)
 
-            for edition in work.editions:
-                if edition.contributors and len(edition.contributors) > 1: 
-                    edition.contributors = deleteDuplicateAgents(edition.contributors, \
-                                                                countEditContrib, 'edition contributor')
-                    dbManager.session.add(edition)
+    for edition in dbManager.session.query(Edition) \
+        .filter(func.jsonb_array_length(Edition.contributors) > 1) \
+        .yield_per(batchSize):
+            if edition.contributors and len(edition.contributors) > 1:
+                logging.info('_________Edition Duplicate Contributors Deletion_________')
 
-    dbManager.closeConnection()
+                edition.contributors = deleteDuplicateAgents(edition.id, edition.contributors, \
+                                                            countEditContrib, 'edition contributor')
+                dbManager.session.add(edition)
+
+    if dryRun == True:
+        logging.info('________DRY RUN COMPLETED________')
+
+        dbManager.rollbackChanges()
+        dbManager.session.close()
+        dbManager.engine.dispose()
+    else:
+        logging.info('________DELETION COMPLETED________')
+        dbManager.closeConnection()
 
 
-def deleteDuplicateAgents(agent, count, type):
+def deleteDuplicateAgents(agentID, agent, count, type):
     
     '''Deleting duplicate agents in works and editions'''
  
@@ -60,38 +77,50 @@ def deleteDuplicateAgents(agent, count, type):
             break
                    
         cleanCurrAgent = re.sub(r'[.,:\(\)\-0-9]+', '', currAgent['name'].lower())
+        logging.info(cleanCurrAgent)
 
-        for nextAgent in agent[1:]:
+        for nextAgent in agent[currIndex+1:]:
             cleanNextAgent = re.sub(r'[.,:\(\)\-0-9]+', '', nextAgent['name'].lower())
+            logging.info(cleanNextAgent)
+
             if jaro_winkler(cleanCurrAgent, cleanNextAgent) > 0.74:
+                logging.info(jaro_winkler(cleanCurrAgent, cleanNextAgent))
+                logging.info(agentID)
+                logging.info('___OLD AGENT___')
+                logging.info(agent)
+
                 mergeAgents(currAgent, nextAgent)
                 agent.remove(nextAgent)
-                print(agent)
+
+                logging.info('___NEW AGENT___')
+                logging.info(agent)
+
                 count+=1
+
                 if type == 'author':
-                    logger.info(f'Deleted {count} duplicate work author(s)')
+                    logging.info(f'Deleted {count} duplicate work author(s)')
                     
                 elif type == 'work contributor':
-                    logger.info(f'Deleted {count} duplicate work contributor(s)')
+                    logging.info(f'Deleted {count} duplicate work contributor(s)')
                     
                 elif type == 'edition contributor':
-                    logger.info(f'Deleted {count} duplicate edition contributor(s)')
+                    logging.info(f'Deleted {count} duplicate edition contributor(s)')
 
                 else: 
-                    logger.info(agent)
+                    logging.info(agent)
                     raise Exception
                 
     return agent
 
 def mergeAgents(existing, new):
-    if new['viaf'] != '':
+    if 'viaf' in new.keys() and new['viaf'] != '':
         existing['viaf'] = new['viaf']
 
-    if new['lcnaf'] != '':
+    if 'lcnaf' in new.keys() and new['lcnaf'] != '':
         existing['lcnaf'] = new['lcnaf']
     
-    if new['primary'] != '':
-        existing['primary'] = new['primary']
+    if 'primary' in new.keys() and new['primary'] != '':
+            existing['primary'] = new['primary']
 
     if 'role' in new.keys():
         roleSet = set(existing['roles'])
