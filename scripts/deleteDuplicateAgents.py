@@ -49,12 +49,11 @@ def main(dryRun=True):
     for edition in dbManager.session.query(Edition) \
         .filter(func.jsonb_array_length(Edition.contributors) > 1) \
         .yield_per(batchSize):
-            if edition.contributors and len(edition.contributors) > 1:
-                logging.info('_________Edition Duplicate Contributors Deletion_________')
+            logging.info('_________Edition Duplicate Contributors Deletion_________')
 
-                edition.contributors = deleteDuplicateAgents(edition.id, edition.contributors, \
+            edition.contributors = deleteDuplicateAgents(edition.id, edition.contributors, \
                                                             countEditContrib, 'edition contributor')
-                dbManager.session.add(edition)
+            dbManager.session.add(edition)
 
     if dryRun == True:
         logging.info('________DRY RUN COMPLETED________')
