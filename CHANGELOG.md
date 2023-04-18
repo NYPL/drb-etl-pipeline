@@ -5,6 +5,8 @@
 - Script to delete current duplicate authors/contributors in the PSQL database
 ### Fixed
 - Modify agentParser method to reduce number of future duplicate agents
+- Install `wheel` with pip to fix fasttext build
+
 
 ## 2023-04-03 -- v0.12.0
 ### Added
