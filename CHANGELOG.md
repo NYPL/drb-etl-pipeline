@@ -4,7 +4,7 @@
 ### Added
 - Script to delete current duplicate authors/contributors in the PSQL database
 ### Fixed
-- 
+- Install `wheel` with pip to fix fasttext build
 
 ## 2023-04-03 -- v0.12.0
 ### Added
