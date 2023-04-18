@@ -10,7 +10,7 @@ from sqlalchemy import or_, func
 
 logger = createLog(__name__)
 
-logging.basicConfig(filename='duplicateAgents.log', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename='duplicateAgentsTest.log', encoding='utf-8', level=logging.INFO)
 
 def main(dryRun=True):
 
@@ -88,7 +88,7 @@ def deleteDuplicateAgents(agentID, agent, count, type):
                 logging.info('___OLD AGENT___')
                 logging.info(agent)
 
-                SFRRecordManager.agentParser(currAgent, nextAgent)
+                SFRRecordManager.mergeAgents(currAgent, nextAgent)
                 agent.remove(nextAgent)
 
                 logging.info('___NEW AGENT___')
