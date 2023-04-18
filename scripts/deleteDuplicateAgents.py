@@ -3,14 +3,14 @@ import re
 import logging 
 
 from model import Work, Edition
-from managers import DBManager
+from managers import DBManager, SFRRecordManager
 from Levenshtein import jaro_winkler
 from logger import createLog
 from sqlalchemy import or_, func
 
 logger = createLog(__name__)
 
-logging.basicConfig(filename='duplicateAgents.log', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename='duplicateAgentsTest.log', encoding='utf-8', level=logging.INFO)
 
 def main(dryRun=True):
 
@@ -88,7 +88,7 @@ def deleteDuplicateAgents(agentID, agent, count, type):
                 logging.info('___OLD AGENT___')
                 logging.info(agent)
 
-                mergeAgents(currAgent, nextAgent)
+                SFRRecordManager.mergeAgents(currAgent, nextAgent)
                 agent.remove(nextAgent)
 
                 logging.info('___NEW AGENT___')
@@ -110,18 +110,3 @@ def deleteDuplicateAgents(agentID, agent, count, type):
                     raise Exception
                 
     return agent
-
-def mergeAgents(existing, new):
-    if 'viaf' in new.keys() and new['viaf'] != '':
-        existing['viaf'] = new['viaf']
-
-    if 'lcnaf' in new.keys() and new['lcnaf'] != '':
-        existing['lcnaf'] = new['lcnaf']
-    
-    if 'primary' in new.keys() and new['primary'] != '':
-            existing['primary'] = new['primary']
-
-    if 'role' in new.keys():
-        roleSet = set(existing['roles'])
-        roleSet.add(new['role'])
-        existing['roles'] = list(roleSet)
