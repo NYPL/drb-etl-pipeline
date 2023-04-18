@@ -533,7 +533,7 @@ class SFRRecordManager:
                 agentParts.insert(1, '')
 
             rec = dict(zip(fields, agentParts))
-            recKey = re.sub(r'[.,:\(\)]+', '', rec['name'].lower())
+            recKey = re.sub(r'[.,:\(\)\-0-9]+', '', rec['name'].lower())
 
             if rec['name'] == '' and rec['viaf'] == '' and rec['lcnaf'] == '':
                 continue
@@ -547,7 +547,7 @@ class SFRRecordManager:
                         break
 
                 if existingMatch is False:
-                    if jaro_winkler(oaKey, recKey) > 0.85:
+                    if jaro_winkler(oaKey, recKey) > 0.74:
                         SFRRecordManager.mergeAgents(oa, rec)
                         existingMatch = True
                         break
@@ -605,11 +605,14 @@ class SFRRecordManager:
 
     @staticmethod
     def mergeAgents(existing, new):
-        if new['viaf'] != '':
+        if 'viaf' in new.keys() and new['viaf'] != '':
             existing['viaf'] = new['viaf']
 
-        if new['lcnaf'] != '':
+        if 'lcnaf' in new.keys() and new['lcnaf'] != '':
             existing['lcnaf'] = new['lcnaf']
+
+        if 'primary' in new.keys() and new['primary'] != '':
+            existing['primary'] = new['primary']
 
         if 'role' in new.keys():
             roleSet = set(existing['roles'])
