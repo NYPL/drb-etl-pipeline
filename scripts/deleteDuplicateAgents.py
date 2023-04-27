@@ -10,9 +10,9 @@ from sqlalchemy import or_, func
 
 logger = createLog(__name__)
 
-logging.basicConfig(filename='duplicateAgentsTest.log', encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename='duplicateAgents.log', encoding='utf-8', level=logging.INFO)
 
-def main(dryRun=True):
+def main(dryRun=False):
 
     '''Deleting current duplicate authors/contributors with improved Levenshtein implementation'''
 
@@ -49,6 +49,7 @@ def main(dryRun=True):
     for edition in dbManager.session.query(Edition) \
         .filter(func.jsonb_array_length(Edition.contributors) > 1) \
         .yield_per(batchSize):
+            
             logging.info('_________Edition Duplicate Contributors Deletion_________')
 
             edition.contributors = deleteDuplicateAgents(edition.id, edition.contributors, \
@@ -69,6 +70,8 @@ def main(dryRun=True):
 def deleteDuplicateAgents(agentID, agent, count, type):
     
     '''Deleting duplicate agents in works and editions'''
+
+    originalAgent = agent.copy()
  
     for currIndex, currAgent in enumerate(agent):
                    
@@ -76,37 +79,39 @@ def deleteDuplicateAgents(agentID, agent, count, type):
             break
                    
         cleanCurrAgent = re.sub(r'[.,:\(\)\-0-9]+', '', currAgent['name'].lower())
-        logging.info(cleanCurrAgent)
 
         for nextAgent in agent[currIndex+1:]:
             cleanNextAgent = re.sub(r'[.,:\(\)\-0-9]+', '', nextAgent['name'].lower())
-            logging.info(cleanNextAgent)
 
             if jaro_winkler(cleanCurrAgent, cleanNextAgent) > 0.74:
-                logging.info(jaro_winkler(cleanCurrAgent, cleanNextAgent))
-                logging.info(agentID)
-                logging.info('___OLD AGENT___')
-                logging.info(agent)
+                logging.info(cleanCurrAgent)
+                logging.info(cleanNextAgent)
+                logging.info(f'Match Score: {jaro_winkler(cleanCurrAgent, cleanNextAgent)}')
 
                 SFRRecordManager.mergeAgents(currAgent, nextAgent)
                 agent.remove(nextAgent)
 
-                logging.info('___NEW AGENT___')
-                logging.info(agent)
-
                 count+=1
 
-                if type == 'author':
-                    logging.info(f'Deleted {count} duplicate work author(s)')
-                    
-                elif type == 'work contributor':
-                    logging.info(f'Deleted {count} duplicate work contributor(s)')
-                    
-                elif type == 'edition contributor':
-                    logging.info(f'Deleted {count} duplicate edition contributor(s)')
+    if count >= 1:
+         
+        logging.info(f'ID: {agentID}')
+        logging.info('___OLD AGENT___')
+        logging.info(originalAgent)
+        logging.info('___NEW AGENT___')
+        logging.info(agent)
 
-                else: 
-                    logging.info(agent)
-                    raise Exception
-                
+        if type == 'author':
+            logging.info(f'Deleted {count} duplicate work author(s)')
+                        
+        elif type == 'work contributor':
+            logging.info(f'Deleted {count} duplicate work contributor(s)')
+                        
+        elif type == 'edition contributor':
+            logging.info(f'Deleted {count} duplicate edition contributor(s)')
+
+        else: 
+            logging.info(agent)
+            raise Exception
+                    
     return agent

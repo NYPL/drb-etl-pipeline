@@ -3,6 +3,7 @@
 ## unreleased version -- v0.12.1
 ### Added
 - Script to delete current duplicate authors/contributors in the PSQL database
+- Webscraper for the Chicago ISAC catalogs
 ### Fixed
 - Modify agentParser method to reduce number of future duplicate agents
 - Install `wheel` with pip to fix fasttext build
