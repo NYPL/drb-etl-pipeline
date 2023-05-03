@@ -54,6 +54,7 @@ def main():
             parsePubWithDownloadRedirect(elem, url)
 
     finalMetaDataJSON = cleaningText(finalMetaData)
+    print(len(finalMetaDataJSON))
 
     with open("data_file.json", "w", encoding='utf-8') as write_file:
         json.dump(finalMetaDataJSON, write_file, ensure_ascii = False, indent = 6)

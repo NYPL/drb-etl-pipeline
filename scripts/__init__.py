@@ -7,3 +7,4 @@ from .govDocES import main as govDocUpdate
 from .deleteElasticRecords import main as deleteESCRecords
 from .esReIndex import main as esIndex
 from .deleteDuplicateAgents import main as deleteDuplicates
+from .chicago_isac_scraper import main as isacScraper
