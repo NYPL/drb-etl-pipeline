@@ -1,7 +1,6 @@
 from .json import JSONMapping
 
-class METMapping(JSONMapping):
-    PDF_LINK = 'https://libmma.contentdm.oclc.org/digital/api/collection/p15324coll10/id/{}/download'
+class ChicagoISACMapping(JSONMapping):
     def __init__(self, source):
         super().__init__(source, {})
         self.mapping = self.createMapping()
@@ -37,7 +36,7 @@ class METMapping(JSONMapping):
         }
 
     def applyFormatting(self):
-        self.record.source = 'met'
+        self.record.source = 'chicagoISAC'
         self.record.source_id = self.record.identifiers[0]
 
         # Clean up subjects
@@ -58,5 +57,5 @@ class METMapping(JSONMapping):
         # Set PDF download link
         pdfURL = self.PDF_LINK.format(self.source['dmrecord'])
         self.record.has_part.append(
-            '|'.join(['1', pdfURL, 'met', 'application/pdf', '{}'])
+            '|'.join(['1', pdfURL, 'chicagoISAC', 'application/pdf', '{}'])
         )

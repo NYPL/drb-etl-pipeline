@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 import json
 import os
 import requests
@@ -6,29 +5,21 @@ from requests.exceptions import HTTPError, ConnectionError
 
 from .core import CoreProcess
 from mappings.core import MappingError
-from mappings.met import METMapping
+from mappings.chicagoISAC import ChicagoISACMapping
 from managers import WebpubManifest
 from logger import createLog
 
 logger = createLog(__name__)
 
 
-class METProcess(CoreProcess):
-    MET_ROOT_URL = 'https://libmma.contentdm.oclc.org/digital'
-
-    # The documentation for these API queries is here: https://help.oclc.org/Metadata_Services/CONTENTdm/Advanced_website_customization/API_Reference/CONTENTdm_API/CONTENTdm_Server_API_Functions_-_dmwebservices
-    LIST_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmQuery/p15324coll10/CISOSEARCHALL/title!dmmodified!dmcreated!rights/dmmodified/{}/{}/1/0/0/00/0/json'
-    DETAIL_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmGetItemInfo/p15324coll10/{}/json'
-    COMPOUND_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmGetCompoundObjectInfo/p15324coll10/{}/json'
-    IMAGE_QUERY = 'https://libmma.contentdm.oclc.org/digital/api/singleitem/collection/p15324coll10/id/{}'
+class ChiacgoISACProcess(CoreProcess):
 
     def __init__(self, *args):
-        super(METProcess, self).__init__(*args[:4])
+        super(ChiacgoISACProcess, self).__init__(*args[:4])
 
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
         self.fullImport = self.process == 'complete'
-        self.startTimestamp = None
 
         # Connect to database
         self.generateEngine()
@@ -37,7 +28,6 @@ class METProcess(CoreProcess):
         # Connect to file processing queue
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
-        self.createRabbitConnection()
         self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
         # S3 Configuration
@@ -45,74 +35,31 @@ class METProcess(CoreProcess):
         self.createS3Client()
 
     def runProcess(self):
-        self.setStartTime()
-        self.importDCRecords()
+        self.processChicagoISACRecord()
 
         self.saveRecords()
         self.commitChanges()
 
-    def setStartTime(self):
-        if not self.fullImport:
-            if not self.ingestPeriod:
-                self.startTimestamp = datetime.utcnow() - timedelta(days=1)
-            else:
-                self.startTimestamp = datetime.strptime(
-                    self.ingestPeriod, '%Y-%m-%dT%H:%M:%S'
-                )
-
-    def importDCRecords(self):
-        currentPosition = self.ingestOffset
-        pageSize = 50
-
-        while True:
-            batchQuery = self.LIST_QUERY.format(pageSize, currentPosition)
-
-            batchResponse = self.queryMetAPI(batchQuery)
-
-            batchRecords = batchResponse['records']
-
-            self.processMetBatch(batchRecords)
-
-            if len(batchRecords) < 1 or currentPosition >= self.ingestLimit:
-                break
-
-            currentPosition += pageSize
-
-    def processMetBatch(self, metRecords):
-        for record in metRecords:
-            if (
-                self.startTimestamp
-                and datetime.strptime(record['dmmodified'], '%Y-%m-%d')
-                >= self.startTimestamp
-            ) or record['rights'] == 'copyrighted':
-                continue
-
-            try:
-                self.processMetRecord(record)
-            except METError:
-                logger.warning('Unable to process MET record {}'.format(
-                    record['pointer'])
-                )
-
-    def processMetRecord(self, record):
+    def processChicagoISACRecord(self, record):
         try:
-            detailQuery = self.DETAIL_QUERY.format(record['pointer'])
-            metDetail = self.queryMetAPI(detailQuery)
+            with open('data_file.json') as f:
+                chicagoISACData = json.load(f)
 
-            metRec = METMapping(metDetail)
-            metRec.applyMapping()
+            chicagoISACRec = ChicagoISACMapping(chicagoISACData)
+            chicagoISACRec.applyMapping()
+            
         except (MappingError, HTTPError, ConnectionError) as e:
             logger.debug(e)
-            raise METError('Unable to process MET record')
+            raise ChicagoISACError('Unable to process MET record')
 
-        self.storePDFManifest(metRec.record)
+        self.storePDFManifest(chicagoISACRec.record)
 
         try:
-            self.addCoverAndStoreInS3(metRec.record, record['filetype'])
-        except METError as e:
+            self.addCoverAndStoreInS3(chicagoISACRec.record, record['filetype'])
+        except ChicagoISACError as e:
             logger.warning('Unable to fetch cover ({})'.format(e))
 
-        self.addDCDWToUpdateList(metRec)
+        self.addDCDWToUpdateList(chicagoISACRec)
 
     def addCoverAndStoreInS3(self, record, filetype):
         recordID = record.identifiers[0].split('|')[0]
@@ -151,7 +98,7 @@ class METProcess(CoreProcess):
                         recordID
                     )
                 )
-                raise METError('Unable to fetch page structure for record')
+                raise ChicagoISACError('Unable to fetch page structure for record')
 
             return imageObject['imageUri']
         else:
@@ -231,5 +178,5 @@ class METProcess(CoreProcess):
             return response.json()
 
 
-class METError(Exception):
+class ChicagoISACError(Exception):
     pass
