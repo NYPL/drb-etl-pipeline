@@ -8,11 +8,11 @@ from Levenshtein import jaro_winkler
 from logger import createLog
 from sqlalchemy import or_, func
 
-logger = createLog(__name__)
-
-logging.basicConfig(filename='duplicateAgents.log', encoding='utf-8', level=logging.INFO)
-
 def main(dryRun=False):
+
+    logger = createLog(__name__)
+
+    logging.basicConfig(filename='duplicateAgents.log', encoding='utf-8', level=logging.INFO)
 
     '''Deleting current duplicate authors/contributors with improved Levenshtein implementation'''
 
