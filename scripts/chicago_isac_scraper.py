@@ -33,6 +33,14 @@ finalMetaData = []
 
 OIC_ROOT = 'https://isac.uchicago.edu/'
 
+isbnPattern = re.compile(r'ISBN\-10 |ISBN\-10|ISBN\-13 |ISBN\-13|ISBN |ISBN|\:|\-|\
+                            \(hardback\) | \(hardcover\) |\(eBook\) ')
+charPattern = re.compile(r'\n|\t|\\|\\:|\u00a0')
+titlePattern = re.compile(r'AS [\d]+. |CHDS [\d]+. |ISAC [\d]+. | OIS [\d]+. |LAMINE [\d]+. |\
+                            MAD [\d]+. |MSKH [\d] |NE [\d]+. |OIC [\d]+. |OIDA [\d]+. |OIMP [\d]+. |\
+                            OIP [\d]+. |SAOC [/d]+. ')
+authorPattern = re.compile(r'ed\.|eds\.|([\d]+)\.| and |([\d]+)|Originally published in ([\d]+)\.|\n')
+
 def main(): 
 
     '''Looping through each catalog to add the download links and metadata to a dictionary'''
@@ -53,7 +61,7 @@ def main():
         else: 
             parsePubWithDownloadRedirect(elem, url)
 
-    finalMetaDataJSON = cleaningText(finalMetaData)
+    finalMetaDataJSON = cleanText(finalMetaData)
     print(len(finalMetaDataJSON))
 
     with open("chicagoISAC_metadata.json", "w", encoding='utf-8') as write_file:
@@ -193,7 +201,7 @@ def parsePubWithDownloadRedirect(elem, url):
 
                 finalMetaData.append({
                     'title': detailTitle,
-                    'authors': cleaningAuthorMetadata(detailAuthor),
+                    'authors': cleanAuthorMetadata(detailAuthor),
                     'series': metadata[1].text,
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[2].text)['publisher'],
@@ -206,7 +214,7 @@ def parsePubWithDownloadRedirect(elem, url):
 
                 finalMetaData.append({
                     'title': detailTitle,
-                    'authors': cleaningAuthorMetadata(detailAuthor),
+                    'authors': cleanAuthorMetadata(detailAuthor),
                     'series': metadata[0].text,
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -221,7 +229,7 @@ def parsePubWithDownloadRedirect(elem, url):
 
                 finalMetaData.append({
                     'title': detailTitle,
-                    'authors': cleaningAuthorMetadata(detailAuthor),
+                    'authors': cleanAuthorMetadata(detailAuthor),
                     'series': metadata[0].text,
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -234,7 +242,7 @@ def parsePubWithDownloadRedirect(elem, url):
 
                 finalMetaData.append({
                     'title': detailTitle,
-                    'authors': cleaningAuthorMetadata(detailAuthor),
+                    'authors': cleanAuthorMetadata(detailAuthor),
                     'series': '',
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[0].text)['publisher'],
@@ -247,7 +255,7 @@ def parsePubWithDownloadRedirect(elem, url):
 
                 finalMetaData.append({
                     'title': detailTitle,
-                    'authors': cleaningAuthorMetadata(detailAuthor),
+                    'authors': cleanAuthorMetadata(detailAuthor),
                     'series': metadata[3].text,
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[0].text)['publisher'],
@@ -260,7 +268,7 @@ def parsePubWithDownloadRedirect(elem, url):
                 
                 finalMetaData.append({
                     'title': detailTitle,
-                    'authors': cleaningAuthorMetadata(detailAuthor),
+                    'authors': cleanAuthorMetadata(detailAuthor),
                     'series': metadata[0].text,
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -276,7 +284,7 @@ def parsePubWithDownloadRedirect(elem, url):
             
             finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': '',
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[0].text)['publisher'],
@@ -291,7 +299,7 @@ def parsePubWithDownloadRedirect(elem, url):
 
             finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -306,7 +314,7 @@ def parsePubWithDownloadRedirect(elem, url):
                 
             finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -321,7 +329,7 @@ def parsePubWithDownloadRedirect(elem, url):
                 
                 finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -340,7 +348,7 @@ def parsePubWithDownloadRedirect(elem, url):
                 
                 finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -356,7 +364,7 @@ def parsePubWithDownloadRedirect(elem, url):
             
                 finalMetaData.append({
                     'title': detailTitle,
-                    'authors': cleaningAuthorMetadata(detailAuthor),
+                    'authors': cleanAuthorMetadata(detailAuthor),
                     'series': metadata[0].text,
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -370,7 +378,7 @@ def parsePubWithDownloadRedirect(elem, url):
 
             finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -384,7 +392,7 @@ def parsePubWithDownloadRedirect(elem, url):
 
             finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -399,7 +407,7 @@ def parsePubWithDownloadRedirect(elem, url):
                 
                 finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[2].text)['publisher'],
@@ -414,7 +422,7 @@ def parsePubWithDownloadRedirect(elem, url):
                 
                 finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 #Publisher split in 3 list blocks: metadata[1] metadata[2] metadata[3]
@@ -429,7 +437,7 @@ def parsePubWithDownloadRedirect(elem, url):
 
             finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -494,7 +502,7 @@ def parsePubSAOC(pub, url, downloadLinks):
 
                 finalMetaData.append({
                     'title': detailTitle,
-                    'authors': cleaningAuthorMetadata(detailAuthor),
+                    'authors': cleanAuthorMetadata(detailAuthor),
                     'series': metadata[0].text,
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -507,7 +515,7 @@ def parsePubSAOC(pub, url, downloadLinks):
 
                 finalMetaData.append({
                     'title': detailTitle,
-                    'authors': cleaningAuthorMetadata(detailAuthor),
+                    'authors': cleanAuthorMetadata(detailAuthor),
                     'series': metadata[0].text,
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -520,7 +528,7 @@ def parsePubSAOC(pub, url, downloadLinks):
 
             finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -552,7 +560,7 @@ def parsePubSAOC(pub, url, downloadLinks):
             cleanISBN = metadata[2].text.replace("\u00a0", "")
             finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -565,7 +573,7 @@ def parsePubSAOC(pub, url, downloadLinks):
 
             finalMetaData.append({
                 'title': detailTitle,
-                'authors': cleaningAuthorMetadata(detailAuthor),
+                'authors': cleanAuthorMetadata(detailAuthor),
                 'series': metadata[0].text,
                 'publisherLocation': 'Chicago',
                 'publisher': pubParsing(metadata[1].text)['publisher'],
@@ -588,27 +596,19 @@ def detailLinkUpdate(detailLink):
         detailURL = f'{OIC_ROOT}{detailLink}'
         return detailURL
     
-def cleaningText(metaData):
+def cleanText(metaData):
     for i, dataDict in enumerate(metaData):
         for key, value in dataDict.items():
             if type(value) == str:
-                isbnPattern = re.compile(r'ISBN\-10 |ISBN\-10|ISBN\-13 |ISBN\-13|ISBN |ISBN|\:|\
-                                         \(hardback\) | \(hardcover\) |\(eBook\) ')
-                charPattern = re.compile(r'\n|\t|\\|\\:|\u00a0')
-                authorPattern = re.compile(r' Originally published in ([\d]+).')
-                titlePattern = re.compile(r'AS [\d]+. |CHDS [\d]+. |ISAC [\d]+. | OIS [\d]+. |LAMINE [\d]+. |\
-                                          MAD [\d]+. |MSKH [\d] |NE [\d]+. |OIC [\d]+. |OIDA [\d]+. |OIMP [\d]+. |\
-                                          OIP [\d]+. |SAOC [/d]+. ')
+                if key == 'isbn':
+                    metaData[i][key] = re.sub(isbnPattern, '', metaData[i][key])
                 metaData[i][key] = re.sub(charPattern, '', metaData[i][key])
-                metaData[i][key] = re.sub(isbnPattern, '', metaData[i][key])
-                metaData[i][key] = re.sub(authorPattern, '', metaData[i][key])
                 metaData[i][key] = re.sub(titlePattern, '', metaData[i][key])
                 metaData[i][key] = metaData[i][key].strip()
     
     return metaData
 
-def cleaningAuthorMetadata(authors):
-    authorPattern = re.compile(r'ed\.|eds\.|([\d]+)\.| and |([\d]+)|Originally published in ([\d]+)\.|\n')
+def cleanAuthorMetadata(authors):
     cleanAuthors = re.sub(authorPattern, '', authors)
     cleanAuthorsList = cleanAuthors.strip().split(', ')
     return cleanAuthorsList
@@ -625,9 +625,14 @@ def pubParsing(pubInfo):
     elif pubParsedInfo[0].isdigit():
         pubDictionary['date'] = pubParsedInfo[0]
     elif pubParsedInfo[0].isdigit() == False and len(pubParsedInfo) == 1:
-        pubDictionary['publisher'].append(pubParsedInfo[0].replace(',', ''))
+        pubParsedInfoComma = pubParsedInfo[0].replace(',', '')
+        pubParsedInfoLocation = pubParsedInfoComma.replace('Chicago: ', '')
+        pubDictionary['publisher'].append(pubParsedInfoLocation)
+        pubDictionary['publisher']
     else:
-        pubDictionary['publisher'].append(pubParsedInfo[0].replace(',', ''))
+        pubParsedInfoComma = pubParsedInfo[0].replace(',', '')
+        pubParsedInfoLocation = pubParsedInfoComma.replace('Chicago: ', '')
+        pubDictionary['publisher'].append(pubParsedInfoLocation)
         pubDictionary['date'] = pubParsedInfo[1]
     return pubDictionary
 
@@ -642,7 +647,7 @@ def parsePubMISC(detailURL, detailTitle, detailAuthor, pubContainer, downloadLin
         metadata = dataList.get_text().split('\n')
         finalMetaData.append({
             'title': detailTitle,
-            'authors': cleaningAuthorMetadata(detailAuthor),
+            'authors': cleanAuthorMetadata(detailAuthor),
             'series': metadata[0],
             'publisherLocation': 'Chicago',
             'publisher': pubParsing(metadata[1])['publisher'],
@@ -655,7 +660,7 @@ def parsePubMISC(detailURL, detailTitle, detailAuthor, pubContainer, downloadLin
     elif detailURL == 'https://isac.uchicago.edu//node/3990':
         finalMetaData.append({
             'title': detailTitle,
-            'authors': cleaningAuthorMetadata(detailAuthor),
+            'authors': cleanAuthorMetadata(detailAuthor),
             'series': 'Reliefs and Inscriptions from the Tomb of Per-Haps: An Oriental Institute Holiday Card',
             'publisherLocation': 'Chicago',
             'publisher': [],
@@ -675,7 +680,7 @@ def parsePubMISC(detailURL, detailTitle, detailAuthor, pubContainer, downloadLin
 
         finalMetaData.append({
             'title': detailTitle,
-            'authors': cleaningAuthorMetadata(detailAuthor),
+            'authors': cleanAuthorMetadata(detailAuthor),
             'publisherLocation': 'Chicago',
             'publisher': ['Joint Publication with the Cotsen Institute of Archaeology, University of California, Los Angeles'],
             'publicationDate': '2007',
@@ -690,7 +695,7 @@ def parsePubMISC(detailURL, detailTitle, detailAuthor, pubContainer, downloadLin
 
         finalMetaData.append({
             'title': detailTitle,
-            'authors': cleaningAuthorMetadata(detailAuthor),
+            'authors': cleanAuthorMetadata(detailAuthor),
             'series': metadata[0].text,
             'publisherLocation': 'Chicago',
             'publisher': pubParsing(metadata[2].text)['publisher'],
@@ -708,7 +713,7 @@ def parsePubMISC(detailURL, detailTitle, detailAuthor, pubContainer, downloadLin
 
         finalMetaData.append({
             'title': detailTitle,
-            'authors': cleaningAuthorMetadata(detailAuthor),
+            'authors': cleanAuthorMetadata(detailAuthor),
             'series': metadata[0].text,
             'publisherLocation': 'Chicago',
             'publisher': pubParsing(metadata[2].text)['publisher'],

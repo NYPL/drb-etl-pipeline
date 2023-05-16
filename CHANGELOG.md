@@ -7,7 +7,7 @@
 ### Fixed
 - Modify agentParser method to reduce number of future duplicate agents
 - Install `wheel` with pip to fix fasttext build
-- Cleaned web scraped metadata from Chicago ISAC catalog of publications
+- Clean web scraped metadata from Chicago ISAC catalog of publications
 
 
 ## 2023-04-03 -- v0.12.0
