@@ -14,3 +14,4 @@ from .ingestReport import IngestReportProcess
 from .met import METProcess
 from .migration import MigrationProcess
 from .dbMaintenance import DatabaseMaintenanceProcess
+from .chicagoISAC import ChicagoISACProcess
