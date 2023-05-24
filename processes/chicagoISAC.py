@@ -11,7 +11,6 @@ from logger import createLog
 
 logger = createLog(__name__)
 
-
 class ChicagoISACProcess(CoreProcess):
 
     def __init__(self, *args):
@@ -19,7 +18,7 @@ class ChicagoISACProcess(CoreProcess):
 
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
-        self.fullImport = self.process == 'complete'
+        self.fullImport = self.process == 'complete' 
 
         # Connect to database
         self.generateEngine()
@@ -33,8 +32,8 @@ class ChicagoISACProcess(CoreProcess):
         with open('chicagoISAC_metadata.json') as f:
                 chicagoISACData = json.load(f)
 
-        for i, value in enumerate(chicagoISACData):
-            self.processChicagoISACRecord(value)
+        for dict in chicagoISACData:
+            self.processChicagoISACRecord(dict)
 
         self.saveRecords()
         self.commitChanges()
@@ -46,7 +45,7 @@ class ChicagoISACProcess(CoreProcess):
             self.storePDFManifest(chicagoISACRec.record)
             self.addDCDWToUpdateList(chicagoISACRec)
             
-        except (MappingError, HTTPError, ConnectionError, IndexError) as e:
+        except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
             logger.debug(e)
             logger.warn(ChicagoISACError('Unable to process ISAC record'))
             
@@ -75,7 +74,15 @@ class ChicagoISACProcess(CoreProcess):
                     flags
                 ])
                 record.has_part.insert(0, linkString)
-
+                for i in range(1, len(record.has_part)):
+                    if len(record.has_part[i]) > 1:
+                        urlArray = record.has_part[i]
+                        record.has_part.pop(i)
+                        for elem in urlArray:
+                            record.has_part.append(elem)
+                    else:
+                        record.has_part[i] = ''.join(record.has_part[i])
+        
                 break
 
     def createManifestInS3(self, manifestPath, manifestJSON):
@@ -91,7 +98,7 @@ class ChicagoISACProcess(CoreProcess):
             record,
             conformsTo=os.environ['WEBPUB_PDF_PROFILE']
         )
-
+        
         manifest.addChapter(sourceURI, record.title)
 
         manifest.links.append({

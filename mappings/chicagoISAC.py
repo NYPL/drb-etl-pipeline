@@ -8,36 +8,35 @@ class ChicagoISACMapping(JSONMapping):
     def createMapping(self):
         return {
             'title': ('title', '{0}'),
-            #'alternate': [('titlea', '{0}')],
             'authors': ('authors', '{0}|||true'),
-            #'languages': [('langua', '{0}||')],
-            'dates': ('publicationDate', '{0}|publication_date'),
+            'dates': [('publicationDate', '{0}|publication_date')],
             'publisher': ('publisher', '{0}'),
             'identifiers': 
-                #('dmrecord', '{0}|met'),
-                #('identi', '{0}|met'),
-                #('digiti', '{0}|met'),
-                ('isbn', '{0}|isbn')
+                [('isbn', '{0}|isbn')]
             ,
-            # 'contributors': [
-            #     ('contri', '{0}|||contributor'),
-            #     ('physic', '{0}|||repository'),
-            #     ('source', '{0}|||provider')
-            # ],
+            'is_part_of': ('series', '{0}|series'),
+            'spatial': ('publisherLocation', '{0}|publissherLocation'),
             'extent': ('extent', '{0}'),
-            #'is_part_of': [('relatig', '{0}|collection')],
-            # 'abstract': [
-            #     ('transc', '{0}'),
-            #     ('descri', '{0}')
-            # ],
-            # 'subjects': [('subjec', '{0}||')],
-            # 'rights': (['rights', 'copyra', 'copyri'], 'met|{0}|{1}|{2}|'),
-            'has_part': ('url', '1|{0}|isac|application/pdf|{{"catalog": false, "download": true, "reader": false, "embed": false}}')
+            'has_part': [('url', '1|{0}|isac|application/pdf|{{"catalog": false, "download": true, "reader": false, "embed": false}}')] 
         }
 
     def applyFormatting(self):
         self.record.source = 'isac'
-        #if self.record.identifiers[0]:
-        print(type(self.record.identifiers[0].split('|')[0]))
-        self.record.source_id = f'isac_{self.record.identifiers[0]}'
+
+        #Formatting for multiple isbns
+        if ',' in self.record.identifiers[0]:
+            identifierArray = self.record.identifiers[0].split(', ')
+            updatedIdentifierArray = []
+            i = 0
+            while len(updatedIdentifierArray) < len(identifierArray):
+                if i == len(identifierArray)-1:
+                    updatedIdentifierArray.append(identifierArray[i].strip())
+                else:
+                    updatedIdentifierArray.append(f'{identifierArray[i].strip()}|isbn')
+                i += 1
+
+            self.record.identifiers = updatedIdentifierArray
+
+        source_id = self.record.identifiers[0].split('|')[0]
+        self.record.source_id = f'isac_{source_id}'
 
