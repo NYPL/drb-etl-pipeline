@@ -32,8 +32,8 @@ class ChicagoISACProcess(CoreProcess):
         with open('chicagoISAC_metadata.json') as f:
                 chicagoISACData = json.load(f)
 
-        for dict in chicagoISACData:
-            self.processChicagoISACRecord(dict)
+        for metaDict in chicagoISACData:
+            self.processChicagoISACRecord(metaDict)
 
         self.saveRecords()
         self.commitChanges()
@@ -82,7 +82,6 @@ class ChicagoISACProcess(CoreProcess):
                             record.has_part.append(elem)
                     else:
                         record.has_part[i] = ''.join(record.has_part[i])
-        
                 break
 
     def createManifestInS3(self, manifestPath, manifestJSON):
