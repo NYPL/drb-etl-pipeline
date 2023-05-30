@@ -18,8 +18,8 @@ class TestChicagoISACProcess:
         class TestISAC(ChicagoISACProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
-                self.s3Client = mocker.patch.object(ChicagoISACProcess, 'createS3Client')
-                self.session = mocker.patch.object(ChicagoISACProcess, 'createSession')
+                self.s3Client = mocker.MagicMock(s3Client='testS3Client')
+                self.session = mocker.MagicMock(session='testSession')
                 self.records = mocker.MagicMock(record='testRecord')
                 self.batchSize = mocker.MagicMock(batchSize='testBatchSize')
         
