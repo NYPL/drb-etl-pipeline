@@ -702,7 +702,6 @@ def parsePubMISC(detailURL, detailTitle, detailAuthor, pubContainer, downloadLin
             'extent': f'{metadata[1].text}, {metadata2[1].text}',
             'isbn': '',
             'url': downloadLinks
-
         })
 
     elif detailURL == 'https://isac.uchicago.edu//node/3380':
