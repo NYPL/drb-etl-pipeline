@@ -1,17 +1,8 @@
 import pytest
-import boto3
 
 from mappings.core import MappingError
-from processes.chicagoISAC import ChicagoISACProcess, ChicagoISACError
+from processes.chicagoISAC import ChicagoISACProcess
 from tests.helper import TestHelpers
-
-# self = <tests.unit.test_isac_process.TestChicagoISACProcess object at 0x12f17d850>
-# testProcess = <tests.unit.test_isac_process.TestChicagoISACProcess.testProcess.<locals>.TestISAC object at 0x12f9ae280>
-# mocker = <pytest_mock.plugin.MockerFixture object at 0x12f9aedc0>
-
-# self = <tests.unit.test_isac_process.TestChicagoISACProcess.testProcess.<locals>.TestISAC object at 0x12f9ae280>
-# obj = b'{"context": "https://test_aws_bucket-s3.amazonaws.com/manifests/context.jsonld", "metadata": {"@type": "https://sche..."Studies Presented to Robert D. Biggs, June 4, 2004 From the Workshop of the Chicago Assyrian Dictionary, Volume 2"}]}'
-# objKey = 'manifests/isac/9781885923448.json', bucket = 'test_aws_bucket2', bucketPermissions = 'public-read'
 
 class TestChicagoISACProcess:
     @classmethod
@@ -23,18 +14,16 @@ class TestChicagoISACProcess:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testProcess(self):
+    def testProcess(self, mocker):
         class TestISAC(ChicagoISACProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
+                self.s3Client = mocker.patch.object(ChicagoISACProcess, 'createS3Client')
+                self.session = mocker.patch.object(ChicagoISACProcess, 'createSession')
+                self.records = mocker.MagicMock(record='testRecord')
+                self.batchSize = mocker.MagicMock(batchSize='testBatchSize')
         
         return TestISAC()
-
-    @pytest.fixture
-    def testRecords(self, mocker):
-        return [
-            {'title': 'testTitle', 'authors': 'testAuth, testAuth2'}
-        ]
 
     def test_runProcess(self, testProcess, mocker):
         runMocks = mocker.patch.multiple(
