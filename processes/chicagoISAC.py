@@ -46,7 +46,7 @@ class ChicagoISACProcess(CoreProcess):
             self.addDCDWToUpdateList(chicagoISACRec)
             
         except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
-            logger.debug(e)
+            logger.exception(e)
             logger.warn(ChicagoISACError('Unable to process ISAC record'))
             
 
@@ -74,6 +74,8 @@ class ChicagoISACProcess(CoreProcess):
                     flags
                 ])
                 record.has_part.insert(0, linkString)
+                #The second element of the has_part array will always be an array of pdfURLS from the json file
+                #Those elements of the array are popped out and appended back into the has_part array as strings instead of an array
                 for i in range(1, len(record.has_part)):
                     if len(record.has_part[i]) > 1:
                         urlArray = record.has_part[i]
