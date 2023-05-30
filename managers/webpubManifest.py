@@ -14,10 +14,11 @@ class WebpubManifest:
         self.openSection = None
 
     # TODO validate kwargs against schema.org/Book
-    def addMetadata(self, dcdwRecord: object, conformsTo=None) -> NoReturn:
+    def addMetadata(self, dcdwRecord: object, conformsTo=None) -> None:
         self.metadata['title'] = dcdwRecord.title
 
         if len(dcdwRecord.authors) > 0:
+            print(dcdwRecord.authors)
             self.metadata['author'] = list(dcdwRecord.authors[0].split('|'))[0]
 
         isbns = list(filter(
@@ -47,7 +48,7 @@ class WebpubManifest:
         self.openSection = None
 
     # TODO Make it possible to add subsections iteratively
-    def addChapter(self, link: str, title: str, subsections=None) -> NoReturn:
+    def addChapter(self, link: str, title: str, subsections=None) -> None:
         component = {'href': link, 'title': title}
         tocEntry = component.copy()
 

@@ -6,7 +6,7 @@ from processes.met import METProcess, METError
 from tests.helper import TestHelpers
 
 
-class TestMUSEProcess:
+class TestMetProcess:
     @classmethod
     def setup_class(cls):
         TestHelpers.setEnvVars()
@@ -44,13 +44,12 @@ class TestMUSEProcess:
         )
 
         testProcess.runProcess()
-
+        
         runMocks['setStartTime'].assert_called_once()
         runMocks['importDCRecords'].assert_called_once()
         runMocks['saveRecords'].assert_called_once()
         runMocks['commitChanges'].assert_called_once()
 
-    def test_setStartTime_fullImport_true(self, testProcess):
         testProcess.fullImport = True
         testProcess.startTimestamp = None
 

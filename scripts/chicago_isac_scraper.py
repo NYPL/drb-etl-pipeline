@@ -33,12 +33,10 @@ finalMetaData = []
 
 OIC_ROOT = 'https://isac.uchicago.edu/'
 
-isbnPattern = re.compile(r'ISBN\-10 |ISBN\-10|ISBN\-13 |ISBN\-13|ISBN |ISBN|\:|\-|\
-                            \(hardback\) | \(hardcover\) |\(eBook\) ')
+isbnPattern = re.compile(r'ISBN\-10 |ISBN\-10|ISBN\-13 |ISBN\-13|ISBN |ISBN|\:|\-| \(hardcover\) |\(hardcover\) |\(hardback\)| \(hardback\) |\(eBook\)| \(eBook\) |\(paperback\)')
 charPattern = re.compile(r'\n|\t|\\|\\:|\u00a0')
-titlePattern = re.compile(r'AS [\d]+. |CHDS [\d]+. |ISAC [\d]+. | OIS [\d]+. |LAMINE [\d]+. |\
-                            MAD [\d]+. |MSKH [\d] |NE [\d]+. |OIC [\d]+. |OIDA [\d]+. |OIMP [\d]+. |\
-                            OIP [\d]+. |SAOC [/d]+. ')
+titlePattern = re.compile(r'AS [\d]+. |CHDS [\d]+. |ISAC [\d]+. |OIS [\d]+. |LAMINE [\d]+. ')
+titlePattern2 = re.compile(r'MAD [\d]+. |MSKH [\d] |NE [\d]+. |OIC [\d]+. |OIDA [\d]+. |OIMP [\d]+. |OIP [\d]+. |SAOC [\d]+. ')
 authorPattern = re.compile(r'ed\.|eds\.|([\d]+)\.| and |([\d]+)|Originally published in ([\d]+)\.|\n')
 
 def main(): 
@@ -512,18 +510,30 @@ def parsePubSAOC(pub, url, downloadLinks):
                     'url': downloadLinks
                 }) 
             else:
-
-                finalMetaData.append({
+                if detailTitle == 'SAOC 71. From Sherds to Landscapes: Studies on the Ancient Near East in Honor of McGuire Gibson.':
+                    finalMetaData.append({
                     'title': detailTitle,
                     'authors': cleanAuthorMetadata(detailAuthor),
                     'series': metadata[0].text,
                     'publisherLocation': 'Chicago',
                     'publisher': pubParsing(metadata[1].text)['publisher'],
                     'publicationDate': pubParsing(metadata[1].text)['date'],
-                    'isbn': metadata[2].text,
+                    'isbn': '9781614910633, 9781614910640',
                     'extent': metadata[3].text,
                     'url': downloadLinks
-                }) 
+                    }) 
+                else:
+                    finalMetaData.append({
+                        'title': detailTitle,
+                        'authors': cleanAuthorMetadata(detailAuthor),
+                        'series': metadata[0].text,
+                        'publisherLocation': 'Chicago',
+                        'publisher': pubParsing(metadata[1].text)['publisher'],
+                        'publicationDate': pubParsing(metadata[1].text)['date'],
+                        'isbn': metadata[2].text,
+                        'extent': metadata[3].text,
+                        'url': downloadLinks
+                    }) 
         else:
 
             finalMetaData.append({
@@ -558,6 +568,7 @@ def parsePubSAOC(pub, url, downloadLinks):
         if 'ISBN' in metadata[2].text:
 
             cleanISBN = metadata[2].text.replace("\u00a0", "")
+            print(detailTitle)
             finalMetaData.append({
                 'title': detailTitle,
                 'authors': cleanAuthorMetadata(detailAuthor),
@@ -567,6 +578,7 @@ def parsePubSAOC(pub, url, downloadLinks):
                 'publicationDate': pubParsing(metadata[1].text)['date'],
                 'extent': metadata[3].text,
                 'isbn': cleanISBN,
+                'url': downloadLinks
             }) 
 
         else:
@@ -580,6 +592,7 @@ def parsePubSAOC(pub, url, downloadLinks):
                 'publicationDate': pubParsing(metadata[1].text)['date'],
                 'extent': metadata[2].text,
                 'isbn': '',
+                'url': downloadLinks
             })
 
 def detailLinkUpdate(detailLink):
@@ -604,6 +617,7 @@ def cleanText(metaData):
                     metaData[i][key] = re.sub(isbnPattern, '', metaData[i][key])
                 metaData[i][key] = re.sub(charPattern, '', metaData[i][key])
                 metaData[i][key] = re.sub(titlePattern, '', metaData[i][key])
+                metaData[i][key] = re.sub(titlePattern2, '', metaData[i][key])
                 metaData[i][key] = metaData[i][key].strip()
     
     return metaData
@@ -681,10 +695,13 @@ def parsePubMISC(detailURL, detailTitle, detailAuthor, pubContainer, downloadLin
         finalMetaData.append({
             'title': detailTitle,
             'authors': cleanAuthorMetadata(detailAuthor),
+            'series': '',
             'publisherLocation': 'Chicago',
             'publisher': ['Joint Publication with the Cotsen Institute of Archaeology, University of California, Los Angeles'],
             'publicationDate': '2007',
-            'extent': f'{metadata[1].text}, {metadata2[1].text}'
+            'extent': f'{metadata[1].text}, {metadata2[1].text}',
+            'isbn': '',
+            'url': downloadLinks
         })
 
     elif detailURL == 'https://isac.uchicago.edu//node/3380':
@@ -719,6 +736,7 @@ def parsePubMISC(detailURL, detailTitle, detailAuthor, pubContainer, downloadLin
             'publisher': pubParsing(metadata[2].text)['publisher'],
             'publicationDate': pubParsing(metadata[2].text)['date'],
             'extent': metadata[3].text,
+            'isbn': '',
             'url': downloadLinks
             })
             

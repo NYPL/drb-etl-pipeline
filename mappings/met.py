@@ -1,4 +1,3 @@
-
 from .json import JSONMapping
 
 class METMapping(JSONMapping):
