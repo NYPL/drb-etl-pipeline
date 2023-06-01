@@ -212,15 +212,16 @@ class SFRRecordManager:
         
         # Contributors
         itemContributors = set()
-        for contrib in rec.contributors:
-            role = tuple(contrib.split('|'))[-1]
+        if rec.contributors:
+            for contrib in rec.contributors:
+                role = tuple(contrib.split('|'))[-1]
 
-            if role in ['publisher', 'manufacturer', 'distributor', 'printer']:
-                editionData['contributors'].add(contrib)
-            elif role in ['provider', 'repository', 'digitizer', 'responsible']:
-                itemContributors.add(contrib)
-            else:
-                workData['contributors'].add(contrib)
+                if role in ['publisher', 'manufacturer', 'distributor', 'printer']:
+                    editionData['contributors'].add(contrib)
+                elif role in ['provider', 'repository', 'digitizer', 'responsible']:
+                    itemContributors.add(contrib)
+                else:
+                    workData['contributors'].add(contrib)
 
         # Subjects
         if rec.subjects:
@@ -230,8 +231,9 @@ class SFRRecordManager:
         editionData['dates'].update(self.normalizeDates(rec.dates))
 
         # Languages
-        workData['languages'].update(rec.languages)
-        editionData['languages'].update(rec.languages)
+        if rec.languages:
+            workData['languages'].update(rec.languages)
+            editionData['languages'].update(rec.languages)
 
         # Summary/TOC/Extent
         editionData['summary'][rec.abstract] += 1

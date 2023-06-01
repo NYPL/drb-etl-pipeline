@@ -18,7 +18,8 @@ class ClassifyManager:
     Returns:
         [str] -- A string of XML data comprising of the Classify response body.
     """
-    CLASSIFY_ROOT = 'https://metadata.api.oclc.org/classify'
+    #Forward slash at the end is needed before the query parameters for the classification API to work
+    CLASSIFY_ROOT = 'https://metadata.api.oclc.org/classify/'
 
     LOOKUP_IDENTIFIERS = [
         'oclc', # OCLC Number
@@ -60,7 +61,8 @@ class ClassifyManager:
 
         try:
             self.execQuery()
-        except (ConnectTimeout, HTTPError, ReadTimeout):
+        except (ConnectTimeout, HTTPError, ReadTimeout) as e:
+            logger.exception(e)
             raise ClassifyError('Unable execute query to Classify service')
 
         return self.parseXMLResponse()

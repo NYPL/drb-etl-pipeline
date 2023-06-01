@@ -83,7 +83,7 @@ class TestClassifyManager:
 
         testInstance.generateAuthorTitleURL()
 
-        assert testInstance.query == 'https://metadata.api.oclc.org/classify?title=testTitle&author=testAuthor'
+        assert testInstance.query == 'https://metadata.api.oclc.org/classify/?title=testTitle&author=testAuthor'
         mockAddOptions.assert_called_once
 
     def test_generateIdentifierURL(self, testInstance, mocker):
@@ -91,7 +91,7 @@ class TestClassifyManager:
 
         testInstance.generateIdentifierURL()
 
-        assert testInstance.query == 'https://metadata.api.oclc.org/classify?test=1'
+        assert testInstance.query == 'https://metadata.api.oclc.org/classify/?test=1'
         mockAddOptions.assert_called_once
 
     def test_addClassifyOptions(self, testInstance):
