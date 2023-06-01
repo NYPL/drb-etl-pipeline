@@ -18,6 +18,7 @@ class ClassifyManager:
     Returns:
         [str] -- A string of XML data comprising of the Classify response body.
     """
+    #Forward slash at the end is needed before the query parameters for the classification API to work
     CLASSIFY_ROOT = 'https://metadata.api.oclc.org/classify/'
 
     LOOKUP_IDENTIFIERS = [
