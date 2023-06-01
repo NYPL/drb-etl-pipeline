@@ -11,7 +11,7 @@
 - Install `wheel` with pip to fix fasttext build
 - Clean web scraped metadata from Chicago ISAC catalog of publications
 - Pinned python requirements.txt versions
-
+- Modified conditionals for clustering manager and root url for classification manager
 
 ## 2023-04-03 -- v0.12.0
 ### Added
