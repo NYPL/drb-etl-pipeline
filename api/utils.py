@@ -32,9 +32,10 @@ class APIUtils():
         'doab': 2,
         'muse': 3,
         'met': 4,
-        'hathitrust': 5,
-        'oclc': 6,
-        'nypl': 7
+        'isac': 5,
+        'hathitrust': 6,
+        'oclc': 7,
+        'nypl': 8
     }
 
     @staticmethod
