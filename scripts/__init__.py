@@ -8,3 +8,5 @@ from .deleteElasticRecords import main as deleteESCRecords
 from .esReIndex import main as esIndex
 from .deleteDuplicateAgents import main as deleteDuplicates
 from .chicago_isac_scraper import main as isacScraper
+from .interstitialPagesSFR1410 import main as interstitialPages
+from .ingestS3Metadata import main as ingestS3

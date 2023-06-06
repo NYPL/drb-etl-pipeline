@@ -15,3 +15,4 @@ from .met import METProcess
 from .migration import MigrationProcess
 from .dbMaintenance import DatabaseMaintenanceProcess
 from .chicagoISAC import ChicagoISACProcess
+from .UofSC import UofSCProcess
