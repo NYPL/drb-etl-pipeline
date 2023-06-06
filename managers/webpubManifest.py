@@ -18,7 +18,6 @@ class WebpubManifest:
         self.metadata['title'] = dcdwRecord.title
 
         if len(dcdwRecord.authors) > 0:
-            print(dcdwRecord.authors)
             self.metadata['author'] = list(dcdwRecord.authors[0].split('|'))[0]
 
         isbns = list(filter(
