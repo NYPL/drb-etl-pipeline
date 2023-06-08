@@ -5,10 +5,14 @@ class UofSCMapping(JSONMapping):
         super().__init__(source, {})
         self.mapping = self.createMapping()
     
+
     def createMapping(self):
         return {
             'title': ('title', '{0}'),
             'authors': [('authors', '{0}|||true')],
+            'dates': [('publicationDate', '{0}|publication_date')],
+            'publisher': [('publisher', '{0}')],
+            'spatial': ('publisherLocation', '{0}|publisherLocation'),
             'identifiers': 
                 [('isbn', '{0}|isbn')]
             ,
