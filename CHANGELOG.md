@@ -6,6 +6,7 @@
 - Web scraper script for the Chicago ISAC catalog of publications
 - Mapping and process for Chicago ISAC catalog of publications
 - Unit tests for Chicago ISAC catalog mapping and process
+- Added mapping for Library of Congress collections
 ### Fixed
 - Modify agentParser method to reduce number of future duplicate agents
 - Install `wheel` with pip to fix fasttext build
