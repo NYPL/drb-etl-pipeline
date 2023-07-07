@@ -15,7 +15,7 @@ class ChicagoISACMapping(JSONMapping):
                 [('isbn', '{0}|isbn')]
             ,
             'is_part_of': ('series', '{0}|series'),
-            'spatial': ('publisherLocation', '{0}|publisherLocation'),
+            'spatial': ('publisherLocation', '{0}'),
             'extent': ('extent', '{0}'),
             'has_part': [('url', '1|{0}|isac|application/pdf|{{"catalog": false, "download": true, "reader": false, "embed": false}}')] 
         }
