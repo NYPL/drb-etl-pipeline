@@ -100,7 +100,7 @@ def collectionCreate(user=None):
 
     logger.info('Created collection {}'.format(newCollection))
 
-    opdsFeed = constructOPDSFeed(newCollection.uuid, dbClient)
+    opdsFeed = constructOPDSFeed(newCollection, dbClient)
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
@@ -184,7 +184,7 @@ def collectionReplace(uuid, user=None):
 
     logger.info('Replaced collection {}'.format(collection.uuid))
 
-    opdsFeed = constructOPDSFeed(collection.uuid, dbClient)
+    opdsFeed = constructOPDSFeed(collection, dbClient)
 
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
@@ -223,18 +223,18 @@ def collectionUpdate(uuid, user=None):
         collection.creator = creator
     if description:
         collection.description = description
-        
+
     if editionIDs:
         editionIDsList = editionIDs.split(',')
         if len(editionIDs) > 10:
             errMsg = {'message': 'Size of editionIDsList must not exceed 10 IDs'}
             return APIUtils.formatResponseObject(400, 'collectionUpdate', errMsg)
-        #Check if all the editionIDs are actually edition ids in the database 
+        #Check if all the editionIDs are actually edition ids in the database
         for eid in editionIDsList:
             if dbClient.fetchSingleEdition(eid) == None:
                 errMsg = {'message': 'Unable to locate edition with id {}'.format(eid)}
                 return APIUtils.formatResponseObject(404, 'fetchSingleEdition', errMsg)
-            
+
         addEditionsToCollection(dbClient, collection, editionIDsList)
 
     if workUUIDs:
@@ -242,17 +242,17 @@ def collectionUpdate(uuid, user=None):
         if len(workUUIDsList) > 10:
             errMsg = {'message': 'Size of workUUIDsList must not exceed 10 UUIDs'}
             return APIUtils.formatResponseObject(400, 'collectionUpdate', errMsg)
-        #Check if all the workUUIDs are actually work uuids in the database 
+        #Check if all the workUUIDs are actually work uuids in the database
         for workUUID in workUUIDsList:
             if dbClient.fetchSingleWork(workUUID) == None:
                 errMsg = {'message': 'Unable to locate work with uuid {}'.format(workUUID)}
                 return APIUtils.formatResponseObject(404, 'fetchSingleWork', errMsg)
-            
+
         addWorksToCollection(dbClient, collection, workUUIDsList)
 
     dbClient.session.commit()
 
-    opdsFeed = constructOPDSFeed(uuid, dbClient)
+    opdsFeed = constructOPDSFeed(collection, dbClient)
 
     return APIUtils.formatOPDS2Object(200, opdsFeed)
 
@@ -268,12 +268,14 @@ def collectionFetch(uuid):
     perPage = int(request.args.get('perPage', 10))
 
     try:
-        opdsFeed = constructOPDSFeed(
-            uuid, dbClient, sort=sort, page=page, perPage=perPage
-        )
+        collection = dbClient.fetchSingleCollection(uuid)
     except NoResultFound:
         errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
         return APIUtils.formatResponseObject(404, 'fetchCollection', errMsg)
+
+    opdsFeed = constructOPDSFeed(
+        collection, dbClient, sort=sort, page=page, perPage=perPage
+    )
 
     dbClient.closeSession()
 
@@ -324,7 +326,7 @@ def collectionDeleteWorkEdition(uuid, user=None):
     except NoResultFound:
         errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
         return APIUtils.formatResponseObject(404, 'fetchSingleCollection', errMsg)
-    
+
     if editionIDs:
         editionIDsList = editionIDs.split(',')
     else:
@@ -338,7 +340,7 @@ def collectionDeleteWorkEdition(uuid, user=None):
 
     dbClient.session.commit()
 
-    opdsFeed = constructOPDSFeed(collection.uuid, dbClient)
+    opdsFeed = constructOPDSFeed(collection, dbClient)
 
     return APIUtils.formatOPDS2Object(200, opdsFeed)
 
@@ -385,7 +387,7 @@ def collectionList():
 
         path = '/collection/{}'.format(uuid)
 
-        group = constructOPDSFeed(uuid, dbClient, perPage=5, path=path)
+        group = constructOPDSFeed(collection, dbClient, perPage=5, path=path)
 
         opdsFeed.addGroup(group)
 
@@ -414,9 +416,9 @@ def constructSortMethod(sort):
 
 
 def constructOPDSFeed(
-    uuid, dbClient, sort=None, page=1, perPage=10, path=None
+    collection, dbClient, sort=None, page=1, perPage=10, path=None
 ):
-    collection = dbClient.fetchSingleCollection(uuid)
+    uuid = collection.uuid
 
     opdsFeed = Feed()
 
@@ -525,7 +527,7 @@ def removeAllEditionsFromCollection(dbClient, collection):
     '''Deleting the rows of collection_editions that were in the original collection'''
     dbClient.session.execute(COLLECTION_EDITIONS.delete()\
         .where(COLLECTION_EDITIONS.c.collection_id == collection.id))
-        
+
 def addEditionsToCollection(dbClient, collection, editionIDs):
 
     '''Inserting rows of collection_editions based on editionIDs array'''
@@ -558,6 +560,6 @@ def addWorksToCollection(dbClient, collection, workUUIDs):
         if dbClient.session.query(COLLECTION_EDITIONS.c.collection_id)\
             .filter(COLLECTION_EDITIONS.c.edition_id == collectionEdition.id)\
             .first() == None:
-                
+
             dbClient.session.execute(COLLECTION_EDITIONS.insert()\
                 .values({"collection_id": collection.id, "edition_id": collectionEdition.id}))

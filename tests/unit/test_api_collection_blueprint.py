@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.orm.exc import NoResultFound
 
 from api.blueprints.drbCollection import (
-    collectionCreate, collectionFetch, collectionReplace, collectionUpdate, collectionDelete, 
+    collectionCreate, collectionFetch, collectionReplace, collectionUpdate, collectionDelete,
     collectionDeleteWorkEdition, collectionList, constructSortMethod, constructOPDSFeed, validateToken
 )
 from api.utils import APIUtils
@@ -37,9 +37,8 @@ class TestCollectionBlueprint:
             user='testUser', password='testPswd', salt='testSalt'
         )
 
-        mockDB.fetchSingleCollection\
-            .return_value = mocker.MagicMock(uuid='testUUID')
-
+        collection = mocker.MagicMock(uuid="testUUID")
+        mockDB.fetchSingleCollection.return_value = collection
         mockFeedConstruct = mocker.patch(
             'api.blueprints.drbCollection.constructOPDSFeed'
         )
@@ -77,7 +76,7 @@ class TestCollectionBlueprint:
             mockDB.session.commit.assert_called_once()
 
             mockFeedConstruct.assert_called_once_with(
-                'testUUID', mockDB
+                collection, mockDB
             )
 
             mockBase64.assert_called_once_with(b'testAuth')
@@ -144,8 +143,8 @@ class TestCollectionBlueprint:
             user='testUser', password='testPswd', salt='testSalt'
         )
 
-        mockDB.fetchSingleCollection\
-            .return_value = mocker.MagicMock(uuid='testUUID')
+        collection = mocker.MagicMock(uuid="testUUID")
+        mockDB.fetchSingleCollection.return_value = collection
 
         mockFeedConstruct = mocker.patch(
             'api.blueprints.drbCollection.constructOPDSFeed'
@@ -173,7 +172,7 @@ class TestCollectionBlueprint:
             mockDB.session.commit.assert_called_once()
 
             mockFeedConstruct.assert_called_once_with(
-                'testUUID', mockDB
+                collection, mockDB
             )
 
             mockUtils['formatOPDS2Object'].assert_called_once_with(
@@ -193,7 +192,7 @@ class TestCollectionBlueprint:
 
         mockDB.fetchSingleCollection\
             .return_value = mocker.MagicMock(uuid='testUUID')
-        
+
         mocker.patch.dict(os.environ, {'NYPL_API_CLIENT_PUBLIC_KEY': 'test'})
 
         mockBase64 = mocker.patch('api.blueprints.drbCollection.b64decode')
@@ -226,8 +225,8 @@ class TestCollectionBlueprint:
             user='testUser', password='testPswd', salt='testSalt'
         )
 
-        mockDB.createStaticCollection\
-            .return_value = mocker.MagicMock(uuid='testUUID')
+        collection = mocker.MagicMock(uuid='testUUID')
+        mockDB.createStaticCollection.return_value = collection
 
         mockFeedConstruct = mocker.patch(
             'api.blueprints.drbCollection.constructOPDSFeed'
@@ -269,7 +268,7 @@ class TestCollectionBlueprint:
             )
             mockDB.session.commit.assert_called_once()
 
-            mockFeedConstruct.assert_called_once_with('testUUID', mockDB)
+            mockFeedConstruct.assert_called_once_with(collection, mockDB)
 
             mockBase64.assert_called_once_with(b'testAuth')
 
@@ -330,7 +329,9 @@ class TestCollectionBlueprint:
             )
             mockDB.session.commit.assert_called_once()
 
-            mockFeedConstruct.assert_called_once_with('testUUID', mockDB)
+            mockFeedConstruct.assert_called_once_with(
+                mockDB.createAutomaticCollection.return_value, mockDB,
+            )
 
             mockBase64.assert_called_once_with(b'testAuth')
 
@@ -481,6 +482,9 @@ class TestCollectionBlueprint:
         mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
         mockDBClient.return_value = mockDB
 
+        collection = mocker.MagicMock(uuid="testUUID")
+        mockDB.fetchSingleCollection.return_value = collection
+
         mockFeedConstruct = mocker.patch(
             'api.blueprints.drbCollection.constructOPDSFeed'
         )
@@ -496,7 +500,7 @@ class TestCollectionBlueprint:
             mockDB.createSession.assert_called_once()
 
             mockFeedConstruct.assert_called_once_with(
-                'testUUID', mockDB, sort='title', page=3, perPage=10
+                collection, mockDB, sort='title', page=3, perPage=10
             )
 
             mockUtils['formatOPDS2Object'].assert_called_once_with(
@@ -508,10 +512,7 @@ class TestCollectionBlueprint:
         mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
         mockDBClient.return_value = mockDB
 
-        mockFeedConstruct = mocker.patch(
-            'api.blueprints.drbCollection.constructOPDSFeed'
-        )
-        mockFeedConstruct.side_effect = NoResultFound
+        mockDB.fetchSingleCollection.side_effect = NoResultFound
 
         mockUtils['formatResponseObject'].return_value = 'testErrorResponse'
 
@@ -521,10 +522,6 @@ class TestCollectionBlueprint:
             assert testAPIResponse == 'testErrorResponse'
 
             mockDB.createSession.assert_called_once()
-
-            mockFeedConstruct.assert_called_once_with(
-                'testUUID', mockDB, sort='title', page=3, perPage=10
-            )
 
             mockUtils['formatResponseObject'].assert_called_once_with(
                 404, 'fetchCollection',
@@ -610,8 +607,8 @@ class TestCollectionBlueprint:
             user='testUser', password='testPswd', salt='testSalt'
         )
 
-        mockDB.fetchSingleCollection\
-            .return_value = mocker.MagicMock(uuid='testUUID')
+        collection = mocker.MagicMock(uuid="testUUID")
+        mockDB.fetchSingleCollection.return_value = collection
 
         mockFeedConstruct = mocker.patch(
             'api.blueprints.drbCollection.constructOPDSFeed'
@@ -645,9 +642,7 @@ class TestCollectionBlueprint:
             mockDB.fetchSingleCollection.assert_called_once_with('testUUID')
             mockDB.session.commit.assert_called_once()
 
-            mockFeedConstruct.assert_called_once_with(
-                'testUUID', mockDB
-            )
+            mockFeedConstruct.assert_called_once_with(collection, mockDB)
 
             mockUtils['formatOPDS2Object'].assert_called_once_with(
                 200, 'testOPDS2Feed'
@@ -697,9 +692,9 @@ class TestCollectionBlueprint:
         mockDBClient = mocker.patch('api.blueprints.drbCollection.DBClient')
         mockDBClient.return_value = mockDB
 
-        mockDB.fetchCollections.return_value = [
-            mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2')
-        ]
+        collection1 = mocker.MagicMock(uuid='uuid1')
+        collection2 = mocker.MagicMock(uuid='uuid2')
+        mockDB.fetchCollections.return_value = [collection1, collection2]
 
         mockFeed = mocker.MagicMock()
         mockFeedInit = mocker.patch('api.blueprints.drbCollection.Feed')
@@ -740,10 +735,10 @@ class TestCollectionBlueprint:
 
             mockConstruct.assert_has_calls([
                 mocker.call(
-                    'uuid1', mockDB, perPage=5, path='/collection/uuid1'
+                    collection1, mockDB, perPage=5, path='/collection/uuid1'
                 ),
                 mocker.call(
-                    'uuid2', mockDB, perPage=5, path='/collection/uuid2'
+                    collection2, mockDB, perPage=5, path='/collection/uuid2'
                 )
             ])
 
@@ -804,7 +799,8 @@ class TestCollectionBlueprint:
         mockPubInit.return_value = mockPub
 
         mockDB = mocker.MagicMock()
-        mockDB.fetchSingleCollection.return_value = mocker.MagicMock(
+        collection = mocker.MagicMock(
+            uuid="testUUID",
             title='Test Collection',
             creator='Test Creator',
             description='Test Description',
@@ -824,7 +820,7 @@ class TestCollectionBlueprint:
         mockSortCon.return_value = (lambda x: str(x), False)
 
         with testApp.test_request_context('/collections/test'):
-            testOPDSFeed = constructOPDSFeed('testUUID', mockDB, sort='test')
+            testOPDSFeed = constructOPDSFeed(collection, mockDB, sort='test')
 
             assert testOPDSFeed == mockFeed
 
@@ -872,12 +868,14 @@ class TestCollectionBlueprint:
         mockPubInit.return_value = mockPub
 
         mockDB = mocker.MagicMock()
-        mockDB.fetchSingleCollection.return_value = mocker.MagicMock(
+        collection = mocker.MagicMock(
+            uuid='testUUID',
             title='Test Collection',
             creator='Test Creator',
             description='Test Description',
             type="automatic",
         )
+        mockDB.fetchSingleCollection.return_value = collection
         mockES = mocker.MagicMock()
 
         mocker.patch(
@@ -897,7 +895,7 @@ class TestCollectionBlueprint:
         mockPaging = mocker.patch.object(OPDSUtils, 'addPagingOptions')
 
         with testApp.test_request_context('/collections/test'):
-            testOPDSFeed = constructOPDSFeed('testUUID', mockDB, sort='test')
+            testOPDSFeed = constructOPDSFeed(collection, mockDB, sort='test')
 
             assert testOPDSFeed == mockFeed
 

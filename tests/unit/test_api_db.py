@@ -126,7 +126,7 @@ class TestDBClient:
             .assert_called_once()
 
     def test_fetchCollections(self, testInstance):
-        testInstance.session.query().order_by().offset().limit().all\
+        testInstance.session.query().options().order_by().offset().limit().all\
             .return_value = 'testCollections'
 
         assert testInstance.fetchCollections() == 'testCollections'

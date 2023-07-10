@@ -178,20 +178,37 @@ class DBClient():
         return (baseQuery.count(), baseQuery.offset(offset).limit(size).all())
 
     def fetchSingleCollection(self, uuid):
-        return self.session.query(Collection)\
-            .options(joinedload(Collection.editions))\
-            .filter(Collection.uuid == uuid).one()
+        return (
+            self.session.query(Collection)
+                .options(
+                    joinedload(Collection.editions),
+                    joinedload(Collection.editions, Edition.links),
+                    joinedload(Collection.editions, Edition.items),
+                    joinedload(Collection.editions, Edition.items, Item.links),
+                    joinedload(Collection.editions, Edition.items, Item.rights),
+                )
+                .filter(Collection.uuid == uuid).one()
+        )
 
     def fetchCollections(self, sort=None, page=1, perPage=10):
         offset = (page - 1) * perPage
 
         sort = sort.replace(':', ' ') if sort else 'title'
 
-        return self.session.query(Collection)\
-            .order_by(text(sort))\
-            .offset(offset)\
-            .limit(perPage)\
-            .all()
+        return (
+            self.session.query(Collection)
+                .options(
+                    joinedload(Collection.editions),
+                    joinedload(Collection.editions, Edition.links),
+                    joinedload(Collection.editions, Edition.items),
+                    joinedload(Collection.editions, Edition.items, Item.links),
+                    joinedload(Collection.editions, Edition.items, Item.rights),
+                )
+                .order_by(text(sort))
+                .offset(offset)
+                .limit(perPage)
+                .all()
+        )
 
     def fetchAutomaticCollection(self, collection_id: int):
         return (
