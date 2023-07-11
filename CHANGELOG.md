@@ -14,6 +14,7 @@
 - Pinned python requirements.txt versions
 - Modified conditionals for clustering manager and root url for classification manager
 - Eager load collections to avoid queries in loops
+- Wrap dev setup DB statements in `sqlalchemy.text`
 
 ## 2023-04-03 -- v0.12.0
 ### Added

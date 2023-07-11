@@ -2,6 +2,7 @@ import csv
 import gzip
 import pytest
 import requests
+import sqlalchemy as sa
 
 from tests.helper import TestHelpers
 from processes import DevelopmentSetupProcess
@@ -23,7 +24,7 @@ class TestDevelopmentSetupProcess:
                 self.adminDBConnection = mocker.MagicMock()
                 self.statics = {}
                 self.es = mocker.MagicMock()
-        
+
         return TestDevelopmentProcess('TestProcess', 'testFile', 'testDate')
 
     @pytest.fixture
@@ -86,13 +87,16 @@ class TestDevelopmentSetupProcess:
 
         devInstance.initializeDB()
 
-        devInstance.adminDBConnection.generateEngine.assert_called_once
-        mockConnection.connection.set_isolation_level.assert_called_once
-        mockConnection.execute.assert_has_calls([
-            mocker.call('CREATE DATABASE test_psql_name'),
-            mocker.call('CREATE USER test_psql_user WITH PASSWORD \'test_psql_pswd\''),
-            mocker.call('GRANT ALL PRIVILEGES ON DATABASE test_psql_name TO test_psql_user')
-        ])
+        devInstance.adminDBConnection.generateEngine.assert_called_once()
+        mockConnection.connection.set_isolation_level.assert_called_once()
+        createDBCall, createUserCall, grantPrivilegesCall = mockConnection.execute.call_args_list
+        assert createDBCall[0][0].compare(sa.text('CREATE DATABASE test_psql_name'))
+        assert createUserCall[0][0].compare(
+            sa.text('CREATE USER test_psql_user WITH PASSWORD \'test_psql_pswd\''),
+        )
+        assert grantPrivilegesCall[0][0].compare(
+            sa.text('GRANT ALL PRIVILEGES ON DATABASE test_psql_name TO test_psql_user'),
+        )
         mockEngine.dispose.assert_called_once()
 
     def test_fetchHathiSampleData(self, devInstance, mocker):
