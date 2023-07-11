@@ -5,6 +5,7 @@ import gzip
 import os
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import requests
+import sqlalchemy as sa
 from sqlalchemy.exc import ProgrammingError
 from time import sleep
 
@@ -70,16 +71,24 @@ class DevelopmentSetupProcess(CoreProcess):
         with self.adminDBConnection.engine.connect() as conn:
             conn.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             try:
-                conn.execute('CREATE DATABASE {}'.format(os.environ['POSTGRES_NAME']))
+                conn.execute(
+                    sa.text(f"CREATE DATABASE {os.environ['POSTGRES_NAME']}"),
+                )
             except ProgrammingError:
                 pass
 
             try:
-                conn.execute('CREATE USER {} WITH PASSWORD \'{}\''.format(
-                    os.environ['POSTGRES_USER'], os.environ['POSTGRES_PSWD']
-                ))
-                conn.execute('GRANT ALL PRIVILEGES ON DATABASE {} TO {}'.format(
-                    os.environ['POSTGRES_NAME'], os.environ['POSTGRES_USER'])
+                conn.execute(
+                    sa.text(
+                        f"CREATE USER {os.environ['POSTGRES_USER']} "
+                        f"WITH PASSWORD '{os.environ['POSTGRES_PSWD']}'",
+                    ),
+                )
+                conn.execute(
+                    sa.text(
+                        f"GRANT ALL PRIVILEGES ON DATABASE {os.environ['POSTGRES_NAME']} "
+                        f"TO {os.environ['POSTGRES_USER']}",
+                    ),
                 )
             except ProgrammingError:
                 pass
