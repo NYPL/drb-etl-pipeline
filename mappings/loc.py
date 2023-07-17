@@ -84,7 +84,6 @@ class LOCMapping(JSONMapping):
 
         if 'medium' in itemList:
             extentArray.extend(itemList['medium'])
-            raise Exception
 
         return extentArray
     
