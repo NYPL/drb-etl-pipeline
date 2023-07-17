@@ -30,13 +30,14 @@ class APIUtils():
     SOURCE_PRIORITY = {
         'gutenberg': 1,
         'doab': 2,
-        'muse': 3,
-        'met': 4,
-        'isac': 5,
-        'UofSC': 6,
-        'hathitrust': 7,
-        'oclc': 8,
-        'nypl': 9
+        'loc': 3,
+        'muse': 4,
+        'met': 5,
+        'isac': 6,
+        'UofSC': 7,
+        'hathitrust': 8,
+        'oclc': 9,
+        'nypl': 10
     }
 
     @staticmethod

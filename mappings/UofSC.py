@@ -12,7 +12,7 @@ class UofSCMapping(JSONMapping):
             'authors': [('authors', '{0}|||true')],
             'dates': [('publicationDate', '{0}|publication_date')],
             'publisher': [('publisher', '{0}')],
-            'spatial': ('publisherLocation', '{0}|publisherLocation'),
+            'spatial': ('publisherLocation', '{0}'),
             'identifiers': 
                 [('isbn', '{0}|isbn')]
             ,
