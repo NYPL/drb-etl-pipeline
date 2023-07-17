@@ -58,18 +58,24 @@ class LOCProcess(CoreProcess):
     def importOpenAccessRecords(self, count):
         sp = 2
         try:
-            while sp > 0:
+            # An HTTP error will occur when the sp parameter value
+            # passes the last page number of the collection search reuslts
+            while sp < 100000:
                 openAccessURL = '{}&sp={}'.format(LOC_ROOT_OPEN_ACCESS, sp)
                 jsonData = self.fetchPageJSON(openAccessURL)
                 LOCData = jsonData.json()
+
                 for metaDict in LOCData['results']:
                     resources = metaDict['resources'][0]
                     if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
                         logger.debug(f'OPEN ACCESS URL: {openAccessURL}')
                         logger.debug(f"TITLE: {metaDict['title']}")
+
                         self.processLOCRecord(metaDict)
                         count += 1
+
                         logger.debug(f'Count for OP Access: {count}')
+
                 sp += 1
 
         except Exception or HTTPError as e:
@@ -83,19 +89,26 @@ class LOCProcess(CoreProcess):
     def importDigitizedRecords(self, count):
         sp = 2
         try:
-            while sp > 0:
+            # An HTTP error will occur when the sp parameter value
+            # passes the last page number of the collection search reuslts
+            while sp > 100000:
                 digitizedURL = '{}&sp={}'.format(LOC_ROOT_DIGIT, sp)
                 jsonData = self.fetchPageJSON(digitizedURL)
                 LOCData = jsonData.json()
+
                 for metaDict in LOCData['results']:
                     resources = metaDict['resources'][0]
                     if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
                         logger.debug(f'DIGITIZED URL: {digitizedURL}')
                         logger.debug(f"TITLE: {metaDict['title']}")
+
                         self.processLOCRecord(metaDict)
                         count += 1
+
                         logger.debug(f'Count for Digitized: {count}')
+
                 sp += 1
+
             return count
         
         except Exception or HTTPError as e:

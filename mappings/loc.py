@@ -83,8 +83,9 @@ class LOCMapping(JSONMapping):
         extentArray = []
 
         if 'medium' in itemList:
-            for elem in itemList['medium']:
-                extentArray.append(elem)
+            extentArray.extend(itemList['medium'])
+            raise Exception
+
         return extentArray
     
     #Subjects Formatting
