@@ -10,8 +10,8 @@ from logger import createLog
 
 logger = createLog(__name__)
 
-LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=25&at=results'
-LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=25&at=results' 
+LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results'
+LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results' 
 
 class LOCProcess(CoreProcess):
 
@@ -27,63 +27,82 @@ class LOCProcess(CoreProcess):
         self.createSession()
 
         # Connect to epub processing queue
-        # self.fileQueue = os.environ['FILE_QUEUE']
-        # self.fileRoute = os.environ['FILE_ROUTING_KEY']
-        # self.createRabbitConnection()
-        # self.createOrConnectQueue(self.fileQueue, self.fileRoute)
+        self.fileQueue = os.environ['FILE_QUEUE']
+        self.fileRoute = os.environ['FILE_ROUTING_KEY']
+        self.createRabbitConnection()
+        self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
         # S3 Configuration
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.createS3Client()
 
     def runProcess(self):
-        count = 0
-        count2 = 0
-        sp = 1
-        openAccessURL = '{}&sp={}'.format(LOC_ROOT_OPEN_ACCESS, sp)
+        openAccessRequestCount = 0 
+        digitizedRequestCount = 0
+
+        try:
+            openAccessRequestCount = self.importOpenAccessRecords(openAccessRequestCount)
+
+        except Exception or HTTPError as e:
+            logger.exception(e)
+
+        try:
+            digitizedRequestCount = self.importDigitizedRecords(digitizedRequestCount)
+        
+        except Exception or HTTPError as e:
+            logger.exception(e)
+
+        self.saveRecords()
+        self.commitChanges()
+
+    def importOpenAccessRecords(self, count):
+        sp = 2
         try:
             while sp > 0:
                 openAccessURL = '{}&sp={}'.format(LOC_ROOT_OPEN_ACCESS, sp)
                 jsonData = self.fetchPageJSON(openAccessURL)
-                with open("locAPI_metadata_OPAccess.json", "w", encoding='utf-8') as write_file:
-                    json.dump(jsonData.json(), write_file, ensure_ascii = False, indent = 6)
-                with open("locAPI_metadata_OPAccess.json") as f:
-                    LOCData = json.load(f)
-                    for metaDict in LOCData['results']:
-                        if 'pdf' in metaDict['resources'][0].keys() or 'epub_file' in metaDict['resources'][0].keys():
-                            self.processLOCRecord(metaDict)
-                            count += 1
-                    logger.debug(f'Count for OP Access: {count}')
+                LOCData = jsonData.json()
+                for metaDict in LOCData['results']:
+                    resources = metaDict['resources'][0]
+                    if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
+                        logger.debug(f'OPEN ACCESS URL: {openAccessURL}')
+                        logger.debug(f"TITLE: {metaDict['title']}")
+                        self.processLOCRecord(metaDict)
+                        count += 1
+                        logger.debug(f'Count for OP Access: {count}')
                 sp += 1
 
-        
         except Exception or HTTPError as e:
-            logger.exception(e)
-            logger.debug('OPEN ACCESS Collection Ingestion Complete')
+            if e == Exception:
+                logger.exception(e)
+            else:
+                logger.debug('Open Access Collection Ingestion Complete')
 
+        return count
 
-        sp = 1
+    def importDigitizedRecords(self, count):
+        sp = 2
         try:
             while sp > 0:
                 digitizedURL = '{}&sp={}'.format(LOC_ROOT_DIGIT, sp)
                 jsonData = self.fetchPageJSON(digitizedURL)
-                with open("locAPI_metadata_digitzed.json", "w", encoding='utf-8') as write_file:
-                    json.dump(jsonData.json(), write_file, ensure_ascii = False, indent = 6)
-                with open("locAPI_metadata_digitzed.json") as f:
-                    LOCData = json.load(f)
-                    for metaDict in LOCData['results']:
-                        if 'pdf' in metaDict['resources'][0].keys() or 'epub_file' in metaDict['resources'][0].keys():
-                            self.processLOCRecord(metaDict)
-                            count2 += 1
-                    logger.debug(f'Count for Digitzed: {count2}')
+                LOCData = jsonData.json()
+                for metaDict in LOCData['results']:
+                    resources = metaDict['resources'][0]
+                    if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
+                        logger.debug(f'DIGITIZED URL: {digitizedURL}')
+                        logger.debug(f"TITLE: {metaDict['title']}")
+                        self.processLOCRecord(metaDict)
+                        count += 1
+                        logger.debug(f'Count for Digitized: {count}')
                 sp += 1
+            return count
         
         except Exception or HTTPError as e:
-            logger.exception(e)
-            logger.debug('Digitized Books Collection Ingestion Complete')
-
-        self.saveRecords()
-        self.commitChanges()
+            if e == Exception:
+                logger.exception(e)
+            else:
+                logger.debug('Digitized Books Collection Ingestion Complete')
 
     def processLOCRecord(self, record):
         try:
@@ -96,7 +115,7 @@ class LOCProcess(CoreProcess):
             
         except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
             logger.exception(e)
-            logger.warn(LOCError('Unable to process ISAC record'))
+            logger.warn(LOCError('Unable to process LOC record'))
             
     def addHasPartMapping(self, resultsRecord, record):
         if 'pdf' in resultsRecord['resources'][0].keys():
@@ -147,7 +166,6 @@ class LOCProcess(CoreProcess):
                 break
 
     def storeEpubsInS3(self, record):
-        newParts = []
         for epubItem in record.has_part:
             itemNo, uri, source, mediaType, flagStr = epubItem.split('|')
 
@@ -159,11 +177,11 @@ class LOCProcess(CoreProcess):
 
                 if flags['download'] is True:
                     bucketLocation = 'epubs/{}/{}.epub'.format(source, recordID)
-                    self.addNewPart(
-                        record, newParts, itemNo, source, flagStr, mediaType, bucketLocation
+                    self.addEPUBManifest(
+                        record, itemNo, source, flagStr, mediaType, bucketLocation
                     )
 
-                    # self.sendFileToProcessingQueue(uri, bucketLocation)
+                    self.sendFileToProcessingQueue(uri, bucketLocation)
                     break
 
     def createManifestInS3(self, manifestPath, manifestJSON):
@@ -171,7 +189,7 @@ class LOCProcess(CoreProcess):
             manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket
         )
 
-    def addNewPart(self, record, parts, itemNo, source, flagStr, mediaType, location):
+    def addEPUBManifest(self, record, itemNo, source, flagStr, mediaType, location):
             s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, location)
 
             linkString = '|'.join([itemNo, s3URL, source, mediaType, flagStr])
@@ -199,7 +217,8 @@ class LOCProcess(CoreProcess):
     
     @staticmethod
     def fetchPageJSON(url):
-        elemResponse = requests.get(url)
+        headers = {'Accept': 'application/json'}
+        elemResponse = requests.get(url, headers=headers)
         elemResponse.raise_for_status()
         return elemResponse
 

@@ -40,7 +40,7 @@ class TestISACMapping:
         assert recordMapping['publisher'] == ('publisher', '{0}')
         assert recordMapping['identifiers'] == [('isbn', '{0}|isbn')]
         assert recordMapping['is_part_of'] == ('series', '{0}|series')
-        assert recordMapping['spatial'] == ('publisherLocation', '{0}|publisherLocation')
+        assert recordMapping['spatial'] == ('publisherLocation', '{0}')
         assert recordMapping['has_part'] == [('url', '1|{0}|isac|application/pdf|{{"catalog": false, "download": true, "reader": false, "embed": false}}')] 
 
     def test_applyFormatting_standard(self, testMapping, testRecordStandard):

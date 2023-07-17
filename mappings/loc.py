@@ -1,5 +1,6 @@
 from .json import JSONMapping
 import ast
+import json
 
 class LOCMapping(JSONMapping):
     def __init__(self, source):
@@ -12,7 +13,6 @@ class LOCMapping(JSONMapping):
             'alternative': [('other_title', '{0}')], #One other_title in items block and one outside of it 
             'medium': [('original_format', '{0}')],
             'authors': ('contributor', '{0}|||true'),
-            'languages': ('item', '||{0}'),
             'dates': ('dates', '{0}|publication_date'),
             'publisher': ('item', '{0}'),
             'identifiers': [
@@ -26,7 +26,6 @@ class LOCMapping(JSONMapping):
             'abstract': 
                 ('description', '{0}')
             ,
-            'subjects': [('item', '{0}')],
         }
 
     def applyFormatting(self):
@@ -37,25 +36,37 @@ class LOCMapping(JSONMapping):
         #Convert string repr of list to actual list
         itemList = ast.literal_eval(self.record.identifiers[1])
 
-        #Identifier Formatting
+        self.record.identifiers[0], self.record.identifiers[1], self.record.source_id = self.formatIdentifierSourceID(itemList)
+
+        self.record.publisher, self.record.spatial = self.formatPubSpatial(itemList)
+
+        self.record.extent = self.formatExtent(itemList)
+
+        self.record.subjects = self.formatSubjects(itemList)
+
+        self.record.rights = self.formatRights(itemList)
+
+        self.record.languages = self.formatLanguages(itemList)
+
+    #Identifier/SourceID Formatting
+    def formatIdentifierSourceID(self, itemList):
         newIdentifier = itemList
         newIdentifier['call_number'][0] = f'{newIdentifier["call_number"][0]}|call_number'
         lccnNumber = self.record.identifiers[0][0]  #lccnNumber comes in as an array and we need the string inside the array
-        self.record.identifiers[0] = lccnNumber
-        self.record.identifiers[1] = newIdentifier['call_number'][0].strip(' ')
-        self.record.source_id = self.record.identifiers[0].split('|')[0]
-
-        #Publisher/Spatial Formatting
+        callNumber = newIdentifier['call_number'][0].strip(' ')
+        sourceID = lccnNumber
+        return (lccnNumber, callNumber, sourceID)
+    
+    #Publisher/Spatial Formatting
+    def formatPubSpatial(self, itemList):
         pubArray = []
         spatialArray = []
-        for i, elem in enumerate(itemList['created_published']):
+        for elem in itemList['created_published']:
             if ':' not in elem:
                 createdPublishedList = elem.split(',', 1)
                 pubLocation = createdPublishedList[0].strip(' ')
                 if ',' in createdPublishedList[1]:
                     pubOnly = createdPublishedList[1].split(',')[0].strip(' ')
-                    pubArray.append(pubOnly)
-                else: 
                     pubArray.append(pubOnly)
                 spatialArray.append(pubLocation)
             else:
@@ -65,42 +76,45 @@ class LOCMapping(JSONMapping):
                 pubOnly = pubInfo.split(',', 1)[0].strip()
                 pubArray.append(pubOnly)
                 spatialArray.append(pubLocation)
+        return (pubArray, spatialArray)
+    
+    #Extent Formatting
+    def formatExtent(self, itemList):
+        extentArray = []
 
-        self.record.publisher = pubArray
-        self.record.spatial = spatialArray
-
-        #Extent Formatting
         if 'medium' in itemList:
-            for i, elem in enumerate(itemList['medium']):
-                self.record.extent[i] = elem
-        else:
-            self.record.extent = []
+            for elem in itemList['medium']:
+                extentArray.append(elem)
+        return extentArray
+    
+    #Subjects Formatting
+    def formatSubjects(self, itemList):
+        subjectArray = []
 
-        #Subjects Formatting
         if 'subjects' in itemList:
-            subjectArray = []
-            for i, elem in enumerate(itemList['subjects']):
+            for elem in itemList['subjects']:
                 subjectArray.append(f'{elem}||')
-            self.record.subjects = subjectArray
-        else:
-            self.record.subjects = []
+        
+        return subjectArray
+    
+    #Rights Formatting
+    def formatRights(self, itemList):
+        rightsArray = []
 
-        #Rights Formatting
         if 'rights_advisory' in itemList:
-            rightsArray = []
-            for i, elem in enumerate(itemList['rights_advisory']):
+            for elem in itemList['rights_advisory']:
                 rightsArray.append(f'loc|{elem}|||')
-            self.record.rights = rightsArray
-        else:
-            self.record.rights = []
 
-        #Languages Formatting
+        return rightsArray
+    
+    #Languages Formatting
+    def formatLanguages(self, itemList):
+        languageArray = []
+
         if 'language' in itemList:
-            languageArray = []
-            for i, elem in enumerate(itemList['language']):
+            for elem in itemList['language']:
                 languageArray.append(f'||{elem}')
-            self.record.languages = languageArray
-        else:
-            self.record.languages = []
+
+        return languageArray
 
         
