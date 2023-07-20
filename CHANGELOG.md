@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased version -- v0.12.1
+## 2023-07-20 -- v0.12.1
 ### Added
 - Script to delete current duplicate authors/contributors in the PSQL database
 - Web scraper script for the Chicago ISAC catalog of publications
