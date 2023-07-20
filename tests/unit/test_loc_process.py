@@ -22,7 +22,7 @@ class TestLOCProcess:
                 self.session = mocker.MagicMock(session='testSession')
                 self.records = mocker.MagicMock(record='testRecord')
                 self.batchSize = mocker.MagicMock(batchSize='testBatchSize')
-                self.process = mocker.MagicMock(process='testRecord')
+                self.process = 'complete'
         
         return TestLOC()
 
@@ -30,11 +30,13 @@ class TestLOCProcess:
         runMocks = mocker.patch.multiple(
             LOCProcess,
             saveRecords=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT
+            commitChanges=mocker.DEFAULT,
+            importLOCRecords=mocker.DEFAULT
         )
 
         testProcess.runProcess()
 
+        runMocks['importLOCRecords'].assert_called_once_with(fullImport=True)
         runMocks['saveRecords'].assert_called_once()
         runMocks['commitChanges'].assert_called_once()
 
@@ -92,6 +94,25 @@ class TestLOCProcess:
 
         mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
         mockCreateMan.assert_called_once_with('manifests/loc/1.json', 'testJSON')
+
+    def test_storeEpubsInS3(self, testProcess, mocker):
+        mockRecord = mocker.MagicMock(identifiers=['1|loc'])
+        mockRecord.has_part = [
+            '1|testURI|loc|application/epub+zip|{"reader": false, "catalog": false, "download": true}',
+        ]
+
+        mockSendToQueue = mocker.patch.object(LOCProcess, 'sendFileToProcessingQueue')
+        mockAddEPUBManifest = mocker.patch.object(LOCProcess, 'addEPUBManifest')
+
+        testProcess.storeEpubsInS3(mockRecord)
+
+        mockSendToQueue.assert_has_calls([
+            mocker.call('testURI', 'epubs/loc/1.epub'),
+        ])
+
+        mockAddEPUBManifest.assert_has_calls([
+            mocker.call(mockRecord, '1', 'loc', '{"reader": false, "catalog": false, "download": true}', 'application/epub+zip', 'epubs/loc/1.epub'),
+        ])
 
     def test_createManifestInS3(self, testProcess, mocker):
         mockPut = mocker.patch.object(LOCProcess, 'putObjectInBucket')

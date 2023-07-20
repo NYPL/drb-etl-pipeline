@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased version -- v0.12.1
+## 2023-07-20 -- v0.12.1
 ### Added
 - Script to delete current duplicate authors/contributors in the PSQL database
 - Web scraper script for the Chicago ISAC catalog of publications
@@ -8,6 +8,7 @@
 - Unit tests for Chicago ISAC catalog mapping and process
 - Added mapping for Library of Congress collections
 - Added process for Library of Congress collections
+- Automatic Ingestion for Library of Congress collections
 ### Fixed
 - Modify agentParser method to reduce number of future duplicate agents
 - Install `wheel` with pip to fix fasttext build

@@ -7,10 +7,11 @@ from mappings.core import MappingError
 from mappings.loc import LOCMapping
 from managers import WebpubManifest
 from logger import createLog
+from datetime import datetime, timedelta
 
 logger = createLog(__name__)
 
-LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results'
+LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sp=2'
 LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results' 
 
 class LOCProcess(CoreProcess):
@@ -20,7 +21,8 @@ class LOCProcess(CoreProcess):
 
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
-        self.fullImport = self.process == 'complete' 
+        self.fullImport = self.process == 'complete'
+        self.startTimestamp = None 
 
         # Connect to database
         self.generateEngine()
@@ -37,27 +39,49 @@ class LOCProcess(CoreProcess):
         self.createS3Client()
 
     def runProcess(self):
+        if self.process == 'weekly':
+            self.importLOCRecords()
+        elif self.process == 'complete':
+            self.importLOCRecords(fullImport=True)
+        elif self.process == 'custom':
+            self.importLOCRecords(startTimestamp=self.ingestPeriod)
+
+        self.saveRecords()
+        self.commitChanges()
+    
+
+    def importLOCRecords(self, fullImport=False, startTimestamp=None):
+
+        if not fullImport:
+            if not startTimestamp:
+                startTimestamp = datetime.utcnow() - timedelta(days=7)
+            else:
+                startTimestamp = datetime.strptime(startTimestamp, '%Y-%m-%dT%H:%M:%S')
+
         openAccessRequestCount = 0 
         digitizedRequestCount = 0
 
         try:
-            openAccessRequestCount = self.importOpenAccessRecords(openAccessRequestCount)
+            openAccessRequestCount = self.importOpenAccessRecords(openAccessRequestCount, startTimestamp)
+            logger.debug('Open Access Collection Ingestion Complete')
 
         except Exception or HTTPError as e:
             logger.exception(e)
 
         try:
-            digitizedRequestCount = self.importDigitizedRecords(digitizedRequestCount)
+            digitizedRequestCount = self.importDigitizedRecords(digitizedRequestCount, startTimestamp)
+            logger.debug('Digitized Books Collection Ingestion Complete')
         
         except Exception or HTTPError as e:
             logger.exception(e)
 
-        self.saveRecords()
-        self.commitChanges()
+        
 
-    def importOpenAccessRecords(self, count):
-        sp = 2
+    def importOpenAccessRecords(self, count, weekTimeStamp):
+        sp = 1
         try:
+            whileBreakFlag = False
+            
             # An HTTP error will occur when the sp parameter value
             # passes the last page number of the collection search reuslts
             while sp < 100000:
@@ -66,6 +90,14 @@ class LOCProcess(CoreProcess):
                 LOCData = jsonData.json()
 
                 for metaDict in LOCData['results']:
+                    #Weekly Ingestion Conditional
+                    if weekTimeStamp:
+                        itemTimeStamp = datetime.strptime(metaDict['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
+
+                        if itemTimeStamp > weekTimeStamp:
+                            whileBreakFlag = True
+                            break
+
                     resources = metaDict['resources'][0]
                     if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
                         logger.debug(f'OPEN ACCESS URL: {openAccessURL}')
@@ -76,27 +108,38 @@ class LOCProcess(CoreProcess):
 
                         logger.debug(f'Count for OP Access: {count}')
 
+                if whileBreakFlag == True:
+                    logger.debug('No new items added to collection')
+                    break
+
                 sp += 1
 
         except Exception or HTTPError as e:
             if e == Exception:
                 logger.exception(e)
-            else:
-                logger.debug('Open Access Collection Ingestion Complete')
 
         return count
 
-    def importDigitizedRecords(self, count):
-        sp = 2
+    def importDigitizedRecords(self, count, weekTimeStamp):
+        sp = 1
         try:
             # An HTTP error will occur when the sp parameter value
             # passes the last page number of the collection search reuslts
-            while sp > 100000:
+            whileBreakFlag = False
+            while sp < 100000:
                 digitizedURL = '{}&sp={}'.format(LOC_ROOT_DIGIT, sp)
                 jsonData = self.fetchPageJSON(digitizedURL)
                 LOCData = jsonData.json()
 
                 for metaDict in LOCData['results']:
+                    #Weekly Ingestion conditional
+                    if weekTimeStamp:
+                        itemTimeStamp = datetime.strptime(metaDict['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
+
+                        if itemTimeStamp > weekTimeStamp:
+                            whileBreakFlag = True
+                            break
+
                     resources = metaDict['resources'][0]
                     if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
                         logger.debug(f'DIGITIZED URL: {digitizedURL}')
@@ -107,6 +150,12 @@ class LOCProcess(CoreProcess):
 
                         logger.debug(f'Count for Digitized: {count}')
 
+
+                            
+                if whileBreakFlag == True:
+                    logger.debug('No new items added to collection')
+                    break
+
                 sp += 1
 
             return count
@@ -114,8 +163,6 @@ class LOCProcess(CoreProcess):
         except Exception or HTTPError as e:
             if e == Exception:
                 logger.exception(e)
-            else:
-                logger.debug('Digitized Books Collection Ingestion Complete')
 
     def processLOCRecord(self, record):
         try:
