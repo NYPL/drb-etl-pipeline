@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 
 logger = createLog(__name__)
 
-LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sp=2'
-LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results' 
+LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sb=timestamp_desc'
+LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sb=timestamp_desc' 
 
 class LOCProcess(CoreProcess):
 
@@ -21,7 +21,7 @@ class LOCProcess(CoreProcess):
 
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
-        self.fullImport = self.process == 'complete'
+        self.process == 'complete'
         self.startTimestamp = None 
 
         # Connect to database
@@ -40,36 +40,33 @@ class LOCProcess(CoreProcess):
 
     def runProcess(self):
         if self.process == 'weekly':
-            self.importLOCRecords()
+            startTimeStamp = datetime.utcnow() - timedelta(days=7)
+            self.importLOCRecords(startTimeStamp)
         elif self.process == 'complete':
-            self.importLOCRecords(fullImport=True)
+            self.importLOCRecords()
         elif self.process == 'custom':
-            self.importLOCRecords(startTimestamp=self.ingestPeriod)
+            timeStamp = self.ingestPeriod
+            startTimeStamp = datetime.strptime(timeStamp, '%Y-%m-%dT%H:%M:%S')
+            self.importLOCRecords(startTimeStamp)
 
         self.saveRecords()
         self.commitChanges()
     
 
-    def importLOCRecords(self, fullImport=False, startTimestamp=None):
-
-        if not fullImport:
-            if not startTimestamp:
-                startTimestamp = datetime.utcnow() - timedelta(days=7)
-            else:
-                startTimestamp = datetime.strptime(startTimestamp, '%Y-%m-%dT%H:%M:%S')
+    def importLOCRecords(self, startTimeStamp=None):
 
         openAccessRequestCount = 0 
         digitizedRequestCount = 0
 
         try:
-            openAccessRequestCount = self.importOpenAccessRecords(openAccessRequestCount, startTimestamp)
+            openAccessRequestCount = self.importOpenAccessRecords(openAccessRequestCount, startTimeStamp)
             logger.debug('Open Access Collection Ingestion Complete')
 
         except Exception or HTTPError as e:
             logger.exception(e)
 
         try:
-            digitizedRequestCount = self.importDigitizedRecords(digitizedRequestCount, startTimestamp)
+            digitizedRequestCount = self.importDigitizedRecords(digitizedRequestCount, startTimeStamp)
             logger.debug('Digitized Books Collection Ingestion Complete')
         
         except Exception or HTTPError as e:
@@ -77,9 +74,10 @@ class LOCProcess(CoreProcess):
 
         
 
-    def importOpenAccessRecords(self, count, weekTimeStamp):
+    def importOpenAccessRecords(self, count, customTimeStamp):
         sp = 1
         try:
+
             whileBreakFlag = False
             
             # An HTTP error will occur when the sp parameter value
@@ -90,11 +88,11 @@ class LOCProcess(CoreProcess):
                 LOCData = jsonData.json()
 
                 for metaDict in LOCData['results']:
-                    #Weekly Ingestion Conditional
-                    if weekTimeStamp:
+                    #Weekly/Custom Ingestion Conditional
+                    if customTimeStamp:
                         itemTimeStamp = datetime.strptime(metaDict['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
 
-                        if itemTimeStamp > weekTimeStamp:
+                        if itemTimeStamp < customTimeStamp:
                             whileBreakFlag = True
                             break
 
@@ -120,12 +118,14 @@ class LOCProcess(CoreProcess):
 
         return count
 
-    def importDigitizedRecords(self, count, weekTimeStamp):
+    def importDigitizedRecords(self, count, customTimeStamp):
         sp = 1
         try:
+
+            whileBreakFlag = False
+
             # An HTTP error will occur when the sp parameter value
             # passes the last page number of the collection search reuslts
-            whileBreakFlag = False
             while sp < 100000:
                 digitizedURL = '{}&sp={}'.format(LOC_ROOT_DIGIT, sp)
                 jsonData = self.fetchPageJSON(digitizedURL)
@@ -133,10 +133,10 @@ class LOCProcess(CoreProcess):
 
                 for metaDict in LOCData['results']:
                     #Weekly Ingestion conditional
-                    if weekTimeStamp:
+                    if customTimeStamp:
                         itemTimeStamp = datetime.strptime(metaDict['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
 
-                        if itemTimeStamp > weekTimeStamp:
+                        if itemTimeStamp < customTimeStamp:
                             whileBreakFlag = True
                             break
 
@@ -149,8 +149,6 @@ class LOCProcess(CoreProcess):
                         count += 1
 
                         logger.debug(f'Count for Digitized: {count}')
-
-
                             
                 if whileBreakFlag == True:
                     logger.debug('No new items added to collection')

@@ -36,7 +36,7 @@ class TestLOCProcess:
 
         testProcess.runProcess()
 
-        runMocks['importLOCRecords'].assert_called_once_with(fullImport=True)
+        runMocks['importLOCRecords'].assert_called_once_with()
         runMocks['saveRecords'].assert_called_once()
         runMocks['commitChanges'].assert_called_once()
 
