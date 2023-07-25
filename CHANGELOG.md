@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased version -- v0.12.2
+### Added
+
+### Fixed
+- Publisher location and webpub manifest links for ISAC records
+
 ## 2023-07-20 -- v0.12.1
 ### Added
 - Script to delete current duplicate authors/contributors in the PSQL database
