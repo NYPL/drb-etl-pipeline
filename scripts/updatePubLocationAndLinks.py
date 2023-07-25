@@ -28,18 +28,20 @@ def main():
             record.spatial = re.sub(charPattern, '', record.spatial)
 
             #Reversing download and reader values of webpub mainfest in has_part attribute 
-            if record.has_part:
-                hasPartManifest = record.has_part[0].split('|')
+            if not record.has_part:
+                continue
+            
+            hasPartManifest = record.has_part[0].split('|')
 
-                if hasPartManifest[len(hasPartManifest)-2] == 'application/webpub+json' \
-                and hasPartManifest[-1] == '{"catalog": false, "download": true, "reader": false, "embed": false}':
-                    
-                    hasPartManifest[-1] = '{"catalog": false, "download": false, "reader": true, "embed": false}'
-                    newHasPart = []
-                    newHasPart.append('|'.join(hasPartManifest))
-                    for i in record.has_part[1:]:
-                        newHasPart.append(i)
-                    record.has_part = newHasPart
+            if hasPartManifest[len(hasPartManifest)-2] == 'application/webpub+json' \
+            and hasPartManifest[-1] == '{"catalog": false, "download": true, "reader": false, "embed": false}':
+                
+                hasPartManifest[-1] = '{"catalog": false, "download": false, "reader": true, "embed": false}'
+                newHasPart = []
+                newHasPart.append('|'.join(hasPartManifest))
+                for i in record.has_part[1:]:
+                    newHasPart.append(i)
+                record.has_part = newHasPart
                 
     #Removing |publisherLocation from publication_place attribute in Edition Table
     #This makes this change show up on the frontend unlike changing the record spatial attribute
