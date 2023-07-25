@@ -28,6 +28,9 @@ def main():
             record.spatial = re.sub(charPattern, '', record.spatial)
 
             #Reversing download and reader values of webpub mainfest in has_part attribute 
+            if not record.has_part:
+                continue
+            
             hasPartManifest = record.has_part[0].split('|')
 
             if hasPartManifest[len(hasPartManifest)-2] == 'application/webpub+json' \
