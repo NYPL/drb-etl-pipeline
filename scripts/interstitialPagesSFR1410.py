@@ -4,13 +4,13 @@ import logging
 
 from urllib.parse import urlparse, parse_qsl, urlencode, urlunparse
 
-logging.basicConfig(filename='manifest.log', encoding='utf-8', level=logging.INFO)
-
 s3_client = boto3.client("s3")
 
 bucketName = 'drb-files-qa'
 
 def main():
+
+    logging.basicConfig(filename='manifest.log', encoding='utf-8', level=logging.INFO)
 
     '''Loading and updating batches of ProjectMuse JSON records with a query parameter to skip interstitial pages'''
     
