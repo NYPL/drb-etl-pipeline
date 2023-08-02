@@ -30,7 +30,7 @@ def main():
     for sourceID in UCBooks:
         record = dbManager.session.query(Record).filter(Record.source_id == f'{sourceID}|hathi').first()
         if record:
-            UCBooksDRB.append(f'{sourceID}|hathi')
+            UCBooksDRB.append(f'{record.id}|{record.source_id}')
             count += 1
 
     print(UCBooksDRB)
