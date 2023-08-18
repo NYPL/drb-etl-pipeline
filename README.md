@@ -66,13 +66,13 @@ All services share a single entry point in `main.py` file. This script dynamical
 
 To set up a local environment there is a special process to initialize a database and search cluster which is the `DevelopmentSetupProcess`. However, it's recommended to run the `DevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. Before running a command, it's required to set these config variables in the sample-compose.yaml file:
 
-`HATHI_API_KEY`: 
+`HATHI_API_KEY`:
 `HATHI_API_SECRET`:
 `OCLC_API_KEY`:
 
 You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values.
 
-With the configurations set, one of these commands should be run: `make up` or `docker compose up`. These commands will run the docker-compose file in the codebase and this is why it's required to have Docker/Docker Desktop installed locally. After running one of the commands, a short import process will occur and populate the database with some sample data alongside running the API locally. This will allow you to query the API at `localhost:5000` and query the ESC at `localhost:9200`. 
+With the configurations set, one of these commands should be run: `make up` or `docker compose up`. These commands will run the docker-compose file in the codebase and this is why it's required to have Docker/Docker Desktop installed locally. After running one of the commands, a short import process will occur and populate the database with some sample data alongside running the API locally. This will allow you to query the API at `localhost:5000` and query the ESC at `localhost:9200`.
 
 The docker compose file uses the sample-compose.yaml file in the `config` directory and additional configurations and dependencies can be added to the file to build upon your local environment.
 
@@ -133,6 +133,8 @@ We use git tags to tag releases and github's release feature to deploy.  The ste
      ('v0.12.0')
   9. Add a quick 1-2 sentence summary, make sure 'Set as the latest release' is enabled and hit 'Publish release'
   10. Check the repo's `Actions` tab to observe the progress of the deployment to production
+    - Note that the deployment job merely kicks off an ECS service update. To fully verify success, you'll need to check the
+      `Deployments` tab for the relevant service / cluster in the ECS console.
   11. Send a quick message to `#researchnow_aka_sfr` in Slack to notify folks of the newest release
 
 And you're done!
