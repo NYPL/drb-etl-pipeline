@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 
 logger = createLog(__name__)
 
-LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sb=timestamp_desc'
-LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sb=timestamp_desc' 
+LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sp=1'
+LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sp=1' 
 
 class LOCProcess(CoreProcess):
 
@@ -28,15 +28,15 @@ class LOCProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
+        # S3 Configuration
+        self.createS3Client()
+        self.s3Bucket = os.environ['FILE_BUCKET']
+
         # Connect to epub processing queue
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
         self.createRabbitConnection()
         self.createOrConnectQueue(self.fileQueue, self.fileRoute)
-
-        # S3 Configuration
-        self.s3Bucket = os.environ['FILE_BUCKET']
-        self.createS3Client()
 
     def runProcess(self):
         if self.process == 'weekly':
@@ -105,6 +105,7 @@ class LOCProcess(CoreProcess):
                         count += 1
 
                         logger.debug(f'Count for OP Access: {count}')
+                raise Exception
 
                 if whileBreakFlag == True:
                     logger.debug('No new items added to collection')
@@ -150,11 +151,14 @@ class LOCProcess(CoreProcess):
 
                         logger.debug(f'Count for Digitized: {count}')
                             
+                raise Exception
+            
                 if whileBreakFlag == True:
                     logger.debug('No new items added to collection')
                     break
 
                 sp += 1
+                
 
             return count
         
@@ -231,16 +235,13 @@ class LOCProcess(CoreProcess):
 
                 recordID = record.identifiers[0].split('|')[0]
 
-                flags = json.loads(flagStr)
+                bucketLocation = 'epubs/{}/{}.epub'.format(source, recordID)
+                self.addEPUBManifest(
+                    record, itemNo, source, flagStr, mediaType, bucketLocation
+                )
 
-                if flags['download'] is True:
-                    bucketLocation = 'epubs/{}/{}.epub'.format(source, recordID)
-                    self.addEPUBManifest(
-                        record, itemNo, source, flagStr, mediaType, bucketLocation
-                    )
-
-                    self.sendFileToProcessingQueue(uri, bucketLocation)
-                    break
+                self.sendFileToProcessingQueue(uri, bucketLocation)
+                break
 
     def createManifestInS3(self, manifestPath, manifestJSON):
         self.putObjectInBucket(
