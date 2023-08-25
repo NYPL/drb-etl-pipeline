@@ -3,6 +3,7 @@
 ## unreleased version -- v0.12.2
 ### Added
 - Script to count and return ids of PD Univ of Cali Books from Hathitrust
+- Script to delete problem work records from PSQL and ESC
 ### Fixed
 - Publisher location and webpub manifest links for ISAC records
 
