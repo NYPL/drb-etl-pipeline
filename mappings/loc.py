@@ -56,7 +56,7 @@ class LOCMapping(JSONMapping):
 
         self.record.languages = self.formatLanguages(itemList)
 
-    #Identifier/SourceID Formatting
+    #Identifier/SourceID Formatting to return (string, string, string)
     def formatIdentifierSourceID(self, itemList):
         newIdentifier = itemList
         lccnNumber = self.record.identifiers[0][0]  #lccnNumber comes in as an array and we need the string inside the array
@@ -68,7 +68,7 @@ class LOCMapping(JSONMapping):
             callNumber = None
         return (lccnNumber, callNumber, sourceID)
     
-    #Publisher/Spatial Formatting
+    #Publisher/Spatial Formatting to return (array, string)
     def formatPubSpatial(self, itemList):
         pubArray = []
         spatialString = None
@@ -92,7 +92,7 @@ class LOCMapping(JSONMapping):
         else:
             return ([], None)
     
-    #Extent Formatting
+    #Extent Formatting to return string
     def formatExtent(self, itemList):
         extentString = ''
 
@@ -103,7 +103,7 @@ class LOCMapping(JSONMapping):
             
         return None
     
-    #Subjects Formatting
+    #Subjects Formatting to return array
     def formatSubjects(self, itemList):
         subjectArray = []
 
@@ -113,7 +113,7 @@ class LOCMapping(JSONMapping):
         
         return subjectArray
     
-    #Rights Formatting
+    #Rights Formatting to return string
     def formatRights(self, itemList):
         rightsString = ''
 
@@ -124,7 +124,7 @@ class LOCMapping(JSONMapping):
             
         return None
         
-    #Languages Formatting
+    #Languages Formatting to return array
     def formatLanguages(self, itemList):
         languageArray = []
 
