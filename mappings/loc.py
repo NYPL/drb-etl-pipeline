@@ -10,13 +10,13 @@ class LOCMapping(JSONMapping):
     def createMapping(self):
         return {
             'title': ('title', '{0}'),
-            'alternative': [('other_title', '{0}')], #One other_title in items block and one outside of it 
-            'medium': [('original_format', '{0}')],
+            'alternative': ('other_title', '{0}'),
+            'medium': ('original_format', '{0}'),
             'authors': ('contributor', '{0}|||true'),
             'dates': ('dates', '{0}|publication_date'),
             'publisher': ('item', '{0}'),
             'identifiers': [
-                ('number_lccn', '{0}|loc'),
+                ('number_lccn', '{0}|lccn'),
                 ('item', '{0}'),
             ],
             'contributors': 
@@ -28,15 +28,23 @@ class LOCMapping(JSONMapping):
             ,
         }
 
-    def applyFormatting(self):
+    def applyFormatting(self):       
         self.record.has_part = []
         self.record.source = 'loc'
-        self.record.medium = self.record.medium[0]
+        if self.record.medium:
+            self.record.medium = self.record.medium[0]
+        if len(self.record.is_part_of) == 0:
+            self.record.is_part_of = None
+        if len(self.record.abstract) == 0:
+            self.record.abstract = None
 
         #Convert string repr of list to actual list
         itemList = ast.literal_eval(self.record.identifiers[1])
 
         self.record.identifiers[0], self.record.identifiers[1], self.record.source_id = self.formatIdentifierSourceID(itemList)
+
+        if self.record.identifiers[1] == None:
+            del self.record.identifiers[1]
 
         self.record.publisher, self.record.spatial = self.formatPubSpatial(itemList)
 
@@ -51,41 +59,49 @@ class LOCMapping(JSONMapping):
     #Identifier/SourceID Formatting
     def formatIdentifierSourceID(self, itemList):
         newIdentifier = itemList
-        newIdentifier['call_number'][0] = f'{newIdentifier["call_number"][0]}|call_number'
         lccnNumber = self.record.identifiers[0][0]  #lccnNumber comes in as an array and we need the string inside the array
-        callNumber = newIdentifier['call_number'][0].strip(' ')
         sourceID = lccnNumber
+        if 'call_number' in newIdentifier.keys():
+            newIdentifier['call_number'][0] = f'{newIdentifier["call_number"][0]}|call_number'
+            callNumber = newIdentifier['call_number'][0].strip(' ')
+        else: 
+            callNumber = None
         return (lccnNumber, callNumber, sourceID)
     
     #Publisher/Spatial Formatting
     def formatPubSpatial(self, itemList):
         pubArray = []
-        spatialArray = []
-        for elem in itemList['created_published']:
-            if ':' not in elem:
-                createdPublishedList = elem.split(',', 1)
-                pubLocation = createdPublishedList[0].strip(' ')
-                if ',' in createdPublishedList[1]:
-                    pubOnly = createdPublishedList[1].split(',')[0].strip(' ')
+        spatialString = None
+        if 'created_published' in itemList.keys():
+            for elem in itemList['created_published']:
+                if ':' not in elem:
+                    createdPublishedList = elem.split(',', 1)
+                    pubLocation = createdPublishedList[0].strip(' ')
+                    if ',' in createdPublishedList[1]:
+                        pubOnly = createdPublishedList[1].split(',')[0].strip(' ')
+                        pubArray.append(pubOnly)
+                    spatialString = pubLocation
+                else:
+                    pubLocatAndPubInfo = elem.split(':', 1)
+                    pubLocation = pubLocatAndPubInfo[0].strip()
+                    pubInfo = pubLocatAndPubInfo[1]
+                    pubOnly = pubInfo.split(',', 1)[0].strip()
                     pubArray.append(pubOnly)
-                spatialArray.append(pubLocation)
-            else:
-                pubLocatAndPubInfo = elem.split(':', 1)
-                pubLocation = pubLocatAndPubInfo[0].strip()
-                pubInfo = pubLocatAndPubInfo[1]
-                pubOnly = pubInfo.split(',', 1)[0].strip()
-                pubArray.append(pubOnly)
-                spatialArray.append(pubLocation)
-        return (pubArray, spatialArray)
+                    spatialString = pubLocation
+            return (pubArray, spatialString)
+        else:
+            return ([], None)
     
     #Extent Formatting
     def formatExtent(self, itemList):
-        extentArray = []
+        extentString = ''
 
         if 'medium' in itemList:
-            extentArray.extend(itemList['medium'])
-
-        return extentArray
+            if itemList['medium']:
+                extentString = itemList['medium'][0]
+                return extentString
+            
+        return None
     
     #Subjects Formatting
     def formatSubjects(self, itemList):
@@ -99,14 +115,15 @@ class LOCMapping(JSONMapping):
     
     #Rights Formatting
     def formatRights(self, itemList):
-        rightsArray = []
+        rightsString = ''
 
         if 'rights_advisory' in itemList:
-            for elem in itemList['rights_advisory']:
-                rightsArray.append(f'loc|{elem}|||')
-
-        return rightsArray
-    
+            if itemList['rights_advisory']:
+                rightsString = f'loc|{itemList["rights_advisory"][0]}|||'
+                return rightsString
+            
+        return None
+        
     #Languages Formatting
     def formatLanguages(self, itemList):
         languageArray = []

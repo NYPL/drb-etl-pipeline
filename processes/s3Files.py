@@ -49,8 +49,6 @@ class S3Process(CoreProcess):
         attempts = 1
         while True:
             msgProps, _, msgBody = rabbitManager.getMessageFromQueue(fileQueue)
-            print('TRUE')
-            print(msgProps, msgBody)
             if msgProps is None:
                 if attempts <= 3:
                     sleep(30 * attempts)
@@ -66,19 +64,14 @@ class S3Process(CoreProcess):
             filePath = fileMeta['bucketPath']
 
             try:
-                print('Try Storing 1')
                 logger.info('Storing {}'.format(fileURL))
                 epubB = S3Process.getFileContents(fileURL)
 
-                print('Try Storing 2')
                 storageManager.putObjectInBucket(epubB, filePath, bucket)
-
-                print('Try Storing 3')
 
                 if '.epub' in filePath:
                     fileRoot = '.'.join(filePath.split('.')[:-1])
 
-                    print('Try Storing 4')
                     webpubManifest = S3Process.generateWebpub(
                         epubConverterURL, fileRoot, bucket
                     )

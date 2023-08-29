@@ -1,4 +1,4 @@
-import json
+import time
 import os, requests
 from requests.exceptions import HTTPError, ConnectionError
 
@@ -11,8 +11,8 @@ from datetime import datetime, timedelta
 
 logger = createLog(__name__)
 
-LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sp=1'
-LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results&sp=1' 
+LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=50&at=results&sb=timestamp_desc'
+LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=50&at=results&sb=timestamp_desc' 
 
 class LOCProcess(CoreProcess):
 
@@ -96,26 +96,27 @@ class LOCProcess(CoreProcess):
                             whileBreakFlag = True
                             break
 
-                    resources = metaDict['resources'][0]
-                    if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
-                        logger.debug(f'OPEN ACCESS URL: {openAccessURL}')
-                        logger.debug(f"TITLE: {metaDict['title']}")
+                    if 'resources' in metaDict.keys():
+                        if metaDict['resources']:
+                            resources = metaDict['resources'][0]
+                            if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
+                                logger.debug(f'OPEN ACCESS URL: {openAccessURL}')
+                                logger.debug(f"TITLE: {metaDict['title']}")
 
-                        self.processLOCRecord(metaDict)
-                        count += 1
+                                self.processLOCRecord(metaDict)
+                                count += 1
 
-                        logger.debug(f'Count for OP Access: {count}')
-                raise Exception
+                                logger.debug(f'Count for OP Access: {count}')
 
                 if whileBreakFlag == True:
                     logger.debug('No new items added to collection')
                     break
 
                 sp += 1
+                time.sleep(5)
 
-        except Exception or HTTPError as e:
-            if e == Exception:
-                logger.exception(e)
+        except Exception or HTTPError or IndexError or KeyError as e:
+            logger.exception(e)
 
         return count
 
@@ -141,30 +142,29 @@ class LOCProcess(CoreProcess):
                             whileBreakFlag = True
                             break
 
-                    resources = metaDict['resources'][0]
-                    if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
-                        logger.debug(f'DIGITIZED URL: {digitizedURL}')
-                        logger.debug(f"TITLE: {metaDict['title']}")
+                    if 'resources' in metaDict.keys():
+                        if metaDict['resources']:
+                            resources = metaDict['resources'][0]
+                            if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
+                                logger.debug(f'DIGITIZED URL: {digitizedURL}')
+                                logger.debug(f"TITLE: {metaDict['title']}")
 
-                        self.processLOCRecord(metaDict)
-                        count += 1
+                                self.processLOCRecord(metaDict)
+                                count += 1
 
-                        logger.debug(f'Count for Digitized: {count}')
-                            
-                raise Exception
+                                logger.debug(f'Count for Digitized: {count}')
             
                 if whileBreakFlag == True:
                     logger.debug('No new items added to collection')
                     break
 
                 sp += 1
+                time.sleep(5)
                 
-
             return count
         
-        except Exception or HTTPError as e:
-            if e == Exception:
-                logger.exception(e)
+        except Exception or HTTPError or IndexError or KeyError as e:
+            logger.exception(e)
 
     def processLOCRecord(self, record):
         try:
