@@ -74,9 +74,9 @@ class TestLOCMapping:
         ]
         assert testMapping.record.source_id == 'testLCCN|loc'
         assert testMapping.record.publisher == ['testPub']
-        assert testMapping.record.spatial == ['testPubLocation']
-        assert testMapping.record.extent == ['testExtent']
+        assert testMapping.record.spatial == 'testPubLocation'
+        assert testMapping.record.extent == 'testExtent'
         assert testMapping.record.subjects == ['testSubject1||', 'testSubject2||']
-        assert testMapping.record.rights == ['loc|testRights|||']
+        assert testMapping.record.rights == 'loc|testRights|||'
         assert testMapping.record.languages == ['||testLang']
 

@@ -1,4 +1,4 @@
-import json
+import time
 import os, requests
 from requests.exceptions import HTTPError, ConnectionError
 
@@ -7,11 +7,12 @@ from mappings.core import MappingError
 from mappings.loc import LOCMapping
 from managers import WebpubManifest
 from logger import createLog
+from datetime import datetime, timedelta
 
 logger = createLog(__name__)
 
-LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results'
-LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=2&at=results' 
+LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=50&at=results&sb=timestamp_desc'
+LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=50&at=results&sb=timestamp_desc' 
 
 class LOCProcess(CoreProcess):
 
@@ -20,11 +21,16 @@ class LOCProcess(CoreProcess):
 
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
-        self.fullImport = self.process == 'complete' 
+        self.process == 'complete'
+        self.startTimestamp = None 
 
         # Connect to database
         self.generateEngine()
         self.createSession()
+
+        # S3 Configuration
+        self.createS3Client()
+        self.s3Bucket = os.environ['FILE_BUCKET']
 
         # Connect to epub processing queue
         self.fileQueue = os.environ['FILE_QUEUE']
@@ -32,32 +38,48 @@ class LOCProcess(CoreProcess):
         self.createRabbitConnection()
         self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
-        # S3 Configuration
-        self.s3Bucket = os.environ['FILE_BUCKET']
-        self.createS3Client()
-
     def runProcess(self):
+        if self.process == 'weekly':
+            startTimeStamp = datetime.utcnow() - timedelta(days=7)
+            self.importLOCRecords(startTimeStamp)
+        elif self.process == 'complete':
+            self.importLOCRecords()
+        elif self.process == 'custom':
+            timeStamp = self.ingestPeriod
+            startTimeStamp = datetime.strptime(timeStamp, '%Y-%m-%dT%H:%M:%S')
+            self.importLOCRecords(startTimeStamp)
+
+        self.saveRecords()
+        self.commitChanges()
+    
+
+    def importLOCRecords(self, startTimeStamp=None):
+
         openAccessRequestCount = 0 
         digitizedRequestCount = 0
 
         try:
-            openAccessRequestCount = self.importOpenAccessRecords(openAccessRequestCount)
+            openAccessRequestCount = self.importOpenAccessRecords(openAccessRequestCount, startTimeStamp)
+            logger.debug('Open Access Collection Ingestion Complete')
 
         except Exception or HTTPError as e:
             logger.exception(e)
 
         try:
-            digitizedRequestCount = self.importDigitizedRecords(digitizedRequestCount)
+            digitizedRequestCount = self.importDigitizedRecords(digitizedRequestCount, startTimeStamp)
+            logger.debug('Digitized Books Collection Ingestion Complete')
         
         except Exception or HTTPError as e:
             logger.exception(e)
 
-        self.saveRecords()
-        self.commitChanges()
+        
 
-    def importOpenAccessRecords(self, count):
-        sp = 2
+    def importOpenAccessRecords(self, count, customTimeStamp):
+        sp = 1
         try:
+
+            whileBreakFlag = False
+            
             # An HTTP error will occur when the sp parameter value
             # passes the last page number of the collection search reuslts
             while sp < 100000:
@@ -66,56 +88,83 @@ class LOCProcess(CoreProcess):
                 LOCData = jsonData.json()
 
                 for metaDict in LOCData['results']:
-                    resources = metaDict['resources'][0]
-                    if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
-                        logger.debug(f'OPEN ACCESS URL: {openAccessURL}')
-                        logger.debug(f"TITLE: {metaDict['title']}")
+                    #Weekly/Custom Ingestion Conditional
+                    if customTimeStamp:
+                        itemTimeStamp = datetime.strptime(metaDict['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
 
-                        self.processLOCRecord(metaDict)
-                        count += 1
+                        if itemTimeStamp < customTimeStamp:
+                            whileBreakFlag = True
+                            break
 
-                        logger.debug(f'Count for OP Access: {count}')
+                    if 'resources' in metaDict.keys():
+                        if metaDict['resources']:
+                            resources = metaDict['resources'][0]
+                            if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
+                                logger.debug(f'OPEN ACCESS URL: {openAccessURL}')
+                                logger.debug(f"TITLE: {metaDict['title']}")
+
+                                self.processLOCRecord(metaDict)
+                                count += 1
+
+                                logger.debug(f'Count for OP Access: {count}')
+
+                if whileBreakFlag == True:
+                    logger.debug('No new items added to collection')
+                    break
 
                 sp += 1
+                time.sleep(5)
 
-        except Exception or HTTPError as e:
-            if e == Exception:
-                logger.exception(e)
-            else:
-                logger.debug('Open Access Collection Ingestion Complete')
+        except Exception or HTTPError or IndexError or KeyError as e:
+            logger.exception(e)
 
         return count
 
-    def importDigitizedRecords(self, count):
-        sp = 2
+    def importDigitizedRecords(self, count, customTimeStamp):
+        sp = 1
         try:
+
+            whileBreakFlag = False
+
             # An HTTP error will occur when the sp parameter value
             # passes the last page number of the collection search reuslts
-            while sp > 100000:
+            while sp < 100000:
                 digitizedURL = '{}&sp={}'.format(LOC_ROOT_DIGIT, sp)
                 jsonData = self.fetchPageJSON(digitizedURL)
                 LOCData = jsonData.json()
 
                 for metaDict in LOCData['results']:
-                    resources = metaDict['resources'][0]
-                    if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
-                        logger.debug(f'DIGITIZED URL: {digitizedURL}')
-                        logger.debug(f"TITLE: {metaDict['title']}")
+                    #Weekly Ingestion conditional
+                    if customTimeStamp:
+                        itemTimeStamp = datetime.strptime(metaDict['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
 
-                        self.processLOCRecord(metaDict)
-                        count += 1
+                        if itemTimeStamp < customTimeStamp:
+                            whileBreakFlag = True
+                            break
 
-                        logger.debug(f'Count for Digitized: {count}')
+                    if 'resources' in metaDict.keys():
+                        if metaDict['resources']:
+                            resources = metaDict['resources'][0]
+                            if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
+                                logger.debug(f'DIGITIZED URL: {digitizedURL}')
+                                logger.debug(f"TITLE: {metaDict['title']}")
+
+                                self.processLOCRecord(metaDict)
+                                count += 1
+
+                                logger.debug(f'Count for Digitized: {count}')
+            
+                if whileBreakFlag == True:
+                    logger.debug('No new items added to collection')
+                    break
 
                 sp += 1
-
+                time.sleep(5)
+                
             return count
         
-        except Exception or HTTPError as e:
-            if e == Exception:
-                logger.exception(e)
-            else:
-                logger.debug('Digitized Books Collection Ingestion Complete')
+        except Exception or HTTPError or IndexError or KeyError as e:
+            logger.exception(e)
 
     def processLOCRecord(self, record):
         try:
@@ -186,16 +235,13 @@ class LOCProcess(CoreProcess):
 
                 recordID = record.identifiers[0].split('|')[0]
 
-                flags = json.loads(flagStr)
+                bucketLocation = 'epubs/{}/{}.epub'.format(source, recordID)
+                self.addEPUBManifest(
+                    record, itemNo, source, flagStr, mediaType, bucketLocation
+                )
 
-                if flags['download'] is True:
-                    bucketLocation = 'epubs/{}/{}.epub'.format(source, recordID)
-                    self.addEPUBManifest(
-                        record, itemNo, source, flagStr, mediaType, bucketLocation
-                    )
-
-                    self.sendFileToProcessingQueue(uri, bucketLocation)
-                    break
+                self.sendFileToProcessingQueue(uri, bucketLocation)
+                break
 
     def createManifestInS3(self, manifestPath, manifestJSON):
         self.putObjectInBucket(

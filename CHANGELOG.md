@@ -15,6 +15,7 @@
 - Unit tests for Chicago ISAC catalog mapping and process
 - Added mapping for Library of Congress collections
 - Added process for Library of Congress collections
+- Automatic Ingestion for Library of Congress collections
 ### Fixed
 - Modify agentParser method to reduce number of future duplicate agents
 - Install `wheel` with pip to fix fasttext build
