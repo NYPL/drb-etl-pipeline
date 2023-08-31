@@ -6,6 +6,7 @@
 - Script to delete problem work records from PSQL and ESC
 ### Fixed
 - Publisher location and webpub manifest links for ISAC records
+- Upgrade sqlalchemy to fix prod bug
 
 ## 2023-07-20 -- v0.12.1
 ### Added
