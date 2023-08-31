@@ -123,8 +123,7 @@ We use git tags to tag releases and github's release feature to deploy.  The ste
 
   1. Decide on a new version number (assume 0.12.0 for the following steps)
   2. Make sure your local `main` branch is up to date
-  3. Update the `CHANGELOG.md` 'unreleased version' header with the current date and new version number, e.g. '2023-04-03:
-     v0.12.0'
+  3. Update the `CHANGELOG.md` 'unreleased version' header with the current date and new version number, e.g. '2023-04-03 -- v0.12.0'
   4. Commit your change and push straight to `main`: `git push origin main`
   5. Create a new tag and name it after the new version number: `git tag -a v0.12.0`
   6. Push your tag to github: `git push origin v0.12.0`
