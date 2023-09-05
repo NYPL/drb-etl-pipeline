@@ -190,7 +190,7 @@ class ElasticClient():
     @staticmethod
     def escapeSearchQuery(query):
         return re.sub(
-           r'[\+\-\&\|\!\(\)\[\]\{\}\^\~\?\:\\\/]{1}', '\\\\\g<0>', query
+           r'[\*\+\-\&\|\!\(\)\[\]\{\}\^\~\?\:\\\/]{1}', '\\\\\g<0>', query
         )
 
     def languageQuery(self, workTotals):
