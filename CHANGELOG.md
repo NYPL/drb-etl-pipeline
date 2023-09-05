@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 2023-09-05 version -- v0.12.3
+## Removed
+- The "*" character is escaped from queries passed to ElasticSearch, limiting wildcard searches
+## Fixed
+- High volume of wildcard searches should no longer create unrecoverable queues/timeouts
+
 ## 2023-08-31 version -- v0.12.2
 ### Added
 - Script to count and return ids of PD Univ of Cali Books from Hathitrust
