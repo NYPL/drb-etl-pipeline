@@ -44,6 +44,7 @@
 - Supported ES backed automatic collections
 - Add ability to create automatic collections
 - Updated OCLC Classify manager with new API key and header
+- Added script to run production DB migration
 ### Fixed
 - Close DB sessions after collection reads
 
