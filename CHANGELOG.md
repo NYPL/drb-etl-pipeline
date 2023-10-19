@@ -4,7 +4,7 @@
 ## Removed
 -
 ## Added
-- New MIT ingestion process and mapping
+- MIT ingestion process and mapping
 
 ## 2023-09-05 version -- v0.12.3
 ## Removed

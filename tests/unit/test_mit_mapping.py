@@ -31,9 +31,9 @@ class TestMITMapping:
             'identifiers', 'has_part'
         ]
         assert recordMapping['title'] == ('title', '{0}')
-        assert recordMapping['authors'] == ('titleauthorname', '{0}|||true')
+        assert recordMapping['authors'] == [('titleauthorname', '{0}|||true')]
         assert recordMapping['dates'] == [('pubDate', '{0}|publication_date')]
-        assert recordMapping['publisher'] == ('publisher', '{0}')
+        assert recordMapping['publisher'] == [('publisher', '{0}')]
         assert recordMapping['identifiers'] == [('identifier', '{0}'), ('hcIsbn', '{0}|isbn'), ('pbIsbn', '{0}|isbn')]
         assert recordMapping['has_part'] == [('url', '1|{0}|mit|application/pdf|{{"catalog": false, "download": true, "reader": false, "embed": false}}')] 
 

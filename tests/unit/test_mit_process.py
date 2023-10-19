@@ -75,7 +75,7 @@ class TestMITProcess:
         testProcess.storePDFManifest(mockRecord)
 
         testManifestURI = 'https://test_aws_bucket.s3.amazonaws.com/manifests/mit/1.json'
-        assert mockRecord.has_part[0] == '1|{}|mit|application/webpub+json|{{}}'.format(testManifestURI)
+        assert mockRecord.has_part[0] == '1|{}|mit|application/webpub+json|{{"catalog": false, "download": false, "reader": true, "embed": false}}'.format(testManifestURI)
 
         mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
         mockCreateMan.assert_called_once_with('manifests/mit/1.json', 'testJSON')
