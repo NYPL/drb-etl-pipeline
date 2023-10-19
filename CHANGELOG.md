@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## unreleased version -- v0.12.4
+## Removed
+-
+## Added
+- New MIT ingestion process and mapping
+
 ## 2023-09-05 version -- v0.12.3
 ## Removed
 - The "*" character is escaped from queries passed to ElasticSearch, limiting wildcard searches
