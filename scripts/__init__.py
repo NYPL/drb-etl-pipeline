@@ -11,4 +11,5 @@ from .chicago_isac_scraper import main as isacScraper
 from .interstitialPagesSFR1410 import main as interstitialPages
 from .ingestS3Metadata import main as ingestS3
 from .updatePubLocationAndLinks import main as updateLocationAndLinks
-from .countCABooks import main as countCABooks
+from .countCABooks import main as countCA
+from .nyplLoginFlags import main as nyplFlags
