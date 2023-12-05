@@ -3,6 +3,7 @@
 ## unreleased version -- v0.12.4
 ## Added
 - New script to add nypl_login flag to Links objects
+- Added nypl_login flag to nypl mapping
 ## Fixed
 
 ## 2023-09-05 version -- v0.12.3

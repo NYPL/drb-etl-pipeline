@@ -144,7 +144,7 @@ class NYPLMapping(SQLMapping):
                     item['location']['code'], item['location']['name'], pos
                 ))
 
-                self.record.has_part.append('{}|{}|nypl|application/x.html+edd|{{"edd": true, "catalog": false, "download": false, "reader": false}}'.format(
+                self.record.has_part.append('{}|{}|nypl|application/x.html+edd|{{"edd": true, "catalog": false, "download": false, "reader": false, "nypl_login": true}}'.format(
                     pos,
                     'http://www.nypl.org/research/collections/shared-collection-catalog/hold/request/b{}-i{}'.format(self.source['id'], item['id'])
                 ))
