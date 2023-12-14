@@ -10,7 +10,7 @@ from model.postgres.collection import COLLECTION_EDITIONS
 class APIUtils():
     QUERY_TERMS = [
         'keyword', 'title', 'author', 'subject', 'identifier', 'authority: identifier', 'viaf', 'lcnaf',
-        'date', 'startYear', 'endYear', 'language', 'format', 'govDoc', 'showAll'
+        'date', 'startYear', 'endYear', 'language', 'format', 'govDoc', 'showAll', 'key'
     ]
 
     FORMAT_CROSSWALK = {

@@ -4,6 +4,7 @@
 ## Added
 - New script to add nypl_login flag to Links objects
 - Added nypl_login flag to nypl mapping
+- New API to return a link to an S3 object
 ## Fixed
 
 ## 2023-09-05 version -- v0.12.3

@@ -246,6 +246,45 @@
                 }
             }
         },
+        "/s3/{bucket}": {
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "v4 Get AWS S3 Object Link",
+                "description": "Return a single s3 object link from DRB buckets",
+                "parameters": [
+                    {
+                        "name": "key",
+                        "in": "path",
+                        "description": "AWS key for S3 object",
+                        "type": "string",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "A single DRB S3 Object URL"
+                    },
+                    "404": {
+                        "description": "Resource was not found",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },         
         "/link/{id}": {
             "get": {
                 "tags": ["digital-research-books"],
