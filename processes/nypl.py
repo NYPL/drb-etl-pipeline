@@ -101,9 +101,11 @@ class NYPLProcess(CoreProcess):
             nyplBibQuery += ' WHERE updated_date > '
             if startTimestamp:
                 nyplBibQuery += "'{}'".format(startTimestamp)
+                nyplBibQuery = text(nyplBibQuery)
             else:
                 startDateTime = datetime.utcnow() - timedelta(hours=24)
                 nyplBibQuery += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
+                nyplBibQuery = text(nyplBibQuery)
 
         if self.ingestOffset:
             nyplBibQuery += ' OFFSET {}'.format(self.ingestOffset)
@@ -112,7 +114,7 @@ class NYPLProcess(CoreProcess):
             nyplBibQuery += ' LIMIT {}'.format(self.ingestLimit)
 
         with self.bibDBConnection.engine.connect() as conn:
-            bibResults = conn.execution_options(stream_results=True).execute(text(nyplBibQuery))
+            bibResults = conn.execution_options(stream_results=True).execute(nyplBibQuery)
             for bib in bibResults:
                 if bib['var_fields'] is None: continue
 
