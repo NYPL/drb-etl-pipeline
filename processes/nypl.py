@@ -5,6 +5,7 @@ import requests
 from .core import CoreProcess
 from managers.db import DBManager
 from mappings.nypl import NYPLMapping
+from sqlalchemy import text
 
 
 class NYPLProcess(CoreProcess):
@@ -111,7 +112,7 @@ class NYPLProcess(CoreProcess):
             nyplBibQuery += ' LIMIT {}'.format(self.ingestLimit)
 
         with self.bibDBConnection.engine.connect() as conn:
-            bibResults = conn.execution_options(stream_results=True).execute(nyplBibQuery)
+            bibResults = conn.execution_options(stream_results=True).execute(text(nyplBibQuery))
             for bib in bibResults:
                 if bib['var_fields'] is None: continue
 
