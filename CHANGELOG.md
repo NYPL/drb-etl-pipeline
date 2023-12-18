@@ -1,4 +1,7 @@
 # CHANGELOG
+## unreleased version -- v0.12.4
+## Added
+New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
 
 ## 2023-09-05 version -- v0.12.3
 ## Removed
