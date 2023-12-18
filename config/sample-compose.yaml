@@ -45,6 +45,12 @@ HATHI_API_ROOT: https://babel.hathitrust.org/cgi/htd
 OCLC_QUERY_LIMIT: '390000'
 #OCLC_API_KEY: 
 
+# NYPL AUTH CONFIGURATION
+NYPL_API_CLIENT_PUBLIC_KEY: >
+  -----BEGIN PUBLIC KEY-----
+  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44ilHg/PxcJYsISHMRyoxsmez178qZpkJVXg7rOMVTLZuf05an7Pl+lX4nw/rqcvGQDXyrimciLgLkWu00xhm6h6klTeJSNq2DgseF8OMw2olfuBKq1NBQ/vC8U0l5NJu34oSN4/iipgpovqAHHBGV4zDt0EWSXE5xpnBWi+w1NMAX/muB2QRfRxkkhueDkAmwKvz5MXJPay7FB/WRjf+7r2EN78x5iQKyCw0tpEZ5hpBX831SEnVULCnpFOcJWMPLdg0Ff6tBmgDxKQBVFIQ9RrzMLTqxKnVVn2+hVpk4F/8tMsGCdd4s/AJqEQBy5lsq7ji1B63XYqi5fc1SnJEQIDAQAB
+  -----END PUBLIC KEY-----
+
 # Bardo CCE API URL
 BARDO_CCE_API: http://sfr-bardo-copyright-development.us-east-1.elasticbeanstalk.com/search
 
