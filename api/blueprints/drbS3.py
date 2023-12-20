@@ -5,6 +5,7 @@ from functools import wraps
 from botocore.exceptions import ClientError
 from urllib.parse import urlparse
 
+import requests
 import argparse
 import boto3
 
@@ -33,33 +34,18 @@ def s3ObjectLinkFetch(bucket):
 
     s3_client = boto3.client("s3")
     client_action = "get_object"
-    url = generate_presigned_url(
+    url = APIUtils.generate_presigned_url(
         s3_client, client_action, {"Bucket": bucket, "Key": key}, 1000
     )
     logger.info(url)
 
-    return APIUtils.formatResponseObject(
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        return APIUtils.formatResponseObject(
         200, 's3ObjectLinkFetch', {'message': f'{url}'}
      )
-
-def generate_presigned_url(s3_client, client_method, method_parameters, expires_in):
-    """
-    Generate a presigned Amazon S3 URL that can be used to perform an action.
-
-    :param s3_client: A Boto3 Amazon S3 client.
-    :param client_method: The name of the client method that the URL performs.
-    :param method_parameters: The parameters of the specified client method.
-    :param expires_in: The number of seconds the presigned URL is valid for.
-    :return: The presigned URL.
-    """
-    try:
-        url = s3_client.generate_presigned_url(
-            ClientMethod=client_method, Params=method_parameters, ExpiresIn=expires_in
-        )
-        logger.info("Got presigned URL: %s", url)
-    except ClientError:
-        logger.exception(
-            "Couldn't get a presigned URL for client method '%s'.", client_method
-        )
-        raise
-    return url
+    else:
+        return APIUtils.formatResponseObject(
+        response.status_code, 's3ObjectLinkFetch', {'Bucket/Key does not exist': f'{url}'}
+     )
