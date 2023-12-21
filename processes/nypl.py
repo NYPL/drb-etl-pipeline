@@ -5,6 +5,7 @@ import requests
 from .core import CoreProcess
 from managers.db import DBManager
 from mappings.nypl import NYPLMapping
+from sqlalchemy import text
 
 
 class NYPLProcess(CoreProcess):
@@ -100,9 +101,11 @@ class NYPLProcess(CoreProcess):
             nyplBibQuery += ' WHERE updated_date > '
             if startTimestamp:
                 nyplBibQuery += "'{}'".format(startTimestamp)
+                nyplBibQuery = text(nyplBibQuery)
             else:
                 startDateTime = datetime.utcnow() - timedelta(hours=24)
                 nyplBibQuery += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
+                nyplBibQuery = text(nyplBibQuery)
 
         if self.ingestOffset:
             nyplBibQuery += ' OFFSET {}'.format(self.ingestOffset)

@@ -5,6 +5,7 @@
 - New script to add nypl_login flag to Links objects
 - Added nypl_login flag to nypl mapping
 ## Fixed
+- NYPL records not being added due to SQLAlchemy error
 
 ## 2023-09-05 version -- v0.12.3
 ## Removed
