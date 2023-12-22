@@ -5,7 +5,7 @@ from api.blueprints.drbWork import workFetch
 from api.utils import APIUtils
 
 
-class TestSearchBlueprint:
+class TestWorkBlueprint:
     @pytest.fixture
     def mockUtils(self, mocker):
         return mocker.patch.multiple(

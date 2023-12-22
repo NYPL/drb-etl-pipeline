@@ -23,7 +23,7 @@ def main():
 
     for link in dbManager.session.query(Link) \
         .filter(or_(Link.media_type == 'application/html+edd', Link.media_type == 'application/x.html+edd')).all():
-            if link.flags['edd'] == True:
+            if link.flags and 'edd' in link.flags and link.flags['edd'] == True:
                 #The link.flags doesn't update if the dict method isn't called on it
                 newLinkFlag = dict(link.flags)
                 newLinkFlag['nypl_login'] = True

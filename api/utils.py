@@ -6,11 +6,16 @@ from math import ceil
 from model import Collection, Edition
 import re
 from model.postgres.collection import COLLECTION_EDITIONS
+from logger import createLog
+from botocore.exceptions import ClientError
+
+
+logger = createLog(__name__)
 
 class APIUtils():
     QUERY_TERMS = [
         'keyword', 'title', 'author', 'subject', 'identifier', 'authority: identifier', 'viaf', 'lcnaf',
-        'date', 'startYear', 'endYear', 'language', 'format', 'govDoc', 'showAll'
+        'date', 'startYear', 'endYear', 'language', 'format', 'govDoc', 'showAll', 'key'
     ]
 
     FORMAT_CROSSWALK = {
@@ -508,3 +513,26 @@ class APIUtils():
         hashedPassword = scrypt(password, salt=salt, n=2**14, r=8, p=1)
 
         return hashedPassword == hash
+
+    @staticmethod
+    def generate_presigned_url(s3_client, client_method, method_parameters, expires_in):
+        """
+        Generate a presigned Amazon S3 URL that can be used to perform an action.
+
+        :param s3_client: A Boto3 Amazon S3 client.
+        :param client_method: The name of the client method that the URL performs.
+        :param method_parameters: The parameters of the specified client method.
+        :param expires_in: The number of seconds the presigned URL is valid for.
+        :return: The presigned URL.
+        """
+        try:
+            url = s3_client.generate_presigned_url(
+                ClientMethod=client_method, Params=method_parameters, ExpiresIn=expires_in
+            )
+            logger.info("Got presigned URL: %s", url)
+        except ClientError:
+            logger.exception(
+                "Couldn't get a presigned URL for client method '%s'.", client_method
+            )
+            raise
+        return url

@@ -4,6 +4,7 @@
 ## Added
 - New script to add nypl_login flag to Links objects
 - Added nypl_login flag to nypl mapping
+- New APIUtils method to generate a presigned url for S3 actions
 ## Fixed
 - NYPL records not being added due to SQLAlchemy error
 
