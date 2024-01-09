@@ -4,7 +4,8 @@
 ## Added
 - New script to add nypl_login flag to Links objects
 - Added nypl_login flag to nypl mapping
-- New API to return a unique, presigned link to an S3 object
+- New APIUtils method to return a unique, presigned link to an S3 object
+- New API and endpoint to return a link to S3 objects
 ## Fixed
 
 ## 2023-09-05 version -- v0.12.3

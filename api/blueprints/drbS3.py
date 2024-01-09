@@ -1,9 +1,10 @@
 from flask import Blueprint, request, current_app
+from base64 import b64decode
+from ..db import DBClient
 from ..utils import APIUtils
+from functools import wraps
 from logger import createLog
 from functools import wraps
-from botocore.exceptions import ClientError
-from urllib.parse import urlparse
 
 import requests
 import argparse
@@ -13,8 +14,44 @@ logger = createLog(__name__)
 
 s3 = Blueprint('s3', __name__, url_prefix='/s3')
 
+def validateToken(func):
+    @wraps(func)
+    def decorator(*args, **kwargs):
+        logger.debug(request.headers)
+
+        headers = {k.lower(): v for k, v in request.headers.items()}
+
+        try:
+            _, loginPair = headers['authorization'].split(' ')
+            loginBytes = loginPair.encode('utf-8')
+            user, password = b64decode(loginBytes).decode('utf-8').split(':')
+        except KeyError:
+            return APIUtils.formatResponseObject(
+                403, 'authResponse', {'message': 'user/password not provided'}
+            )
+
+        dbClient = DBClient(current_app.config['DB_CLIENT'])
+        dbClient.createSession()
+
+        user = dbClient.fetchUser(user)
+
+        if not user or APIUtils.validatePassword(password, user.password, user.salt) is False:
+            return APIUtils.formatResponseObject(
+                401, 'authResponse', {'message': 'invalid user/password'}
+            )
+
+        dbClient.closeSession()
+
+        kwargs['user'] = user.user
+
+        return func(*args, **kwargs)
+
+    return decorator
+
+
 @s3.route('/<bucket>', methods=['GET'])
-def s3ObjectLinkFetch(bucket):
+@validateToken
+def s3ObjectLinkFetch(bucket,user=None):
 
     logger.info(f'Fetching AWS S3 Object Link')
 

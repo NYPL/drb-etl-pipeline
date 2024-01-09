@@ -251,6 +251,11 @@
                 "tags": ["digital-research-books"],
                 "summary": "v4 Get AWS S3 Object Link",
                 "description": "Return a single s3 object link from DRB buckets",
+                "security": [
+                    {
+                        "BasicAuth": []
+                    }
+                ],
                 "parameters": [
                     {
                         "name": "key",
