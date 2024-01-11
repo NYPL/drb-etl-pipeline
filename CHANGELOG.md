@@ -10,6 +10,7 @@ New /fulfill endpoint with ability to check for NYPL login in Bearer authorizati
 - New APIUtils method to generate a presigned url for S3 actions
 ## Fixed
 - NYPL records not being added due to SQLAlchemy error
+- Bardo CCE API and Hathi DataFiles URL updated
 
 ## 2023-09-05 version -- v0.12.3
 ## Removed
