@@ -8,6 +8,7 @@ import re
 from model.postgres.collection import COLLECTION_EDITIONS
 from logger import createLog
 from botocore.exceptions import ClientError
+from urllib.parse import urlparse
 
 
 logger = createLog(__name__)
@@ -481,14 +482,16 @@ class APIUtils():
                 yield from cls.flatten(elem)
 
     @staticmethod
-    def formatResponseObject(status, responseType, datablock):
+    def formatResponseObject(status, responseType, datablock, headers = {}):
+        response = jsonify({
+            'status': status,
+            'timestamp': datetime.utcnow(),
+            'responseType': responseType,
+            'data': datablock
+        })
+        response.headers.extend(headers)
         return (
-            jsonify({
-                'status': status,
-                'timestamp': datetime.utcnow(),
-                'responseType': responseType,
-                'data': datablock
-            }),
+            response,
             status
         )
 
@@ -536,3 +539,34 @@ class APIUtils():
             )
             raise
         return url
+
+    @staticmethod
+    def getPresignedUrlFromObjectUrl(s3Client, url):
+        """
+        Given the URL of an S3 resource, generate a presigned Amazon S3 URL
+        that can be used to access that resource.
+
+        :param s3_client: A Boto3 Amazon S3 client
+        :param url: The URL of the desired resource
+        """
+
+        if "//" not in url:
+            url = "//" + url
+
+        parsedUrl = urlparse(url)
+
+        if "s3" not in parsedUrl.hostname:
+            raise ValueError(
+                "s3 helper function given a non-s3 or malformed URL"
+            )
+
+        bucketName = parsedUrl.hostname.split('.')[0]
+        objectKey = parsedUrl.path[1:]
+        timeValid = 1000 * 30
+
+        return APIUtils.generate_presigned_url(
+            s3Client,
+            "get_object",
+            {'Bucket': bucketName,'Key': objectKey},
+            timeValid
+        )
