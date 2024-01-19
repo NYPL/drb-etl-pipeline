@@ -36,6 +36,12 @@ class TestSearchBlueprint:
 
         monkeypatch.setenv('NYPL_API_CLIENT_PUBLIC_KEY', "SomeKeyValue")
 
+    @pytest.fixture
+    def mockS3(self, mocker):
+        mockS3Manager = mocker.MagicMock()
+        mocker.patch('api.blueprints.drbFulfill.S3Manager').return_value = mockS3Manager
+        return mockS3Manager
+
     def test_itemFulfill_invalid_token(self, testApp, mockUtils, mockDB):
         with testApp.test_request_context('/fulfill/12345',
                                           headers={'Authorization': 'Bearer Whatever'}):
@@ -72,7 +78,7 @@ class TestSearchBlueprint:
             mockUtils['formatResponseObject'].assert_called_once_with(
                     401, 'fulfill', 'Invalid access token', headers={'WWW-Authenticate': 'Bearer'})
 
-    def test_itemFulfill_redirect(self, testApp, mockDB, mocker):
+    def test_itemFulfill_redirect(self, testApp, mockS3, mockDB, mocker):
         mocker.patch("api.utils.APIUtils.getPresignedUrlFromObjectUrl", return_value="example.com/example.pdf")
         mocker.patch("jwt.decode", return_value={
             "iss": "https://www.nypl.org"
