@@ -9,7 +9,7 @@ from waitress import serve
 
 from logger import createLog
 from .blueprints import (
-    search, work, info, edition, utils, link, opds, collection, citation, s3
+    search, work, info, edition, utils, link, opds, collection, citation, fulfill
 )
 from .utils import APIUtils
 
@@ -36,7 +36,7 @@ class FlaskAPI:
         self.app.register_blueprint(opds)
         self.app.register_blueprint(collection)
         self.app.register_blueprint(citation)
-        self.app.register_blueprint(s3)
+        self.app.register_blueprint(fulfill)
 
     def run(self):
         if 'local-compose' in os.environ['ENVIRONMENT'] or 'sample-compose' in os.environ['ENVIRONMENT']:

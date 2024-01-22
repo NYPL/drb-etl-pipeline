@@ -1,4 +1,7 @@
 # CHANGELOG
+## unreleased version -- v0.12.4
+## Added
+New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
 
 ## unreleased version -- v0.12.4
 ## Added
@@ -7,6 +10,8 @@
 - New APIUtils method to return a unique, presigned link to an S3 object
 - New API and endpoint to return a link to S3 objects
 ## Fixed
+- NYPL records not being added due to SQLAlchemy error
+- Bardo CCE API and Hathi DataFiles URL updated
 
 ## 2023-09-05 version -- v0.12.3
 ## Removed

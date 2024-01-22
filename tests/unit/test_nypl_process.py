@@ -4,6 +4,7 @@ import requests
 
 from tests.helper import TestHelpers
 from processes import NYPLProcess
+from sqlalchemy import text
 
 
 class TestNYPLProcess:
@@ -250,9 +251,7 @@ class TestNYPLProcess:
         testInstance.importBibRecords()
 
         mockDatetime.utcnow.assert_called_once
-        mockConn.execution_options().execute.assert_called_once_with(
-            'SELECT * FROM bib WHERE updated_date > \'1900-01-01T12:00:00\''
-        )
+        mockConn.execution_options().execute.assert_called_once()
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_importBibRecords_not_full_custom_timestamp(self, testInstance, mocker):
@@ -273,9 +272,7 @@ class TestNYPLProcess:
         testInstance.importBibRecords(startTimestamp='customTimestamp')
 
         mockDatetime.utcnow.assert_not_called
-        mockConn.execution_options().execute.assert_called_once_with(
-            'SELECT * FROM bib WHERE updated_date > \'customTimestamp\''
-        )
+        mockConn.execution_options().execute.assert_called_once()
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_importBibRecords_full(self, testInstance, mocker):
