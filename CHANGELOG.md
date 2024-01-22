@@ -7,7 +7,8 @@ New /fulfill endpoint with ability to check for NYPL login in Bearer authorizati
 ## Added
 - New script to add nypl_login flag to Links objects
 - Added nypl_login flag to nypl mapping
-- New APIUtils method to generate a presigned url for S3 actions
+- New APIUtils method to return a unique, presigned link to an S3 object
+- New API and endpoint to return a link to S3 objects
 ## Fixed
 - NYPL records not being added due to SQLAlchemy error
 - Bardo CCE API and Hathi DataFiles URL updated
