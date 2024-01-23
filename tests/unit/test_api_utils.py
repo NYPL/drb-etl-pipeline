@@ -1,6 +1,7 @@
 from hashlib import scrypt
 import pytest
 from random import shuffle
+from flask import Flask
 
 from api.utils import APIUtils
 from datetime import datetime
@@ -574,22 +575,23 @@ class TestAPIUtils:
         assert flatArray == [1, 2, 3, 4, 5]
 
     def test_formatResponseObject(self, mocker):
-        mockDatetime = mocker.patch('api.utils.datetime')
-        mockDatetime.utcnow.return_value = 'presentTimestamp'
-        mockJsonify = mocker.patch('api.utils.jsonify')
-        mockJsonify.return_value = 'jsonBlock'
+        testApp = Flask('test')
+        with testApp.test_request_context('/'):
+            mockDatetime = mocker.patch('api.utils.datetime')
+            mockDatetime.utcnow.return_value = 'presentTimestamp'
 
-        testResponse = APIUtils.formatResponseObject(200, 'test', 'testData')
+            testResponse = APIUtils.formatResponseObject(200, 'test', {"test": "test data"})
 
-        assert testResponse[0] == 'jsonBlock'
-        assert testResponse[1] == 200
-        mockDatetime.utcnow.assert_called_once
-        mockJsonify.assert_called_once_with({
-            'status': 200,
-            'timestamp': 'presentTimestamp',
-            'responseType': 'test',
-            'data': 'testData'
-        })
+            assert testResponse[0].json == {
+                'status': 200,
+                'timestamp': 'presentTimestamp',
+                'responseType': 'test',
+                'data': {
+                    'test': 'test data'
+                }
+            }
+            assert testResponse[1] == 200
+            mockDatetime.utcnow.assert_called_once
 
     def test_formatPipeDelimitedData_string(self):
         assert APIUtils.formatPipeDelimitedData('test|object', ['one', 'two'])\
@@ -643,3 +645,14 @@ class TestAPIUtils:
         shuffle(testList)
         testList.sort(key=APIUtils.sortByMediaType)
         assert [i['id'] for i in testList] == [5, 2, 3, 4, 1, 1]
+
+    def test_getPresignedUrlFromObjectUrl(self, mocker):
+        mockGenerateUrl = mocker.patch.object(APIUtils, 'generate_presigned_url')
+        mockGenerateUrl.return_value = 'https://example.com/mypresignedurl'
+        assert APIUtils.getPresignedUrlFromObjectUrl({"Some Client"}, "https://doc-example-bucket1.s3.us-west-2.amazonaws.com/puppy.png") == "https://example.com/mypresignedurl"
+        mockGenerateUrl.assert_called_once_with({"Some Client"}, "get_object", {'Bucket': "doc-example-bucket1",'Key': "puppy.png"}, 30000)
+
+    def test_getPresignedUrlFromNons3Url(self):
+        with pytest.raises(ValueError):
+            APIUtils.getPresignedUrlFromObjectUrl({"Some Client"}, "https://example.com")
+

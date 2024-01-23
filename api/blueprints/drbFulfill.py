@@ -3,60 +3,86 @@ import os
 
 import jwt
 
-from flask import Blueprint, request
+from flask import Blueprint, request, redirect, current_app
+from ..db import DBClient
 from ..utils import APIUtils
+from managers import S3Manager
 from logger import createLog
 
-JWT_ALGORITHM = ''
 logger = createLog(__name__)
 
-fulfill = Blueprint('fulfill', __name__, url_prefix='/fulfill')
+fulfill = Blueprint("fulfill", __name__, url_prefix="/fulfill")
 
-@fulfill.route('/<uuid>', methods=['GET'])
-def workFulfill(uuid):
-    logger.info('Checking if authorization is needed for work {}'.format(uuid))
 
-    requires_authorization = True
+@fulfill.route("/<link_id>", methods=["GET"])
+def itemFulfill(link_id):
+    with DBClient(current_app.config["DB_CLIENT"]) as dbClient:
+        link = dbClient.fetchSingleLink(link_id)
+        if not link:
+            return APIUtils.formatResponseObject(
+                404, "fulfill", "No link exists for this ID"
+            )
 
-    if requires_authorization:
-        try:
-            bearer = request.headers.get('Authorization')
-            token = bearer.split()[1]
+        requires_authorization = (
+            # Might not have edd flag if edd is not true
+            link.flags.get("edd", False) is False and link.flags["nypl_login"] is True
+        )
 
-            jwt_secret = os.environ['NYPL_API_CLIENT_PUBLIC_KEY']
-            decoded_token =(jwt.decode(token, jwt_secret, 'RS256', 
-                                   audience="app_myaccount"))
-            if json.loads(json.dumps(decoded_token))['iss'] == "https://www.nypl.org":
-                statusCode = 200
-                responseBody = uuid
+        if requires_authorization:
+            decodedToken = None
+            try:
+                bearer = request.headers.get("Authorization")
+                if bearer is None:
+                    return APIUtils.formatResponseObject(
+                        401,
+                        "fulfill",
+                        "Invalid access token",
+                        headers={"WWW-Authenticate": "Bearer"},
+                    )
+                token = bearer.split()[1]
+
+                jwt_secret = os.environ["NYPL_API_CLIENT_PUBLIC_KEY"]
+                decodedToken = jwt.decode(
+                    token, jwt_secret, algorithms=["RS256"], audience="app_myaccount"
+                )
+
+            except jwt.exceptions.ExpiredSignatureError:
+                return APIUtils.formatResponseObject(
+                    401,
+                    "fulfill",
+                    "Expired access token",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            except (
+                jwt.exceptions.DecodeError,
+                UnicodeDecodeError,
+                IndexError,
+                AttributeError,
+            ):
+                return APIUtils.formatResponseObject(
+                    401,
+                    "fulfill",
+                    "Invalid access token",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+
+            if decodedToken["iss"] == "https://www.nypl.org":
+                storageManager = S3Manager()
+                storageManager.createS3Client()
+                presignedObjectUrl = APIUtils.getPresignedUrlFromObjectUrl(
+                    storageManager.s3Client, link.url
+                )
+                return redirect(presignedObjectUrl)
             else:
-                statusCode = 401
-                responseBody = 'Invalid access token'
+                return APIUtils.formatResponseObject(
+                    401,
+                    "fulfill",
+                    "Invalid access token",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
 
-        except jwt.exceptions.ExpiredSignatureError:
-            statusCode = 401
-            responseBody = 'Expired access token'
-        except (jwt.exceptions.DecodeError, UnicodeDecodeError, IndexError, AttributeError):
-            statusCode = 401
-            responseBody = 'Invalid access token'
-        except ValueError:
-            logger.warning("Could not deserialize NYPL-issued public key")
-            statusCode = 500
-            responseBody = 'Server error'
-    
-    else:
-        # TODO: In the future, this could record an analytics timestamp
-        # and redirect to URL of a work if authentication is not required. 
-        # For now, only use /fulfill endpoint in response if authentication is required.
-        statusCode = 400
-        responseBody = "Bad Request"
-
-    response = APIUtils.formatResponseObject(
-        statusCode, 'fulfill', responseBody
-    )
-
-    if statusCode == 401:
-        response[0].headers['WWW-Authenticate'] = 'Bearer'
-
-    return response
-
+        else:
+            # TODO: In the future, this could record an analytics timestamp
+            # and redirect to URL of an item if authentication is not required.
+            # For now, only use /fulfill endpoint in response if authentication is required.
+            return APIUtils.formatResponseObject(400, "fulfill", "Bad request")
