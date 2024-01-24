@@ -1,13 +1,12 @@
 # CHANGELOG
-## unreleased version -- v0.12.4
-## Added
-New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
 
 ## unreleased version -- v0.12.4
 ## Added
 - New script to add nypl_login flag to Links objects
 - Added nypl_login flag to nypl mapping
 - New APIUtils method to generate a presigned url for S3 actions
+- New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
+- Added new University of Michigan process and mapping for ingestion
 ## Fixed
 - NYPL records not being added due to SQLAlchemy error
 - Bardo CCE API and Hathi DataFiles URL updated
