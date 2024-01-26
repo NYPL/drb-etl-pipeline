@@ -336,6 +336,9 @@ class APIUtils():
                     'flags': flags
                 })
 
+            # Replace item links with fulfillment links where necessary
+            itemDict['links'] = list(map(APIUtils.replacePrivateLinkUrl, itemDict['links']))
+
             itemDict['links'].sort(key=cls.sortByMediaType)
 
             itemDict['rights'] = [
@@ -445,6 +448,9 @@ class APIUtils():
         linkDict['work'] = dict(link.items[0].edition.work)
         linkDict['work']['editions'] = [linkEdition]
         linkDict['work']['editions'][0]['items'] = [linkItem]
+
+        # Amend link to include /fulfill link if appropriate
+        linkDict = APIUtils.replacePrivateLinkUrl(linkDict)
 
         return linkDict
 
@@ -570,3 +576,15 @@ class APIUtils():
             {'Bucket': bucketName,'Key': objectKey},
             timeValid
         )
+
+    @staticmethod
+    def replacePrivateLinkUrl(link):
+        """
+        Given a link object, return a link object with the url replaced if
+        the link has flags indicating it should be fulfilled via /fulfill
+        """
+        if link['flags'].get("edd") or not link['flags'].get("nypl_login"):
+            return link
+        else:
+            link['url'] = "<environment>/fulfill/" + str(link['link_id'])
+        return link
