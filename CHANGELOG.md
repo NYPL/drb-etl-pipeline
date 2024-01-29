@@ -13,6 +13,12 @@ Fulfill endpoint returns pre-signed URLs for objects in private buckets when use
 - NYPL records not being added due to SQLAlchemy error
 - Bardo CCE API and Hathi DataFiles URL updated
 
+## unreleased version -- v0.12.4
+## Removed
+-
+## Added
+- MIT ingestion process and mapping
+
 ## 2023-09-05 version -- v0.12.3
 ## Removed
 - The "*" character is escaped from queries passed to ElasticSearch, limiting wildcard searches

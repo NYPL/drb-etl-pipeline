@@ -17,3 +17,4 @@ from .dbMaintenance import DatabaseMaintenanceProcess
 from .chicagoISAC import ChicagoISACProcess
 from .UofSC import UofSCProcess
 from .loc import LOCProcess
+from .mit import MITProcess
