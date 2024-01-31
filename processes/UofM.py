@@ -30,10 +30,10 @@ class UofMProcess(CoreProcess):
         self.createS3Client()
 
     def runProcess(self):
-        with open('UofM_CSV.json') as f:
+        with open('ingestJSONFiles/UofM_CSV.json') as f:
                 UofMData = json.load(f)
 
-        for i in range(0, 12):
+        for i in range(0, len(UofMData['data'])):
             metaDict = UofMData['data'][i]
             self.processUofMRecord(metaDict)
 

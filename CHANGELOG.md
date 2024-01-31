@@ -7,6 +7,7 @@
 - New APIUtils method to generate a presigned url for S3 actions
 - New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
 - Added new University of Michigan process and mapping for ingestion
+- New directory for JSON files that will be ingested
 ## Fixed
 - NYPL records not being added due to SQLAlchemy error
 - Bardo CCE API and Hathi DataFiles URL updated
