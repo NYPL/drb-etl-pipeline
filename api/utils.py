@@ -239,16 +239,14 @@ class APIUtils():
         editionWorkAuthors = edition.work.authors
         editionInCollection = cls.checkEditionInCollection(None, edition, dbClient)
 
-            # Replace item links with fulfillment links where necessary
-
-        #edition['links'] = list(map(APIUtils.replacePrivateLinkUrl, edition['links'], repeat(request)))
-
         formattedEdition = cls.formatEdition(
             edition, editionWorkTitle, editionWorkAuthors, editionInCollection, records, formats, showAll=showAll, reader=reader
         )
 
-        for instance in formattedEdition['instances']:
+        if formattedEdition.get("instances"):
+            for instance in formattedEdition['instances']:
                 for item in instance['items']:
+                    # Map over item links and patch with pre-signed URL where necessary
                     item['links']= list(map(APIUtils.replacePrivateLinkUrl, item['links'], repeat(request)))
 
         return formattedEdition
@@ -559,7 +557,8 @@ class APIUtils():
     def getPresignedUrlFromObjectUrl(s3Client, url):
         """
         Given the URL of an S3 resource, generate a presigned Amazon S3 URL
-        that can be used to access that resource.
+        that can be used to access that resource. This function assumes S3
+        URLs in the "virtual hosted bucket" style, not deprecated path style.
 
         :param s3_client: A Boto3 Amazon S3 client
         :param url: The URL of the desired resource

@@ -61,6 +61,10 @@ class TestAPIUtils:
         return MockDB
 
     @pytest.fixture
+    def MockRequestObject(self, mocker):
+        return {"hostname": "localhost:5000"}
+
+    @pytest.fixture
     def testRecord(self, MockDBObject):
         return MockDBObject(
             id='rec1',
@@ -255,7 +259,7 @@ class TestAPIUtils:
             'lastPage': 6
         }
 
-    def test_formatWorkOutput_single_work(self, mocker):
+    def test_formatWorkOutput_single_work(self, mocker, MockRequestObject):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
         mockFormat.return_value = {
             'uuid': 1,
@@ -266,14 +270,14 @@ class TestAPIUtils:
             ]
         }
 
-        outWork = APIUtils.formatWorkOutput('testWork', None, mocker.sentinel.dbClient)
+        outWork = APIUtils.formatWorkOutput('testWork', None, mocker.sentinel.dbClient, request=MockRequestObject)
 
         assert outWork['uuid'] == 1
         assert outWork['editions'][0]['id'] == 'ed3'
         assert outWork['editions'][2]['id'] == 'ed1'
         mockFormat.assert_called_once_with('testWork', None, True, mocker.sentinel.dbClient, reader=None)
 
-    def test_formatWorkOutput_multiple_works(self, mocker):
+    def test_formatWorkOutput_multiple_works(self, mocker, MockRequestObject):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
         mockFormat.side_effect = ['formattedWork1', 'formattedWork2']
 
@@ -291,6 +295,7 @@ class TestAPIUtils:
                 ('uuid3', 3, 'highlight3')
             ],
             dbClient=mocker.sentinel.dbClient,
+            request=MockRequestObject
         )
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
@@ -381,9 +386,9 @@ class TestAPIUtils:
         assert testWorkDict['editions'][0]['edition_id'] == 'ed2'
         assert testWorkDict['editions'][1]['edition_id'] == 'ed1'
 
-    def test_formatEditionOutput(self, mocker):
+    def test_formatEditionOutput(self, mocker, MockRequestObject):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
-        mockFormatEdition.return_value = 'testEdition'
+        mockFormatEdition.return_value = {"testEdition": "test"}
 
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient')
@@ -394,8 +399,8 @@ class TestAPIUtils:
         mockDB.fetchSingleEdition.return_value = mockEdition
 
         assert APIUtils.formatEditionOutput(
-            mockEdition, records = 'testRecords', dbClient=mockDBClient, showAll=True
-        ) == 'testEdition'
+            mockEdition, records = 'testRecords', dbClient=mockDBClient, request=MockRequestObject, showAll=True
+        ) == {"testEdition": "test"}
 
         mockFormatEdition.assert_called_once_with(
             mockEdition, mockEdition.work.title, mockEdition.work.authors, [], 'testRecords', None, showAll=True, reader=None
@@ -519,12 +524,12 @@ class TestAPIUtils:
             {'item_id': 1, 'url': 'url1'}, {'item_id': 2, 'url': 'url2'}
         ]
 
-    def test_formatLinkOutput(self, testLink, testWork, testEdition, testItem):
+    def test_formatLinkOutput(self, testLink, testWork, testEdition, testItem, MockRequestObject):
         testEdition.work = testWork
         testItem.edition = testEdition
         testLink.items = [testItem]
 
-        testLink = APIUtils.formatLinkOutput(testLink)
+        testLink = APIUtils.formatLinkOutput(testLink, MockRequestObject)
 
         assert testLink['link_id'] == 'li1'
         assert testLink['work']['uuid'] == 'testUUID'
