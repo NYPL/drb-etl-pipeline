@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app
+from flask import Blueprint, current_app, request
 from ..db import DBClient
 from ..utils import APIUtils
 from logger import createLog
@@ -18,7 +18,7 @@ def linkFetch(linkID):
 
     if link:
         statusCode = 200
-        responseObject = APIUtils.formatLinkOutput(link)
+        responseObject = APIUtils.formatLinkOutput(link, request=request)
     else:
         statusCode = 404
         responseObject = {'message': 'Unable to locate link #{}'.format(linkID)}
