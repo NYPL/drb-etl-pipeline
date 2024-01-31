@@ -1,4 +1,4 @@
-from flask import Flask, Request
+from flask import Flask
 import pytest
 
 from api.blueprints.drbLink import linkFetch
