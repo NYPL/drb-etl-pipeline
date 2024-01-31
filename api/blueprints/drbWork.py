@@ -30,7 +30,9 @@ def workFetch(uuid):
     work = dbClient.fetchSingleWork(uuid)
     if work:
         statusCode = 200
-        responseBody = APIUtils.formatWorkOutput(work, None, showAll=showAll, request=request, dbClient=dbClient, formats=filteredFormats, reader=readerVersion)
+        responseBody = APIUtils.formatWorkOutput(work, None, showAll=showAll,
+            request=request, dbClient=dbClient, formats=filteredFormats, reader=readerVersion
+        )
 
     else:
         statusCode = 404
