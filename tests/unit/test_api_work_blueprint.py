@@ -3,6 +3,7 @@ import pytest
 
 from api.blueprints.drbWork import workFetch
 from api.utils import APIUtils
+from tests.helper import AnyFlaskRequest
 
 
 class TestWorkBlueprint:
@@ -36,6 +37,8 @@ class TestWorkBlueprint:
         mockUtils['formatWorkOutput'].return_value = 'testWork'
         mockUtils['formatResponseObject'].return_value = 'singleWorkResponse'
 
+        someFlaskRequest = AnyFlaskRequest()
+
         with testApp.test_request_context('/?showAll=true'):
             testAPIResponse = workFetch('testUUID')
 
@@ -44,7 +47,8 @@ class TestWorkBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=[], reader='test'
+                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=[],
+                reader='test', request=someFlaskRequest
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'
@@ -67,6 +71,8 @@ class TestWorkBlueprint:
         mockUtils['formatWorkOutput'].return_value = 'testWork'
         mockUtils['formatResponseObject'].return_value = 'singleWorkResponse'
 
+        someFlaskRequest = AnyFlaskRequest()
+
         with testApp.test_request_context('/?showAll=true'):
             testAPIResponse = workFetch('testUUID')
 
@@ -78,7 +84,8 @@ class TestWorkBlueprint:
                 mocker.call('filter', queryParams)
             ])
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=['application/html+edd', 'application/x.html+edd'], reader='test'
+                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=['application/html+edd',
+                'application/x.html+edd'], reader='test', request=someFlaskRequest
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'
@@ -96,6 +103,8 @@ class TestWorkBlueprint:
         mockUtils['formatWorkOutput'].return_value = 'testWork'
         mockUtils['formatResponseObject'].return_value = 'singleWorkResponse'
 
+        someFlaskRequest = AnyFlaskRequest()
+
         with testApp.test_request_context('/?showAll=false'):
             testAPIResponse = workFetch('testUUID')
 
@@ -104,7 +113,8 @@ class TestWorkBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=False, dbClient=mockDB, formats=[], reader='test'
+                'dbWorkRecord', None, showAll=False, dbClient=mockDB, formats=[], reader='test',
+                request=someFlaskRequest
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'

@@ -4,7 +4,7 @@ import pytest
 from api.blueprints.drbSearch import standardQuery
 from api.utils import APIUtils
 from api.elastic import ElasticClientError
-
+from tests.helper import AnyFlaskRequest
 
 class TestSearchBlueprint:
     @pytest.fixture
@@ -100,6 +100,8 @@ class TestSearchBlueprint:
 
         mockUtils['formatResponseObject'].return_value = 'mockAPIResponse'
 
+        someFlaskRequest = AnyFlaskRequest()
+
         with testApp.test_request_context('/?testing=true'):
             testAPIResponse = standardQuery()
 
@@ -139,7 +141,8 @@ class TestSearchBlueprint:
                 testResultIds,
                 dbClient=mockDB,
                 formats=['text/html'],
-                reader='test'
+                reader='test',
+                request=someFlaskRequest
             )
 
             mockUtils['formatResponseObject'].assert_called_once_with(

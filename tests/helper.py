@@ -1,5 +1,16 @@
 import os
+from flask import Request
 
+# Because many Blueprint tests rely on checking to see if specific arguments were
+# passed to output processing functions, and these output processing functions now
+# require a request object to determine the host, this class provides an object that
+# will compare "true" to any instantiated Flask request object, for contexts where a
+# valid request object must be passed in but none of its content or attributes matter.
+class AnyFlaskRequest:
+    def __eq__(self, __value: object) -> bool:
+        if isinstance(__value, Request):  # any Flask request will compare true
+            return True
+        return False
 
 class TestHelpers:
     ENV_VARS = {
