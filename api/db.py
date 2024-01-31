@@ -18,6 +18,13 @@ class DBClient():
     def closeSession(self):
         self.session.close()
 
+    def __enter__(self):
+        self.createSession()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.closeSession()
+
     def fetchSearchedWorks(self, ids):
         uuids = [i[0] for i in ids]
         editionIds = list(set(APIUtils.flatten([i[1] for i in ids])))

@@ -6,6 +6,7 @@
 - Added nypl_login flag to nypl mapping
 - New APIUtils method to generate a presigned url for S3 actions
 - New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
+- Fulfill endpoint returns pre-signed URLs for objects in private buckets when user is logged in
 - Added new University of Michigan process and mapping for ingestion
 - New directory for JSON files that will be ingested
 ## Fixed
