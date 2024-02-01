@@ -27,13 +27,13 @@ def editionFetch(editionID):
 
     filteredFormats = APIUtils.formatFilters(terms)
 
-    edition = dbClient.fetchSingleEdition(editionID) 
+    edition = dbClient.fetchSingleEdition(editionID)
     if edition:
         statusCode = 200
         records = dbClient.fetchRecordsByUUID(edition.dcdw_uuids)
 
         responseBody = APIUtils.formatEditionOutput(
-            edition, records=records, dbClient=dbClient, showAll=showAll, formats=filteredFormats, reader=readerVersion
+            edition, request=request, records=records, dbClient=dbClient, showAll=showAll, formats=filteredFormats, reader=readerVersion
         )
     else:
         statusCode = 404

@@ -1,9 +1,8 @@
-from flask import Flask
+from flask import Flask, request
 import pytest
 
 from api.blueprints.drbEdition import editionFetch
 from api.utils import APIUtils
-
 
 class TestEditionBlueprint:
     @pytest.fixture
@@ -15,7 +14,7 @@ class TestEditionBlueprint:
             formatResponseObject=mocker.DEFAULT,
             formatEditionOutput=mocker.DEFAULT
         )
-    
+
     @pytest.fixture
     def testApp(self):
         flaskApp = Flask('test')
@@ -48,7 +47,8 @@ class TestEditionBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockUtils['formatEditionOutput'].assert_called_once_with(
-                mockEdition, records='testRecords', dbClient=mockDB, showAll=True, formats=[], reader='test'
+                mockEdition, records='testRecords', dbClient=mockDB, showAll=True, formats=[],
+                reader='test', request=request
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleEdition', 'testEdition'
@@ -86,8 +86,9 @@ class TestEditionBlueprint:
                 mocker.call('filter', queryParams)
             ])
             mockUtils['formatEditionOutput'].assert_called_once_with(
-                mockEdition, records='testRecords', showAll=True, dbClient=mockDB, 
-                                    formats=['application/html+edd', 'application/x.html+edd'], reader='test'
+                mockEdition, records='testRecords', showAll=True,
+                dbClient=mockDB,request=request,
+                formats=['application/html+edd', 'application/x.html+edd'], reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleEdition', 'testEdition'

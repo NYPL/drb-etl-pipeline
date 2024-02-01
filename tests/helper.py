@@ -1,6 +1,5 @@
 import os
 
-
 class TestHelpers:
     ENV_VARS = {
         'POSTGRES_HOST': 'test_psql_host',

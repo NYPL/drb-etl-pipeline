@@ -77,7 +77,7 @@ def standardQuery():
     dataBlock = {
         'totalWorks': searchResult.hits.total.value,
         'works': APIUtils.formatWorkOutput(
-            works, results, dbClient=dbClient, formats=filteredFormats, reader=readerVersion
+            works, results, request=request, dbClient=dbClient, formats=filteredFormats, reader=readerVersion
         ),
         'paging': paging,
         'facets': facets

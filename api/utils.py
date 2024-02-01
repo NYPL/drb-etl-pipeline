@@ -2,6 +2,7 @@ from collections import OrderedDict
 from datetime import datetime
 from hashlib import scrypt
 from flask import jsonify
+from itertools import repeat
 from math import ceil
 from model import Collection, Edition
 import re
@@ -140,7 +141,7 @@ class APIUtils():
 
     @classmethod
     def formatWorkOutput(
-        cls, works, identifiers, dbClient, showAll=True, formats=None, reader=None
+        cls, works, identifiers, dbClient, request, showAll=True, formats=None, reader=None,
     ):
         #Multiple formatted works with formats specified
         if isinstance(works, list):
@@ -233,15 +234,24 @@ class APIUtils():
 
     @classmethod
     def formatEditionOutput(
-        cls, edition, records=None, dbClient=None, showAll=False, formats=None, reader=None
+        cls, edition, request, records=None, dbClient=None, showAll=False, formats=None, reader=None
     ):
         editionWorkTitle = edition.work.title
         editionWorkAuthors = edition.work.authors
         editionInCollection = cls.checkEditionInCollection(None, edition, dbClient)
 
-        return cls.formatEdition(
+        formattedEdition = cls.formatEdition(
             edition, editionWorkTitle, editionWorkAuthors, editionInCollection, records, formats, showAll=showAll, reader=reader
         )
+
+        if formattedEdition.get("instances"):
+            for instance in formattedEdition['instances']:
+                for item in instance['items']:
+                    # Map over item links and patch with pre-signed URL where necessary
+                    item['links']= list(map(APIUtils.replacePrivateLinkUrl, item['links'], repeat(request)))
+
+        return formattedEdition
+
 
     @classmethod
     def checkEditionInCollection(cls, work, edition, dbClient):
@@ -430,7 +440,7 @@ class APIUtils():
         return outRecord
 
     @classmethod
-    def formatLinkOutput(cls, link):
+    def formatLinkOutput(cls, link, request):
         linkItem = dict(link.items[0])
         linkItem['item_id'] = link.items[0].id
 
@@ -446,6 +456,9 @@ class APIUtils():
         linkDict['work'] = dict(link.items[0].edition.work)
         linkDict['work']['editions'] = [linkEdition]
         linkDict['work']['editions'][0]['items'] = [linkItem]
+
+        # Amend link to include /fulfill link if appropriate
+        linkDict = APIUtils.replacePrivateLinkUrl(linkDict, request)
 
         return linkDict
 
@@ -545,7 +558,8 @@ class APIUtils():
     def getPresignedUrlFromObjectUrl(s3Client, url):
         """
         Given the URL of an S3 resource, generate a presigned Amazon S3 URL
-        that can be used to access that resource.
+        that can be used to access that resource. This function assumes S3
+        URLs in the "virtual hosted bucket" style, not deprecated path style.
 
         :param s3_client: A Boto3 Amazon S3 client
         :param url: The URL of the desired resource
@@ -571,3 +585,15 @@ class APIUtils():
             {'Bucket': bucketName,'Key': objectKey},
             timeValid
         )
+
+    @staticmethod
+    def replacePrivateLinkUrl(link, request):
+        """
+        Given a link object, return a link object with the url replaced if
+        the link has flags indicating it should be fulfilled via /fulfill
+        """
+        if link['flags'].get("edd") or not link['flags'].get("nypl_login"):
+            return link
+        else:
+            link['url'] = request.host + "/fulfill/" + str(link['link_id'])
+        return link

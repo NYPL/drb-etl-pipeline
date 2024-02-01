@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 import pytest
 
 from api.blueprints.drbLink import linkFetch
@@ -36,7 +36,7 @@ class TestLinkBlueprint:
             assert testAPIResponse == 'singleLinkResponse'
             mockDBClient.assert_called_once_with('testDBClient')
 
-            mockUtils['formatLinkOutput'].assert_called_once_with('dbLinkRecord')
+            mockUtils['formatLinkOutput'].assert_called_once_with('dbLinkRecord', request=request)
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleLink', 'testLink'
             )

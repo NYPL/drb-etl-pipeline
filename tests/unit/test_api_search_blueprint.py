@@ -1,10 +1,9 @@
-from flask import Flask
+from flask import Flask, request
 import pytest
 
 from api.blueprints.drbSearch import standardQuery
 from api.utils import APIUtils
 from api.elastic import ElasticClientError
-
 
 class TestSearchBlueprint:
     @pytest.fixture
@@ -139,7 +138,8 @@ class TestSearchBlueprint:
                 testResultIds,
                 dbClient=mockDB,
                 formats=['text/html'],
-                reader='test'
+                reader='test',
+                request=request
             )
 
             mockUtils['formatResponseObject'].assert_called_once_with(
