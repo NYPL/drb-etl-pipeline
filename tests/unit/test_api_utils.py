@@ -1,12 +1,16 @@
 from hashlib import scrypt
 import pytest
 from random import shuffle
-from flask import Flask
+from flask import Flask, request
 
 from api.utils import APIUtils
 from datetime import datetime
 
 class TestAPIUtils:
+    @pytest.fixture
+    def testApp(self):
+        return Flask('test')
+
     @pytest.fixture
     def testAggregationResp(self):
         return {
@@ -59,10 +63,6 @@ class TestAPIUtils:
                     yield attr, value
 
         return MockDB
-
-    @pytest.fixture
-    def MockRequestObject(self, mocker):
-        return {"hostname": "localhost:5000"}
 
     @pytest.fixture
     def testRecord(self, MockDBObject):
@@ -259,7 +259,7 @@ class TestAPIUtils:
             'lastPage': 6
         }
 
-    def test_formatWorkOutput_single_work(self, mocker, MockRequestObject):
+    def test_formatWorkOutput_single_work(self, mocker, testApp):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
         mockFormat.return_value = {
             'uuid': 1,
@@ -270,14 +270,15 @@ class TestAPIUtils:
             ]
         }
 
-        outWork = APIUtils.formatWorkOutput('testWork', None, mocker.sentinel.dbClient, request=MockRequestObject)
+        with testApp.test_request_context('/'):
+            outWork = APIUtils.formatWorkOutput('testWork', None, mocker.sentinel.dbClient, request=request)
 
         assert outWork['uuid'] == 1
         assert outWork['editions'][0]['id'] == 'ed3'
         assert outWork['editions'][2]['id'] == 'ed1'
         mockFormat.assert_called_once_with('testWork', None, True, mocker.sentinel.dbClient, reader=None)
 
-    def test_formatWorkOutput_multiple_works(self, mocker, MockRequestObject):
+    def test_formatWorkOutput_multiple_works(self, mocker, testApp):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
         mockFormat.side_effect = ['formattedWork1', 'formattedWork2']
 
@@ -287,16 +288,17 @@ class TestAPIUtils:
             mocker.MagicMock(uuid='uuid1'), mocker.MagicMock(uuid='uuid2')
         ]
 
-        outWorks = APIUtils.formatWorkOutput(
-            testWorks,
-            [
-                ('uuid1', 1, 'highlight1'),
-                ('uuid2', 2, 'highlight2'),
-                ('uuid3', 3, 'highlight3')
-            ],
-            dbClient=mocker.sentinel.dbClient,
-            request=MockRequestObject
-        )
+        with testApp.test_request_context('/'):
+            outWorks = APIUtils.formatWorkOutput(
+                testWorks,
+                [
+                    ('uuid1', 1, 'highlight1'),
+                    ('uuid2', 2, 'highlight2'),
+                    ('uuid3', 3, 'highlight3')
+                ],
+                dbClient=mocker.sentinel.dbClient,
+                request=request
+            )
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
         mockFormat.assert_has_calls([
@@ -386,7 +388,7 @@ class TestAPIUtils:
         assert testWorkDict['editions'][0]['edition_id'] == 'ed2'
         assert testWorkDict['editions'][1]['edition_id'] == 'ed1'
 
-    def test_formatEditionOutput(self, mocker, MockRequestObject):
+    def test_formatEditionOutput(self, mocker, testApp):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
         mockFormatEdition.return_value = {"testEdition": "test"}
 
@@ -398,9 +400,14 @@ class TestAPIUtils:
 
         mockDB.fetchSingleEdition.return_value = mockEdition
 
-        assert APIUtils.formatEditionOutput(
-            mockEdition, records = 'testRecords', dbClient=mockDBClient, request=MockRequestObject, showAll=True
-        ) == {"testEdition": "test"}
+        with testApp.test_request_context('/'):
+            assert APIUtils.formatEditionOutput(
+                mockEdition,
+                records = 'testRecords',
+                dbClient=mockDBClient,
+                request=request,
+                showAll=True
+            ) == {"testEdition": "test"}
 
         mockFormatEdition.assert_called_once_with(
             mockEdition, mockEdition.work.title, mockEdition.work.authors, [], 'testRecords', None, showAll=True, reader=None
@@ -524,12 +531,13 @@ class TestAPIUtils:
             {'item_id': 1, 'url': 'url1'}, {'item_id': 2, 'url': 'url2'}
         ]
 
-    def test_formatLinkOutput(self, testLink, testWork, testEdition, testItem, MockRequestObject):
+    def test_formatLinkOutput(self, testLink, testWork, testEdition, testItem, testApp):
         testEdition.work = testWork
         testItem.edition = testEdition
         testLink.items = [testItem]
 
-        testLink = APIUtils.formatLinkOutput(testLink, MockRequestObject)
+        with testApp.test_request_context('/'):
+            testLink = APIUtils.formatLinkOutput(testLink, request)
 
         assert testLink['link_id'] == 'li1'
         assert testLink['work']['uuid'] == 'testUUID'
@@ -579,8 +587,7 @@ class TestAPIUtils:
 
         assert flatArray == [1, 2, 3, 4, 5]
 
-    def test_formatResponseObject(self, mocker):
-        testApp = Flask('test')
+    def test_formatResponseObject(self, mocker, testApp):
         with testApp.test_request_context('/'):
             mockDatetime = mocker.patch('api.utils.datetime')
             mockDatetime.utcnow.return_value = 'presentTimestamp'
@@ -661,3 +668,35 @@ class TestAPIUtils:
         with pytest.raises(ValueError):
             APIUtils.getPresignedUrlFromObjectUrl({"Some Client"}, "https://example.com")
 
+    def test_ReplaceWithPrivateLink(self):
+        testApp = Flask('test')
+        with testApp.test_request_context('/', base_url="http://localhost:5000"):
+            testLoginLinkObj = {
+                'link_id':'12345',
+                'media_type':'application/pdf',
+                'url':'https://doc-example-bucket1.s3.us-west-2.amazonaws.com/puppy.pdf',
+                'flags':{'nypl_login': True}
+            }
+            assert APIUtils.replacePrivateLinkUrl(testLoginLinkObj, request) == {
+                'link_id':'12345',
+                'media_type' : 'application/pdf',
+                'url':'localhost:5000/fulfill/12345',
+                'flags':{'nypl_login': True}
+            }
+
+    def test_noLinkReplacement(self):
+        testElectronicDeliveryLink = {
+                'link_id':'6789',
+                'media_type' : "application/html+edd",
+                'flags' : {
+                      "catalog": False,
+                      "download": False,
+                      "edd": True,
+                      "reader": False
+                    }
+            }
+        testApp = Flask('test')
+        with testApp.test_request_context('/'):
+            assert APIUtils.replacePrivateLinkUrl(
+                testElectronicDeliveryLink, request
+                ) == testElectronicDeliveryLink
