@@ -3,6 +3,7 @@
 ## Added
 New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
 Fulfill endpoint returns pre-signed URLs for objects in private buckets when user is logged in
+Change default development port to 5050 due to macOS Monterey and higher occupying port 5000 by default
 
 ## unreleased version -- v0.12.4
 ## Added
