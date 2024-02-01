@@ -41,10 +41,11 @@ class APIUtils():
         'muse': 4,
         'met': 5,
         'isac': 6,
-        'UofSC': 7,
-        'hathitrust': 8,
-        'oclc': 9,
-        'nypl': 10
+        'UofM': 7,
+        'UofSC': 8,
+        'hathitrust': 9,
+        'oclc': 10,
+        'nypl': 11
     }
 
     @staticmethod
