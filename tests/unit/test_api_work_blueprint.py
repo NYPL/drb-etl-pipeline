@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 import pytest
 
 from api.blueprints.drbWork import workFetch
@@ -44,7 +44,8 @@ class TestWorkBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=[], reader='test'
+                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=[],
+                reader='test', request=request
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'
@@ -78,7 +79,8 @@ class TestWorkBlueprint:
                 mocker.call('filter', queryParams)
             ])
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=['application/html+edd', 'application/x.html+edd'], reader='test'
+                'dbWorkRecord', None, showAll=True, dbClient=mockDB, formats=['application/html+edd',
+                'application/x.html+edd'], reader='test', request=request
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'
@@ -104,7 +106,8 @@ class TestWorkBlueprint:
 
             mockUtils['normalizeQueryParams'].assert_called_once
             mockUtils['formatWorkOutput'].assert_called_once_with(
-                'dbWorkRecord', None, showAll=False, dbClient=mockDB, formats=[], reader='test'
+                'dbWorkRecord', None, showAll=False, dbClient=mockDB, formats=[], reader='test',
+                request=request
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleWork', 'testWork'

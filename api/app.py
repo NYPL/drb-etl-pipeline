@@ -40,18 +40,18 @@ class FlaskAPI:
 
     def run(self):
         if 'local-compose' in os.environ['ENVIRONMENT'] or 'sample-compose' in os.environ['ENVIRONMENT']:
-            logger.debug('Starting dev server on port 5000')
+            logger.debug('Starting dev server on port 5050')
 
             self.app.config['ENV'] = 'development'
             self.app.config['DEBUG'] = True
-            self.app.run(host='0.0.0.0')
+            self.app.run(host='0.0.0.0', port=5050)
 
         elif 'local' in os.environ['ENVIRONMENT']:
-            logger.debug('Starting dev server on port 5000')
+            logger.debug('Starting dev server on port 5050')
 
             self.app.config['ENV'] = 'development'
             self.app.config['DEBUG'] = True
-            self.app.run()
+            self.app.run(port=5050)
         else:
             logger.debug('Starting production server on port 80')
 
