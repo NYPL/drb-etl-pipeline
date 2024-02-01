@@ -1,8 +1,10 @@
 # CHANGELOG
 ## unreleased version -- v0.12.4
 ## Added
-New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
-Fulfill endpoint returns pre-signed URLs for objects in private buckets when user is logged in
+- New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
+- Fulfill endpoint returns pre-signed URLs for objects in private buckets when user is logged in
+# Removed
+- Deleted Tugboat configuration as Tugboat is no longer used and no longer builds
 
 ## unreleased version -- v0.12.4
 ## Added
