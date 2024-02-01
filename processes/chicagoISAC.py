@@ -28,7 +28,7 @@ class ChicagoISACProcess(CoreProcess):
         self.createS3Client()
 
     def runProcess(self):
-        with open('chicagoISAC_metadata.json') as f:
+        with open('ingestJSONFiles/chicagoISAC_metadata.json') as f:
                 chicagoISACData = json.load(f)
 
         for metaDict in chicagoISACData:
