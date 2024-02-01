@@ -1,9 +1,8 @@
-from flask import Flask
+from flask import Flask, request
 import pytest
 
 from api.blueprints.drbEdition import editionFetch
 from api.utils import APIUtils
-from tests.helper import AnyFlaskRequest
 
 class TestEditionBlueprint:
     @pytest.fixture
@@ -15,7 +14,7 @@ class TestEditionBlueprint:
             formatResponseObject=mocker.DEFAULT,
             formatEditionOutput=mocker.DEFAULT
         )
-    
+
     @pytest.fixture
     def testApp(self):
         flaskApp = Flask('test')
@@ -28,7 +27,6 @@ class TestEditionBlueprint:
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient')
         mockDBClient.return_value = mockDB
-        someFlaskRequest = AnyFlaskRequest()
 
         mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
 
@@ -50,7 +48,7 @@ class TestEditionBlueprint:
             mockUtils['normalizeQueryParams'].assert_called_once()
             mockUtils['formatEditionOutput'].assert_called_once_with(
                 mockEdition, records='testRecords', dbClient=mockDB, showAll=True, formats=[],
-                reader='test', request=someFlaskRequest
+                reader='test', request=request
             )
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleEdition', 'testEdition'
@@ -60,7 +58,6 @@ class TestEditionBlueprint:
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient')
         mockDBClient.return_value = mockDB
-        someFlaskRequest = AnyFlaskRequest()
 
         queryParams = {'showAll': ['true']}
         mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
@@ -90,7 +87,7 @@ class TestEditionBlueprint:
             ])
             mockUtils['formatEditionOutput'].assert_called_once_with(
                 mockEdition, records='testRecords', showAll=True,
-                dbClient=mockDB,request=someFlaskRequest,
+                dbClient=mockDB,request=request,
                 formats=['application/html+edd', 'application/x.html+edd'], reader='test'
             )
             mockUtils['formatResponseObject'].assert_called_once_with(

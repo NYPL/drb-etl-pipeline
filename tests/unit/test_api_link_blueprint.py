@@ -1,9 +1,8 @@
-from flask import Flask
+from flask import Flask, request
 import pytest
 
 from api.blueprints.drbLink import linkFetch
 from api.utils import APIUtils
-from tests.helper import AnyFlaskRequest
 
 class TestLinkBlueprint:
     @pytest.fixture
@@ -25,7 +24,6 @@ class TestLinkBlueprint:
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbLink.DBClient')
         mockDBClient.return_value = mockDB
-        someFlaskRequest = AnyFlaskRequest()
 
         mockDB.fetchSingleLink.return_value = 'dbLinkRecord'
 
@@ -38,7 +36,7 @@ class TestLinkBlueprint:
             assert testAPIResponse == 'singleLinkResponse'
             mockDBClient.assert_called_once_with('testDBClient')
 
-            mockUtils['formatLinkOutput'].assert_called_once_with('dbLinkRecord', request=someFlaskRequest)
+            mockUtils['formatLinkOutput'].assert_called_once_with('dbLinkRecord', request=request)
             mockUtils['formatResponseObject'].assert_called_once_with(
                 200, 'singleLink', 'testLink'
             )
