@@ -225,8 +225,9 @@ class APIUtils():
 
         for edition in workDict['editions']:
             for item in edition['items']:
-                # Map over item links and patch with pre-signed URL where necessary
-                    item['links']= list(map(APIUtils.replacePrivateLinkUrl, item['links'], repeat(request)))
+                    if item.get("links"):
+                        # Map over item links and patch with pre-signed URL where necessary
+                        item['links']= list(map(APIUtils.replacePrivateLinkUrl, item['links'], repeat(request)))
         return workDict
 
     @classmethod
@@ -250,8 +251,9 @@ class APIUtils():
         if formattedEdition.get("instances"):
             for instance in formattedEdition['instances']:
                 for item in instance['items']:
-                    # Map over item links and patch with pre-signed URL where necessary
-                    item['links']= list(map(APIUtils.replacePrivateLinkUrl, item['links'], repeat(request)))
+                    if item.get("links"):
+                        # Map over item links and patch with pre-signed URL where necessary
+                        item['links']= list(map(APIUtils.replacePrivateLinkUrl, item['links'], repeat(request)))
 
         return formattedEdition
 
