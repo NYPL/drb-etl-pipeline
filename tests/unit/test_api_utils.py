@@ -276,7 +276,7 @@ class TestAPIUtils:
         assert outWork['uuid'] == 1
         assert outWork['editions'][0]['id'] == 'ed3'
         assert outWork['editions'][2]['id'] == 'ed1'
-        mockFormat.assert_called_once_with('testWork', None, True, mocker.sentinel.dbClient, reader=None)
+        mockFormat.assert_called_once_with('testWork', None, True, mocker.sentinel.dbClient, reader=None, request=request)
 
     def test_formatWorkOutput_multiple_works(self, mocker, testApp):
         mockFormat = mocker.patch.object(APIUtils, 'formatWork')
@@ -302,8 +302,8 @@ class TestAPIUtils:
 
         assert outWorks == ['formattedWork1', 'formattedWork2']
         mockFormat.assert_has_calls([
-            mocker.call(testWorks[0], 1, True, mocker.sentinel.dbClient, formats=None, reader=None),
-            mocker.call(testWorks[1], 2, True, mocker.sentinel.dbClient, formats=None, reader=None),
+            mocker.call(testWorks[0], 1, True, mocker.sentinel.dbClient, formats=None, reader=None, request=request),
+            mocker.call(testWorks[1], 2, True, mocker.sentinel.dbClient, formats=None, reader=None, request=request),
         ])
 
         mockAddMeta.assert_has_calls([
@@ -311,10 +311,10 @@ class TestAPIUtils:
             mocker.call('formattedWork2', highlights='highlight2')
         ])
 
-    def test_formatWork_showAll(self, testWork, mocker):
+    def test_formatWork_showAll(self, testWork, mocker, testApp):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
         mockFormatEdition.return_value = {
-            'edition_id': 'ed1', 'items': ['it1']
+            'edition_id': 'ed1', 'items': [{'item1':'foo'}]
         }
         testWork.id = 'testID'
 
@@ -322,54 +322,57 @@ class TestAPIUtils:
         mockDBClient = mocker.patch('api.blueprints.drbWork.DBClient')
         mockDBClient.return_value = mockDB
 
-        testWorkDict = APIUtils.formatWork(testWork, ['ed1'], True, dbClient=mockDBClient)
+        with testApp.test_request_context('/'):
+            testWorkDict = APIUtils.formatWork(testWork, ['ed1'], True, dbClient=mockDBClient, request=request)
 
-        assert testWorkDict['uuid'] == 'testUUID'
-        assert testWorkDict['title'] == 'Test Title'
-        assert testWorkDict['editions'][0]['edition_id'] == 'ed1'
-        assert testWorkDict['editions'][0]['items'][0] == 'it1'
-        assert testWorkDict['edition_count'] == 1
-        assert testWorkDict['date_created'] == '2022-05-12T10:00:41'
-        assert testWorkDict['date_modified'] == '2022-05-13T10:00:44'
-        mockFormatEdition.assert_called_once()
+            assert testWorkDict['uuid'] == 'testUUID'
+            assert testWorkDict['title'] == 'Test Title'
+            assert testWorkDict['editions'][0]['edition_id'] == 'ed1'
+            assert testWorkDict['editions'][0]['items'][0] == {'item1':'foo'}
+            assert testWorkDict['edition_count'] == 1
+            assert testWorkDict['date_created'] == '2022-05-12T10:00:41'
+            assert testWorkDict['date_modified'] == '2022-05-13T10:00:44'
+            mockFormatEdition.assert_called_once()
 
-    def test_formatWork_showAll_false(self, testWork, mocker):
+    def test_formatWork_showAll_false(self, testWork, mocker, testApp):
 
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbWork.DBClient')
         mockDBClient.return_value = mockDB
 
-        testWork.id = 'testID'
-        mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
-        mockFormatEdition.return_value = {
-            'edition_id': 'ed1', 'items': ['it1']
-        }
-        testWorkDict = APIUtils.formatWork(testWork, ['ed1'], False, dbClient=mockDBClient)
+        with testApp.test_request_context('/'):
+            testWork.id = 'testID'
+            mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
+            mockFormatEdition.return_value = {
+                'edition_id': 'ed1', 'items': [{'item1':'foo'}]
+            }
+            testWorkDict = APIUtils.formatWork(testWork, ['ed1'], False, dbClient=mockDBClient, request=request)
 
-        assert testWorkDict['uuid'] == 'testUUID'
-        assert testWorkDict['title'] == 'Test Title'
-        assert len(testWorkDict['editions']) == 1
-        assert testWorkDict['edition_count'] == 1
-        assert testWorkDict['date_created'] == '2022-05-12T10:00:41'
-        assert testWorkDict['date_modified'] == '2022-05-13T10:00:44'
+            assert testWorkDict['uuid'] == 'testUUID'
+            assert testWorkDict['title'] == 'Test Title'
+            assert len(testWorkDict['editions']) == 1
+            assert testWorkDict['edition_count'] == 1
+            assert testWorkDict['date_created'] == '2022-05-12T10:00:41'
+            assert testWorkDict['date_modified'] == '2022-05-13T10:00:44'
 
-    def test_formatWork_blocked_edition(self, testWork, mocker):
+    def test_formatWork_blocked_edition(self, testWork, mocker, testApp):
         mockDB = mocker.MagicMock()
         mockDBClient = mocker.patch('api.blueprints.drbWork.DBClient')
         mockDBClient.return_value = mockDB
 
-        testWork.id = 'testID'
-        testWork.editions[0].items = []
-        testWorkDict = APIUtils.formatWork(testWork, ['ed2'], True, dbClient=mockDBClient)
+        with testApp.test_request_context('/'):
+            testWork.id = 'testID'
+            testWork.editions[0].items = []
+            testWorkDict = APIUtils.formatWork(testWork, ['ed2'], True, dbClient=mockDBClient, request=request)
 
-        assert testWorkDict['uuid'] == 'testUUID'
-        assert testWorkDict['title'] == 'Test Title'
-        assert len(testWorkDict['editions']) == 0
-        assert testWorkDict['edition_count'] == 1
-        assert testWorkDict['date_created'] == '2022-05-12T10:00:41'
-        assert testWorkDict['date_modified'] == '2022-05-13T10:00:44'
+            assert testWorkDict['uuid'] == 'testUUID'
+            assert testWorkDict['title'] == 'Test Title'
+            assert len(testWorkDict['editions']) == 0
+            assert testWorkDict['edition_count'] == 1
+            assert testWorkDict['date_created'] == '2022-05-12T10:00:41'
+            assert testWorkDict['date_modified'] == '2022-05-13T10:00:44'
 
-    def test_formatWork_ordered_editions(self, testWork, mocker):
+    def test_formatWork_ordered_editions(self, testWork, mocker, testApp):
         testWork.editions = [mocker.MagicMock(id=1), mocker.MagicMock(id=2)]
         testWork.id = 'testID'
 
@@ -379,14 +382,15 @@ class TestAPIUtils:
 
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
         mockFormatEdition.side_effect = [
-            {'edition_id': 'ed1', 'items': ['it1']},
-            {'edition_id': 'ed2', 'items': ['it2']}
+            {'edition_id': 'ed1', 'items': [{'it1':'item'}]},
+            {'edition_id': 'ed2', 'items': [{'it2':'item'}]}
         ]
 
-        testWorkDict = APIUtils.formatWork(testWork, [2, 1], True, dbClient=mockDBClient)
+        with testApp.test_request_context('/'):
+            testWorkDict = APIUtils.formatWork(testWork, [2, 1], True, dbClient=mockDBClient, request=request)
 
-        assert testWorkDict['editions'][0]['edition_id'] == 'ed2'
-        assert testWorkDict['editions'][1]['edition_id'] == 'ed1'
+            assert testWorkDict['editions'][0]['edition_id'] == 'ed2'
+            assert testWorkDict['editions'][1]['edition_id'] == 'ed1'
 
     def test_formatEditionOutput(self, mocker, testApp):
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
@@ -668,8 +672,7 @@ class TestAPIUtils:
         with pytest.raises(ValueError):
             APIUtils.getPresignedUrlFromObjectUrl({"Some Client"}, "https://example.com")
 
-    def test_ReplaceWithPrivateLink(self):
-        testApp = Flask('test')
+    def test_ReplaceWithPrivateLink(self, testApp):
         with testApp.test_request_context('/', base_url="http://localhost:5000"):
             testLoginLinkObj = {
                 'link_id':'12345',
@@ -684,7 +687,7 @@ class TestAPIUtils:
                 'flags':{'nypl_login': True}
             }
 
-    def test_noLinkReplacement(self):
+    def test_noLinkReplacement(self, testApp):
         testElectronicDeliveryLink = {
                 'link_id':'6789',
                 'media_type' : "application/html+edd",
@@ -695,7 +698,6 @@ class TestAPIUtils:
                       "reader": False
                     }
             }
-        testApp = Flask('test')
         with testApp.test_request_context('/'):
             assert APIUtils.replacePrivateLinkUrl(
                 testElectronicDeliveryLink, request

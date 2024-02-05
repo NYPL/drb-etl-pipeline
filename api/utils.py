@@ -160,7 +160,8 @@ class APIUtils():
                     showAll,
                     dbClient,
                     formats=formats,
-                    reader=reader
+                    reader=reader,
+                    request=request
                 )
 
                 cls.addWorkMeta(outWork, highlights=highlights)
@@ -171,30 +172,28 @@ class APIUtils():
         #Formatted work with a specific format given
         elif formats != None and identifiers == None:
             formattedWork = cls.formatWork(
-                works, None, showAll, dbClient, formats=formats, reader=reader
+                works, None, showAll, dbClient, formats=formats, reader=reader, request=request
             )
 
             formattedWork['editions'].sort(
                 key=lambda x: x['publication_date']
                 if x['publication_date'] else 9999
             )
-
             return formattedWork
         #Formatted work with no format specified
         else:
             formattedWork = cls.formatWork(
-                works, None, showAll, dbClient, reader=reader
+                works, None, showAll, dbClient, reader=reader, request=request
             )
 
             formattedWork['editions'].sort(
                 key=lambda x: x['publication_date']
                 if x['publication_date'] else 9999
             )
-
             return formattedWork
 
     @classmethod
-    def formatWork(cls, work, editionIds, showAll, dbClient=None, formats=None, reader=None):
+    def formatWork(cls, work, editionIds, showAll, dbClient=None, formats=None, reader=None, request=None):
         workDict = dict(work)
         workDict['edition_count'] = len(work.editions)
         workDict['inCollections'] = cls.checkEditionInCollection(work, None, dbClient=dbClient)
@@ -224,6 +223,11 @@ class APIUtils():
             None, [e for _, e in orderedEds.items()])
         )
 
+        for edition in workDict['editions']:
+            for item in edition['items']:
+                    if item.get("links"):
+                        # Map over item links and patch with pre-signed URL where necessary
+                        item['links']= list(map(APIUtils.replacePrivateLinkUrl, item['links'], repeat(request)))
         return workDict
 
     @classmethod
@@ -247,8 +251,9 @@ class APIUtils():
         if formattedEdition.get("instances"):
             for instance in formattedEdition['instances']:
                 for item in instance['items']:
-                    # Map over item links and patch with pre-signed URL where necessary
-                    item['links']= list(map(APIUtils.replacePrivateLinkUrl, item['links'], repeat(request)))
+                    if item.get("links"):
+                        # Map over item links and patch with pre-signed URL where necessary
+                        item['links']= list(map(APIUtils.replacePrivateLinkUrl, item['links'], repeat(request)))
 
         return formattedEdition
 
