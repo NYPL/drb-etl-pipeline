@@ -67,7 +67,7 @@ class UofMProcess(CoreProcess):
                 urlPDFObject,
                 'UofM',
                 'application/pdf',
-                '{"catalog": false, "download": true, "reader": false, "embed": false}'
+                '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
             ])
             record.has_part.append(linkString)
 
