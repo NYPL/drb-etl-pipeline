@@ -45,7 +45,7 @@ class UofMProcess(CoreProcess):
             UofMRec = UofMMapping(record)
             UofMRec.applyMapping()
             self.addHasPartMapping(record, UofMRec.record)
-            self.storePDFManifest(UofMRec.record)
+            #self.storePDFManifest(UofMRec.record)
             self.addDCDWToUpdateList(UofMRec)
             
         except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
