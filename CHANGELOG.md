@@ -3,7 +3,7 @@
 ## unreleased version -- v0.12.4
 ## Added
 - New script to add nypl_login flag to Links objects
-- Added nypl_login flag to NYPL and University of Michigan mapping and process
+- Added nypl_login flags to NYPL and University of Michigan mapping and process
 - New APIUtils method to generate a presigned url for S3 actions
 - New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
 - Fulfill endpoint returns pre-signed URLs for objects in private buckets when user is logged in
