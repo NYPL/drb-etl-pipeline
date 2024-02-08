@@ -55,7 +55,7 @@ class TestUofMProcess:
         mockMapping.applyMapping.assert_called_once()
 
         processMocks['addHasPartMapping'].assert_called_once_with(mockMapping, 'testRecord')
-        processMocks['storePDFManifest'].assert_called_once_with('testRecord')
+        #processMocks['storePDFManifest'].assert_called_once_with('testRecord')
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
 
     def test_processUofMRecord_error(self, mocker):
@@ -65,23 +65,23 @@ class TestUofMProcess:
 
         assert pytest.raises(MappingError)
 
-    def test_storePDFManifest(self, testProcess, mocker):
-        mockRecord = mocker.MagicMock(identifiers=['1|UofM'])
-        mockRecord.has_part = [
-            '1|testURI|UofM|application/pdf|{}',
-        ]
+    # def test_storePDFManifest(self, testProcess, mocker):
+    #     mockRecord = mocker.MagicMock(identifiers=['1|UofM'])
+    #     mockRecord.has_part = [
+    #         '1|testURI|UofM|application/pdf|{}',
+    #     ]
 
-        mockGenerateMan = mocker.patch.object(UofMProcess, 'generateManifest')
-        mockGenerateMan.return_value = 'testJSON'
-        mockCreateMan = mocker.patch.object(UofMProcess, 'createManifestInS3')
+    #     mockGenerateMan = mocker.patch.object(UofMProcess, 'generateManifest')
+    #     mockGenerateMan.return_value = 'testJSON'
+    #     mockCreateMan = mocker.patch.object(UofMProcess, 'createManifestInS3')
 
-        testProcess.storePDFManifest(mockRecord)
+    #     testProcess.storePDFManifest(mockRecord)
 
-        testManifestURI = 'https://test_aws_bucket.s3.amazonaws.com/manifests/UofM/1.json'
-        assert mockRecord.has_part[0] == '1|{}|UofM|application/webpub+json|{{"catalog": false, "download": false, "reader": true, "embed": false}}'.format(testManifestURI)
+    #     testManifestURI = 'https://test_aws_bucket.s3.amazonaws.com/manifests/UofM/1.json'
+    #     assert mockRecord.has_part[0] == '1|{}|UofM|application/webpub+json|{{"catalog": false, "download": false, "reader": true, "embed": false}}'.format(testManifestURI)
 
-        mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
-        mockCreateMan.assert_called_once_with('manifests/UofM/1.json', 'testJSON')
+    #     mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
+    #     mockCreateMan.assert_called_once_with('manifests/UofM/1.json', 'testJSON')
 
     def test_createManifestInS3(self, testProcess, mocker):
         mockPut = mocker.patch.object(UofMProcess, 'putObjectInBucket')

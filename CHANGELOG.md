@@ -1,24 +1,19 @@
 # CHANGELOG
-## unreleased version -- v0.12.4
-## Added
-- New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
-- Fulfill endpoint returns pre-signed URLs for objects in private buckets when user is logged in
-- Change default development port to 5050 due to macOS Monterey and higher occupying port 5000 by default
-# Removed
-- Deleted Tugboat configuration as Tugboat is no longer used and no longer builds
 
 ## unreleased version -- v0.12.4
 ## Added
 - New script to add nypl_login flag to Links objects
-- Added nypl_login flag to nypl mapping
+- Added nypl_login flags to NYPL and University of Michigan mapping and process
 - New APIUtils method to generate a presigned url for S3 actions
 - New /fulfill endpoint with ability to check for NYPL login in Bearer authorization header
 - Fulfill endpoint returns pre-signed URLs for objects in private buckets when user is logged in
+- Change default development port to 5050 due to macOS Monterey and higher occupying port 5000 by default
 - Added new University of Michigan process and mapping for ingestion
 - New directory for test JSON files that will be ingested
 ## Fixed
 - NYPL records not being added due to SQLAlchemy error
 - Bardo CCE API and Hathi DataFiles URL updated
+- Deleted Tugboat configuration as Tugboat is no longer used and no longer builds
 
 ## 2023-09-05 version -- v0.12.3
 ## Removed
