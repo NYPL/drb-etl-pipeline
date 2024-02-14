@@ -13,3 +13,4 @@ from .ingestS3Metadata import main as ingestS3
 from .updatePubLocationAndLinks import main as updateLocationAndLinks
 from .countCABooks import main as countCA
 from .nyplLoginFlags import main as nyplFlags
+from .deleteUMPManifestLinks import main as deleteUMPManifests
