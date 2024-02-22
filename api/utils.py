@@ -366,7 +366,7 @@ class APIUtils():
             editionDict['items'].append(itemDict)
 
         editionDict['items']\
-            .sort(key=lambda x: cls.SOURCE_PRIORITY[x['source']])
+            .sort(key=lambda x: (cls.SOURCE_PRIORITY[x['source']], cls.sortByMediaType(x['links'][0])))
 
         if records is not None:
             itemsByLink = {}
@@ -391,12 +391,12 @@ class APIUtils():
     def sortByMediaType(link):
         scores = {
             'application/webpub+json': 1,
-            'text/html': 2,
-            'application/pdf': 3,
-            'application/html+edd': 4,
-            'application/x.html+edd': 4,
-            'application/epub+xml': 5,
-            'application/epub+zip': 5,
+            'application/pdf': 2,
+            'application/epub+xml': 3,
+            'application/epub+zip': 3,
+            'text/html': 4,
+            'application/html+edd': 5,
+            'application/x.html+edd': 5,
             'application/html+catalog': 6
         }
 

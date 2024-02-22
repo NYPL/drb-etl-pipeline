@@ -89,4 +89,4 @@ class TestSearchBlueprint:
             headers={'Authorization': 'Bearer Whatever'}
         )
         assert response.status_code == 302
-        assert response.location == "example.com/example.pdf"
+        assert response.location == "http://localhost/fulfill/example.com/example.pdf"

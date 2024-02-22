@@ -101,6 +101,15 @@ class TestAPIUtils:
             url='testURI',
             flags={'test': True}
         )
+    
+    @pytest.fixture
+    def testPDFLink(self, MockDBObject):
+        return MockDBObject(
+            id='li2',
+            media_type='application/pdf',
+            url='testURI',
+            flags={'test': True}
+        )
 
     @pytest.fixture
     def testRights(self, MockDBObject):
@@ -126,6 +135,16 @@ class TestAPIUtils:
         return MockDBObject(
             id='it2',
             links=[testWebpubLink],
+            rights=[],
+            physical_location={},
+            source='gutenberg'
+        )
+    
+    @pytest.fixture
+    def testPDFItem(self, MockDBObject, testPDFLink):
+        return MockDBObject(
+            id='it3',
+            links=[testPDFLink],
             rights=[],
             physical_location={},
             source='gutenberg'
@@ -491,16 +510,19 @@ class TestAPIUtils:
         assert formattedEdition['items'][1]['links'][0]['mediaType'] ==\
             'application/epub+xml'
 
-    def test_formatEdition_v2_reader_flag(self, testEdition, testWebpubItem):
+    def test_formatEdition_v2_reader_flag(self, testEdition, testWebpubItem, testPDFItem):
+        testEdition.items.append(testPDFItem)
         testEdition.items.append(testWebpubItem)
 
         formattedEdition = APIUtils.formatEdition(testEdition, reader='v2')
 
-        assert len(formattedEdition['items']) == 2
+        assert len(formattedEdition['items']) == 3
         assert formattedEdition['items'][0]['item_id'] == 'it2'
         assert formattedEdition['items'][0]['links'][0]['mediaType'] ==\
             'application/webpub+json'
-        assert formattedEdition['items'][1]['links'][0]['flags']['reader'] is\
+        assert formattedEdition['items'][1]['links'][0]['mediaType'] ==\
+            'application/pdf'
+        assert formattedEdition['items'][2]['links'][0]['flags']['reader'] is\
             False
 
     def test_formatRecord(self, testRecord, mocker):
@@ -646,21 +668,21 @@ class TestAPIUtils:
 
     def test_sortByMediaType(self):
         testList = [
-            {'id': 2, 'mediaType': 'text/html'},
-            {'id': 1, 'mediaType': 'application/epub+xml'},
-            {'id': 4, 'mediaType': 'application/html+edd'},
-            {'id': 1, 'mediaType': 'application/epub+zip'},
-            {'id': 5, 'mediaType': 'application/webpub+json'},
-            {'id': 3, 'mediaType': 'application/pdf'}
+            {'id': 4, 'mediaType': 'text/html'},
+            {'id': 3, 'mediaType': 'application/epub+xml'},
+            {'id': 5, 'mediaType': 'application/html+edd'},
+            {'id': 3, 'mediaType': 'application/epub+zip'},
+            {'id': 1, 'mediaType': 'application/webpub+json'},
+            {'id': 2, 'mediaType': 'application/pdf'}
         ]
 
         shuffle(testList)
         testList.sort(key=APIUtils.sortByMediaType)
-        assert [i['id'] for i in testList] == [5, 2, 3, 4, 1, 1]
+        assert [i['id'] for i in testList] == [1, 2, 3, 3, 4, 5]
 
         shuffle(testList)
         testList.sort(key=APIUtils.sortByMediaType)
-        assert [i['id'] for i in testList] == [5, 2, 3, 4, 1, 1]
+        assert [i['id'] for i in testList] == [1, 2, 3, 3, 4, 5]
 
     def test_getPresignedUrlFromObjectUrl(self, mocker):
         mockGenerateUrl = mocker.patch.object(APIUtils, 'generate_presigned_url')

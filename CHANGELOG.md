@@ -15,6 +15,7 @@
 - NYPL records not being added due to SQLAlchemy error
 - Bardo CCE API and Hathi DataFiles URL updated
 - Deleted Tugboat configuration as Tugboat is no longer used and no longer builds
+- Adjusted sorting for item source priority and media type priority
 
 ## 2023-09-05 version -- v0.12.3
 ## Removed
