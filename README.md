@@ -113,7 +113,7 @@ Any file that contains sensitive details should not be committed to git. These v
 
 ## Deployment
 
-This application is deployed via Github Actions to an ECS cluster. Opening a PR will give a temporary testing/QA environment (the IP address for the environment is added as a comment to the PR), which is torn down on merge. Once merged into QA changes are deployed to [the DRB QA Instance](http://drb-api-qa.nypl.org)
+This application is deployed via Github Actions to an ECS cluster. Once merged into QA changes are deployed to [the DRB QA Instance](http://drb-api-qa.nypl.org)
 
 Production deployments are to be made when releases are cut against `main`.
 
