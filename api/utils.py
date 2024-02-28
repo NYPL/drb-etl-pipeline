@@ -366,7 +366,7 @@ class APIUtils():
             editionDict['items'].append(itemDict)
 
         editionDict['items']\
-            .sort(key=lambda x: (cls.SOURCE_PRIORITY[x['source']], cls.sortByMediaType(x['links'][0])))
+            .sort(key=lambda x: (cls.SOURCE_PRIORITY[x['source']]))
 
         if records is not None:
             itemsByLink = {}
