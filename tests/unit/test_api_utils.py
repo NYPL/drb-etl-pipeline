@@ -510,21 +510,6 @@ class TestAPIUtils:
         assert formattedEdition['items'][1]['links'][0]['mediaType'] ==\
             'application/epub+xml'
 
-    def test_formatEdition_v2_reader_flag(self, testEdition, testWebpubItem, testPDFItem):
-        testEdition.items.append(testPDFItem)
-        testEdition.items.append(testWebpubItem)
-
-        formattedEdition = APIUtils.formatEdition(testEdition, reader='v2')
-
-        assert len(formattedEdition['items']) == 3
-        assert formattedEdition['items'][0]['item_id'] == 'it2'
-        assert formattedEdition['items'][0]['links'][0]['mediaType'] ==\
-            'application/webpub+json'
-        assert formattedEdition['items'][1]['links'][0]['mediaType'] ==\
-            'application/pdf'
-        assert formattedEdition['items'][2]['links'][0]['flags']['reader'] is\
-            False
-
     def test_formatRecord(self, testRecord, mocker):
         testLinkItems = {
             'url1': {'item_id': 1, 'url': 'url1'},

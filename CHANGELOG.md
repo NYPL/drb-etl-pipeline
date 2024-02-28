@@ -16,7 +16,7 @@
 - Bardo CCE API and Hathi DataFiles URL updated
 - Deleted Tugboat configuration as Tugboat is no longer used and no longer builds
 - Adjusted sorting for item source and media type priority
-- Removed item media type priority to fix 500 error with search endpoint for filtering by format
+- Removed item media type sorting to fix 500 error with search endpoint for filtering by format
 
 ## 2023-09-05 version -- v0.12.3
 ## Removed
