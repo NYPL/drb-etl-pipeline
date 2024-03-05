@@ -365,9 +365,22 @@ class APIUtils():
 
             editionDict['items'].append(itemDict)
 
-        editionDict['items']\
-            .sort(key=lambda x: (cls.SOURCE_PRIORITY[x['source']], cls.sortByMediaType(x['links'][0])))
+        emptyListFlag = False
+        
+        #This for loop is meant to check if a empty links array exists in a item dictionary
+            #If one exists, then sorting by source priority and empty/non-empty priority occurs
+            #Otherwise, sorting by source and link media type occurs
+        for itemDict in editionDict['items']:
+            if itemDict['links'] == []:
+                editionDict['items']\
+                    .sort(key=lambda x: (cls.SOURCE_PRIORITY[x['source']], x['links'] == []))
+                emptyListFlag = True
+                break
 
+        if emptyListFlag == False:
+            editionDict['items']\
+                .sort(key=lambda x: (cls.SOURCE_PRIORITY[x['source']], cls.sortByMediaType(x['links'][0])))
+            
         if records is not None:
             itemsByLink = {}
             for item in editionDict['items']:
@@ -400,8 +413,8 @@ class APIUtils():
             'application/html+catalog': 6
         }
 
-        return scores.get(link['mediaType'], 7)
-
+        return scores.get(link['mediaType'], 7)   
+     
     @classmethod
     def formatRecord(cls, record, itemsByLink):
         outRecord = {

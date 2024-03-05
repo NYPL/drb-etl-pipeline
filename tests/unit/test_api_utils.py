@@ -129,7 +129,7 @@ class TestAPIUtils:
             physical_location={'name': 'test'},
             source='hathitrust'
         )
-
+    
     @pytest.fixture
     def testWebpubItem(self, MockDBObject, testWebpubLink):
         return MockDBObject(
@@ -145,6 +145,16 @@ class TestAPIUtils:
         return MockDBObject(
             id='it3',
             links=[testPDFLink],
+            rights=[],
+            physical_location={},
+            source='gutenberg'
+        )
+    
+    @pytest.fixture
+    def testEmptyItem(self, MockDBObject):
+        return MockDBObject(
+            id='it4',
+            links=[],
             rights=[],
             physical_location={},
             source='gutenberg'
@@ -514,6 +524,7 @@ class TestAPIUtils:
         testEdition.items.append(testPDFItem)
         testEdition.items.append(testWebpubItem)
 
+
         formattedEdition = APIUtils.formatEdition(testEdition, reader='v2')
 
         assert len(formattedEdition['items']) == 3
@@ -524,7 +535,23 @@ class TestAPIUtils:
             'application/pdf'
         assert formattedEdition['items'][2]['links'][0]['flags']['reader'] is\
             False
+        
+    def test_formatEdition_v2_reader_flag_2(self, testEdition, testWebpubItem, testPDFItem, testEmptyItem):
+        testEdition.items.append(testEmptyItem)
+        testEdition.items.append(testWebpubItem)
 
+
+        formattedEdition = APIUtils.formatEdition(testEdition, reader='v2')
+
+        assert len(formattedEdition['items']) == 3
+        assert formattedEdition['items'][0]['item_id'] == 'it2'
+        assert formattedEdition['items'][0]['links'][0]['mediaType'] ==\
+            'application/webpub+json'
+        assert formattedEdition['items'][1]['links'] ==\
+            []
+        assert formattedEdition['items'][2]['links'][0]['flags']['reader'] is\
+            False
+    
     def test_formatRecord(self, testRecord, mocker):
         testLinkItems = {
             'url1': {'item_id': 1, 'url': 'url1'},
