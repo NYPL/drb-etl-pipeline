@@ -1,7 +1,7 @@
 import os
 import boto3
-import json
 import re
+import numpy 
 
 from model import Edition, Item, Link
 from model.postgres.item import ITEM_LINKS
@@ -23,7 +23,7 @@ def main():
     fileIDRegex = r'REST.GET.OBJECT (.+pdf\s)' #File ID includes the file name for the pdf object
     timeStampRegex = r'\[.+\]'
     referrerRegex = r'https://drb-qa.nypl.org/'
-    umpDownloadJSON = []
+    umpDownloadArray = [['title', 'timeStamp', 'identifier']]
 
     batches = load_batch()
     for batch in batches:
@@ -35,9 +35,10 @@ def main():
                 logObject = i.decode('utf8')
                 parseTuple = parseInfo(logObject, requestRegex, referrerRegex, timeStampRegex, fileIDRegex)
                 if parseTuple:
-                    umpDownloadJSON.append(parseTuple)
-    with open("parseDataRequests.json", "w", encoding='utf-8') as write_file:
-        json.dump(umpDownloadJSON, write_file, ensure_ascii = False, indent = 6) 
+                    umpDownloadArray.append(parseTuple)
+    umpDownloadCSV = numpy.array(umpDownloadArray)
+    with open('data3.csv', 'w') as f: 
+        f.write(str(umpDownloadCSV))
 
 def load_batch():
     paginator = s3_client.get_paginator('list_objects_v2')
@@ -81,7 +82,7 @@ def parseInfo(logObject, requestRegex, referrerRegex, timeStampRegex, fileIDRege
         
         dbManager.closeConnection()
 
-        return {'title': titleParse, 'timeStamp': matchTime.group(0), 'identifier': idParse}
+        return [titleParse, matchTime.group(0), idParse]
 
 
 if __name__ == '__main__':
