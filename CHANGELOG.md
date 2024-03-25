@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## unreleased version -- v0.13.1
+## Added
+- New script to parse download requests from S3 log files for UMP books 
+## Fixed
+
 ## 2024-03-21 -- v0.13.0
 ## Added
 - New script to add nypl_login flag to Links objects
@@ -11,7 +16,6 @@
 - Added new University of Michigan process and mapping for ingestion
 - New directory for test JSON files that will be ingested
 - New script to delete UMP Manifest links from links table
-- New script to parse download requests from S3 log files for UMP books 
 ## Fixed
 - NYPL records not being added due to SQLAlchemy error
 - Bardo CCE API and Hathi DataFiles URL updated

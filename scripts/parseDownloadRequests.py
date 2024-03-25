@@ -10,20 +10,19 @@ from managers import DBManager
 s3_client = boto3.client("s3")
 
 bucketName = 'ump-pdf-repository-logs'
+logPrefix = 'logs/946183545209/us-east-1/ump-pdf-repository/2024/03/13/'
+requestRegex = r'REST.GET.OBJECT '
+fileIDRegex = r'REST.GET.OBJECT (.+pdf\s)' #File ID includes the file name for the pdf object
+timeStampRegex = r'\[.+\]'
+referrerRegex = r'https://drb-qa.nypl.org/'
+umpDownloadArray = [['title', 'timeStamp', 'identifier']]
 
 def main():
-    
     
     '''
     The edition title, identifier, and timestamp are parsed out of the 
     S3 server access log files for UMP download requests
     '''
-
-    requestRegex = r'REST.GET.OBJECT '
-    fileIDRegex = r'REST.GET.OBJECT (.+pdf\s)' #File ID includes the file name for the pdf object
-    timeStampRegex = r'\[.+\]'
-    referrerRegex = r'https://drb-qa.nypl.org/'
-    umpDownloadArray = [['title', 'timeStamp', 'identifier']]
 
     batches = load_batch()
     for batch in batches:
@@ -33,7 +32,7 @@ def main():
             logObject = s3_client.get_object(Bucket= bucketName, Key= f'{currKey}')
             for i in logObject['Body'].iter_lines():
                 logObject = i.decode('utf8')
-                parseTuple = parseInfo(logObject, requestRegex, referrerRegex, timeStampRegex, fileIDRegex)
+                parseTuple = parseInfo(logObject)
                 if parseTuple:
                     umpDownloadArray.append(parseTuple)
     umpDownloadCSV = numpy.array(umpDownloadArray)
@@ -42,10 +41,10 @@ def main():
 
 def load_batch():
     paginator = s3_client.get_paginator('list_objects_v2')
-    page_iterator = paginator.paginate(Bucket= bucketName, Prefix= 'logs/946183545209/us-east-1/ump-pdf-repository/2024/03/13/')
+    page_iterator = paginator.paginate(Bucket= bucketName, Prefix=logPrefix)
     return page_iterator
 
-def parseInfo(logObject, requestRegex, referrerRegex, timeStampRegex, fileIDRegex):
+def parseInfo(logObject):
     matchRequest = re.search(requestRegex, logObject)
     matchReferrer = re.search(referrerRegex, logObject) 
     
