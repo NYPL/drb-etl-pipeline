@@ -58,7 +58,7 @@ def update_batch(metadataObject, bucketName, currKey):
     fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False, indent = 6)
 
     try:
-        return s3_client.put_object(Bucket=bucketName, Key='manifests/UofM/0472030132.json', \
+        return s3_client.put_object(Bucket=bucketName, Key=currKey, \
                             Body=fulfillManifest, ACL= 'public-read', \
                             ContentType = 'application/json'
             )

@@ -3,7 +3,7 @@
 ## unreleased version -- v0.13.1
 ## Added
 - New script to parse download requests from S3 log files for UMP books 
-- New script to update all UofM manifests with fulfill endpoints
+- New script to update current UofM manifests with fulfill endpoints
 ## Fixed
 
 ## 2024-03-21 -- v0.13.0
