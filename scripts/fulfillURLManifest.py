@@ -4,23 +4,11 @@ import os
 import logging
 from botocore.exceptions import ClientError
 from model import Link
-from managers import DBManager, s3
+from managers import DBManager
 
 s3_client = boto3.client("s3")
 
 bucketName = 'drb-files-qa'
-
-# class fulfillURLManifest():
-
-#     def __init__(self):
-
-#         # Connect to database
-#         self.generateEngine()
-#         self.createSession()
-
-#         # S3 Configuration
-#         self.s3Bucket = bucketName
-#         self.createS3Client()
 
 def main():
 
@@ -32,6 +20,7 @@ def main():
             currKey = c['Key']
             metadataObject = s3_client.get_object(Bucket= bucketName, Key= f'{currKey}')
             update_batch(metadataObject, bucketName, currKey)
+    update_batch(metadataObject, bucketName, currKey)
     
 
 def update_batch(metadataObject, bucketName, currKey):
@@ -54,8 +43,9 @@ def update_batch(metadataObject, bucketName, currKey):
     metadataJSON = readingOrderFulfill(metadataJSON, dbManager)
     metadataJSON = resourceFulfill(metadataJSON, dbManager)
     metadataJSON = tocFulfill(metadataJSON, dbManager)
+    print(metadataJSON)
 
-    fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False, indent = 6)
+    fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False)
 
     try:
         return s3_client.put_object(Bucket=bucketName, Key=currKey, \
@@ -67,30 +57,20 @@ def update_batch(metadataObject, bucketName, currKey):
 
 def linkFulfill(metadataJSON, dbManager):
     for i in metadataJSON['links']:
-        if i['type'] == 'application/pdf' or i['type'] == 'application/epub+zip' \
-            or i['type'] == 'application/epub+xml':
-                for link in dbManager.session.query(Link) \
-                    .filter(Link.url == i['href'].replace('https://', '')):
-                        i['href'] = f'http://127.0.0.1:5050/fulfill/{link.id}'
-                        return metadataJSON
-                
+        i['href'] = fulfillReplace(i, dbManager)
+    return metadataJSON
+        
 def readingOrderFulfill(metadataJSON, dbManager):
     for i in metadataJSON['readingOrder']:
-        if i['type'] == 'application/pdf' or i['type'] == 'application/epub+zip' \
-            or i['type'] == 'application/epub+xml':
-                for link in dbManager.session.query(Link) \
-                    .filter(Link.url == i['href'].replace('https://', '')):
-                        i['href'] = f'http://127.0.0.1:5050/fulfill/{link.id}'
-                        return metadataJSON
+        i['href'] = fulfillReplace(i, dbManager)
+
+    return metadataJSON
 
 def resourceFulfill(metadataJSON, dbManager):
     for i in metadataJSON['resources']:
-        if i['type'] == 'application/pdf' or i['type'] == 'application/epub+zip' \
-            or i['type'] == 'application/epub+xml':
-                for link in dbManager.session.query(Link) \
-                    .filter(Link.url == i['href'].replace('https://', '')):
-                        i['href'] = f'http://127.0.0.1:5050/fulfill/{link.id}'
-                        return metadataJSON
+        i['href'] = fulfillReplace(i, dbManager)
+
+    return metadataJSON
 
 def tocFulfill(metadataJSON, dbManager): 
     for i in metadataJSON['toc']:
@@ -99,7 +79,15 @@ def tocFulfill(metadataJSON, dbManager):
                 for link in dbManager.session.query(Link) \
                     .filter(Link.url == i['href'].replace('https://', '')):
                         i['href'] = f'http://127.0.0.1:5050/fulfill/{link.id}'
-                        return metadataJSON
+    return metadataJSON
+
+def fulfillReplace(metadata, dbManager):
+    if metadata['type'] == 'application/pdf' or metadata['type'] == 'application/epub+zip' \
+        or metadata['type'] == 'application/epub+xml':
+            for link in dbManager.session.query(Link) \
+                .filter(Link.url == metadata['href'].replace('https://', '')):
+                    metadata['href'] = f'http://127.0.0.1:5050/fulfill/{link.id}'
+    return metadata['href']
 
 def load_batch():
 
@@ -108,3 +96,6 @@ def load_batch():
     paginator = s3_client.get_paginator('list_objects_v2')
     page_iterator = paginator.paginate(Bucket= bucketName, Prefix= 'manifests/UofM/')
     return page_iterator
+
+if __name__ == '__main__':
+    main()
