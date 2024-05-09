@@ -2,6 +2,9 @@ import boto3
 import json
 import os
 import logging
+
+
+import copy 
 from botocore.exceptions import ClientError
 from model import Link
 from managers import DBManager
@@ -20,8 +23,6 @@ def main():
             currKey = c['Key']
             metadataObject = s3_client.get_object(Bucket= bucketName, Key= f'{currKey}')
             update_batch(metadataObject, bucketName, currKey)
-    update_batch(metadataObject, bucketName, currKey)
-    
 
 def update_batch(metadataObject, bucketName, currKey):
 
@@ -38,26 +39,27 @@ def update_batch(metadataObject, bucketName, currKey):
     dbManager.createSession()
 
     metadataJSON = json.loads(metadataObject['Body'].read().decode("utf-8"))
+    metadataJSONCopy = copy.deepcopy(metadataJSON)
     
     metadataJSON = linkFulfill(metadataJSON, dbManager)
     metadataJSON = readingOrderFulfill(metadataJSON, dbManager)
     metadataJSON = resourceFulfill(metadataJSON, dbManager)
     metadataJSON = tocFulfill(metadataJSON, dbManager)
-    print(metadataJSON)
 
-    fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False)
-
-    try:
-        return s3_client.put_object(Bucket=bucketName, Key=currKey, \
-                            Body=fulfillManifest, ACL= 'public-read', \
-                            ContentType = 'application/json'
-            )
-    except ClientError as e:
-        logging.error(e)
+    if metadataJSON != metadataJSONCopy:
+        try:
+            fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False)
+            return s3_client.put_object(Bucket=bucketName, Key=currKey, \
+                                Body=fulfillManifest, ACL= 'public-read', \
+                                ContentType = 'application/json'
+                )
+        except ClientError as e:
+            logging.error(e)
 
 def linkFulfill(metadataJSON, dbManager):
     for i in metadataJSON['links']:
         i['href'] = fulfillReplace(i, dbManager)
+
     return metadataJSON
         
 def readingOrderFulfill(metadataJSON, dbManager):
