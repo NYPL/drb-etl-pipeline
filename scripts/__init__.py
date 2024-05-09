@@ -15,3 +15,4 @@ from .countCABooks import main as countCA
 from .nyplLoginFlags import main as nyplFlags
 from .deleteUMPManifestLinks import main as deleteUMPManifests
 from .parseDownloadRequests import main as parseDownloads
+from .fulfillURLManifest import main as fulfillManifest
