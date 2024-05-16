@@ -87,6 +87,8 @@ class FulfillProcess(CoreProcess):
                 )
             except ClientError as e:
                 logging.error(e)
+        
+        dbManager.closeConnection()
 
     def linkFulfill(self, metadataJSON, dbManager):
         for i in metadataJSON['links']:

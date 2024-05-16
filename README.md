@@ -78,7 +78,7 @@ The docker compose file uses the sample-compose.yaml file in the `config` direct
 
 To run the processes individually the command should be in this format: `python main.py --process APIProcess`.
 
-The currently available processes are:
+The currently available processes (with the exception of the UofSC and ChicagoISAC processes) are:
 
 - `DevelopmentSetupProcess` Initialize a testing/development database
 - `APIProcess` run the DRB API
@@ -90,8 +90,19 @@ The currently available processes are:
 - `NYPLProcess` Fetch files from the NYPL catalog (specifically Bib records) and import them
 - `GutenbergProcess` Fetch updated files from Project Gutenberg and import them
 - `MUSEProcess` Fetch open access books from Project MUSE and import them
-- `DOABProcess` Fetch open access books from the Directory of Open Access Books
+- `METProcess` Fetch open access books from The MET Watson Digital Collections and import them
+- `DOABProcess` Fetch open access books from the Directory of Open Access Books and import them
+- `LOCProcess` Fetch open access and digitized books from the Library of Congress and import them
+- `UofMProcess` Fetch open access books from the Univerity of Michigan and import them
 - `CoverProcess` Fetch covers for edition records
+
+#### Appendix Link Flags (All flags are booleans)
+- `reader` Added to 'application/webpub+json' links to indicate if a book will have a Read Online function on the frontend
+- `embed` Indicates if a book will be using a third party web reader like Hathitrust's web reader on the frontend
+- `download` Added to pdf/epub links to indicate if a book is downloadable on the frontend
+- `catalog` Indicates if a book is a part of a catalog which may not be readable online, but can be accessed with other means like requesting online 
+- `nypl_login` Indicates if a book is a requestable book on the frontend for NYPL patrons
+- `fulfill_limited_access` Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
 
 #### Building and running a process in Docker
 
