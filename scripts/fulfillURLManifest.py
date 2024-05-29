@@ -2,7 +2,7 @@ import boto3
 import json
 import os
 import logging
-
+import os 
 
 import copy 
 from botocore.exceptions import ClientError
@@ -13,11 +13,14 @@ s3_client = boto3.client("s3")
 
 bucketName = 'drb-files-qa'
 
+host = os.environ['DRB_API_HOST']
+port = os.environ['DRB_API_PORT']
+
 def main():
 
     '''Replacing pdf/epub links in with fulfill urls in manifest JSON files'''
 
-    batches = load_batch()
+    batches = load_batches()
     for batch in batches:
         for c in batch['Contents']:
             currKey = c['Key']
@@ -80,7 +83,7 @@ def tocFulfill(metadataJSON, dbManager):
             or 'epub' in i['href']:
                 for link in dbManager.session.query(Link) \
                     .filter(Link.url == i['href'].replace('https://', '')):
-                        i['href'] = f'http://127.0.0.1:5050/fulfill/{link.id}'
+                        i['href'] = f'http://{host}:{port}/fulfill/{link.id}'
     return metadataJSON
 
 def fulfillReplace(metadata, dbManager):
@@ -88,10 +91,10 @@ def fulfillReplace(metadata, dbManager):
         or metadata['type'] == 'application/epub+xml':
             for link in dbManager.session.query(Link) \
                 .filter(Link.url == metadata['href'].replace('https://', '')):
-                    metadata['href'] = f'http://127.0.0.1:5050/fulfill/{link.id}'
+                    metadata['href'] = f'http://{host}:{port}/fulfill/{link.id}'
     return metadata['href']
 
-def load_batch():
+def load_batches():
 
     '''# Loading batches of JSON records using a paginator until there are no more batches'''
 
