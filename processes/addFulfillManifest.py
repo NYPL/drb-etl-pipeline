@@ -27,7 +27,7 @@ class FulfillProcess(CoreProcess):
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.host = os.environ['DRB_API_HOST']
         self.port = os.environ['DRB_API_PORT']
-        self.objKey = 'manifests/UofM/'
+        self.prefix = 'manifests/UofM/'
         self.createS3Client()
 
     def runProcess(self):
@@ -43,9 +43,9 @@ class FulfillProcess(CoreProcess):
 
     def getManifests(self, startTimeStamp=None):
 
-        '''Load batch of LA works from past 24 hours'''
+        '''Load batch of LA works based on startTimeStamp'''
 
-        batches = self.load_batches(self.objKey, self.s3Bucket)
+        batches = self.load_batches(self.prefix, self.s3Bucket)
         filtered_batches = batches.search(f"Contents[?to_string(LastModified) > '\"{startTimeStamp}\"'].Key")
         for batch in filtered_batches:
             currKey = batch['Key']
@@ -57,10 +57,10 @@ class FulfillProcess(CoreProcess):
         metadataJSON = json.loads(metadataObject['Body'].read().decode("utf-8"))
         metadataJSONCopy = copy.deepcopy(metadataJSON)
         
-        metadataJSON = self.linkFulfill(self, metadataJSON)
-        metadataJSON = self.readingOrderFulfill(self, metadataJSON)
-        metadataJSON = self.resourceFulfill(self, metadataJSON)
-        metadataJSON = self.tocFulfill(self, metadataJSON)
+        metadataJSON = self.linkFulfill(metadataJSON)
+        metadataJSON = self.readingOrderFulfill(metadataJSON)
+        metadataJSON = self.resourceFulfill(metadataJSON)
+        metadataJSON = self.tocFulfill(metadataJSON)
 
         if metadataJSON != metadataJSONCopy:
             try:
@@ -103,17 +103,16 @@ class FulfillProcess(CoreProcess):
                 or 'epub' in toc['href']:
                     for link in self.session.query(Link) \
                         .filter(Link.url == toc['href'].replace('https://', '')):
-                            toc['href'] = f'http://{self.host}:{os.environ[self.port]}/fulfill/{link.id}'
+                            toc['href'] = f'{self.host}:{self.port}/fulfill/{link.id}'
                             link.flags['fulfill_limited_access'] = True
         return metadataJSON
 
-    @staticmethod
     def fulfillReplace(self, metadata):
         if metadata['type'] == 'application/pdf' or metadata['type'] == 'application/epub+zip' \
             or metadata['type'] == 'application/epub+xml':
                 for link in self.session.query(Link) \
                     .filter(Link.url == metadata['href'].replace('https://', '')):
-                        metadata['href'] = f'http://{self.host}:{os.environ[self.port]}/fulfill/{link.id}'
+                        metadata['href'] = f'{self.host}:{self.port}/fulfill/{link.id}'
                         link.flags['fulfill_limited_access'] = True
         return metadata['href']
 
