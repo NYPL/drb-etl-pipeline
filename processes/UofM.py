@@ -30,7 +30,7 @@ class UofMProcess(CoreProcess):
         self.createS3Client()
 
     def runProcess(self):
-        with open('ingestJSONFiles/UofM_CSV.json') as f:
+        with open('ingestJSONFiles/UofM_One_PD.json') as f:
                 UofMData = json.load(f)
 
         for i in range(0, len(UofMData['data'])):
@@ -45,7 +45,7 @@ class UofMProcess(CoreProcess):
             UofMRec = UofMMapping(record)
             UofMRec.applyMapping()
             self.addHasPartMapping(record, UofMRec.record)
-            #self.storePDFManifest(UofMRec.record)
+            self.storePDFManifest(UofMRec.record)
             self.addDCDWToUpdateList(UofMRec)
             
         except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
@@ -67,7 +67,7 @@ class UofMProcess(CoreProcess):
                 urlPDFObject,
                 'UofM',
                 'application/pdf',
-                '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
+                '{"catalog": false, "download": true, "reader": false, "embed": false}'
             ])
             record.has_part.append(linkString)
 

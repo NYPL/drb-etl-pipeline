@@ -1,5 +1,4 @@
 from .json import JSONMapping
-import logging
 
 class UofMMapping(JSONMapping):
     def __init__(self, source):
