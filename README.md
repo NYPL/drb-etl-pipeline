@@ -48,8 +48,8 @@ The steps to install the application are:
 2. Set up virtual environment
 3. Clone this repository
 4. Run `pip install -r requirements.txt` from the root directory.  If you run into the error ```pip: command not found``` while installing the dependencies, you may need to alias python3 and pip3 to python and pip, respectively. 
-1. Configure environment variables per instructions below
-2. Run `DevelopmentSetupProcess` per instructions below
+5. Configure environment variables per instructions below
+6. Run `DevelopmentSetupProcess` per instructions below
 
 #### Running services on host machine
 
