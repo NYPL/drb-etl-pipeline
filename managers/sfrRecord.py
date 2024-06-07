@@ -476,7 +476,6 @@ class SFRRecordManager:
                 publicationDate = datetime(year=int(pubYearGroup.group(1)), month=1, day=1)
 
         if publicationDate\
-                # Publication dates are not timezone aware. 
                 and publicationDate <= datetime.now(timezone.utc).replace(tzinfo=None)\
                 and publicationDate.year >= 1488:
             return publicationDate
