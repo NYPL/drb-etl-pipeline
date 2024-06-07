@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timzeone
 import json
 import os
 import requests
@@ -54,7 +54,7 @@ class METProcess(CoreProcess):
     def setStartTime(self):
         if not self.fullImport:
             if not self.ingestPeriod:
-                self.startTimestamp = datetime.utcnow() - timedelta(days=1)
+                self.startTimestamp = datetime.now(timezone.utc) - timedelta(days=1)
             else:
                 self.startTimestamp = datetime.strptime(
                     self.ingestPeriod, '%Y-%m-%dT%H:%M:%S'

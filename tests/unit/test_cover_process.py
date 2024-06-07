@@ -1,5 +1,5 @@
-import datetime
 import pytest
+from datetime import datetime, timezone
 from sqlalchemy import column
 
 from model import Edition, Link
@@ -101,7 +101,7 @@ class TestCoverProcess:
         processMocks['searchForCover'].side_effect = ['manager1', None, 'manager2']
         processMocks['windowedQuery'].return_value = ['ed1', 'ed2', 'ed3']
 
-        testProcess.runTime = datetime.datetime.utcnow()
+        testProcess.runTime = datetime.now(timezone.utc)
 
         testProcess.fetchEditionCovers('mockQuery')
 

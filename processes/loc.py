@@ -7,7 +7,7 @@ from mappings.core import MappingError
 from mappings.loc import LOCMapping
 from managers import WebpubManifest
 from logger import createLog
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 logger = createLog(__name__)
 
@@ -40,7 +40,7 @@ class LOCProcess(CoreProcess):
 
     def runProcess(self):
         if self.process == 'weekly':
-            startTimeStamp = datetime.utcnow() - timedelta(days=7)
+            startTimeStamp = datetime.now(timezone.utc) - timedelta(days=7)
             self.importLOCRecords(startTimeStamp)
         elif self.process == 'complete':
             self.importLOCRecords()

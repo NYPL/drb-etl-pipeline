@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from math import ceil
 import re
 from sqlalchemy.exc import DataError
@@ -48,7 +48,7 @@ class ClusterProcess(CoreProcess):
 
         if full is False:
             if not startDateTime:
-                startDateTime = datetime.utcnow() - timedelta(hours=24)
+                startDateTime = datetime.now(timezone.utc) - timedelta(hours=24)
             elif self.process == 'custom':
                 startDateTime = datetime.strptime(startDateTime, '%Y-%m-%dT%H:%M:%S')
 
