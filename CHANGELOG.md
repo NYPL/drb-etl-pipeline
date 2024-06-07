@@ -4,6 +4,7 @@
 ## Added
 - New script to parse download requests from S3 log files for UMP books 
 - New script to update current UofM manifests with fulfill endpoints to replace pdf/epub urls
+- Deprecated datetime.utcnow() method
 ## Fixed
 
 ## 2024-03-21 -- v0.13.0
