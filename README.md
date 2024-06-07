@@ -40,7 +40,7 @@ Local development requires that the following services be available. They do not
 - Redis
 - XCode Command Line Tools
 
-This is a Python application and requires Python >= 3.6. It is recommended that a virtual environment be set up for the application (again use the virtual environment tool of your choice).  There are several options, but most developers use [virtualenv](https://virtualenv.pypa.io/en/latest/installation.html#).
+This is a Python application and requires Python >= 3.6. It is recommended that a virtual environment be set up for the application (again use the virtual environment tool of your choice).  There are several options, but most developers use [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/installation.html#).
 
 The steps to install the application are:
 
