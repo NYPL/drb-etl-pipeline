@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timzeone
+from datetime import datetime, timedelta, timezone
 import json
 import os
 import requests

@@ -16,7 +16,7 @@ class Core(object):
 
     date_modified = Column(
         DateTime,
-        default=datetime.now(timzeone.utc),
+        default=datetime.now(timezone.utc),
         onupdate=datetime.now(timezone.utc),
         index=True
     )
