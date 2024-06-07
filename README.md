@@ -32,13 +32,15 @@ Locally these services can be run in two modes:
 #### Dependencies and Installation
 
 Local development requires that the following services be available. They do not need to be running locally, but for development purposes this is probably easiest. These should be installed by whatever means is easiest (on macOS this is generally `brew`, or your package manager of choice). These dependencies are:
-- PostgreSQL@10
-- ElasticSearch@7.10>
+- PostgreSQL@10 
+  - Note that v10 is deprecated.
+- ElasticSearch@7.10 
+  - Note you may need to follow the [macOS Homebrew install guide](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/brew.html#brew)
 - RabbitMQ
 - Redis
 - XCode Command Line Tools
 
-This is a Python application and requires Python >= 3.6. It is recommended that a virtual environment be set up for the application (again use the virtual environment tool of your choice).
+This is a Python application and requires Python >= 3.6. It is recommended that a virtual environment be set up for the application (again use the virtual environment tool of your choice).  There are several options, but most developers use [virtualenv](https://virtualenv.pypa.io/en/latest/installation.html#).
 
 The steps to install the application are:
 
@@ -46,6 +48,7 @@ The steps to install the application are:
 2. Set up virtual environment
 3. Clone this repository
 3. Run `pip install -r requirements.txt` from the root directory
+  - If you run into the error ```pip: command not found``` while installing the dependencies, you may need to alias python3 and pip3 to python and pip, respectively. 
 4. Configure environment variables per instructions below
 5. Run `DevelopmentSetupProcess` per instructions below
 
@@ -156,3 +159,4 @@ And you're done!
   - ~~Unit tests for all components~~
   - Functional tests for each process
   - Integration tests for the full cluster
+- Update dependencies
