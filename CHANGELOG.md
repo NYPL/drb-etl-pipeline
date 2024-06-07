@@ -4,6 +4,7 @@
 ## Added
 - New script to parse download requests from S3 log files for UMP books 
 - New script to update current UofM manifests with fulfill endpoints to replace pdf/epub urls
+- Updated README and added more information to installation steps
 ## Fixed
 
 ## 2024-03-21 -- v0.13.0

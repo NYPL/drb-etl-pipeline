@@ -35,7 +35,7 @@ Local development requires that the following services be available. They do not
 - PostgreSQL@10 
   - Note that v10 is deprecated.
 - ElasticSearch@7.10 
-  - Note you may need to follow the [macOS Homebrew install guide](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/brew.html#brew)
+  - Note you may need to follow the [macOS Homebrew install guide](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/brew.html#brew).
 - RabbitMQ
 - Redis
 - XCode Command Line Tools
@@ -47,10 +47,9 @@ The steps to install the application are:
 1. Install dependencies, including Python >= 3.6, if not already installed
 2. Set up virtual environment
 3. Clone this repository
-3. Run `pip install -r requirements.txt` from the root directory
-  - If you run into the error ```pip: command not found``` while installing the dependencies, you may need to alias python3 and pip3 to python and pip, respectively. 
-4. Configure environment variables per instructions below
-5. Run `DevelopmentSetupProcess` per instructions below
+4. Run `pip install -r requirements.txt` from the root directory.  If you run into the error ```pip: command not found``` while installing the dependencies, you may need to alias python3 and pip3 to python and pip, respectively. 
+1. Configure environment variables per instructions below
+2. Run `DevelopmentSetupProcess` per instructions below
 
 #### Running services on host machine
 
