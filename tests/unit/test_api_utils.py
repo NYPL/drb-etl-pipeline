@@ -656,7 +656,7 @@ class TestAPIUtils:
                 }
             }
             assert testResponse[1] == 200
-            mockDatetime.now.replace.assert_called_once
+            mockDatetime.now.assert_called_once
 
     def test_formatPipeDelimitedData_string(self):
         assert APIUtils.formatPipeDelimitedData('test|object', ['one', 'two'])\
