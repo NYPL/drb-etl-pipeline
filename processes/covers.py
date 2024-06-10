@@ -24,7 +24,7 @@ class CoverProcess(CoreProcess):
         self.fileBucket = os.environ['FILE_BUCKET']
 
         self.ingestLimit = None
-        self.runTime = datetime.now(timezone.utc)
+        self.runTime = datetime.now(timezone.utc).replace(tzinfo=None)
 
     def runProcess(self):
         coverQuery = self.generateQuery()
@@ -60,7 +60,7 @@ class CoverProcess(CoreProcess):
 
             if coverManager: self.storeFoundCover(coverManager, edition)
 
-            if (self.runTime + timedelta(hours=12)) < datetime.now(timezone.utc): break
+            if (self.runTime + timedelta(hours=12)) < datetime.now(timezone.utc).replace(tzinfo=None): break
 
     def searchForCover(self, edition):
         identifiers = [i for i in self.getEditionIdentifiers(edition)]

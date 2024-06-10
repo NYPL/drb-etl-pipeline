@@ -48,7 +48,7 @@ class ClusterProcess(CoreProcess):
 
         if full is False:
             if not startDateTime:
-                startDateTime = datetime.now(timezone.utc) - timedelta(hours=24)
+                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
             elif self.process == 'custom':
                 startDateTime = datetime.strptime(startDateTime, '%Y-%m-%dT%H:%M:%S')
 

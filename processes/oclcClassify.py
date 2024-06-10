@@ -56,7 +56,7 @@ class ClassifyProcess(CoreProcess):
 
         if full is False:
             if not startDateTime:
-                startDateTime = datetime.now(timezone.utc) - timedelta(hours=24)
+                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
             baseQuery = baseQuery.filter(Record.date_modified > startDateTime)
 
         windowSize = self.ingestLimit

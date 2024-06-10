@@ -54,7 +54,7 @@ class METProcess(CoreProcess):
     def setStartTime(self):
         if not self.fullImport:
             if not self.ingestPeriod:
-                self.startTimestamp = datetime.now(timezone.utc) - timedelta(days=1)
+                self.startTimestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1)
             else:
                 self.startTimestamp = datetime.strptime(
                     self.ingestPeriod, '%Y-%m-%dT%H:%M:%S'

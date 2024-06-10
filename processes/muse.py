@@ -87,7 +87,7 @@ class MUSEProcess(CoreProcess):
         startDateTime = None
         if full is False:
             if not startTimestamp:
-                startDateTime = datetime.now(timezone.utc) - timedelta(hours=24)
+                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
             else:
                 startDateTime = datetime.strptime(startTimestamp, '%Y-%m-%d')
 

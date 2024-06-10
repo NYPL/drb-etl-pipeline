@@ -103,7 +103,7 @@ class NYPLProcess(CoreProcess):
                 nyplBibQuery += "'{}'".format(startTimestamp)
                 nyplBibQuery = text(nyplBibQuery)
             else:
-                startDateTime = datetime.now(timezone.utc) - timedelta(hours=24)
+                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
                 nyplBibQuery += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
                 nyplBibQuery = text(nyplBibQuery)
 

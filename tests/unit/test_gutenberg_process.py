@@ -85,7 +85,7 @@ class TestGutenbergProcess:
         mockManagerInit.return_value = mockManager
 
         mockDateTime = mocker.patch('processes.gutenberg.datetime')
-        mockDateTime.utcnow.return_value = datetime(1900, 1, 2, 12, 0, 0)
+        mockDateTime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
         
         testInstance.importRDFRecords()
 

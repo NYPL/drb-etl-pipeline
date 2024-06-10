@@ -216,7 +216,7 @@ class TestDOABProcess:
 
     def test_downloadOAIRecords_daily(self, testProcess, mockOAIQuery, mocker):
         mockDatetime = mocker.patch('processes.doab.datetime')
-        mockDatetime.utcnow.return_value = datetime.datetime(1900, 1, 2)
+        mockDatetime.now.return_value.replace.return_value = datetime.datetime(1900, 1, 2)
 
         testRecords = testProcess.downloadOAIRecords(False, None)
 

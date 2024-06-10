@@ -14,7 +14,7 @@ class RedisManager:
         self.redisPort = port or os.environ.get('REDIS_PORT', None)
         self.environment = os.environ.get('ENVIRONMENT', 'test')
 
-        self.presentTime = datetime.now(timezone.utc)
+        self.presentTime = datetime.now(timezone.utc).replace(tzinfo=None)
         self.oneDayAgo = self.presentTime - timedelta(days=1)
 
         self.oclcLimit = int(os.environ.get('OCLC_QUERY_LIMIT', 400000))

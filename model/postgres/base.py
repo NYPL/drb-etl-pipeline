@@ -10,14 +10,14 @@ class Core(object):
     date_updated field for all database tables."""
     date_created = Column(
         DateTime,
-        default=datetime.now(timezone.utc),
+        default=datetime.now(timezone.utc).replace(tzinfo=None),
         index=True
     )
 
     date_modified = Column(
         DateTime,
-        default=datetime.now(timezone.utc),
-        onupdate=datetime.now(timezone.utc),
+        default=datetime.now(timezone.utc).replace(tzinfo=None),
+        onupdate=datetime.now(timezone.utc).replace(tzinfo=None),
         index=True
     )
 

@@ -235,7 +235,7 @@ class TestNYPLProcess:
 
     def test_importBibRecords_not_full_no_timestamp(self, testInstance, mocker):
         mockDatetime = mocker.patch('processes.nypl.datetime')
-        mockDatetime.utcnow.return_value = datetime(1900, 1, 2, 12, 0, 0)
+        mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
@@ -250,13 +250,13 @@ class TestNYPLProcess:
 
         testInstance.importBibRecords()
 
-        mockDatetime.utcnow.assert_called_once
+        mockDatetime.now.assert_called_once
         mockConn.execution_options().execute.assert_called_once()
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_importBibRecords_not_full_custom_timestamp(self, testInstance, mocker):
         mockDatetime = mocker.patch('processes.nypl.datetime')
-        mockDatetime.utcnow.return_value = datetime(1900, 1, 2, 12, 0, 0)
+        mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
         mockParse = mocker.patch.object(NYPLProcess, 'parseNYPLDataRow')
 
@@ -271,7 +271,7 @@ class TestNYPLProcess:
 
         testInstance.importBibRecords(startTimestamp='customTimestamp')
 
-        mockDatetime.utcnow.assert_not_called
+        mockDatetime.now.assert_not_called
         mockConn.execution_options().execute.assert_called_once()
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
@@ -291,7 +291,7 @@ class TestNYPLProcess:
 
         testInstance.importBibRecords(fullOrPartial=True)
 
-        mockDatetime.utcnow.assert_not_called
+        mockDatetime.now.assert_not_called
         mockConn.execution_options().execute.assert_called_once_with(
             'SELECT * FROM bib'
         )
@@ -314,7 +314,7 @@ class TestNYPLProcess:
         testInstance.bibDBConnection.engine.connect.return_value.__enter__.return_value = mockConn
         testInstance.importBibRecords(fullOrPartial=True)
 
-        mockDatetime.utcnow.assert_not_called
+        mockDatetime.now.assert_not_called
         mockConn.execution_options().execute.assert_called_once_with(
             'SELECT * FROM bib OFFSET 1000 LIMIT 1000'
         )

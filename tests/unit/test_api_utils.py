@@ -4,7 +4,7 @@ from random import shuffle
 from flask import Flask, request
 
 from api.utils import APIUtils
-from datetime import datetime
+from datetime import datetime, timezone
 
 class TestAPIUtils:
     @pytest.fixture
@@ -643,7 +643,7 @@ class TestAPIUtils:
     def test_formatResponseObject(self, mocker, testApp):
         with testApp.test_request_context('/'):
             mockDatetime = mocker.patch('api.utils.datetime')
-            mockDatetime.utcnow.return_value = 'presentTimestamp'
+            mockDatetime.now.return_value.replace.return_value = 'presentTimestamp'
 
             testResponse = APIUtils.formatResponseObject(200, 'test', {"test": "test data"})
 
@@ -656,7 +656,7 @@ class TestAPIUtils:
                 }
             }
             assert testResponse[1] == 200
-            mockDatetime.utcnow.assert_called_once
+            mockDatetime.now.replace.assert_called_once
 
     def test_formatPipeDelimitedData_string(self):
         assert APIUtils.formatPipeDelimitedData('test|object', ['one', 'two'])\

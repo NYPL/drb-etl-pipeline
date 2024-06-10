@@ -40,7 +40,7 @@ class LOCProcess(CoreProcess):
 
     def runProcess(self):
         if self.process == 'weekly':
-            startTimeStamp = datetime.now(timezone.utc) - timedelta(days=7)
+            startTimeStamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
             self.importLOCRecords(startTimeStamp)
         elif self.process == 'complete':
             self.importLOCRecords()

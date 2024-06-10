@@ -57,7 +57,7 @@ class GutenbergProcess(CoreProcess):
         orderField = 'PUSHED_AT'
         if not fullImport:
             if not startTimestamp:
-                startTimestamp = datetime.now(timezone.utc) - timedelta(days=1)
+                startTimestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1)
             else:
                 startTimestamp = datetime.strptime(startTimestamp, '%Y-%m-%dT%H:%M:%S')
         else:

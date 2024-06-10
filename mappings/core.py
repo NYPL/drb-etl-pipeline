@@ -18,8 +18,8 @@ class Core(AbstractMapping):
     def initEmptyRecord(self):
         return Record(
             uuid=uuid4(),
-            date_created=datetime.now(timezone.utc),
-            date_modified=datetime.now(timezone.utc),
+            date_created=datetime.now(timezone.utc).replace(tzinfo=None),
+            date_modified=datetime.now(timezone.utc).replace(tzinfo=None),
             frbr_status='to_do',
             cluster_status=False
         )

@@ -517,7 +517,7 @@ class APIUtils():
     def formatResponseObject(status, responseType, datablock, headers = {}):
         response = jsonify({
             'status': status,
-            'timestamp': datetime.now(timezone.utc),
+            'timestamp': datetime.now(timezone.utc).replace(tzinfo=None),
             'responseType': responseType,
             'data': datablock
         })

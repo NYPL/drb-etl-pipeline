@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import column
 
 from model import Edition, Link
@@ -13,7 +13,7 @@ class TestCoverProcess:
             def __init__(self, *args):
                 self.fileBucket = 'test_aws_bucket'
                 self.batchSize = 3
-                self.runTime = datetime.datetime(1900, 1, 1)
+                self.runTime = datetime(1900, 1, 1)
 
         return TestCoverProcess()
 
@@ -67,7 +67,7 @@ class TestCoverProcess:
 
         assert testQuery == 'testQuery'
         assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_(['sub']))
-        testDate = datetime.datetime.strptime('2020-01-01', '%Y-%m-%d')
+        testDate = datetime.strptime('2020-01-01', '%Y-%m-%d')
         assert mockQuery.filter.call_args[0][1].compare(Edition.date_modified >= testDate)
 
     def test_generateQuery_daily(self, testProcess, mocker):
@@ -80,9 +80,9 @@ class TestCoverProcess:
         testProcess.session = mocker.MagicMock()
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
 
-        testQueryDate = testProcess.runTime - datetime.timedelta(hours=24)
+        testQueryDate = testProcess.runTime - timedelta(hours=24)
         mockDatetime = mocker.patch('processes.covers.datetime')
-        mockDatetime.utcnow.return_value = testProcess.runTime
+        mockDatetime.now.return_value.replace.return_value = testProcess.runTime
 
         testProcess.process = 'daily'
         testProcess.ingestPeriod = None
@@ -101,7 +101,7 @@ class TestCoverProcess:
         processMocks['searchForCover'].side_effect = ['manager1', None, 'manager2']
         processMocks['windowedQuery'].return_value = ['ed1', 'ed2', 'ed3']
 
-        testProcess.runTime = datetime.now(timezone.utc)
+        testProcess.runTime = datetime.now(timezone.utc).replace(tzinfo=None)
 
         testProcess.fetchEditionCovers('mockQuery')
 

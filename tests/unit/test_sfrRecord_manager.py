@@ -264,13 +264,13 @@ class TestSFRRecordManager:
     def test_publicationDateCheck2(self):
         testEdition2 = SFRRecordManager.createEmptyEditionRecord()
 
-        testEdition2['publication_date'] = datetime.now(timezone.utc)
+        testEdition2['publication_date'] = datetime.now(timezone.utc).replace(tzinfo=None)
         testPubDateCheck2 = SFRRecordManager.publicationDateCheck(testEdition2)
-        assert testPubDateCheck2.year == datetime.now(timezone.utc).year
+        assert testPubDateCheck2.year == datetime.now(timezone.utc).replace(tzinfo=None).year
 
-        testEdition2['publication_date'] = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        testEdition2['publication_date'] = datetime.now(timezone.utc).replace(tzinfo=None).strftime('%Y-%m-%d')
         testPubDateCheck2 = SFRRecordManager.publicationDateCheck(testEdition2)
-        assert testPubDateCheck2.year == datetime.now(timezone.utc).year
+        assert testPubDateCheck2.year == datetime.now(timezone.utc).replace(tzinfo=None).year
     
     #Test for publication date with earliest year in our date range
     def test_publicationDateCheck3(self):
@@ -301,11 +301,11 @@ class TestSFRRecordManager:
     def test_publicationDateCheck5(self):
         testEdition5 = SFRRecordManager.createEmptyEditionRecord()
 
-        testEdition5['publication_date'] = datetime.now(timezone.utc) + timedelta(1)
+        testEdition5['publication_date'] = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(1)
         testPubDateCheck5 = SFRRecordManager.publicationDateCheck(testEdition5)
         assert testPubDateCheck5 == None
     
-        testEdition5['publication_date'] = (datetime.now(timezone.utc) + timedelta(1)).strftime('%Y-%m-%d')
+        testEdition5['publication_date'] = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(1)).strftime('%Y-%m-%d')
         testPubDateCheck5 = SFRRecordManager.publicationDateCheck(testEdition5)
         assert testPubDateCheck5 == None
 
