@@ -43,11 +43,19 @@ def update_batch(metadataObject, bucketName, currKey):
 
     metadataJSON = json.loads(metadataObject['Body'].read().decode("utf-8"))
     metadataJSONCopy = copy.deepcopy(metadataJSON)
+
+    counter = 0
     
-    metadataJSON = linkFulfill(metadataJSON, dbManager)
-    metadataJSON = readingOrderFulfill(metadataJSON, dbManager)
-    metadataJSON = resourceFulfill(metadataJSON, dbManager)
-    metadataJSON = tocFulfill(metadataJSON, dbManager)
+    metadataJSON, counter = linkFulfill(metadataJSON, counter, dbManager)
+    metadataJSON, counter = readingOrderFulfill(metadataJSON, counter, dbManager)
+    metadataJSON, counter = resourceFulfill(metadataJSON, counter, dbManager)
+    metadataJSON, counter = tocFulfill(metadataJSON, counter, dbManager)
+
+    if counter >= 4: 
+        for link in metadataJSON['links']:
+            fulfillFlagUpdate(link, dbManager)
+
+    dbManager.closeConnection()
 
     if metadataJSON != metadataJSONCopy:
         try:
@@ -59,40 +67,67 @@ def update_batch(metadataObject, bucketName, currKey):
         except ClientError as e:
             logging.error(e)
 
-def linkFulfill(metadataJSON, dbManager):
-    for i in metadataJSON['links']:
-        i['href'] = fulfillReplace(i, dbManager)
+def linkFulfill(metadataJSON, counter, dbManager):
+    for link in metadataJSON['links']:
+        fulfillLink, counter = fulfillReplace(link, counter, dbManager)
+        link['href'] = fulfillLink
 
-    return metadataJSON
+    return (metadataJSON, counter)
         
-def readingOrderFulfill(metadataJSON, dbManager):
-    for i in metadataJSON['readingOrder']:
-        i['href'] = fulfillReplace(i, dbManager)
+def readingOrderFulfill(metadataJSON, counter, dbManager):
+    for readOrder in metadataJSON['readingOrder']:
+        fulfillLink, counter = fulfillReplace(readOrder, counter, dbManager)
+        readOrder['href'] = fulfillLink
 
-    return metadataJSON
+    return (metadataJSON, counter)
 
-def resourceFulfill(metadataJSON, dbManager):
-    for i in metadataJSON['resources']:
-        i['href'] = fulfillReplace(i, dbManager)
+def resourceFulfill(metadataJSON, counter, dbManager):
+    for resource in metadataJSON['resources']:
+        fulfillLink, counter = fulfillReplace(resource, counter, dbManager)
+        resource['href'] = fulfillLink
 
-    return metadataJSON
+    return (metadataJSON, counter)
 
-def tocFulfill(metadataJSON, dbManager): 
-    for i in metadataJSON['toc']:
-        if 'pdf' in i['href'] \
-            or 'epub' in i['href']:
+def tocFulfill(metadataJSON, counter, dbManager): 
+
+    '''
+    The toc dictionary has no "type" key like the previous dictionaries 
+    therefore the 'href' key is evaluated instead
+    '''
+    
+    for toc in metadataJSON['toc']:
+        if 'pdf' in toc['href'] \
+            or 'epub' in toc['href']:
                 for link in dbManager.session.query(Link) \
-                    .filter(Link.url == i['href'].replace('https://', '')):
-                        i['href'] = f'http://{host}:{port}/fulfill/{link.id}'
-    return metadataJSON
+                    .filter(Link.url == toc['href'].replace('https://', '')):
+                        counter += 1
+                        toc['href'] = f'http://{host}:{port}/fulfill/{link.id}'
 
-def fulfillReplace(metadata, dbManager):
+    return (metadataJSON, counter)
+
+def fulfillReplace(metadata, counter, dbManager):
+
     if metadata['type'] == 'application/pdf' or metadata['type'] == 'application/epub+zip' \
         or metadata['type'] == 'application/epub+xml':
             for link in dbManager.session.query(Link) \
-                .filter(Link.url == metadata['href'].replace('https://', '')):
+                .filter(Link.url == metadata['href'].replace('https://', '')):          
+                    counter += 1            
                     metadata['href'] = f'http://{host}:{port}/fulfill/{link.id}'
-    return metadata['href']
+
+    return (metadata['href'], counter)
+
+def fulfillFlagUpdate(metadata, dbManager):
+    if metadata['type'] == 'application/webpub+json':
+        for link in dbManager.session.query(Link) \
+            .filter(Link.url == metadata['href'].replace('https://', '')):   
+                    print(link)
+                    print(link.flags)
+                    if 'fulfill_limited_access' in link.flags.keys():
+                        if link.flags['fulfill_limited_access'] == False:
+                            newLinkFlag = dict(link.flags)
+                            newLinkFlag['fulfill_limited_access'] = True
+                            link.flags = newLinkFlag
+                            dbManager.commitChanges()
 
 def load_batches():
 
