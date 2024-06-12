@@ -26,7 +26,6 @@ class FulfillProcess(CoreProcess):
         # S3 Configuration
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.host = os.environ['DRB_API_HOST']
-        self.port = os.environ['DRB_API_PORT']
         self.prefix = 'manifests/UofM/'
         self.createS3Client()
 
@@ -121,7 +120,7 @@ class FulfillProcess(CoreProcess):
                     for link in self.session.query(Link) \
                         .filter(Link.url == toc['href'].replace('https://', '')):
                             counter += 1
-                            toc['href'] = f'http://{self.host}:{self.port}/fulfill/{link.id}'
+                            toc['href'] = f'https://{self.host}/fulfill/{link.id}'
 
         return (metadataJSON, counter)
 
@@ -131,7 +130,7 @@ class FulfillProcess(CoreProcess):
                 for link in self.session.query(Link) \
                     .filter(Link.url == metadata['href'].replace('https://', '')):
                         counter += 1            
-                        metadata['href'] = f'http://{self.host}:{self.port}/fulfill/{link.id}'
+                        metadata['href'] = f'https://{self.host}/fulfill/{link.id}'
 
         return (metadata['href'], counter)
     
