@@ -4,6 +4,8 @@
 ## Added
 - New script to parse download requests from S3 log files for UMP books 
 - New script to update current UofM manifests with fulfill endpoints to replace pdf/epub urls
+- Updated README with appendix and additions to avaliable processes
+- New process to add fulfill urls to Limited Access manifests and update fulfill_limited_access flags to True
 - Updated README and added more information to installation steps
 ## Fixed
 

@@ -45,7 +45,7 @@ class UofMProcess(CoreProcess):
             UofMRec = UofMMapping(record)
             UofMRec.applyMapping()
             self.addHasPartMapping(record, UofMRec.record)
-            #self.storePDFManifest(UofMRec.record)
+            self.storePDFManifest(UofMRec.record)
             self.addDCDWToUpdateList(UofMRec)
             
         except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
@@ -90,7 +90,7 @@ class UofMProcess(CoreProcess):
                     urlPDFObject,
                     'UofM',
                     'application/pdf',
-                    '{"catalog": false, "download": true, "reader": false, "embed": false}'
+                    '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
                 ])
                 record.has_part.append(linkString)
 
@@ -101,7 +101,6 @@ class UofMProcess(CoreProcess):
                     logger.info(UofMError("Object doesn't exist"))
         
 
-            
     def storePDFManifest(self, record):
         for link in record.has_part:
             itemNo, uri, source, mediaType, flags = link.split('|')
@@ -124,7 +123,7 @@ class UofMProcess(CoreProcess):
                     manifestURI,
                     source,
                     'application/webpub+json',
-                    '{"catalog": false, "download": false, "reader": true, "embed": false}'
+                    '{"catalog": false, "download": false, "reader": true, "embed": false, "fulfill_limited_access": false}'
                 ])
 
                 record.has_part.insert(0, linkString)
