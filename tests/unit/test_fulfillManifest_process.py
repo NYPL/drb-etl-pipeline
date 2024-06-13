@@ -1,7 +1,7 @@
 import pytest
 
 from mappings.core import MappingError
-from processes.addFulfillManifest import FulfillProcess
+from processes.fulfillURLManifest import FulfillProcess
 from tests.helper import TestHelpers
 
 class TestUofMProcess:

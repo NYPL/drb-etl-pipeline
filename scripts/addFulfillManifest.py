@@ -14,7 +14,6 @@ s3_client = boto3.client("s3")
 bucketName = 'drb-files-qa'
 
 host = os.environ['DRB_API_HOST']
-port = os.environ['DRB_API_PORT']
 
 def main():
 
@@ -101,7 +100,7 @@ def tocFulfill(metadataJSON, counter, dbManager):
                 for link in dbManager.session.query(Link) \
                     .filter(Link.url == toc['href'].replace('https://', '')):
                         counter += 1
-                        toc['href'] = f'http://{host}:{port}/fulfill/{link.id}'
+                        toc['href'] = f'https://{host}/fulfill/{link.id}'
 
     return (metadataJSON, counter)
 
@@ -112,7 +111,7 @@ def fulfillReplace(metadata, counter, dbManager):
             for link in dbManager.session.query(Link) \
                 .filter(Link.url == metadata['href'].replace('https://', '')):          
                     counter += 1            
-                    metadata['href'] = f'http://{host}:{port}/fulfill/{link.id}'
+                    metadata['href'] = f'https://{host}/fulfill/{link.id}'
 
     return (metadata['href'], counter)
 

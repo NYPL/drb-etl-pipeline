@@ -18,4 +18,4 @@ from .chicagoISAC import ChicagoISACProcess
 from .UofSC import UofSCProcess
 from .loc import LOCProcess
 from .UofM import UofMProcess
-from .addFulfillManifest import FulfillProcess
+from .fulfillURLManifest import FulfillProcess
