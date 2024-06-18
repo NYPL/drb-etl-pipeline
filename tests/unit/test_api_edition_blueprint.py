@@ -25,8 +25,8 @@ class TestEditionBlueprint:
 
     def test_editionFetch_success_noFormat(self, mockUtils, testApp, mocker):
         mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient')
-        mockDBClient.return_value = mockDB
+        mockDB.__enter__.return_value = mockDB
+        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
 
         mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
 
@@ -56,8 +56,8 @@ class TestEditionBlueprint:
 
     def test_editionFetch_success_format(self, mockUtils, testApp, mocker):
         mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient')
-        mockDBClient.return_value = mockDB
+        mockDB.__enter__.return_value = mockDB
+        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
 
         queryParams = {'showAll': ['true']}
         mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
@@ -98,8 +98,8 @@ class TestEditionBlueprint:
 
     def test_editionFetch_missing(self, mockUtils, testApp, mocker):
         mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient')
-        mockDBClient.return_value = mockDB
+        mockDB.__enter__.return_value = mockDB
+        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
 
         mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
         
@@ -119,4 +119,27 @@ class TestEditionBlueprint:
                 404,
                 'singleEdition',
                 {'message': 'Unable to locate edition with id 1'}
+            )
+    
+    def test_editionFetch_error(self, mockUtils, testApp, mocker):
+        mockDB = mocker.MagicMock()
+        mockDB.__enter__.return_value = mockDB
+        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
+
+        mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
+        
+        mockDB.fetchSingleEdition.side_effect = Exception('Database error')
+
+        mockUtils['formatResponseObject'].return_value = '500response'
+
+        with testApp.test_request_context('/'):
+            testAPIResponse = editionFetch(1)
+
+            assert testAPIResponse == '500response'
+            mockDBClient.assert_called_once_with('testDBClient')
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                500,
+                'singleEdition',
+                {'message': 'Unable to fetch edition with id 1'}
             )
