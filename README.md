@@ -32,22 +32,24 @@ Locally these services can be run in two modes:
 #### Dependencies and Installation
 
 Local development requires that the following services be available. They do not need to be running locally, but for development purposes this is probably easiest. These should be installed by whatever means is easiest (on macOS this is generally `brew`, or your package manager of choice). These dependencies are:
-- PostgreSQL@10
-- ElasticSearch@7.10>
+- PostgreSQL@10 
+  - Note that v10 is deprecated.
+- ElasticSearch@7.10 
+  - Note you may need to follow the [macOS Homebrew install guide](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/brew.html#brew).
 - RabbitMQ
 - Redis
 - XCode Command Line Tools
 
-This is a Python application and requires Python >= 3.6. It is recommended that a virtual environment be set up for the application (again use the virtual environment tool of your choice).
+This is a Python application and requires Python >= 3.6. It is recommended that a virtual environment be set up for the application (again use the virtual environment tool of your choice).  There are several options, but most developers use [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/installation.html#).
 
 The steps to install the application are:
 
 1. Install dependencies, including Python >= 3.6, if not already installed
 2. Set up virtual environment
 3. Clone this repository
-3. Run `pip install -r requirements.txt` from the root directory
-4. Configure environment variables per instructions below
-5. Run `DevelopmentSetupProcess` per instructions below
+4. Run `pip install -r requirements.txt` from the root directory.  If you run into the error ```pip: command not found``` while installing the dependencies, you may need to alias python3 and pip3 to python and pip, respectively. 
+5. Configure environment variables per instructions below
+6. Run `DevelopmentSetupProcess` per instructions below
 
 #### Running services on host machine
 
@@ -78,7 +80,7 @@ The docker compose file uses the sample-compose.yaml file in the `config` direct
 
 To run the processes individually the command should be in this format: `python main.py --process APIProcess`.
 
-The currently available processes are:
+The currently available processes (with the exception of the UofSC and ChicagoISAC processes) are:
 
 - `DevelopmentSetupProcess` Initialize a testing/development database
 - `APIProcess` run the DRB API
@@ -90,8 +92,19 @@ The currently available processes are:
 - `NYPLProcess` Fetch files from the NYPL catalog (specifically Bib records) and import them
 - `GutenbergProcess` Fetch updated files from Project Gutenberg and import them
 - `MUSEProcess` Fetch open access books from Project MUSE and import them
-- `DOABProcess` Fetch open access books from the Directory of Open Access Books
+- `METProcess` Fetch open access books from The MET Watson Digital Collections and import them
+- `DOABProcess` Fetch open access books from the Directory of Open Access Books and import them
+- `LOCProcess` Fetch open access and digitized books from the Library of Congress and import them
+- `UofMProcess` Fetch open access books from the Univerity of Michigan and import them
 - `CoverProcess` Fetch covers for edition records
+
+#### Appendix Link Flags (All flags are booleans)
+- `reader` Added to 'application/webpub+json' links to indicate if a book will have a Read Online function on the frontend
+- `embed` Indicates if a book will be using a third party web reader like Hathitrust's web reader on the frontend
+- `download` Added to pdf/epub links to indicate if a book is downloadable on the frontend
+- `catalog` Indicates if a book is a part of a catalog which may not be readable online, but can be accessed with other means like requesting online 
+- `nypl_login` Indicates if a book is a requestable book on the frontend for NYPL patrons
+- `fulfill_limited_access` Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
 
 #### Building and running a process in Docker
 
@@ -156,3 +169,4 @@ And you're done!
   - ~~Unit tests for all components~~
   - Functional tests for each process
   - Integration tests for the full cluster
+- Update dependencies

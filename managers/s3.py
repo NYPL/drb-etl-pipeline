@@ -94,6 +94,14 @@ class S3Manager:
             )
         except ClientError:
             raise S3Error('Unable to get object from s3')
+        
+    def load_batches(self, objKey, bucket):
+
+        '''# Loading batches of data using a paginator until there are no more batches'''
+
+        paginator = self.s3Client.get_paginator('list_objects_v2')
+        page_iterator = paginator.paginate(Bucket=bucket, Prefix=objKey)
+        return page_iterator
 
     @staticmethod
     def getmd5HashOfObject(obj):
