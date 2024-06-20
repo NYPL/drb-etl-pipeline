@@ -1,6 +1,6 @@
 import csv
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from pymarc import MARCReader
 import requests
@@ -87,7 +87,7 @@ class MUSEProcess(CoreProcess):
         startDateTime = None
         if full is False:
             if not startTimestamp:
-                startDateTime = datetime.utcnow() - timedelta(hours=24)
+                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
             else:
                 startDateTime = datetime.strptime(startTimestamp, '%Y-%m-%d')
 

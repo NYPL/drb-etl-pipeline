@@ -63,7 +63,7 @@ class TestMetProcess:
         testProcess.ingestPeriod = None
 
         mockDatetime = mocker.patch('processes.met.datetime')
-        mockDatetime.utcnow.return_value = datetime(1900, 1, 2, 12, 0, 0)
+        mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
         testProcess.setStartTime()
 

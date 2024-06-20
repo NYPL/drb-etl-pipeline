@@ -7,6 +7,7 @@
 - Updated README with appendix and additions to avaliable processes
 - New process to add fulfill urls to Limited Access manifests and update fulfill_limited_access flags to True
 - Updated README and added more information to installation steps
+- Deprecated datetime.utcnow() method
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
 

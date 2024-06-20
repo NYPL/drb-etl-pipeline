@@ -1,5 +1,5 @@
 from collections import Counter, defaultdict
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 import json
 from Levenshtein import jaro_winkler
 import pycountry
@@ -476,7 +476,7 @@ class SFRRecordManager:
                 publicationDate = datetime(year=int(pubYearGroup.group(1)), month=1, day=1)
 
         if publicationDate\
-                and publicationDate < datetime.utcnow()\
+                and publicationDate <= datetime.now(timezone.utc).replace(tzinfo=None)\
                 and publicationDate.year >= 1488:
             return publicationDate
 

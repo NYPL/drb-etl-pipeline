@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from string import Formatter
 from uuid import uuid4
 
@@ -18,8 +18,8 @@ class Core(AbstractMapping):
     def initEmptyRecord(self):
         return Record(
             uuid=uuid4(),
-            date_created=datetime.utcnow(),
-            date_modified=datetime.utcnow(),
+            date_created=datetime.now(timezone.utc).replace(tzinfo=None),
+            date_modified=datetime.now(timezone.utc).replace(tzinfo=None),
             frbr_status='to_do',
             cluster_status=False
         )

@@ -28,7 +28,7 @@ class TestCoreMapping:
         mockUUID = mocker.patch('mappings.core.uuid4')
         mockUUID.return_value = 'testUUID'
         mockDate = mocker.patch('mappings.core.datetime')
-        mockDate.utcnow.side_effect = ['testCreated', 'testModified']
+        mockDate.now.return_value.replace.side_effect = ['testCreated', 'testModified']
         mockRecord = mocker.patch('mappings.core.Record')
         mockRecord.return_value = 'testRecord'
 
