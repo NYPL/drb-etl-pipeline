@@ -2,8 +2,8 @@ from .json import JSONMapping
 import logging
 
 class UofMMapping(JSONMapping):
-    def __init__(self, source):
-        super().__init__(source, {})
+    def __init__(self, source, statics):
+        super().__init__(source, statics)
         self.mapping = self.createMapping() 
 
     def createMapping(self):
@@ -16,6 +16,7 @@ class UofMMapping(JSONMapping):
                 ('ISBN', '{0}|isbn'),
                 ('OCLC', '{0}|oclc')
             ],
+            'rights': ('Rights status (from Rights status linked record)', '{0}||||'),
             'contributors': [('Contributors', '{0}|||contributor')],
             'subjects': ('Subject 1', '{0}'),
         }
@@ -36,6 +37,9 @@ class UofMMapping(JSONMapping):
                 source_id = self.record.identifiers[0].split('|')[0]
             else:
                 source_id = self.record.identifiers[1].split('|')[0]
+
+        if self.record.rights:
+            self.record.rights - self.formatRecords()
 
             self.record.source_id = f'UofM_{source_id}'
             self.record.identifiers = self.formatIdentifiers()
@@ -75,6 +79,21 @@ class UofMMapping(JSONMapping):
                     return newISBNList
                 
         return self.record.identifiers
+    
+    def formatRecords(self):
+        # Parse rights codes
+        rightsElements = self.record.rights.split('|') if self.record.rights else [''] * 5
+        rightsMetadata = rightsElements[0]
+        print(rightsMetadata)
+        if rightsMetadata in self.staticValues['rightsValues'].keys():
+            licenseMeta = self.staticValues['rightsValues']['rightsMetadata']['license']
+            statementMeta = self.staticValues['rightsValues']['rightsMetadata']['statement']
+            self.record.rights = 'UofM|{}|{}|{}|{}'.format(
+                licenseMeta,
+                self.staticValues['hathitrust']['rightsReasons'],
+                statementMeta,
+                rightsElements[4]
+            ) 
 
 
             
