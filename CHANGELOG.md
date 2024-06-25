@@ -10,6 +10,7 @@
 - Deprecated datetime.utcnow() method
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
+- Added additional logging to the editions endpoint to debug
 
 ## 2024-03-21 -- v0.13.0
 ## Added
