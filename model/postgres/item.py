@@ -24,6 +24,7 @@ class Item(Base, Core):
 
     id = Column(Integer, primary_key=True)
     source = Column(Unicode, nullable=False, index=True)
+    contract_source = Column(ARRAY(Unicode, dimensions=1), index=True)
     content_type = Column(Unicode)
     contributors = Column(JSONB)
     modified = Column(DateTime)
@@ -44,6 +45,6 @@ class Item(Base, Core):
 
     def __dir__(self):
         return [
-            'source', 'content_type', 'contributors', 'modified', 'drm',
+            'source', 'contract_source', 'content_type', 'contributors', 'modified', 'drm',
             'measurements'
         ]
