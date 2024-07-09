@@ -35,7 +35,9 @@ class UofMProcess(CoreProcess):
 
         for i in range(0, len(UofMData['data'])):
             metaDict = UofMData['data'][i]
-            self.processUofMRecord(metaDict)
+            #Only want to ingest records that are ready to be QA tested
+            if 'QA test' in metaDict['Project steps']:
+                self.processUofMRecord(metaDict)
 
         self.saveRecords()
         self.commitChanges()
@@ -104,6 +106,7 @@ class UofMProcess(CoreProcess):
                         '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
                     ])
                     record.has_part.append(linkString)
+
                 if 'public_domain' in record.rights:
                     linkString = '|'.join([
                         '1',

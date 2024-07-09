@@ -7,7 +7,7 @@
 - Updated README with appendix and additions to avaliable processes
 - New process to add fulfill urls to Limited Access manifests and update fulfill_limited_access flags to True
 - Updated README and added more information to installation steps
-- Added Rights status to UofM mapping
+- Added Rights status to UofM mapping and Rights conditionals to UofM process
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
 
