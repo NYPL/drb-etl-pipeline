@@ -42,8 +42,7 @@ class UofMMapping(JSONMapping):
                 self.record.source_id = f'UofM_{source_id}'
                 self.record.identifiers = self.formatIdentifiers()
 
-        if self.record.rights:
-            self.record.rights = self.formatRights()
+        self.record.rights = self.formatRights()
 
     def formatAuthors(self):
         authorList = []
@@ -83,34 +82,25 @@ class UofMMapping(JSONMapping):
             return subjectList
     
     def formatRights(self):
-        # The pipe delimiter is to separate the Rights table attributes into this format:
-        # source|license|reason|statement|date 
-        # which makes it easy to place the right data into the columns when clustered
+        '''
+        The pipe delimiter is to separate the Rights table attributes into this format:
+        source|license|reason|statement|date 
+        which makes it easy to place the right data into the columns when clustered
+        '''
 
-        rightsElements = self.record.rights.split('|') if self.record.rights else [''] * 5
+        if not self.record.rights: 
+            return None
+
+        rightsElements = self.record.rights.split('|')
         rightsStatus = rightsElements[0]
 
         if rightsStatus == 'in copyright':
-            licenseMeta = 'in_copyright'
-            statementMeta = 'In Copyright'
-
-            rightsObject = 'UofM|{}||{}|'.format(
-                licenseMeta,
-                statementMeta
-            ) 
-
-            return rightsObject
+            return 'UofM|{}||{}|'.format('in_copyright', 'In Copyright') 
         
         if rightsStatus == 'public domain':
-            licenseMeta = 'public_domain'
-            statementMeta = 'Public Domain'
-
-            rightsObject = 'UofM|{}||{}|'.format(
-                licenseMeta,
-                statementMeta
-            ) 
-
-            return rightsObject
+            return 'UofM|{}||{}|'.format('public_domain', 'Public Domain') 
+        
+        return None
 
 
 
