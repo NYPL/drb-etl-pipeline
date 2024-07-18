@@ -50,7 +50,7 @@ class Record(Base, Core):
         )
     
     def __dir__(self):
-        return ['uuid', 'frbr_status', 'cluster_status', 'source', 'contract_source', 'source_id',
+        return ['uuid', 'frbr_status', 'cluster_status', 'source', 'publisher_project_source', 'source_id',
             'title', 'alternative', 'medium', 'is_part_of', 'subjects', 'authors',
             'contributors', 'languages', 'dates', 'rights', 'identifiers',
             'date_submitted', 'requires', 'spatial', 'publisher', 'has_version',

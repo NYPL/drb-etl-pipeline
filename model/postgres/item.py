@@ -45,6 +45,6 @@ class Item(Base, Core):
 
     def __dir__(self):
         return [
-            'source', 'contract_source', 'content_type', 'contributors', 'modified', 'drm',
+            'source', 'publisher_project_source', 'content_type', 'contributors', 'modified', 'drm',
             'measurements'
         ]
