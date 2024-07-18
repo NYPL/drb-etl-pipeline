@@ -1,4 +1,4 @@
-"""add contract source to records and items
+"""add publisher_project_source field to records and items
 
 Revision ID: 54e57fb2e1c6
 Revises: e46b30dd3ff5
@@ -17,10 +17,10 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('records', sa.Column('contract_source', sa.ARRAY, index=True))
-    op.add_column('items', sa.Column('contract_source', sa.ARRAY, index=True))
+    op.add_column('records', sa.Column('publisher_project_source', sa.ARRAY(sa.Unicode), index=True))
+    op.add_column('items', sa.Column('publisher_project_source', sa.ARRAY(sa.Unicode), index=True))
 
 
 def downgrade():
-    op.drop_column('records', 'contract_source')
-    op.drop_column('items', 'contract_source')
+    op.drop_column('records', 'publisher_project_source')
+    op.drop_column('items', 'publisher_project_source')
