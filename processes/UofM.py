@@ -73,6 +73,7 @@ class UofMProcess(CoreProcess):
                     '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
                 ])
                 record.has_part.append(linkString)
+
             if 'public_domain' in record.rights:
                 linkString = '|'.join([
                     '1',
@@ -159,7 +160,7 @@ class UofMProcess(CoreProcess):
                         manifestURI,
                         source,
                         'application/webpub+json',
-                        '{"catalog": false, "download": false, "reader": true, "embed": false'
+                        '{"catalog": false, "download": false, "reader": true, "embed": false}'
                     ])
 
                     record.has_part.insert(0, linkString)
