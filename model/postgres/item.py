@@ -24,7 +24,7 @@ class Item(Base, Core):
 
     id = Column(Integer, primary_key=True)
     source = Column(Unicode, nullable=False, index=True)
-    publisher_project_source = Column(ARRAY(Unicode, dimensions=1), index=True)
+    publisher_project_source = Column(Unicode, index=True)
     content_type = Column(Unicode)
     contributors = Column(JSONB)
     modified = Column(DateTime)

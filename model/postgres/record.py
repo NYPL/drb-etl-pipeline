@@ -18,7 +18,7 @@ class Record(Base, Core):
     )
     cluster_status = Column(Boolean, default=False, nullable=False, index=True)
     source = Column(Unicode, index=True) # dc:source, Non-Repeating
-    publisher_project_source = Column(ARRAY(Unicode, dimensions=1), index=True) # dc:publisherProjectSource, Non-Repeating
+    publisher_project_source = Column(Unicode, index=True) # dc:publisherProjectSource, Non-Repeating
     source_id = Column(Unicode, index=True) # dc:identifier, Non-Repeating
     title = Column(Unicode) # dc:title, Non-Repeating
     alternative = Column(ARRAY(Unicode, dimensions=1)) # dc:alternative, Repeating

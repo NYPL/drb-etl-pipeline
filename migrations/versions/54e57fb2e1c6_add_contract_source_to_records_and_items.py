@@ -17,8 +17,8 @@ depends_on = None
 
 
 def upgrade():
-    op.add_column('records', sa.Column('publisher_project_source', sa.ARRAY(sa.Unicode), index=True))
-    op.add_column('items', sa.Column('publisher_project_source', sa.ARRAY(sa.Unicode), index=True))
+    op.add_column('records', sa.Column('publisher_project_source', sa.Unicode, index=True))
+    op.add_column('items', sa.Column('publisher_project_source', sa.Unicode, index=True))
 
 
 def downgrade():
