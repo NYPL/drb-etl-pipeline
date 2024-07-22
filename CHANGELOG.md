@@ -8,7 +8,8 @@
 - New process to add fulfill urls to Limited Access manifests and update fulfill_limited_access flags to True
 - Updated README and added more information to installation steps
 - Deprecated datetime.utcnow() method
-- Added new field (publisher_project_source) to the records and item tables
+- Added new field (publisher_project_source) to the records and items data models
+- Ran database migration to add publisher_project_source field to records and items tables
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
 - Added additional logging to the editions endpoint to debug

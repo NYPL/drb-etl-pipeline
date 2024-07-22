@@ -98,6 +98,11 @@ The currently available processes (with the exception of the UofSC and ChicagoIS
 - `UofMProcess` Fetch open access books from the Univerity of Michigan and import them
 - `CoverProcess` Fetch covers for edition records
 
+### Database Migration
+The database migration tool Alembic is utilized in this codebase for the Postgresql database. The first step 
+is to run this command `alembic revision -m "<revision name>"` which will create a new migration version in the `migrations/versions` directory. Aftwerwards, the `loadEnvFile` method parameters in the `migrations/env.py` file determine which config credentials the database migration will run on. The command to run the database migration is `alembic upgrade head` to run the most recent migration created or `alembic upgrade <name of version migration>` to upgrade to a specific version. To revert the migration, the command `alembic downgrade -1` will undo the last migration upgrade and the command `alembic downgrade <name of version migration>` will revert the database to a specific version.
+
+
 #### Appendix Link Flags (All flags are booleans)
 - `reader` Added to 'application/webpub+json' links to indicate if a book will have a Read Online function on the frontend
 - `embed` Indicates if a book will be using a third party web reader like Hathitrust's web reader on the frontend
