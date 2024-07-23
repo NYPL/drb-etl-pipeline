@@ -11,6 +11,7 @@
 - Deprecated datetime.utcnow() method
 - Added new field (publisher_project_source) to the records and items data models
 - Ran database migration to add publisher_project_source field to records and items tables
+- Filled out publisher_project_source field for UofM books
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
 - Added additional logging to the editions endpoint to debug
