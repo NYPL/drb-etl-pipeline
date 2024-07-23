@@ -30,12 +30,14 @@ class UofMProcess(CoreProcess):
         self.createS3Client()
 
     def runProcess(self):
-        with open('ingestJSONFiles/UofM_CSV.json') as f:
-                UofMData = json.load(f)
+        with open('ingestJSONFiles/UofM_Updated_CSV.json') as f:
+            UofMData = json.load(f)
 
         for i in range(0, len(UofMData['data'])):
             metaDict = UofMData['data'][i]
-            self.processUofMRecord(metaDict)
+            #Only want to ingest records that are ready to be QA tested
+            if 'QA test' in metaDict['Project steps']:
+                self.processUofMRecord(metaDict)
 
         self.saveRecords()
         self.commitChanges()
@@ -62,14 +64,25 @@ class UofMProcess(CoreProcess):
             key = f'{resultsRecord["File ID 1"]}_060pct.pdf'
             urlPDFObject = f'https://{bucket}.s3.amazonaws.com/{key}'
 
-            linkString = '|'.join([
-                '1',
-                urlPDFObject,
-                'UofM',
-                'application/pdf',
-                '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
-            ])
-            record.has_part.append(linkString)
+            if 'in_copyright' in record.rights:
+                linkString = '|'.join([
+                    '1',
+                    urlPDFObject,
+                    'UofM',
+                    'application/pdf',
+                    '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
+                ])
+                record.has_part.append(linkString)
+
+            if 'public_domain' in record.rights:
+                linkString = '|'.join([
+                    '1',
+                    urlPDFObject,
+                    'UofM',
+                    'application/pdf',
+                    '{"catalog": false, "download": true, "reader": false, "embed": false}'
+                ])
+                record.has_part.append(linkString)
 
         except ClientError or Exception or HTTPError as err:
             if err.response['Error']['Code'] == 'NoSuchKey':
@@ -85,14 +98,25 @@ class UofMProcess(CoreProcess):
                 key = f'{resultsRecord["File ID 1"]}_100pct.pdf'
                 urlPDFObject = f'https://{bucket}.s3.amazonaws.com/{key}'
 
-                linkString = '|'.join([
-                    '1',
-                    urlPDFObject,
-                    'UofM',
-                    'application/pdf',
-                    '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
-                ])
-                record.has_part.append(linkString)
+                if 'in_copyright' in record.rights:
+                    linkString = '|'.join([
+                        '1',
+                        urlPDFObject,
+                        'UofM',
+                        'application/pdf',
+                        '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
+                    ])
+                    record.has_part.append(linkString)
+
+                if 'public_domain' in record.rights:
+                    linkString = '|'.join([
+                        '1',
+                        urlPDFObject,
+                        'UofM',
+                        'application/pdf',
+                        '{"catalog": false, "download": true, "reader": false, "embed": false}'
+                    ])
+                    record.has_part.append(linkString)
 
             except ClientError or Exception or HTTPError as err:
                 if err.response['Error']['Code'] == 'NoSuchKey':
@@ -118,16 +142,29 @@ class UofMProcess(CoreProcess):
 
                 self.createManifestInS3(manifestPath, manifestJSON)
 
-                linkString = '|'.join([
-                    itemNo,
-                    manifestURI,
-                    source,
-                    'application/webpub+json',
-                    '{"catalog": false, "download": false, "reader": true, "embed": false, "fulfill_limited_access": false}'
-                ])
+                if 'in_copyright' in record.rights:
+                    linkString = '|'.join([
+                        itemNo,
+                        manifestURI,
+                        source,
+                        'application/webpub+json',
+                        '{"catalog": false, "download": false, "reader": true, "embed": false, "fulfill_limited_access": false}'
+                    ])
 
-                record.has_part.insert(0, linkString)
-                break
+                    record.has_part.insert(0, linkString)
+                    break
+
+                if 'public_domain' in record.rights:
+                    linkString = '|'.join([
+                        itemNo,
+                        manifestURI,
+                        source,
+                        'application/webpub+json',
+                        '{"catalog": false, "download": false, "reader": true, "embed": false}'
+                    ])
+
+                    record.has_part.insert(0, linkString)
+                    break
 
     def createManifestInS3(self, manifestPath, manifestJSON):
         self.putObjectInBucket(

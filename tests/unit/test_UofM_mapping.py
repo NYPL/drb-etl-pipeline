@@ -20,6 +20,7 @@ class TestUofMMapping:
             dates=['testDate|publication_date'],
             publisher=['testPublisher||'],
             identifiers=['testISBN|isbn', 'testOCLC|oclc'],
+            rights='in copyright||||',
             contributor=['testContributor|||contributor'],
             subjects='testSubject'
         )
@@ -29,7 +30,7 @@ class TestUofMMapping:
 
         assert list(recordMapping.keys()) == [
             'title', 'authors', 'dates', 'publisher',
-            'identifiers', 'contributors', 'subjects'
+            'identifiers', 'rights', 'contributors', 'subjects'
         ]
         assert recordMapping['title'] == ('Title', '{0}')
 
@@ -44,6 +45,7 @@ class TestUofMMapping:
         assert testMapping.record.source_id == 'UofM_testOCLC'
         assert testMapping.record.publisher == ['testPublisher||']
         assert testMapping.record.spatial == 'Michigan'
+        assert testMapping.record.rights == 'UofM|in_copyright||In Copyright|'
         assert testMapping.record.subjects == ['testSubject||']
 
 
