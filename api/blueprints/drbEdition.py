@@ -22,6 +22,9 @@ def editionFetch(editionID):
                 or current_app.config['READER_VERSION']
             filteredFormats = APIUtils.formatFilters(terms)
 
+            if not isValidEditionID(editionID):
+                return APIUtils.formatResponseObject(400, RESPONSE_TYPE, { 'message': 'Edition id {} is invalid'.format(editionID) })
+
             edition = dbClient.fetchSingleEdition(editionID)
 
             if not edition:
@@ -39,3 +42,7 @@ def editionFetch(editionID):
     except Exception as e: 
         logger.error(e)
         return APIUtils.formatResponseObject(500, RESPONSE_TYPE, { 'message': 'Unable to fetch edition with id {}'.format(editionID) })
+
+
+def isValidEditionID(editionID) -> bool:
+    return isinstance(editionID, int) or (isinstance(editionID, str) and editionID.isdigit())
