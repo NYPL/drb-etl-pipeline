@@ -128,7 +128,7 @@ class TestOCLCClassifyProcess:
 
         testInstance.classifyRecords(startDateTime='testDate')
 
-        mockDatetime.utcnow.assert_not_called()
+        mockDatetime.now.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
@@ -153,7 +153,7 @@ class TestOCLCClassifyProcess:
 
         testInstance.classifyRecords(full=True)
 
-        mockDatetime.utcnow.assert_not_called()
+        mockDatetime.now.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords[:50]])
@@ -179,7 +179,7 @@ class TestOCLCClassifyProcess:
         testInstance.ingestLimit = 100
         testInstance.classifyRecords(full=True)
 
-        mockDatetime.utcnow.assert_not_called()
+        mockDatetime.now.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
         mockUpdateClassified.assert_called_once()

@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timezone
 from hashlib import scrypt
 from flask import jsonify
 from itertools import repeat
@@ -517,7 +517,7 @@ class APIUtils():
     def formatResponseObject(status, responseType, datablock, headers = {}):
         response = jsonify({
             'status': status,
-            'timestamp': datetime.utcnow(),
+            'timestamp': datetime.now(timezone.utc).replace(tzinfo=None),
             'responseType': responseType,
             'data': datablock
         })

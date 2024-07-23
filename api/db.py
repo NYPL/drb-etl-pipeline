@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from sqlalchemy import Integer
 from sqlalchemy.orm import joinedload, sessionmaker
 from sqlalchemy.sql import column, func, select, text, values
@@ -80,7 +80,7 @@ class DBClient():
 
         # For perf reasons, filter to the last 100 days.  We might be able to tune the
         # query to improve this...
-        startDate = datetime.utcnow().date() - timedelta(days=100)
+        startDate = datetime.now(timezone.utc).replace(tzinfo=None).date() - timedelta(days=100)
         # Sort all the `Work`s and rank their editions by oldest
         workQuery = (
             self.session.query(
@@ -177,7 +177,7 @@ class DBClient():
     def fetchNewWorks(self, page=0, size=50):
         offset = page * size
 
-        createdSince = datetime.utcnow() - timedelta(days=1)
+        createdSince = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1)
 
         baseQuery = self.session.query(Work)\
             .filter(Work.date_created >= createdSince)

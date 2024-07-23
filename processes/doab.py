@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from lxml import etree
 import os
@@ -131,7 +131,7 @@ class DOABProcess(CoreProcess):
             urlParams = '{}&resumptionToken={}'.format(urlParams, resumptionToken)
         elif fullOrPartial is False:
             if not startTimestamp:
-                startTimestamp = (datetime.utcnow() - timedelta(hours=24)).strftime('%Y-%m-%d')
+                startTimestamp = (datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)).strftime('%Y-%m-%d')
             urlParams = '{}&metadataPrefix=oai_dc&from={}'.format(urlParams, startTimestamp)
         else:
             urlParams = '{}&metadataPrefix=oai_dc'.format(urlParams)

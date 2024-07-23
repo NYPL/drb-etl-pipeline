@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import json
 import mimetypes
 import os
@@ -57,7 +57,7 @@ class GutenbergProcess(CoreProcess):
         orderField = 'PUSHED_AT'
         if not fullImport:
             if not startTimestamp:
-                startTimestamp = datetime.utcnow() - timedelta(days=1)
+                startTimestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1)
             else:
                 startTimestamp = datetime.strptime(startTimestamp, '%Y-%m-%dT%H:%M:%S')
         else:

@@ -95,7 +95,7 @@ class TestMUSEProcess:
         processMocks['parseMuseRecord'].side_effect = [None, MUSEError('test'), None]
 
         mockDatetime = mocker.patch('processes.muse.datetime')
-        mockDatetime.utcnow.return_value = datetime(1900, 1, 2, 12, 0, 0)
+        mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
         mockReader = mocker.patch('processes.muse.MARCReader')
         mockReader.return_value = ['rec1', 'rec2', 'rec3', 'rec4']
