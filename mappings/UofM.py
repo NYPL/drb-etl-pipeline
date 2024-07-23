@@ -25,6 +25,7 @@ class UofMMapping(JSONMapping):
         self.record.has_part = []
         self.record.spatial = 'Michigan'
         self.record.source = 'UofM'
+        self.record.publisher_project_source = 'UofMichigan Press'
 
         if self.record.authors:
             self.record.authors = self.formatAuthors()
