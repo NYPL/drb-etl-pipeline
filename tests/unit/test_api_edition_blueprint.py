@@ -143,3 +143,17 @@ class TestEditionBlueprint:
                 'singleEdition',
                 {'message': 'Unable to fetch edition with id 1'}
             )
+
+    def test_editionFetch_invalid_id_error(self, mockUtils, testApp, mocker):
+        mockDB = mocker.MagicMock()
+        mockDB.__enter__.return_value = mockDB
+        mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
+
+        with testApp.test_request_context('/'):
+            editionFetch('e2d0e0aa-aa72-42a0-88fb-1aeadbec2f67')
+
+            mockUtils['formatResponseObject'].assert_called_once_with(
+                400,
+                'singleEdition',
+                {'message': 'Edition id e2d0e0aa-aa72-42a0-88fb-1aeadbec2f67 is invalid'}
+            )
