@@ -81,7 +81,7 @@ def getProxyResponse():
                     urlParts.scheme, urlParts.netloc, cleanUrl
                 )
         else:
-            logger.warn(f'Unable to proxy clean URL {cleanUrl}')
+            logger.warn(f'Unable to proxy clean url {cleanUrl}')
             cleanUrl = proxyUrl
             break
 
