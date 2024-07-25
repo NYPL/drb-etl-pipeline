@@ -13,6 +13,7 @@
 - Ran database migration to add publisher_project_source field to records and items tables
 - Filled out publisher_project_source field for UofM books
 - Added editionID validation to editions API
+- Added more logging to proxy API
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
 - Added additional logging to the editions endpoint to debug
