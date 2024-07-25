@@ -60,7 +60,7 @@ def getProxyResponse():
     cleanUrl = unquote_plus(proxyUrl)
     urlParts = urlparse(cleanUrl)
 
-    logger.info(f'Received request to proxy url: {proxyUrl}')
+    logger.info(f'Received {request.method} request to proxy url: {proxyUrl}')
 
     while True:
         headResp = requests.head(
