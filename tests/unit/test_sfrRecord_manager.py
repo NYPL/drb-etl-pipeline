@@ -28,6 +28,7 @@ class TestSFRRecordManager:
             spatial='Test Publication Place',
             contributors=['Contrib 1|printer', 'Contrib 2|||provider', 'Contrib 3|||translator'],
             subjects=['Subject 1', 'Subject 2', 'Subject 3'],
+            publisher_project_source='TestPubProjSource',
             dates=['Date 1', 'Date 2'],
             languages=['Language 1'],
             abstract='Test Abstract',
@@ -242,6 +243,7 @@ class TestSFRRecordManager:
         assert testEditionData['items'][0]['links'][0] == 'url2|test|{"test": "flag"}'
         assert testEditionData['items'][1]['links'][0] == 'url3|test|'
         assert testEditionData['items'][0]['content_type'] == 'ebook'
+        assert testEditionData['items'][0]['publisher_project_source'] == 'TestPubProjSource'
         assert testEditionData['items'][1]['source'] == 'test'
         assert testEditionData['items'][1]['contributors'] == set(['Item Contrib 1'])
         assert testEditionData['items'][0]['identifiers'] == set(['1|test'])

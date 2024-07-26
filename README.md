@@ -72,7 +72,7 @@ To set up a local environment there is a special process to initialize a databas
 `HATHI_API_SECRET`:
 `OCLC_API_KEY`:
 
-You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values.
+You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values. Also, the `local-compose.yaml` file referenced in the `docker-compose.yml` file includes other sensitive data such as NYPL API and AWS credentials. If you need these credentials or the whole local-compose.yaml file then you must ask one of the backend developers for this info.
 
 With the configurations set, one of these commands should be run: `make up` or `docker compose up`. These commands will run the docker-compose file in the codebase and this is why it's required to have Docker/Docker Desktop installed locally. After running one of the commands, a short import process will occur and populate the database with some sample data alongside running the API locally. This will allow you to query the API at `localhost:5050` and query the ESC at `localhost:9200`.
 

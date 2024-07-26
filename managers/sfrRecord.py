@@ -285,6 +285,7 @@ class SFRRecordManager:
                 **editionData['items'][itemPos],
                 **{
                     'source': source,
+                    'publisher_project_source': rec.publisher_project_source,
                     'content_type': 'ebook',
                     'modified': rec.date_submitted,
                     'rights': rec.rights
