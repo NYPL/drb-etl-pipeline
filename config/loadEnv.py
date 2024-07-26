@@ -35,5 +35,4 @@ def loadEnvFile(runType, fileString=None):
 
     if envDict:
         for key, value in envDict.items():
-            print(key, value)
             os.environ[key] = value

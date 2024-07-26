@@ -1,4 +1,4 @@
-from functools import wraps
+from datetime import datetime, timezone
 import os
 import requests
 from requests.exceptions import Timeout, ConnectionError
@@ -22,8 +22,15 @@ class OCLCAuthManager:
         OCLC_CLIENT_ID = os.environ.get('OCLC_CLIENT_ID', None)
         OCLC_CLIENT_SECRET = os.environ.get('OCLC_CLIENT_SECRET', None)
 
-        if cls._token and cls._token_expires_at and (cls._token_expires_at - time.time()) > cls.TIME_TO_REFRESH_IN_SECONDS:
-            return cls._token
+        if cls._token and cls._token_expires_at:
+            expiry_date = datetime.strptime(cls._token_expires_at, "%Y-%m-%d %H:%M:%SZ")
+            now = datetime.now(timezone.utc).replace(tzinfo=None)
+            time_to_expiry_in_seconds = (expiry_date - now).total_seconds()
+
+            print(time_to_expiry_in_seconds)
+            
+            if time_to_expiry_in_seconds > cls.TIME_TO_REFRESH_IN_SECONDS:
+                return cls._token
             
         try:
             authResp = requests.post(
