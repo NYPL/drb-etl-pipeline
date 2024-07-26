@@ -1,5 +1,5 @@
 import pytest
-from main import loadEnvFile
+from config.loadEnv import loadEnvFile
 from managers import OCLCCatalogManager
 
 class TestOCLCCatalogManager:
