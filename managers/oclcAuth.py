@@ -22,7 +22,7 @@ class OCLCAuthManager:
         OCLC_CLIENT_ID = os.environ.get('OCLC_CLIENT_ID', None)
         OCLC_CLIENT_SECRET = os.environ.get('OCLC_CLIENT_SECRET', None)
 
-        if cls._token or cls._token_expires_at and (cls._token_expires_at - time.time()) > cls.TIME_TO_REFRESH_IN_SECONDS:
+        if cls._token and cls._token_expires_at and (cls._token_expires_at - time.time()) > cls.TIME_TO_REFRESH_IN_SECONDS:
             return cls._token
             
         try:
