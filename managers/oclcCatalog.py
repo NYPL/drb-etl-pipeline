@@ -21,7 +21,6 @@ class OCLCCatalogManager:
         classifyResp = None
         self.attempts += 1
         catalogQuery = self.CATALOG_URL.format(self.oclcNo, self.oclcKey)
-
         if self.attempts > 3:
             return classifyResp
 
