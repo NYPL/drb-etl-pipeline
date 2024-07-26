@@ -69,8 +69,8 @@ class TestOCLCCatalogProcess:
 
         testInstance.processCatalogQuery('{"oclcNo": 1, "owiNo": 1}')
 
-        mockOCLC.assert_called_once_with(1)
-        mockManager.queryCatalog.assert_called_once()
+        mockOCLC.assert_called_once()
+        mockManager.queryCatalog.assert_called_once_with(1)
         mockParser.assert_called_once_with('testXML', 1)
 
     def test_processCatalogQuery_no_record_found(self, testInstance, mocker):
@@ -82,8 +82,8 @@ class TestOCLCCatalogProcess:
 
         testInstance.processCatalogQuery('{"oclcNo": "badID"}')
 
-        mockOCLC.assert_called_once_with('badID')
-        mockManager.queryCatalog.assert_called_once()
+        mockOCLC.assert_called_once()
+        mockManager.queryCatalog.assert_called_once_with('badID')
         mockParser.assert_not_called()
 
     def test_parseCatalogRecord_success(self, testInstance, mocker):

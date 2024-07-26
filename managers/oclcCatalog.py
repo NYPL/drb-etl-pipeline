@@ -4,15 +4,14 @@ from requests.exceptions import Timeout, ConnectionError
 
 class OCLCCatalogManager:
     CATALOG_URL = 'http://www.worldcat.org/webservices/catalog/content/{}?wskey={}'
-    def __init__(self, oclcNo):
-        self.oclcNo = oclcNo
+    def __init__(self):
         self.oclcKey = os.environ['OCLC_API_KEY']
         self.attempts = 0
 
-    def queryCatalog(self):
+    def queryCatalog(self, oclcNo):
         classifyResp = None
         self.attempts += 1
-        catalogQuery = self.CATALOG_URL.format(self.oclcNo, self.oclcKey)
+        catalogQuery = self.CATALOG_URL.format(oclcNo, self.oclcKey)
         if self.attempts > 3: 
             return classifyResp
 
@@ -20,7 +19,7 @@ class OCLCCatalogManager:
             classifyResp = requests.get(catalogQuery, timeout=3)
         except (Timeout, ConnectionError):
             print('Failed to query URL {}'.format(catalogQuery))
-            return self.queryCatalog()
+            return self.queryCatalog(oclcNo)
 
         if classifyResp.status_code != 200:
             print('OCLC Catalog Request failed with status {}'.format(
@@ -29,4 +28,3 @@ class OCLCCatalogManager:
             return None
     
         return classifyResp.text
-        

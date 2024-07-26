@@ -60,8 +60,9 @@ class CatalogProcess(CoreProcess):
 
     def processCatalogQuery(self, msgBody):
         message = json.loads(msgBody)
-        catalogManager = OCLCCatalogManager(message['oclcNo'])
-        catalogXML = catalogManager.queryCatalog()
+        oclcNo = message['oclcNo']
+        catalogManager = OCLCCatalogManager()
+        catalogXML = catalogManager.queryCatalog(oclcNo)
         if catalogXML:
             self.parseCatalogRecord(catalogXML, message['owiNo'])
 
