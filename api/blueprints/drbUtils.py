@@ -13,6 +13,12 @@ logger = createLog(__name__)
 
 
 utils = Blueprint('utils', __name__, url_prefix='/utils')
+EXCLUDED_HEADERS = [
+    'content-encoding', 'content-length', 'transfer-encoding',
+    'x-frame-options', 'referrer-policy', 'access-control-allow-origin',
+    'connection', 'keep-alive', 'public', 'proxy-authenticate',
+    'upgrade'
+]
 
 
 @utils.route('/languages', methods=['GET'])
@@ -51,10 +57,10 @@ def totalCounts():
 @cross_origin(origins=os.environ.get('API_PROXY_CORS_ALLOWED', '*'))
 def getProxyResponse():
     proxyUrl = request.args.get('proxy_url')
-
     cleanUrl = unquote_plus(proxyUrl)
-
     urlParts = urlparse(cleanUrl)
+
+    logger.info(f'Received {request.method} request to proxy url: {proxyUrl}')
 
     while True:
         headResp = requests.head(
@@ -62,11 +68,12 @@ def getProxyResponse():
         )
 
         statusCode = headResp.status_code
-        print(statusCode, cleanUrl)
+        
+        logger.info(f'HEAD response from {cleanUrl} returned status code {statusCode}')
+
         if statusCode in [200, 204]:
             break
         elif statusCode in [301, 302, 303, 307, 308]:
-            print(headResp.headers)
             cleanUrl = headResp.headers['Location']
 
             if cleanUrl[0] == '/':
@@ -74,7 +81,7 @@ def getProxyResponse():
                     urlParts.scheme, urlParts.netloc, cleanUrl
                 )
         else:
-            logger.warn('Unable to proxy URL {}'.format(cleanUrl))
+            logger.warn(f'Unable to proxy clean url {cleanUrl}')
             cleanUrl = proxyUrl
             break
 
@@ -88,17 +95,11 @@ def getProxyResponse():
         allow_redirects=False
     )
 
-    excludedHeaders = [
-        'content-encoding', 'content-length', 'transfer-encoding',
-        'x-frame-options', 'referrer-policy', 'access-control-allow-origin',
-        'connection', 'keep-alive', 'public', 'proxy-authenticate',
-        'upgrade'
-    ]
-
     headers = [
         (k, v) for (k, v) in resp.headers.items()
-        if k.lower() not in excludedHeaders
+        if k.lower() not in EXCLUDED_HEADERS
     ]
 
-    proxyResp = Response(resp.content, resp.status_code, headers)
-    return proxyResp
+    logger.info(f'Returning {request.method} response from {cleanUrl} with status code {resp.status_code}')
+
+    return Response(resp.content, resp.status_code, headers)

@@ -7,10 +7,18 @@
 - Updated README with appendix and additions to avaliable processes
 - New process to add fulfill urls to Limited Access manifests and update fulfill_limited_access flags to True
 - Updated README and added more information to installation steps
+- Added Rights status to UofM mapping and Rights conditionals to UofM process
 - Deprecated datetime.utcnow() method
+- Added new field (publisher_project_source) to the records and items data models
+- Ran database migration to add publisher_project_source field to records and items tables
+- Filled out publisher_project_source field for UofM books
+- Added editionID validation to editions API
+- Updated README with steps on retrieving local-compose.yaml file and credentials
+- Added more logging to proxy API
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
 - Added additional logging to the editions endpoint to debug
+- Renamed Docker API container name to drb_local_api
 
 ## 2024-03-21 -- v0.13.0
 ## Added

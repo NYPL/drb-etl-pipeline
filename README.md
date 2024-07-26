@@ -72,7 +72,7 @@ To set up a local environment there is a special process to initialize a databas
 `HATHI_API_SECRET`:
 `OCLC_API_KEY`:
 
-You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values.
+You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values. Also, the `local-compose.yaml` file referenced in the `docker-compose.yml` file includes other sensitive data such as NYPL API and AWS credentials. If you need these credentials or the whole local-compose.yaml file then you must ask one of the backend developers for this info.
 
 With the configurations set, one of these commands should be run: `make up` or `docker compose up`. These commands will run the docker-compose file in the codebase and this is why it's required to have Docker/Docker Desktop installed locally. After running one of the commands, a short import process will occur and populate the database with some sample data alongside running the API locally. This will allow you to query the API at `localhost:5050` and query the ESC at `localhost:9200`.
 
@@ -97,6 +97,11 @@ The currently available processes (with the exception of the UofSC and ChicagoIS
 - `LOCProcess` Fetch open access and digitized books from the Library of Congress and import them
 - `UofMProcess` Fetch open access books from the Univerity of Michigan and import them
 - `CoverProcess` Fetch covers for edition records
+
+### Database Migration
+The database migration tool Alembic is utilized in this codebase for the Postgresql database. The first step 
+is to run this command `alembic revision -m "<revision name>"` which will create a new migration version in the `migrations/versions` directory. Aftwerwards, the `loadEnvFile` method parameters in the `migrations/env.py` file determine which config credentials the database migration will run on. The command to run the database migration is `alembic upgrade head` to run the most recent migration created or `alembic upgrade <name of version migration>` to upgrade to a specific version. To revert the migration, the command `alembic downgrade -1` will undo the last migration upgrade and the command `alembic downgrade <name of version migration>` will revert the database to a specific version. It's highly recommended to run this migration before merging in branches concerning updates to database migration.
+
 
 #### Appendix Link Flags (All flags are booleans)
 - `reader` Added to 'application/webpub+json' links to indicate if a book will have a Read Online function on the frontend

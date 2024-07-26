@@ -18,6 +18,7 @@ class Record(Base, Core):
     )
     cluster_status = Column(Boolean, default=False, nullable=False, index=True)
     source = Column(Unicode, index=True) # dc:source, Non-Repeating
+    publisher_project_source = Column(Unicode, index=True) # dc:publisherProjectSource, Non-Repeating
     source_id = Column(Unicode, index=True) # dc:identifier, Non-Repeating
     title = Column(Unicode) # dc:title, Non-Repeating
     alternative = Column(ARRAY(Unicode, dimensions=1)) # dc:alternative, Repeating
@@ -49,7 +50,7 @@ class Record(Base, Core):
         )
     
     def __dir__(self):
-        return ['uuid', 'frbr_status', 'cluster_status', 'source', 'source_id',
+        return ['uuid', 'frbr_status', 'cluster_status', 'source', 'publisher_project_source', 'source_id',
             'title', 'alternative', 'medium', 'is_part_of', 'subjects', 'authors',
             'contributors', 'languages', 'dates', 'rights', 'identifiers',
             'date_submitted', 'requires', 'spatial', 'publisher', 'has_version',

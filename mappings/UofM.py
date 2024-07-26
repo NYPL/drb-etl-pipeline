@@ -1,5 +1,5 @@
 from .json import JSONMapping
-import logging
+
 
 class UofMMapping(JSONMapping):
     def __init__(self, source):
@@ -16,6 +16,7 @@ class UofMMapping(JSONMapping):
                 ('ISBN', '{0}|isbn'),
                 ('OCLC', '{0}|oclc')
             ],
+            'rights': ('DRB Rights Classification', '{0}||||'),
             'contributors': [('Contributors', '{0}|||contributor')],
             'subjects': ('Subject 1', '{0}'),
         }
@@ -24,6 +25,7 @@ class UofMMapping(JSONMapping):
         self.record.has_part = []
         self.record.spatial = 'Michigan'
         self.record.source = 'UofM'
+        self.record.publisher_project_source = 'UofMichigan Press'
 
         if self.record.authors:
             self.record.authors = self.formatAuthors()
@@ -34,11 +36,14 @@ class UofMMapping(JSONMapping):
         if self.record.identifiers:
             if len(self.record.identifiers) == 1:
                 source_id = self.record.identifiers[0].split('|')[0]
+                self.record.source_id = f'UofM_{source_id}'
+                self.record.identifiers = self.formatIdentifiers()
             else:
                 source_id = self.record.identifiers[1].split('|')[0]
+                self.record.source_id = f'UofM_{source_id}'
+                self.record.identifiers = self.formatIdentifiers()
 
-            self.record.source_id = f'UofM_{source_id}'
-            self.record.identifiers = self.formatIdentifiers()
+        self.record.rights = self.formatRights()
 
     def formatAuthors(self):
         authorList = []
@@ -51,16 +56,6 @@ class UofMMapping(JSONMapping):
             authorList.append(f'{self.record.authors}|||true)')
             return authorList
         
-    def formatSubjects(self):
-        subjectList = []
-
-        if '|' in self.record.subjects:
-            subjectList = self.record.subjects.split('|')
-            newSubjectList = [f'{subject}||' for subject in subjectList] 
-            return newSubjectList
-        else:
-            subjectList.append(f'{self.record.subjects}||')
-            return subjectList
         
     def formatIdentifiers(self):
         if 'isbn' in self.record.identifiers[0]:
@@ -75,6 +70,40 @@ class UofMMapping(JSONMapping):
                     return newISBNList
                 
         return self.record.identifiers
+    
+    def formatSubjects(self):
+        subjectList = []
+
+        if '|' in self.record.subjects:
+            subjectList = self.record.subjects.split('|')
+            newSubjectList = [f'{subject}||' for subject in subjectList] 
+            return newSubjectList
+        else:
+            subjectList.append(f'{self.record.subjects}||')
+            return subjectList
+    
+    def formatRights(self):
+        '''
+        The pipe delimiter is to separate the Rights table attributes into this format:
+        source|license|reason|statement|date 
+        which makes it easy to place the right data into the columns when clustered
+        '''
+
+        if not self.record.rights: 
+            return None
+
+        rightsElements = self.record.rights.split('|')
+        rightsStatus = rightsElements[0]
+
+        if rightsStatus == 'in copyright':
+            return 'UofM|{}||{}|'.format('in_copyright', 'In Copyright') 
+        
+        if rightsStatus == 'public domain':
+            return 'UofM|{}||{}|'.format('public_domain', 'Public Domain') 
+        
+        return None
+
+
 
 
             

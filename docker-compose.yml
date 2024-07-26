@@ -48,7 +48,7 @@ services:
       - drb_local_rsdata:/data
 
   webapp:
-    container_name: drb_local_webapp
+    container_name: drb_local_api
     depends_on:
       - database
       - elasticsearch
