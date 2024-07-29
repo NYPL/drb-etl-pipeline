@@ -7,10 +7,10 @@ help:
 	@echo "make help"
 
 test: 
-	python -m pytest --cov-report term-missing --cov=. tests/
+	python -m pytest --cov-report term-missing --cov=. tests/unit
 
 allure-test:
-	python -m pytest --alluredir=./allure-results ./tests
+	python -m pytest --alluredir=./allure-results ./tests/unit
 
 up:
 	$(compose_command) up -d
