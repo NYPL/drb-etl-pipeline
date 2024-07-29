@@ -11,6 +11,7 @@ logger = createLog(__name__)
 
 class OCLCCatalogManager:
     CATALOG_URL = 'http://www.worldcat.org/webservices/catalog/content/{}?wskey={}'
+    OCLC_SEARCH_URL = 'https://americas.discovery.api.oclc.org/worldcat/search/v2/'
     def __init__(self):
         self.oclcKey = os.environ['OCLC_API_KEY']
         self.attempts = 0
