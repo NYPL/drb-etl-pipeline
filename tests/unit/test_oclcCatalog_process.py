@@ -19,6 +19,7 @@ class TestOCLCCatalogProcess:
         class TestCatalogProcess(CatalogProcess):
             def __init__(self, process, customFile, ingestPeriod):
                 self.statics = {}
+                self.oclcCatalogManager = mocker.MagicMock()
         
         return TestCatalogProcess('TestProcess', 'testFile', 'testDate')
     
@@ -61,29 +62,21 @@ class TestOCLCCatalogProcess:
         mockAcknowledge.assert_called_once_with('rabbitMQTag')
 
     def test_processCatalogQuery_success(self, testInstance, mocker):
-        mockOCLC = mocker.patch('processes.oclcCatalog.OCLCCatalogManager')
-        mockManager = mocker.MagicMock()
-        mockManager.queryCatalog.return_value = 'testXML'
-        mockOCLC.return_value = mockManager
+        testInstance.oclcCatalogManager.queryCatalog.return_value = 'testXML'
         mockParser = mocker.patch.object(CatalogProcess, 'parseCatalogRecord')
 
         testInstance.processCatalogQuery('{"oclcNo": 1, "owiNo": 1}')
 
-        mockOCLC.assert_called_once()
-        mockManager.queryCatalog.assert_called_once_with(1)
+        testInstance.oclcCatalogManager.queryCatalog.assert_called_once_with(1)
         mockParser.assert_called_once_with('testXML', 1)
 
     def test_processCatalogQuery_no_record_found(self, testInstance, mocker):
-        mockOCLC = mocker.patch('processes.oclcCatalog.OCLCCatalogManager')
-        mockManager = mocker.MagicMock()
-        mockManager.queryCatalog.return_value = None
-        mockOCLC.return_value = mockManager
+        testInstance.oclcCatalogManager.queryCatalog.return_value = None
         mockParser = mocker.patch.object(CatalogProcess, 'parseCatalogRecord')
 
         testInstance.processCatalogQuery('{"oclcNo": "badID"}')
 
-        mockOCLC.assert_called_once()
-        mockManager.queryCatalog.assert_called_once_with('badID')
+        testInstance.oclcCatalogManager.queryCatalog.assert_called_once_with('badID')
         mockParser.assert_not_called()
 
     def test_parseCatalogRecord_success(self, testInstance, mocker):

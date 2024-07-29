@@ -19,14 +19,14 @@ class OCLCCatalogManager:
         classifyResp = None
         self.attempts += 1
         catalogQuery = self.CATALOG_URL.format(oclcNo, self.oclcKey)
-        if self.attempts > 3: 
+        if self.attempts > 3:
             return classifyResp
 
         try:
             classifyResp = requests.get(catalogQuery, timeout=3)
         except (Timeout, ConnectionError):
             logger.warn('Failed to query URL {}'.format(catalogQuery))
-            return self.queryCatalog()
+            return self.queryCatalog(oclcNo)
 
         if classifyResp.status_code != 200:
             logger.warn('OCLC Catalog Request failed with status {}'.format(
