@@ -1,5 +1,5 @@
 from managers.oclcAuth import OCLCAuthManager
-from config.loadEnv import loadEnvFile
+from loadEnv import loadEnvFile
 import os
 
 loadEnvFile('local-compose', fileString='config/local-compose.yaml')

@@ -4,7 +4,7 @@ import newrelic.agent
 import argparse
 import inspect
 
-from config.loadEnv import loadEnvFile
+from loadEnv import loadEnvFile
 from logger import createLog
 
 #NEW_RELIC_LICENSE_KEY = Put license key here
