@@ -14,5 +14,5 @@ from .updatePubLocationAndLinks import main as updateLocationAndLinks
 from .countCABooks import main as countCA
 from .nyplLoginFlags import main as nyplFlags
 from .deleteUMPManifestLinks import main as deleteUMPManifests
-from .parseDownloadRequests import main as parseDownloads
+from ..analytics.upress_reporting.main import main as parseDownloads
 from .addFulfillManifest import main as fulfillManifest
