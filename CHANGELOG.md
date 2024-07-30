@@ -17,6 +17,7 @@
 - Added more logging to proxy API
 - Implement call to Worldcat to retrieve OCLC number
 - Refactor OCLC Catalog Manager
+- Added integration test step in Github Actions
 
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
