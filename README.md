@@ -123,6 +123,12 @@ This will place an image `drb-etl-pipeline:latest` in your local docker instance
 
 When running a Docker image locally that interacts with other resources running on `localhost` it is necessary to supply a special URL to access them. Due to this it is generally helpful to define a unique `config` file for local docker testing. You may not wish to commit this file to git as it may contain secrets.
 
+### Testing
+
+To run the unit tests, run `make unit`.
+
+To run the integration tests, run `make integration`.
+
 ### Managing secrets
 
 To keep sensitive settings out of git, some secrets configuration must be done to run the cluster. To set up for running on your local machine, copy the `config/example.yaml` file and provide the necessary configuration (ask a colleague if you need some of the keys required there). Then provide the name of this file as the `--environment` argument when you run scripts.
