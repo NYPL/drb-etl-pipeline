@@ -5,22 +5,23 @@ from analytics.upress_reporting.helpers.download_request_parser import (
 )
 from reports.counter_5_report import Counter5Report
 
-ADDITIONAL_HEADERS = ["Book Title", 
-                      "Book ID", 
-                      "Authors", 
-                      "ISBN", 
-                      "eISBN", 
-                      "Copyright Year", 
-                      "Disciplines", 
-                      "Usage Type", 
+ADDITIONAL_HEADERS = ["Book Title",
+                      "Book ID",
+                      "Authors",
+                      "ISBN",
+                      "eISBN",
+                      "Copyright Year",
+                      "Disciplines",
+                      "Usage Type",
                       "Reporting Period Total"]
 
+
 class DownloadsReport(Counter5Report):
-    def __init__(self, publisher, reporting_period):
-        super().__init__(publisher, reporting_period)
-        pandas_date_range = self.parse_reporting_period(reporting_period)
+    def __init__(self, *args):
+        super().__init__(*args)
+        pandas_date_range = self.parse_reporting_period(self.reporting_period)
         self.download_request_parser = DownloadRequestParser(
-            publisher, pandas_date_range
+            self.publisher, pandas_date_range
         )
 
     def build_header(self):
@@ -36,3 +37,9 @@ class DownloadsReport(Counter5Report):
 
     def build_report(self):
         self.download_request_parser.generate_csv_files()
+        header = self.build_header()
+        with open('counter_5_downloads_report.csv', 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            for key, value in header.items():
+                writer.writerow([key, value])
+            writer.writerow("\n")
