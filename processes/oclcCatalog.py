@@ -24,6 +24,8 @@ class CatalogProcess(CoreProcess):
         self.createRabbitConnection()
         self.createChannel()
 
+        self.oclcCatalogManager = OCLCCatalogManager()
+
     def runProcess(self):
         self.receiveAndProcessMessages()
 
@@ -60,8 +62,10 @@ class CatalogProcess(CoreProcess):
 
     def processCatalogQuery(self, msgBody):
         message = json.loads(msgBody)
-        catalogManager = OCLCCatalogManager(message['oclcNo'])
-        catalogXML = catalogManager.queryCatalog()
+        oclcNo = message['oclcNo']
+        
+        catalogXML = self.oclcCatalogManager.queryCatalog(oclcNo)
+        
         if catalogXML:
             self.parseCatalogRecord(catalogXML, message['owiNo'])
 

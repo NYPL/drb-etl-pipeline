@@ -16,6 +16,8 @@
 - Updated README with steps on retrieving local-compose.yaml file and credentials
 - Added more logging to proxy API
 - Implement call to Worldcat to retrieve OCLC number
+- Refactor OCLC Catalog Manager
+
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
 - Added additional logging to the editions endpoint to debug

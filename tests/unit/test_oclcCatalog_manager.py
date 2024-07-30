@@ -9,10 +9,9 @@ class TestOCLCCatalogManager:
     def testInstance(self, mocker):
         mocker.patch.dict('os.environ', {'OCLC_API_KEY': 'test_api_key'})
 
-        return OCLCCatalogManager(1)
+        return OCLCCatalogManager()
 
     def test_initializer(self, testInstance):
-        assert testInstance.oclcNo == 1
         assert testInstance.oclcKey == 'test_api_key'
         assert testInstance.attempts == 0
 
@@ -24,7 +23,7 @@ class TestOCLCCatalogManager:
         mockResponse.status_code = 200
         mockResponse.text = 'testClassifyRecord'
 
-        testResponse = testInstance.queryCatalog()
+        testResponse = testInstance.queryCatalog(1)
 
         assert testResponse == 'testClassifyRecord'
         mockRequest.get.assert_called_once_with(
@@ -40,7 +39,7 @@ class TestOCLCCatalogManager:
         mockResponse.status_code = 500
         mockResponse.text = 'testClassifyRecord'
 
-        testResponse = testInstance.queryCatalog()
+        testResponse = testInstance.queryCatalog(1)
 
         assert testResponse == None
         mockRequest.get.assert_called_once_with(
@@ -56,7 +55,7 @@ class TestOCLCCatalogManager:
         mockResponse.status_code = 200
         mockResponse.text = 'testClassifyRecord'
 
-        testResponse = testInstance.queryCatalog()
+        testResponse = testInstance.queryCatalog(1)
 
         assert testResponse == 'testClassifyRecord'
         mockRequest.get.assert_has_calls(
@@ -71,7 +70,7 @@ class TestOCLCCatalogManager:
         mockResponse.status_code = 200
         mockResponse.text = 'testClassifyRecord'
 
-        testResponse = testInstance.queryCatalog()
+        testResponse = testInstance.queryCatalog(1)
 
         assert testResponse == None
         mockRequest.get.assert_has_calls(
