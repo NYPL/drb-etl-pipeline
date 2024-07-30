@@ -18,6 +18,7 @@
 - Implement call to Worldcat to retrieve OCLC number
 - Refactor OCLC Catalog Manager
 - Added make integration command
+- Upgrade RabbitMQ Docker image to 3.13
 
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
