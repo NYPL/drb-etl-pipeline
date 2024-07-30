@@ -8,7 +8,7 @@ from main import loadEnvFile
 
 def main():
     logger = createLog("Generating Counter 5 reports...")
-    loadEnvFile('sample-compose', fileString='config/example.yaml')
+    loadEnvFile('local-compose', fileString='config/local-compose.yaml')
 
     downloads_report = None
 
