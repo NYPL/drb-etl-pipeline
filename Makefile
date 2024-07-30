@@ -6,11 +6,14 @@ compose_command = docker-compose --file $(compose_file)
 help:
 	@echo "make help"
 
-test: 
+unit: 
 	python -m pytest --cov-report term-missing --cov=. tests/unit
 
 allure-test:
 	python -m pytest --alluredir=./allure-results ./tests/unit
+
+integration: 
+	python -m pytest tests/integration
 
 up:
 	$(compose_command) up -d
