@@ -33,7 +33,7 @@ services:
 
   rabbitmq:
     container_name: drb_local_mq
-    image: rabbitmq:3.10
+    image: rabbitmq:3.13
     ports:
       - 5672:5672
     volumes:
