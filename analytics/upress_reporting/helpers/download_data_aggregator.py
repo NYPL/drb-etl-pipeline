@@ -124,7 +124,7 @@ class DownloadDataAggregator:
             id_parse = None
 
             '''
-            To from the log event data, we need to go to from the link to the item, to the edition, to the work
+            To go from the log event data, we need to go to from the link to the item, to the edition, to the work and to the record (?)
             '''
 
             for item in self.db_manager.session.query(Item).filter(
