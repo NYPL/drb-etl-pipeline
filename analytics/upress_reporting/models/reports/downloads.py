@@ -24,7 +24,6 @@ class DownloadsReport(Counter5Report):
             self.publisher, pandas_date_range)
 
     def build_header(self):
-        # TODO: what do we term this set of headers?
         return {
             "Report_Name": "NYPL DRB Book Usage by Title / Downloads",
             "Report_ID": self.generate_report_id(),
@@ -42,7 +41,8 @@ class DownloadsReport(Counter5Report):
             writer = csv.writer(csv_file)
             for key, value in header.items():
                 writer.writerow([key, value])
-            writer.writerow("\n")
+            writer.writerow([])
+            # following code is temp until we can integrate DRB data
             writer.writerow(["Title", "Timestamp", "Edition_ID"])
             for download_event in download_events:
                 writer.writerow(

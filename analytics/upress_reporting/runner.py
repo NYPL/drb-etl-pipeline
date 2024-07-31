@@ -13,7 +13,6 @@ def main():
     downloads_report = None
 
     if (len(sys.argv) <= 1):
-        # TODO: should this warning be printed or logged?
         print(
             f"No reporting period passed in. Generating report for Jan {datetime.now().year}!")
     downloads_report = DownloadsReport("UofM") if (

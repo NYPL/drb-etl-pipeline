@@ -79,20 +79,18 @@ class DownloadDataAggregator:
                 raise DownloadParsingError(
                     f"Log files in path {path} do not exist.")
             else:
-                for c in log_file["Contents"]:
-                    curr_key = str(c["Key"])
-                    # log_object is a dict type
-                    log_object = self.s3_client.get_object(
+                for content in log_file["Contents"]:
+                    curr_key = str(content["Key"])
+                    log_object_dict = self.s3_client.get_object(
                         Bucket=self.bucket_name, Key=f"{curr_key}"
                     )
-                    for i in log_object["Body"].iter_lines():
-                        log_object = i.decode("utf8")
+                    for i in log_object_dict["Body"].iter_lines():
+                        log_object_dict = i.decode("utf8")
                         parse_tuple = self._match_log_info_with_frbr_data(
-                            log_object)
+                            log_object_dict)
                         if parse_tuple:
-                            download_event = DownloadEvent(
-                                parse_tuple[0], parse_tuple[1], parse_tuple[2])
-                            downloads_in_batch.append(download_event)
+                            downloads_in_batch.append(DownloadEvent(
+                                parse_tuple[0], parse_tuple[1], parse_tuple[2]))
         return downloads_in_batch
 
     def _redact_s3_path(self, path):
