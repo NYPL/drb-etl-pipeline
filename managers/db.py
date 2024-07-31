@@ -35,6 +35,15 @@ class DBManager:
         except Exception as e:
             raise e
 
+
+    def __enter__(self):
+        self.generateEngine()
+        self.createSession()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.closeConnection()
+
     def initializeDatabase(self):
         if not inspect(self.engine).has_table('works'):
             Base.metadata.create_all(self.engine)
