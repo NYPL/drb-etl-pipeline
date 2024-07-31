@@ -19,6 +19,7 @@
 - Refactor OCLC Catalog Manager
 - Added make integration command
 - Upgrade RabbitMQ Docker image to 3.13
+- Updated README with steps on running the processes locally
 
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
