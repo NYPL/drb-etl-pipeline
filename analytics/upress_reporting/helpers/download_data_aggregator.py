@@ -2,7 +2,7 @@ import os
 import boto3
 import re
 
-from analytics.upress_reporting.models.data.download_event import DownloadEvent
+from analytics.upress_reporting.models.data.interaction_event import InteractionEvent, InteractionType
 from logger import createLog
 from model import Edition, Item, Link
 from model.postgres.item import ITEM_LINKS
@@ -87,10 +87,19 @@ class DownloadDataAggregator:
                     for i in log_object_dict["Body"].iter_lines():
                         log_object_dict = i.decode("utf8")
                         parse_tuple = self._match_log_info_with_frbr_data(
-                            log_object_dict)
+                            log_object_dict
+                        )
+                        
                         if parse_tuple:
-                            downloads_in_batch.append(DownloadEvent(
-                                parse_tuple[0], parse_tuple[1], parse_tuple[2]))
+                            downloads_in_batch.append(
+                                InteractionEvent(
+                                    title=parse_tuple[0], 
+                                    timestamp=parse_tuple[1], 
+                                    book_id=parse_tuple[2],
+                                    interaction_type=InteractionType.DOWNLOAD
+                                )
+                            )
+        
         return downloads_in_batch
 
     def _redact_s3_path(self, path):
@@ -113,6 +122,10 @@ class DownloadDataAggregator:
             link_group = match_file_id.group(1)
             title_parse = ""
             id_parse = None
+
+            '''
+            To from the log event data, we need to go to from the link to the item, to the edition, to the work
+            '''
 
             for item in self.db_manager.session.query(Item).filter(
                 Item.source == self.publisher
