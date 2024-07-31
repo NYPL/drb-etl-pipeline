@@ -124,7 +124,7 @@ class DownloadDataAggregator:
             id_parse = None
 
             '''
-            To go from the log event data, we need to go to from the link to the item, to the edition, to the work, and to the original source record.
+            To go from the log event data, we need to go from the link to the item, to the edition, to the work, and to the original source record.
 
             Links are linked to itmes by the item_id. 
             Items are linked to editions by the edition_id. 
