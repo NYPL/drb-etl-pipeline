@@ -44,7 +44,7 @@ class DownloadDataAggregator:
             batch = self._load_batch(folder_name)
             downloads_per_day = self._parse_logs(batch)
             download_events.extend(downloads_per_day)
-        
+
         self.db_manager.session.close()
         return download_events
 
