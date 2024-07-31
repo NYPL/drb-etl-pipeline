@@ -2,7 +2,7 @@
 
 ## unreleased version -- v0.13.1
 ## Added
-- New script to parse download requests from S3 log files for UMP books 
+- New analytics folder for University Press project code. Contains methodology for generating Counter 5 reports
 - New script to update current UofM manifests with fulfill endpoints to replace pdf/epub urls
 - Updated README with appendix and additions to avaliable processes
 - New process to add fulfill urls to Limited Access manifests and update fulfill_limited_access flags to True

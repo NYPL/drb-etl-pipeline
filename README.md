@@ -22,6 +22,18 @@ Using these retrieved records, and matched records from the DCDW as a corpus, th
 
 This application is built as a monorepo, which can be built as a single Docker container. This container can be run to execute different processes, which either execute discrete tasks or start a persistent service (such as a Flask API instance). The monorepo structure allows for a high degree of code reuse and makes extending existing services/adding new services easier as they can be based on existing patterns. Many of the modules include abstract base classes that define the mandatory methods for each service.
 
+## Analytics
+
+Analytics projects are stored separately from other DRB processes and scripts, in the [analytics](analytics) folder. Each analytics project is listed below:
+* [University Press Backlist Project](analytics/upress_reporting) = Generates [Counter 5 reports](https://airtable.com/appBoLf4lMofecGPU/tblIjRKk0fnoGOqMo?blocks=hide) given a timeframe. Be sure to set up environment variables `DOWNLOAD_BUCKET` and `DOWNLOAD_LOG_PATH`. To generate Counter 5 reports, run the following:
+    ```
+    python3 analytics/upress_reporting/runner.py <REPORTING PERIOD>
+    ```
+  Here is an example command:
+    ```
+    python3 analytics/upress_reporting/runner.py "2024-03-01 to 2024-03-30"
+    ```
+
 ### Local Development
 
 Locally these services can be run in two modes:
