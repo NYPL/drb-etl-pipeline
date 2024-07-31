@@ -1,5 +1,5 @@
 from nypl_py_utils.functions.log_helper import create_log
-from analytics.upress_reporting.reports.models.downloads import DownloadsReport
+from analytics.upress_reporting.models.reports.downloads import DownloadsReport
 
 
 class Counter5Controller:

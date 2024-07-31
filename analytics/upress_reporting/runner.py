@@ -1,6 +1,6 @@
 import sys
 
-from analytics.upress_reporting.reports.models.downloads import DownloadsReport
+from analytics.upress_reporting.models.reports.downloads import DownloadsReport
 from datetime import datetime
 from logger import createLog
 from main import loadEnvFile

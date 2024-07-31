@@ -1,9 +1,8 @@
 import os
 import boto3
-import numpy
 import re
-import shutil
 
+from analytics.upress_reporting.models.data.download_event import DownloadEvent
 from logger import createLog
 from model import Edition, Item, Link
 from model.postgres.item import ITEM_LINKS
@@ -17,10 +16,10 @@ TIMESTAMP_REGEX = r"\[.+\]"
 REFERRER_REGEX = r"https://drb-qa.nypl.org/"
 
 
-class DownloadRequestParser:
+class DownloadDataAggregator:
     """
-    Parses S3 download logs and generates CSVs with all download requests
-    for each day. All CSVs are stored locally in "download_csvs" directory.
+    Parses S3 download logs and generates list of DownloadEvents, each corresponding 
+    to a single download request.
     """
 
     def __init__(self, publisher, date_range):
@@ -34,26 +33,20 @@ class DownloadRequestParser:
         self._setup_db_manager()
         self.logger = createLog("download_request_parser")
 
-    def generate_csv_files(self):
-        csv_directory = "download_csvs"
+    def pull_download_events(self):
+        '''
+        Returns list of DownloadEvents in a given reporting period.
+        '''
+        download_events = []
 
         for date in self.date_range:
             folder_name = date.strftime("%Y/%m/%d")
-            new_dir = f"{csv_directory}/{folder_name}"
-            # Delete any old files and make a new directory before beginning
-            if os.path.exists(new_dir):
-                shutil.rmtree(new_dir)
-            os.makedirs(new_dir)
-
             batch = self._load_batch(folder_name)
             downloads_per_day = self._parse_logs(batch)
-            numpy_download_array = numpy.asarray(downloads_per_day)
-            numpy.savetxt(f"{new_dir}/{date.day}.csv",
-                          numpy_download_array,
-                          delimiter=",",
-                          fmt="%s")
-
+            download_events.extend(downloads_per_day)
+        
         self.db_manager.session.close()
+        return download_events
 
     def _setup_db_manager(self):
         self.db_manager = DBManager(
@@ -78,8 +71,7 @@ class DownloadRequestParser:
         The edition title, identifier, and timestamp are parsed out of the
         S3 server access log files for UMP download requests.
         '''
-        # initial array contains headers for CSV
-        ump_downloads_array = [["title", "timeStamp", "identifier"]]
+        downloads_in_batch = []
 
         for log_file in batch:
             if "Contents" not in log_file:
@@ -98,9 +90,10 @@ class DownloadRequestParser:
                         parse_tuple = self._match_log_info_with_frbr_data(
                             log_object)
                         if parse_tuple:
-                            ump_downloads_array.append(parse_tuple)
-
-        return ump_downloads_array
+                            download_event = DownloadEvent(
+                                parse_tuple[0], parse_tuple[1], parse_tuple[2])
+                            downloads_in_batch.append(download_event)
+        return downloads_in_batch
 
     def _redact_s3_path(self, path):
         '''
