@@ -1,8 +1,9 @@
 import os
+from typing import Optional
 import yaml
 
 
-def load_env_file(run_type: str, file_string: str | None=None) -> None:
+def load_env_file(run_type: str, file_string: Optional[str]=None) -> None:
     """Loads configuration details from a specific yaml file.
     Arguments:
         runType {string} -- The environment to load configuration details for.
