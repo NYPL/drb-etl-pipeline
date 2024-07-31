@@ -124,7 +124,12 @@ class DownloadDataAggregator:
             id_parse = None
 
             '''
-            To go from the log event data, we need to go to from the link to the item, to the edition, to the work and to the record (?)
+            To go from the log event data, we need to go to from the link to the item, to the edition, to the work, and to the original source record.
+
+            Links are linked to itmes by the item_id. 
+            Items are linked to editions by the edition_id. 
+            Editions are linked to works by the work_id.
+            Editions are linked to records by the dcdw_uuids.
             '''
 
             for item in self.db_manager.session.query(Item).filter(
