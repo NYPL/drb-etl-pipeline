@@ -57,14 +57,14 @@ It's required to have Docker/Docker Desktop installed locally for setting up a l
 
 All services share a single entry point in `main.py` file. This script dynamically imports available processes from the `processes` directory and executes the selected process. This script accepts the following arguments (these can also be displayed by running `python main.py --help`)
 
-- `--process` The name of the process to execute. This should be the name of the process class
-- `--environment` The environment in which to execute the process. This controls which set of environment variables are loaded from the `config` directory, and should be set to `local` for local development
-- `--ingestType` Applicable for processes that fetch records from external sources. Generally three settings are available (see individual processes for their own settings): `daily`, `complete` and `custom`
-- `--inputFile` Used with the `custom` ingest setting provides a local file of records to import
-- `--startDate` Also used with the `custom` ingest setting, sets a start point for a period to query or ingest records
-- `--limit` Limits the total number of rows imported in a single process
-- `--offset` Skips the first `n` rows of an import process
-- `--singleRecord` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
+- `--process`/`-p` The name of the process to execute. This should be the name of the process class
+- `--environment`/`-e` The environment in which to execute the process. This controls which set of environment variables are loaded from the `config` directory, and should be set to `local` for local development
+- `--ingestType`/`-i` Applicable for processes that fetch records from external sources. Generally three settings are available (see individual processes for their own settings): `daily`, `complete` and `custom`
+- `--inputFile`/`-f` Used with the `custom` ingest setting provides a local file of records to import
+- `--startDate`/`-s` Also used with the `custom` ingest setting, sets a start point for a period to query or ingest records
+- `--limit`/`-l` Limits the total number of rows imported in a single process
+- `--offset`/`-o` Skips the first `n` rows of an import process
+- `--singleRecord`/`-r` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
 
 To set up a local environment there is a special process to initialize a database and search cluster which is the `DevelopmentSetupProcess`. However, it's recommended to run the `DevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. Before running a command, it's required to set these config variables in the sample-compose.yaml file:
 
@@ -78,7 +78,10 @@ With the configurations set, one of these commands should be run: `make up` or `
 
 The docker compose file uses the sample-compose.yaml file in the `config` directory and additional configurations and dependencies can be added to the file to build upon your local environment.
 
-To run the processes individually the command should be in this format: `python main.py --process APIProcess`.
+To run the processes individually in a local environment the command should be in this format: 
+`python main.py -p APIProcess -e sample-compose` or `python main.py -p APIProcess -e local-compose`.
+
+An example of running one of these processes is: `python main.py -p LOCProcess -e local-compose -i complete`
 
 The currently available processes (with the exception of the UofSC and ChicagoISAC processes) are:
 
