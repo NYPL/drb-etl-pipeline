@@ -1,18 +1,17 @@
-from managers.oclcAuth import OCLCAuthManager
-from loadEnv import loadEnvFile
-import os
+from managers.oclc_auth import OCLCAuthManager
+from load_env import load_env_file
 
-loadEnvFile('local-compose', fileString='config/local-compose.yaml')
+load_env_file('local-compose', file_string='config/local-compose.yaml')
 
 
 def test_get_token():
-    token = OCLCAuthManager.getToken()
+    token = OCLCAuthManager.get_token()
 
     assert token != None
 
 
 def test_reuse_valid_token():
-    token = OCLCAuthManager.getToken()
-    new_token = OCLCAuthManager.getToken()
+    token = OCLCAuthManager.get_token()
+    new_token = OCLCAuthManager.get_token()
 
     assert new_token == token

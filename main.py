@@ -4,7 +4,7 @@ import newrelic.agent
 import argparse
 import inspect
 
-from loadEnv import loadEnvFile
+from load_env import load_env_file
 from logger import createLog
 
 #NEW_RELIC_LICENSE_KEY = Put license key here
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     parser = createArgParser()
     args = parser.parse_args()
 
-    loadEnvFile(args.environment, './config/{}.yaml')
+    load_env_file(args.environment, './config/{}.yaml')
     os.environ['ENVIRONMENT'] = args.environment
 
     main(args)

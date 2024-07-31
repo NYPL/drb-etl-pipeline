@@ -2,7 +2,7 @@ import os
 import yaml
 
 
-def loadEnvFile(runType, fileString=None):
+def load_env_file(run_type: str, file_string: str | None=None) -> None:
     """Loads configuration details from a specific yaml file.
     Arguments:
         runType {string} -- The environment to load configuration details for.
@@ -14,25 +14,25 @@ def loadEnvFile(runType, fileString=None):
         dict -- A dictionary containing the configuration details parsed from
         the specificied yaml file.
     """
-    envDict = None
+    env_dict = None
 
-    if fileString:
-        openFile = fileString.format(runType)
+    if file_string:
+        open_file = file_string.format(run_type)
     else:
-        openFile = 'local.yaml'
+        open_file = 'local.yaml'
 
     try:
-        with open(openFile) as envStream:
+        with open(open_file) as env_stream:
             try:
-                envDict = yaml.full_load(envStream)
+                env_dict = yaml.full_load(env_stream)
             except yaml.YAMLError as err:
-                print('{} Invalid! Please review'.format(openFile))
+                print(f'{open_file} Invalid! Please review')
                 raise err
 
     except FileNotFoundError as err:
         print('Missing config YAML file! Check directory')
         raise err
 
-    if envDict:
-        for key, value in envDict.items():
+    if env_dict:
+        for key, value in env_dict.items():
             os.environ[key] = value

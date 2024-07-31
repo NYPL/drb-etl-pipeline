@@ -3,8 +3,8 @@ from .db import DBManager
 from .doabParser import DOABLinkManager
 from .gutenberg import GutenbergManager
 from .kMeans import KMeansManager
-from .oclcAuth import OCLCAuthManager
-from .oclcCatalog import OCLCCatalogManager
+from .oclc_auth import OCLCAuthManager
+from .oclc_catalog import OCLCCatalogManager
 from .oclcClassify import ClassifyManager
 from .nyplApi import NyplApiManager
 from .webpubManifest import WebpubManifest
