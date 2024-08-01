@@ -46,7 +46,7 @@ class OCLCCatalogManager:
             token = OCLCAuthManager.get_token()
             headers = { 'Authorization': f'Bearer {token}' }
             
-            # TOOD: SFR-2090, SFR-2091 Determine how many records to get and how to order
+            # TODO: SFR-2090, SFR-2091 Determine how many records to get and how to order
             other_editions_response = requests.get(
                 other_editions_url, 
                 headers=headers, 
