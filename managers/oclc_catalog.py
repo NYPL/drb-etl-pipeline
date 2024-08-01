@@ -39,7 +39,6 @@ class OCLCCatalogManager:
         return catalog_response.text
     
     def get_related_oclc_numbers(self, oclc_number: int) -> Optional[list[int]]: 
-        # TODO: SFR-2051 Use https://metadata.api.oclc.org 
         other_editions_url = f'https://americas.discovery.api.oclc.org/worldcat/search/v2/brief-bibs/{oclc_number}/other-editions'
 
         try:
