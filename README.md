@@ -22,6 +22,18 @@ Using these retrieved records, and matched records from the DCDW as a corpus, th
 
 This application is built as a monorepo, which can be built as a single Docker container. This container can be run to execute different processes, which either execute discrete tasks or start a persistent service (such as a Flask API instance). The monorepo structure allows for a high degree of code reuse and makes extending existing services/adding new services easier as they can be based on existing patterns. Many of the modules include abstract base classes that define the mandatory methods for each service.
 
+## Analytics
+
+Analytics projects are stored separately from other DRB processes and scripts, in the [analytics](analytics) folder. Each analytics project is listed below:
+* [University Press Backlist Project](analytics/upress_reporting) = Generates [Counter 5 reports](https://airtable.com/appBoLf4lMofecGPU/tblIjRKk0fnoGOqMo?blocks=hide) given a timeframe. Be sure to set up environment variables `DOWNLOAD_BUCKET` and `DOWNLOAD_LOG_PATH`. To generate Counter 5 reports, run the following:
+    ```
+    python3 analytics/upress_reporting/runner.py <REPORTING PERIOD>
+    ```
+  Here is an example command:
+    ```
+    python3 analytics/upress_reporting/runner.py "2024-03-01 to 2024-03-30"
+    ```
+
 ### Local Development
 
 Locally these services can be run in two modes:
@@ -57,14 +69,14 @@ It's required to have Docker/Docker Desktop installed locally for setting up a l
 
 All services share a single entry point in `main.py` file. This script dynamically imports available processes from the `processes` directory and executes the selected process. This script accepts the following arguments (these can also be displayed by running `python main.py --help`)
 
-- `--process` The name of the process to execute. This should be the name of the process class
-- `--environment` The environment in which to execute the process. This controls which set of environment variables are loaded from the `config` directory, and should be set to `local` for local development
-- `--ingestType` Applicable for processes that fetch records from external sources. Generally three settings are available (see individual processes for their own settings): `daily`, `complete` and `custom`
-- `--inputFile` Used with the `custom` ingest setting provides a local file of records to import
-- `--startDate` Also used with the `custom` ingest setting, sets a start point for a period to query or ingest records
-- `--limit` Limits the total number of rows imported in a single process
-- `--offset` Skips the first `n` rows of an import process
-- `--singleRecord` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
+- `--process`/`-p` The name of the process to execute. This should be the name of the process class
+- `--environment`/`-e` The environment in which to execute the process. This controls which set of environment variables are loaded from the `config` directory, and should be set to `local` for local development
+- `--ingestType`/`-i` Applicable for processes that fetch records from external sources. Generally three settings are available (see individual processes for their own settings): `daily`, `complete` and `custom`
+- `--inputFile`/`-f` Used with the `custom` ingest setting provides a local file of records to import
+- `--startDate`/`-s` Also used with the `custom` ingest setting, sets a start point for a period to query or ingest records
+- `--limit`/`-l` Limits the total number of rows imported in a single process
+- `--offset`/`-o` Skips the first `n` rows of an import process
+- `--singleRecord`/`-r` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
 
 To set up a local environment there is a special process to initialize a database and search cluster which is the `DevelopmentSetupProcess`. However, it's recommended to run the `DevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. Before running a command, it's required to set these config variables in the sample-compose.yaml file:
 
@@ -78,7 +90,10 @@ With the configurations set, one of these commands should be run: `make up` or `
 
 The docker compose file uses the sample-compose.yaml file in the `config` directory and additional configurations and dependencies can be added to the file to build upon your local environment.
 
-To run the processes individually the command should be in this format: `python main.py --process APIProcess`.
+To run the processes individually in a local environment the command should be in this format: 
+`python main.py -p APIProcess -e sample-compose` or `python main.py -p APIProcess -e local-compose`.
+
+An example of running one of these processes is: `python main.py -p LOCProcess -e local-compose -i complete`
 
 The currently available processes (with the exception of the UofSC and ChicagoISAC processes) are:
 
