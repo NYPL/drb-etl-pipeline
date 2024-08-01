@@ -1,6 +1,7 @@
 import os
 import requests
 from requests.exceptions import Timeout, ConnectionError
+from typing import Optional
 
 from logger import createLog
 from managers.oclc_auth import OCLCAuthManager
@@ -37,14 +38,23 @@ class OCLCCatalogManager:
 
         return catalog_response.text
     
-    def query_other_editions(self, oclc_number: str): 
+    def get_related_oclc_numbers(self, oclc_number: int) -> Optional[list[int]]: 
+        # TODO: SFR-2051 Use https://metadata.api.oclc.org 
         other_editions_url = f'https://americas.discovery.api.oclc.org/worldcat/search/v2/brief-bibs/{oclc_number}/other-editions'
 
         try:
             token = OCLCAuthManager.get_token()
             headers = { 'Authorization': f'Bearer {token}' }
             
-            other_editions_response = requests.get(other_editions_url, headers=headers)
+            # TOOD: SFR-2090, SFR-2091 Determine how many records to get and how to order
+            other_editions_response = requests.get(
+                other_editions_url, 
+                headers=headers, 
+                params={
+                    'limit': 10,
+                    'orderBy': 'bestMatch'
+                }
+            )
         except Exception as e:
             logger.error(f'Failed to query URL {other_editions_url} due to {e}')
             return None
@@ -53,7 +63,12 @@ class OCLCCatalogManager:
             logger.warn(f'OCLC other editions request failed with status {other_editions_response.status_code}')
             return None
         
-        return other_editions_response.json()
+        brief_records = other_editions_response.json().get('briefRecords', None)
+
+        if not brief_records:
+            return None
+        
+        return [int(brief_record['oclcNumber']) for brief_record in brief_records if int(brief_record['oclcNumber']) != oclc_number]
 
 
     def query_brief_bibs(self, query: str):
