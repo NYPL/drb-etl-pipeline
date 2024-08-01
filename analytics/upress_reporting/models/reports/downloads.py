@@ -43,7 +43,6 @@ class DownloadsReport(Counter5Report):
                 writer.writerow([key, value])
             writer.writerow([])
             # following code is temp until we can integrate DRB data
-            writer.writerow(["Title", "Timestamp", "Edition_ID"])
+            writer.writerow(ADDITIONAL_HEADERS)
             for download_event in download_events:
-                writer.writerow(
-                    [download_event.title, download_event.timestamp, download_event.edition_id])
+                writer.writerow(download_event.format_for_csv())

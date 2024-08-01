@@ -1,10 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from enum import Enum
 from typing import Optional
 
 class InteractionType(Enum):
-    DOWNLOAD = 'Download'
-    VIEW = 'View'
+    DOWNLOAD = "Download"
+    VIEW = "View"
+
+class UsageType(Enum):
+    FULL_ACCESS = "Full Access"  # public domain books, out of copyright
+    OPEN_ACCESS = "Open Access"  # in copyright
+    LIMITED_ACCESS = "Limited Access"   # UMP books (reqs such as library card needed to access book)
 
 @dataclass(init=True, repr=True)
 class InteractionEvent():
@@ -22,6 +27,12 @@ class InteractionEvent():
     # Pull from works table subjects column, e.g. "[{""heading"": ""Poetry (English)"", ""authority"": """", ""controlNo"": """"}, {""heading"": ""Livres numériques"", ""authority"": ""rvmgf"", ""controlNo"": """"}]"
     disciplines: Optional[list[str]]
     # Pull from records rights column, e.g. "hathitrust|public_domain|copyright renewal research was conducted|Public Domain|2011-08-24 05:30:05"
-    usage_type: Optional[str]
+    usage_type: UsageType
     interaction_type: InteractionType
     timestamp: str
+
+    def format_for_csv(self):
+        csv_row = []
+        for field in fields(self):
+            csv_row.append(getattr(self, field.name))
+        return csv_row
