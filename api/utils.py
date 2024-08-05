@@ -96,7 +96,6 @@ class APIUtils():
 
         for key, value in aggregations.items():
             if key == 'buckets':
-                print(key, value)
                 aggs[parentKey] = [
                     {'value': b['key'], 'count': b['editions_per']['doc_count']}
                     if 'editions_per' in b.keys() else
