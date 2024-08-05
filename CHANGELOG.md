@@ -20,6 +20,7 @@
 - Added make integration command
 - Upgrade RabbitMQ Docker image to 3.13
 - Updated README with steps on running the processes locally
+- Removing aggregation result print statement
 
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
