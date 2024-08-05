@@ -70,7 +70,7 @@ services:
       - elasticsearch
     build:
       context: .
-    command: -e local-compose -p DevelopmentSetupProcess
+    command: -e local -p DevelopmentSetupProcess
     volumes:
       - type: bind
         source: .
