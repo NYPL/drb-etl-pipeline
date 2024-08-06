@@ -44,6 +44,7 @@ class OCLCCatalogManager:
 
         headers = {"Authorization": f"Bearer {token}"}
         try:
+            # Limit 10 results, ordered by bestMatch, by default
             bibsResp = requests.get(
                 bibsEndpoint,
                 headers=headers,
