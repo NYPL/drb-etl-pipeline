@@ -17,7 +17,9 @@ class TestClassifyManager:
         return mocker.patch.multiple(
             ClassifyManager,
             generateIdentifierURL=mocker.DEFAULT,
-            generateAuthorTitleURL=mocker.DEFAULT
+            generateAuthorTitleURL=mocker.DEFAULT,
+            generate_author_title_query=mocker.DEFAULT,
+            generate_identifier_query=mocker.DEFAULT
         )
 
     @pytest.fixture
