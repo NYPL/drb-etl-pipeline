@@ -56,20 +56,41 @@ class TestClassifyManager:
         assert testClassifyResponse == 'testXMLResponse'
         for _, method in mockMethods.items():
             method.assert_called_once
-    
+
+    def test_generate_identifier_query(self, testInstance):
+        testInstance.identifierType = "oclc"
+        assert testInstance.generate_identifier_query() == "no: 1"
+        testInstance.identifierType = "issn"
+        assert testInstance.generate_identifier_query() == "in: 1"
+
+    def test_generate_author_title_query(self, testInstance):
+        assert testInstance.generate_author_title_query() == "ti:testTitle au:testAuthor"
+
+    def test_generate_search_query_w_identifier(self, testInstance, mockGenerators):
+        testInstance.identifierType = "issn"
+        testInstance.generate_search_query()
+        mockGenerators['generate_identifier_query'].assert_called_once
+        mockGenerators['generate_author_title_query'].assert_not_called
+
+    def test_generate_search_query_wo_identifier(self, testInstance, mockGenerators):
+        testInstance.identifier = None
+        testInstance.generate_search_query()
+        mockGenerators['generate_author_title_query'].assert_called_once
+        mockGenerators['generate_identifier_query'].assert_not_called
+
     def test_generateQueryURL_w_identifier(self, testInstance, mockGenerators):
         testInstance.generateQueryURL()
 
         mockGenerators['generateIdentifierURL'].assert_called_once
         mockGenerators['generateAuthorTitleURL'].assert_not_called
-    
+
     def test_generateQueryURL_wo_identifier(self, testInstance, mockGenerators):
         testInstance.identifier = None
         testInstance.generateQueryURL()
 
         mockGenerators['generateIdentifierURL'].assert_not_called
         mockGenerators['generateAuthorTitleURL'].assert_called_once
-    
+
     def test_generateQueryURL_wo_query_options(self, testInstance):
         testInstance.identifier = None
         testInstance.title = None
