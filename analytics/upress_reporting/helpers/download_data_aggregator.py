@@ -1,7 +1,9 @@
+import json
 import boto3
 import os
 import re
 
+from logger import createLog
 from model import Edition, Item, Link
 from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from model.postgres.item import ITEM_LINKS
@@ -31,6 +33,7 @@ class DownloadDataAggregator:
         self.bucket_name = os.environ.get("DOWNLOAD_BUCKET", None)
         self.log_path = os.environ.get("DOWNLOAD_LOG_PATH", None)
 
+        self.logger = createLog("download_data_aggregator")
         self._setup_db_manager()
 
     def pull_download_events(self):
@@ -174,13 +177,24 @@ class DownloadDataAggregator:
         return None
 
     def _determine_usage(self, record):
-        # TODO: how do we determine whether a book is limited access or view only no download?
-        if record.rights is not None:
-            if "public_domain" in record.rights:
-                return UsageType.FULL_ACCESS
-            elif "in_copyright" in record.rights:
-                return UsageType.LIMITED_ACCESS
-        return UsageType.FULL_ACCESS
+        if record.has_part is not None:
+            for item in record.has_part:
+                _, uri, _, _, flag_string = tuple(item.split('|'))
+                if "pdf" in uri:
+                    flags = self._load_flags(flag_string)
+                    if (("embed" in flags.keys()) and (flags["embed"] is True)) or (
+                        ("reader" in flags.keys()) and (flags["reader"] is True)):
+                        return UsageType.FULL_ACCESS
+        return UsageType.LIMITED_ACCESS
+
+    def _load_flags(self, flag_string):
+        try:
+            flags = json.loads(flag_string)
+            return flags if isinstance(flags, dict) else {}
+        except json.decoder.JSONDecodeError:
+            self.logger.error(
+                "Unable to parse nypl_login flags...")
+        return {}
 
 
 class DownloadParsingError(Exception):

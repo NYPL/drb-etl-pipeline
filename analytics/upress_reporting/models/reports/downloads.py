@@ -13,7 +13,7 @@ COLUMNS = ["Book Title",
            "Copyright Year",
            "Disciplines",
            "Usage Type",
-           "Interaction Type"
+           "Interaction Type",
            "Timestamp"]
 
 
@@ -32,7 +32,7 @@ class DownloadsReport(Counter5Report):
 
         header = self.build_header()
         download_events = self.download_request_parser.pull_download_events()
-        df = self.aggregate_interaction_events(download_events)
+        columns, final_data = self.aggregate_interaction_events(download_events)
 
         csv_file_name = f"{self.publisher}_downloads_report_{self.created}.csv"
         with open(csv_file_name, 'w') as csv_file:
@@ -40,10 +40,9 @@ class DownloadsReport(Counter5Report):
             for key, value in header.items():
                 writer.writerow([key, value])
             writer.writerow([])
-            # following code is temp until we can integrate DRB data
-            writer.writerow(COLUMNS)
-            for download_event in download_events:
-                writer.writerow(download_event.format_for_csv())
+            writer.writerow(columns)
+            for title in final_data:
+                writer.writerow(title.values())
 
         self.logger.info("Downloads report generation complete!")
 
@@ -64,43 +63,53 @@ class DownloadsReport(Counter5Report):
         '''
         df = pandas.DataFrame(
             [self.format_dataclass_for_csv(event) for event in events])
-        df.columns = COLUMNS
-        # convert timestamp column from str type to Timestamp type for easier grouping
+        df.columns = ["Book Title",
+           "Book ID",
+           "Authors",
+           "ISBN(s)",
+           "eISBN(s)",
+           "Copyright Year",
+           "Disciplines",
+           "Usage Type",
+           "Interaction Type",
+           "Timestamp"]
+        # convert column from str type to Timestamp type for easier grouping
         df["Timestamp"] = df["Timestamp"].apply(
             self._reformat_timestamp_data)
-        print("Dataframe ", df)
-        df_grouped_by_title_and_month = df.groupby(
-            ["Book Title", pandas.Grouper(freq='M', key='Timestamp')])
-        print("there ", df_grouped_by_title_and_month)
 
         '''
         Remove all duplicate titles for CSV report. We will populate df_unique's 
-        monthly columns based on df_grouped_by_title_and_month
+        monthly columns based on df_grouped_by_id_and_month
         '''
         df_unique = df.drop_duplicates(subset="Book ID")
-        column_names = []
+        df_grouped_by_id_and_month = df.groupby(
+            ["Book ID", pandas.Grouper(freq='M', key='Timestamp')])
+        monthly_columns = []
 
-        for keys, group in df_grouped_by_title_and_month:
+        for keys, group in df_grouped_by_id_and_month:
             # example key values ->  Keys: ('756467457', Timestamp('2024-04-30 00:00:00'))
             month, year = keys[1].month, keys[1].year
             column_name = f"{month}/{year}"
-            column_names.append(column_name)
-            if column_name not in df_unique:
+            if column_name not in df_unique.columns:
+                monthly_columns.append(column_name)
                 # create a new column for each month in the reporting period
-                df_unique[f"{month}/{year}"] = pandas.Series()
+                df_unique[column_name] = pandas.Series()
             # populate counts for a given title per month
             df_unique.loc[df_unique["Book ID"] == keys[0],
                           column_name] = group["Book ID"].count()
 
+        # delete now-unnecessary data
+        df_unique.drop(columns=["Timestamp", "Interaction Type"], 
+                       axis=1,
+                       inplace=True)
         # set null values to 0
-        df_unique[column_names] = df_unique[column_names].fillna(
-            value=0, axis=1)
+        df_unique.loc[:, monthly_columns] = df_unique[monthly_columns].fillna(0)
         # set reporting period total for each title
-        df_unique["Reporting Period Total"] = df_unique[column_names].sum(
+        df_unique.loc[:, "Reporting Period Total"] = df_unique[monthly_columns].sum(
             axis=1)
-        df_unique.drop(columns=["Timestamp", "Interaction Type"], axis=1)
-        print("Unique df ", df_unique)
-        return df_unique
+        
+        # return tuple of new columns for CSV labeling
+        return (df_unique.columns.tolist(), df_unique.to_dict(orient="records"))
 
     def _reformat_timestamp_data(self, date):
         '''

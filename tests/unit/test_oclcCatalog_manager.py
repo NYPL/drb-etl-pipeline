@@ -15,15 +15,15 @@ class TestOCLCCatalogManager:
         assert testInstance.oclcKey == 'test_api_key'
         assert testInstance.attempts == 0
 
-    def test_queryCatalog_success(self, testInstance, mocker):
+    def test_query_catalog_success(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()
-        mockRequest = mocker.patch('managers.oclcCatalog.requests')
+        mockRequest = mocker.patch('managers.oclc_catalog.requests')
         mockRequest.get.return_value = mockResponse
 
         mockResponse.status_code = 200
         mockResponse.text = 'testClassifyRecord'
 
-        testResponse = testInstance.queryCatalog(1)
+        testResponse = testInstance.query_catalog(1)
 
         assert testResponse == 'testClassifyRecord'
         mockRequest.get.assert_called_once_with(
@@ -31,15 +31,15 @@ class TestOCLCCatalogManager:
             timeout=3
         )
 
-    def test_queryCatalog_error(self, testInstance, mocker):
+    def test_query_catalog_error(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()
-        mockRequest = mocker.patch('managers.oclcCatalog.requests')
+        mockRequest = mocker.patch('managers.oclc_catalog.requests')
         mockRequest.get.return_value = mockResponse
 
         mockResponse.status_code = 500
         mockResponse.text = 'testClassifyRecord'
 
-        testResponse = testInstance.queryCatalog(1)
+        testResponse = testInstance.query_catalog(1)
 
         assert testResponse == None
         mockRequest.get.assert_called_once_with(
@@ -47,30 +47,30 @@ class TestOCLCCatalogManager:
             timeout=3
         )
 
-    def test_queryCatalog_single_retry_then_success(self, testInstance, mocker):
+    def test_query_catalog_single_retry_then_success(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()
-        mockRequest = mocker.patch('managers.oclcCatalog.requests')
+        mockRequest = mocker.patch('managers.oclc_catalog.requests')
         mockRequest.get.side_effect = [ConnectionError, mockResponse]
 
         mockResponse.status_code = 200
         mockResponse.text = 'testClassifyRecord'
 
-        testResponse = testInstance.queryCatalog(1)
+        testResponse = testInstance.query_catalog(1)
 
         assert testResponse == 'testClassifyRecord'
         mockRequest.get.assert_has_calls(
             [mocker.call('http://www.worldcat.org/webservices/catalog/content/1?wskey=test_api_key', timeout=3)] * 2
         )
 
-    def test_queryCatalog_exhaust_retries(self, testInstance, mocker):
+    def test_query_catalog_exhaust_retries(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()
-        mockRequest = mocker.patch('managers.oclcCatalog.requests')
+        mockRequest = mocker.patch('managers.oclc_catalog.requests')
         mockRequest.get.side_effect = [ConnectionError, ConnectionError, Timeout]
 
         mockResponse.status_code = 200
         mockResponse.text = 'testClassifyRecord'
 
-        testResponse = testInstance.queryCatalog(1)
+        testResponse = testInstance.query_catalog(1)
 
         assert testResponse == None
         mockRequest.get.assert_has_calls(

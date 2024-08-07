@@ -29,10 +29,6 @@ class Counter5Report(ABC):
     def build_report(self):
         return
 
-    @abstractmethod
-    def aggregate_interaction_events(self, events) -> pandas.DataFrame:
-        return
-
     def generate_report_id(self):
         return uuid.uuid4()
 

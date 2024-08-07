@@ -3,12 +3,12 @@ import sys
 from analytics.upress_reporting.counter_5_controller import Counter5Controller
 from datetime import datetime
 from logger import createLog
-from main import loadEnvFile
+from main import load_env_file
 
 
 def main():
     logger = createLog("runner")
-    loadEnvFile('local-compose', fileString='config/local-compose.yaml')
+    load_env_file('local-compose', file_string='config/local-compose.yaml')
 
     if (len(sys.argv) <= 1):
         print(

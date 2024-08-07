@@ -47,7 +47,7 @@ services:
     volumes:
       - drb_local_rsdata:/data
 
-  webapp:
+  api:
     container_name: drb_local_api
     depends_on:
       - database
