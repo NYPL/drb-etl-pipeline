@@ -3,12 +3,12 @@ import sys
 from analytics.upress_reporting.models.reports.downloads import DownloadsReport
 from datetime import datetime
 from logger import createLog
-from main import loadEnvFile
+from main import load_env_file
 
 
 def main():
     logger = createLog("Generating Counter 5 reports...")
-    loadEnvFile('local-compose', fileString='config/local-compose.yaml')
+    load_env_file('local-compose', fileString='config/local-compose.yaml')
 
     downloads_report = None
 

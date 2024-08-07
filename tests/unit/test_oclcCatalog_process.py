@@ -62,21 +62,21 @@ class TestOCLCCatalogProcess:
         mockAcknowledge.assert_called_once_with('rabbitMQTag')
 
     def test_processCatalogQuery_success(self, testInstance, mocker):
-        testInstance.oclcCatalogManager.queryCatalog.return_value = 'testXML'
+        testInstance.oclcCatalogManager.query_catalog.return_value = 'testXML'
         mockParser = mocker.patch.object(CatalogProcess, 'parseCatalogRecord')
 
         testInstance.processCatalogQuery('{"oclcNo": 1, "owiNo": 1}')
 
-        testInstance.oclcCatalogManager.queryCatalog.assert_called_once_with(1)
+        testInstance.oclcCatalogManager.query_catalog.assert_called_once_with(1)
         mockParser.assert_called_once_with('testXML', 1)
 
     def test_processCatalogQuery_no_record_found(self, testInstance, mocker):
-        testInstance.oclcCatalogManager.queryCatalog.return_value = None
+        testInstance.oclcCatalogManager.query_catalog.return_value = None
         mockParser = mocker.patch.object(CatalogProcess, 'parseCatalogRecord')
 
         testInstance.processCatalogQuery('{"oclcNo": "badID"}')
 
-        testInstance.oclcCatalogManager.queryCatalog.assert_called_once_with('badID')
+        testInstance.oclcCatalogManager.query_catalog.assert_called_once_with('badID')
         mockParser.assert_not_called()
 
     def test_parseCatalogRecord_success(self, testInstance, mocker):

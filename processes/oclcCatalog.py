@@ -64,7 +64,7 @@ class CatalogProcess(CoreProcess):
         message = json.loads(msgBody)
         oclcNo = message['oclcNo']
         
-        catalogXML = self.oclcCatalogManager.queryCatalog(oclcNo)
+        catalogXML = self.oclcCatalogManager.query_catalog(oclcNo)
         
         if catalogXML:
             self.parseCatalogRecord(catalogXML, message['owiNo'])

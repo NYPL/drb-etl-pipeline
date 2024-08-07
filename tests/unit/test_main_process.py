@@ -3,7 +3,7 @@ import pytest
 import sys
 import yaml
 
-from loadEnv import loadEnvFile
+from load_env import load_env_file
 from main import main, registerProcesses, createArgParser
 import processes
 
@@ -112,59 +112,59 @@ class TestMainProcess:
         with pytest.raises(SystemExit):
             argParser.parse_args()
 
-    def test_loadEnvFile_default_file(self, sampleEnvFile, mocker):
+    def test_load_env_file_default_file(self, sampleEnvFile, mocker):
         mockStream = mocker.MagicMock()
-        mockOpen = mocker.patch('loadEnv.open')
+        mockOpen = mocker.patch('load_env.open')
         mockOpen.return_value = mockStream
         mockYaml = mocker.patch('yaml.full_load')
         mockYaml.return_value = sampleEnvFile
         mockEnviron = mocker.patch.dict('os.environ', {})
 
-        loadEnvFile('test', None)
+        load_env_file('test', None)
 
         mockOpen.assert_called_with('local.yaml')
 
         assert mockEnviron['TEST_NAME'] == 'test_name'
         assert mockEnviron['TEST_PORT'] == '9999'
         
-    def test_loadEnvFile_specified_file(self, sampleEnvFile, mocker):
+    def test_load_env_file_specified_file(self, sampleEnvFile, mocker):
         mockStream = mocker.MagicMock()
-        mockOpen = mocker.patch('loadEnv.open')
+        mockOpen = mocker.patch('load_env.open')
         mockOpen.return_value = mockStream
         mockYaml = mocker.patch('yaml.full_load')
         mockYaml.return_value = sampleEnvFile
         mockEnviron = mocker.patch.dict('os.environ', {})
 
-        loadEnvFile('test', './test/path/{}.yaml')
+        load_env_file('test', './test/path/{}.yaml')
 
         mockOpen.assert_called_with('./test/path/test.yaml')
 
         assert mockEnviron['TEST_NAME'] == 'test_name'
         assert mockEnviron['TEST_PORT'] == '9999'
 
-    def test_loadEnvFile_missing_file(self, sampleEnvFile, mocker):
-        mockOpen = mocker.patch('loadEnv.open')
+    def test_load_env_file_missing_file(self, sampleEnvFile, mocker):
+        mockOpen = mocker.patch('load_env.open')
         mockOpen.side_effect = FileNotFoundError
         mockYaml = mocker.patch('yaml.full_load')
         mockEnviron = mocker.patch.dict('os.environ', {})
 
         with pytest.raises(FileNotFoundError):
-            loadEnvFile('test', None)
+            load_env_file('test', None)
             mockYaml.assert_not_called
 
         assert mockEnviron.get('TEST_NAME', None) is None
         assert mockEnviron.get('TEST_PORT', None) is None
 
-    def test_loadEnvFile_invalid_yaml(self, sampleEnvFile, mocker):
+    def test_load_env_file_invalid_yaml(self, sampleEnvFile, mocker):
         mockStream = mocker.MagicMock()
-        mockOpen = mocker.patch('loadEnv.open')
+        mockOpen = mocker.patch('load_env.open')
         mockOpen.return_value = mockStream
         mockYaml = mocker.patch('yaml.full_load')
         mockYaml.side_effect = yaml.YAMLError
         mockEnviron = mocker.patch.dict('os.environ', {})
 
         with pytest.raises(yaml.YAMLError):
-            loadEnvFile('test', None)
+            load_env_file('test', None)
 
         assert mockEnviron.get('TEST_NAME', None) is None
         assert mockEnviron.get('TEST_PORT', None) is None

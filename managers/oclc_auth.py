@@ -2,7 +2,6 @@ from datetime import datetime, timezone
 import os
 import requests
 from requests.exceptions import Timeout, ConnectionError
-import time
 
 from logger import createLog
 
@@ -18,7 +17,7 @@ class OCLCAuthManager:
     
 
     @classmethod
-    def getToken(cls):
+    def get_token(cls):
         OCLC_CLIENT_ID = os.environ.get('OCLC_CLIENT_ID', None)
         OCLC_CLIENT_SECRET = os.environ.get('OCLC_CLIENT_SECRET', None)
 
@@ -26,14 +25,12 @@ class OCLCAuthManager:
             expiry_date = datetime.strptime(cls._token_expires_at, "%Y-%m-%d %H:%M:%SZ")
             now = datetime.now(timezone.utc).replace(tzinfo=None)
             time_to_expiry_in_seconds = (expiry_date - now).total_seconds()
-
-            print(time_to_expiry_in_seconds)
             
             if time_to_expiry_in_seconds > cls.TIME_TO_REFRESH_IN_SECONDS:
                 return cls._token
             
         try:
-            authResp = requests.post(
+            auth_response = requests.post(
                 cls.OCLC_AUTH_URL,
                 headers={'Content-Type': 'application/x-www-form-urlencoded'},
                 auth=(OCLC_CLIENT_ID, OCLC_CLIENT_SECRET),
@@ -42,12 +39,12 @@ class OCLCAuthManager:
             logger.warning(f'Failed to retrieve token from {cls.OCLC_AUTH_URL}')
             return None
 
-        if authResp.status_code != 200:
-            logger.warning(f'OCLC token retrieval failed with status {authResp.status_code}')
+        if auth_response.status_code != 200:
+            logger.warning(f'OCLC token retrieval failed with status {auth_response.status_code}')
             return None
 
-        authData = authResp.json()
-        cls._token = authData['access_token']
-        cls._token_expires_at = authData['expires_at']
+        auth_data = auth_response.json()
+        cls._token = auth_data['access_token']
+        cls._token_expires_at = auth_data['expires_at']
 
         return cls._token

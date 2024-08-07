@@ -1,8 +1,8 @@
 import inspect
 import sys
-from loadEnv import loadEnvFile
+from load_env import load_env_file
 
-loadEnvFile('sample-compose', fileString='config/{}.yaml')
+load_env_file('sample-compose', file_string='config/{}.yaml')
 
 import scripts
 
