@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## unreleased version -- v0.13.1
+## 2024-08-06 -- v0.13.1
 ## Added
 - New analytics folder for University Press project code. Contains methodology for generating Counter 5 reports
 - New script to update current UofM manifests with fulfill endpoints to replace pdf/epub urls
@@ -27,6 +27,7 @@
 - Resolved the format of fulfill endpoints in UofM manifests
 - Added additional logging to the editions endpoint to debug
 - Renamed Docker API container name to drb_local_api
+- Renamed hosts for services in sample-compose file from docker bucket names to localhost
 
 ## 2024-03-21 -- v0.13.0
 ## Added
