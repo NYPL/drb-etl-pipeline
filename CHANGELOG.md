@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Unreleased version -- v0.13.2
+- Removing aggregation result print statement
+
 ## 2024-08-06 -- v0.13.1
 ## Added
 - New analytics folder for University Press project code. Contains methodology for generating Counter 5 reports
