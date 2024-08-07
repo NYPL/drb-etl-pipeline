@@ -31,7 +31,6 @@
 - Renamed Docker API container name to drb_local_api
 - Renamed hosts for services in sample-compose file from docker bucket names to localhost
 
-
 ## 2024-03-21 -- v0.13.0
 ## Added
 - New script to add nypl_login flag to Links objects
