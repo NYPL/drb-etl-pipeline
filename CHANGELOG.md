@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Unreleased -- v0.13.2
+## Added 
+- Implemented OCLC other editions call
+
+## Fixed
+
 ## 2024-08-06 -- v0.13.1
 ## Added
 - New analytics folder for University Press project code. Contains methodology for generating Counter 5 reports
@@ -20,8 +26,6 @@
 - Added make integration command
 - Upgrade RabbitMQ Docker image to 3.13
 - Updated README with steps on running the processes locally
-- Implemented OCLC other editions call
-
 
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
