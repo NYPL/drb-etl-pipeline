@@ -24,12 +24,13 @@
 - Added make integration command
 - Upgrade RabbitMQ Docker image to 3.13
 - Updated README with steps on running the processes locally
-- Renamed hosts for services in sample-compose file from docker bucket names to localhost
 
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
 - Added additional logging to the editions endpoint to debug
 - Renamed Docker API container name to drb_local_api
+- Renamed hosts for services in sample-compose file from docker bucket names to localhost
+
 
 ## 2024-03-21 -- v0.13.0
 ## Added
