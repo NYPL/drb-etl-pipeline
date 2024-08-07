@@ -89,7 +89,7 @@ class DownloadsReport(Counter5Report):
         for keys, group in df_grouped_by_id_and_month:
             # example key values ->  Keys: ('756467457', Timestamp('2024-04-30 00:00:00'))
             month, year = keys[1].month, keys[1].year
-            column_name = f"{month}/{year}"
+            column_name = f"{month}-{year}"
             if column_name not in df_unique.columns:
                 monthly_columns.append(column_name)
                 # create a new column for each month in the reporting period
