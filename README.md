@@ -84,16 +84,18 @@ To set up a local environment there is a special process to initialize a databas
 `HATHI_API_SECRET`:
 `OCLC_API_KEY`:
 
-You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values. Also, the `local-compose.yaml` file referenced in the `docker-compose.yml` file includes other sensitive data such as NYPL API and AWS credentials. If you need these credentials or the whole local-compose.yaml file then you must ask one of the backend developers for this info.
+You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values. 
 
-With the configurations set, one of these commands should be run: `make up` or `docker compose up`. These commands will run the docker-compose file in the codebase and this is why it's required to have Docker/Docker Desktop installed locally. After running one of the commands, a short import process will occur and populate the database with some sample data alongside running the API locally. This will allow you to query the API at `localhost:5050` and query the ESC at `localhost:9200`.
+The `local.yaml` file (host names are localhost) referenced below and the `local-compose.yaml` file (host names are docker container names) referenced in the `docker-compose.yml` file include other sensitive data such as NYPL API and AWS credentials. Please reach out to one of the backend developers for these files.
 
-The docker compose file uses the sample-compose.yaml file in the `config` directory and additional configurations and dependencies can be added to the file to build upon your local environment.
+With the configurations set, one of these commands should be run: `make up` or `docker compose up`. These commands will run the `docker-compose.yml` file in the codebase. Please ensure Docker/Docker Desktop is installed locally. After running one of the commands, a short import process will occur and populate the database with some sample data alongside running the API locally. This will allow you to query the API at `localhost:5050` and query the ESC at `localhost:9200`.
 
-To run the processes individually in a local environment the command should be in this format: 
-`python main.py -p APIProcess -e sample-compose` or `python main.py -p APIProcess -e local-compose`.
+The docker compose file uses the `local-compose.yaml` file in the `config` directory and additional configurations and dependencies can be added to the file to build upon your local environment.
 
-An example of running one of these processes is: `python main.py -p LOCProcess -e local-compose -i complete`
+To run the processes individually in a local environment, the command should be in this format and should use the `local.yaml` file: 
+`python main.py -p APIProcess -e local` or `python main.py -p APIProcess -e local`.
+
+An example of running one of these processes is: `python main.py -p LOCProcess -e local -i complete`
 
 The currently available processes (with the exception of the UofSC and ChicagoISAC processes) are:
 

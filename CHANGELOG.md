@@ -1,10 +1,9 @@
 # CHANGELOG
 
 ## Unreleased version -- v0.13.2
-## Added 
+- Removing aggregation result print statement
+- Created local.yaml file to setup environment variables when running processes locally
 - Implemented OCLC other editions call
-
-## Fixed
 
 ## 2024-08-06 -- v0.13.1
 ## Added
