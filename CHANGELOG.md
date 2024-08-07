@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased -- v0.13.2
+## Unreleased version -- v0.13.2
 ## Added 
 - Implemented OCLC other editions call
 
