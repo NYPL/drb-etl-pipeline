@@ -85,7 +85,6 @@ class ClassifyManager:
         elif self.title and self.author:
             return self.generate_author_title_query()
         else:
-            print('Cannot search for work without identifier or title/author')
             raise ClassifyError('Record lacks identifier or title/author pair')
 
     def generateQueryURL(self):
