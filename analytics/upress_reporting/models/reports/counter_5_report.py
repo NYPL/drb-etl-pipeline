@@ -3,7 +3,9 @@ import re
 import uuid
 
 from abc import ABC, abstractmethod
+from dataclasses import fields, is_dataclass
 from datetime import datetime
+from typing import Any, List
 
 
 class Counter5Report(ABC):
@@ -47,3 +49,12 @@ class Counter5Report(ABC):
         ):
             start, end = reporting_period.split(" to ")
             return pandas.date_range(start=start, end=end, freq=freq)
+    
+    def format_dataclass_for_csv(self, dataclass_instance: Any) -> List[Any]:
+        if not is_dataclass(dataclass_instance):
+            raise ValueError("Provided instance is not a dataclass.")
+        
+        csv_row = []
+        for field in fields(dataclass_instance):
+            csv_row.append(getattr(dataclass_instance, field.name))
+        return csv_row

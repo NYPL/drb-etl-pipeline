@@ -13,6 +13,7 @@ COLUMNS = ["Book Title",
            "Copyright Year",
            "Disciplines",
            "Usage Type",
+           "Interaction Type"
            "Timestamp"]
 
 
@@ -61,14 +62,16 @@ class DownloadsReport(Counter5Report):
         '''
         Builds counts for each title in each month in the reporting period.
         '''
-        df = pandas.DataFrame(data=[event.__dict__ for event in events],
-                              index=None,
-                              columns=COLUMNS)
+        df = pandas.DataFrame(
+            [self.format_dataclass_for_csv(event) for event in events])
+        df.columns = COLUMNS
         # convert timestamp column from str type to Timestamp type for easier grouping
         df["Timestamp"] = df["Timestamp"].apply(
             self._reformat_timestamp_data)
+        print("Dataframe ", df)
         df_grouped_by_title_and_month = df.groupby(
-            ["Book Title", pandas.Grouper(freq='M', key='Reporting Period Total')])
+            ["Book Title", pandas.Grouper(freq='M', key='Timestamp')])
+        print("there ", df_grouped_by_title_and_month)
 
         '''
         Remove all duplicate titles for CSV report. We will populate df_unique's 
@@ -95,7 +98,7 @@ class DownloadsReport(Counter5Report):
         # set reporting period total for each title
         df_unique["Reporting Period Total"] = df_unique[column_names].sum(
             axis=1)
-        df_unique.drop("Timestamp", axis=1)
+        df_unique.drop(columns=["Timestamp", "Interaction Type"], axis=1)
         print("Unique df ", df_unique)
         return df_unique
 
