@@ -2,6 +2,7 @@
 
 ## Unreleased version -- v0.13.2
 - Removing aggregation result print statement
+- Created local.yaml file to setup environment variables when running processes locally
 
 ## 2024-08-06 -- v0.13.1
 ## Added
@@ -23,7 +24,7 @@
 - Added make integration command
 - Upgrade RabbitMQ Docker image to 3.13
 - Updated README with steps on running the processes locally
-- Created local.yaml file to setup environment variables when running processes locally
+
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
 - Added additional logging to the editions endpoint to debug
