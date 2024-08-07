@@ -2,6 +2,9 @@
 
 # Unreleased version -- v0.13.2
 - Added auxiliary functions to build queries for OCLC search endpoints
+- Removing aggregation result print statement
+- Created local.yaml file to setup environment variables when running processes locally
+- Implemented OCLC other editions call
 
 ## 2024-08-06 -- v0.13.1
 ## Added
