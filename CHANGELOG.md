@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## Unreleased version -- v0.13.2
+- Removing aggregation result print statement
+
 ## unreleased version -- v0.13.1
 ## Added
 - New analytics folder for University Press project code. Contains methodology for generating Counter 5 reports
@@ -20,7 +23,6 @@
 - Added make integration command
 - Upgrade RabbitMQ Docker image to 3.13
 - Updated README with steps on running the processes locally
-- Removing aggregation result print statement
 
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
