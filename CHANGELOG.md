@@ -24,6 +24,7 @@
 - Added make integration command
 - Upgrade RabbitMQ Docker image to 3.13
 - Updated README with steps on running the processes locally
+- Renamed hosts for services in sample-compose file from docker bucket names to localhost
 
 ## Fixed
 - Resolved the format of fulfill endpoints in UofM manifests
