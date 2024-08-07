@@ -1,27 +1,50 @@
 import csv
+import pandas
 
-from analytics.upress_reporting.helpers.download_data_aggregator import (
-    DownloadDataAggregator,
-)
-from analytics.upress_reporting.models.reports.counter_5_report import Counter5Report
+from helpers.download_data_aggregator import DownloadDataAggregator
+from models.reports.counter_5_report import Counter5Report
+from logger import createLog
 
-ADDITIONAL_HEADERS = ["Book Title",
-                      "Book ID",
-                      "Authors",
-                      "ISBN",
-                      "eISBN",
-                      "Copyright Year",
-                      "Disciplines",
-                      "Usage Type",
-                      "Reporting Period Total"]
+COLUMNS = ["Book Title",
+           "Book ID",
+           "Authors",
+           "ISBN(s)",
+           "eISBN(s)",
+           "Copyright Year",
+           "Disciplines",
+           "Usage Type",
+           "Timestamp"]
 
 
 class DownloadsReport(Counter5Report):
     def __init__(self, *args):
         super().__init__(*args)
-        pandas_date_range = self.parse_reporting_period(self.reporting_period)
+        pandas_date_range = self.parse_reporting_period(
+            self.reporting_period)
         self.download_request_parser = DownloadDataAggregator(
             self.publisher, pandas_date_range)
+        self.logger = createLog("downloads_report")
+
+    def build_report(self):
+        # TODO: building report is slow, create a follow up story?
+        self.logger.info("Building downloads report...")
+
+        header = self.build_header()
+        download_events = self.download_request_parser.pull_download_events()
+        df = self.aggregate_interaction_events(download_events)
+
+        csv_file_name = f"{self.publisher}_downloads_report_{self.created}.csv"
+        with open(csv_file_name, 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            for key, value in header.items():
+                writer.writerow([key, value])
+            writer.writerow([])
+            # following code is temp until we can integrate DRB data
+            writer.writerow(COLUMNS)
+            for download_event in download_events:
+                writer.writerow(download_event.format_for_csv())
+
+        self.logger.info("Downloads report generation complete!")
 
     def build_header(self):
         return {
@@ -34,15 +57,51 @@ class DownloadsReport(Counter5Report):
             "Created_By": self.created_by,
         }
 
-    def build_report(self):
-        download_events = self.download_request_parser.pull_download_events()
-        header = self.build_header()
-        with open('counter_5_downloads_report.csv', 'w') as csv_file:
-            writer = csv.writer(csv_file)
-            for key, value in header.items():
-                writer.writerow([key, value])
-            writer.writerow([])
-            # following code is temp until we can integrate DRB data
-            writer.writerow(ADDITIONAL_HEADERS)
-            for download_event in download_events:
-                writer.writerow(download_event.format_for_csv())
+    def aggregate_interaction_events(self, events):
+        '''
+        Builds counts for each title in each month in the reporting period.
+        '''
+        df = pandas.DataFrame(data=[event.__dict__ for event in events],
+                              index=None,
+                              columns=COLUMNS)
+        # convert timestamp column from str type to Timestamp type for easier grouping
+        df["Timestamp"] = df["Timestamp"].apply(
+            self._reformat_timestamp_data)
+        df_grouped_by_title_and_month = df.groupby(
+            ["Book Title", pandas.Grouper(freq='M', key='Reporting Period Total')])
+
+        '''
+        Remove all duplicate titles for CSV report. We will populate df_unique's 
+        monthly columns based on df_grouped_by_title_and_month
+        '''
+        df_unique = df.drop_duplicates(subset="Book ID")
+        column_names = []
+
+        for keys, group in df_grouped_by_title_and_month:
+            # example key values ->  Keys: ('756467457', Timestamp('2024-04-30 00:00:00'))
+            month, year = keys[1].month, keys[1].year
+            column_name = f"{month}/{year}"
+            column_names.append(column_name)
+            if column_name not in df_unique:
+                # create a new column for each month in the reporting period
+                df_unique[f"{month}/{year}"] = pandas.Series()
+            # populate counts for a given title per month
+            df_unique.loc[df_unique["Book ID"] == keys[0],
+                          column_name] = group["Book ID"].count()
+
+        # set null values to 0
+        df_unique[column_names] = df_unique[column_names].fillna(
+            value=0, axis=1)
+        # set reporting period total for each title
+        df_unique["Reporting Period Total"] = df_unique[column_names].sum(
+            axis=1)
+        df_unique.drop("Timestamp", axis=1)
+        print("Unique df ", df_unique)
+        return df_unique
+
+    def _reformat_timestamp_data(self, date):
+        '''
+        Converts strings to Pandas Timestamp objects.
+        '''
+        string_date = str(date).strip("[]").split(":")[0]
+        return pandas.to_datetime(string_date)

@@ -14,8 +14,7 @@ class Counter5Report(ABC):
         if reporting_period is not None:
             self.reporting_period = reporting_period
         else:
-            # Set reporting period to first month of current year
-            # TODO: determine default reporting period
+            # set reporting period to first month of current year
             self.reporting_period = (
                 f"{datetime.now().year}-01-01 to {datetime.now().year}-01-31"
             )
@@ -28,13 +27,18 @@ class Counter5Report(ABC):
     def build_report(self):
         return
 
+    @abstractmethod
+    def aggregate_interaction_events(self, events) -> pandas.DataFrame:
+        return
+
     def generate_report_id(self):
         return uuid.uuid4()
 
-    def parse_reporting_period(self, reporting_period):
+    def parse_reporting_period(self, reporting_period, freq='D'):
         """
+        Helper method to transform user input into date_range object.
         Input: String with date range in Y-m-d format (ex. "2024-01-01 to 2024-12-31")
-        Output: Pandas date_range object
+        Output: Pandas date_range
         """
         date_pattern = "20[0-9][0-9](.|-|)(\\d\\d)(.|-|)(\\d\\d)"
 
@@ -42,4 +46,4 @@ class Counter5Report(ABC):
             ("^" + date_pattern + "\\sto\\s" + date_pattern), reporting_period
         ):
             start, end = reporting_period.split(" to ")
-            return pandas.date_range(start=start, end=end)
+            return pandas.date_range(start=start, end=end, freq=freq)

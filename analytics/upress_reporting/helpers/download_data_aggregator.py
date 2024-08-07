@@ -1,10 +1,9 @@
-import os
 import boto3
+import os
 import re
 
-from analytics.upress_reporting.models.data.interaction_event import InteractionEvent, InteractionType, UsageType
-from logger import createLog
 from model import Edition, Item, Link
+from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from model.postgres.item import ITEM_LINKS
 from managers import DBManager
 from model.postgres.record import Record
@@ -33,7 +32,6 @@ class DownloadDataAggregator:
         self.log_path = os.environ.get("DOWNLOAD_LOG_PATH", None)
 
         self._setup_db_manager()
-        self.logger = createLog("download_request_parser")
 
     def pull_download_events(self):
         '''
@@ -114,8 +112,6 @@ class DownloadDataAggregator:
             match_time = re.search(TIMESTAMP_REGEX, log_object)
             match_file_id = re.search(FILE_ID_REGEX, log_object)
             link_group = match_file_id.group(1)
-            title_parse = ""
-            id_parse = None
 
             '''
             To go from the log event data, we need to go from the link to the 
@@ -136,32 +132,33 @@ class DownloadDataAggregator:
                     .filter(Link.media_type == "application/pdf")
                     .filter(Link.url.contains(link_group.strip()))
                         .all()):
-                    for edit in self.db_manager.session.query(Edition).filter(
+                    for edition in self.db_manager.session.query(Edition).filter(
                             Edition.id == item.edition_id):
-                        title_parse = edit.title
-                        copyright_year = self._pull_copyright_year(edit)
+                        title = edition.title
+                        copyright_year = self._pull_copyright_year(edition)
 
                         for record in self.db_manager.session.query(Record).filter(
-                                Record.uuid.in_(edit.dcdw_uuids)):
+                                Record.uuid.in_(edition.dcdw_uuids)):
                             book_id = (record.source_id).split("|")[0]
                             usage_type = self._determine_usage(record)
-                            isbn = None
+                            isbns = [identifier.split(
+                                "|")[0] for identifier in record.identifiers if "isbn" in identifier]
+                            eisbns = [identifier.split(
+                                "|")[0] for identifier in record.identifiers if "eisbn" in identifier]
 
                         for work in self.db_manager.session.query(Work).filter(
-                                Work.id == edit.work_id):
+                                Work.id == edition.work_id):
                             authors = [author["name"]
                                        for author in work.authors]
                             disciplines = [subject["heading"]
                                            for subject in work.subjects]
-                    
-                    # TODO: there are multiple ISBNs. where do we find eisbn?
 
             return InteractionEvent(
-                title=title_parse,
+                title=title,
                 book_id=book_id,
                 authors=authors,
-                isbn=None,
-                eisbn=None,
+                isbns=isbns,
+                eisbns=eisbns,
                 copyright_year=copyright_year,
                 disciplines=disciplines,
                 usage_type=usage_type,
@@ -173,17 +170,17 @@ class DownloadDataAggregator:
         for date in edition.dates:
             if "copyright" in date["type"]:
                 return date["date"]
-        # TODO: what if copyright year doesn't exist?
+
         return None
 
     def _determine_usage(self, record):
+        # TODO: how do we determine whether a book is limited access or view only no download?
         if record.rights is not None:
             if "public_domain" in record.rights:
                 return UsageType.FULL_ACCESS
             elif "in_copyright" in record.rights:
-                return UsageType.OPEN_ACCESS
-        # TODO: not sure how to determine the rest???
-        return UsageType.LIMITED_ACCESS
+                return UsageType.LIMITED_ACCESS
+        return UsageType.FULL_ACCESS
 
 
 class DownloadParsingError(Exception):
