@@ -1,6 +1,9 @@
 # CHANGELOG
 
-## unreleased version -- v0.13.1
+## Unreleased version -- v0.13.2
+- Removing aggregation result print statement
+
+## 2024-08-06 -- v0.13.1
 ## Added
 - New analytics folder for University Press project code. Contains methodology for generating Counter 5 reports
 - New script to update current UofM manifests with fulfill endpoints to replace pdf/epub urls
