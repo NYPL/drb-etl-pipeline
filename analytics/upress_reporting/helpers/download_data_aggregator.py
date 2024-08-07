@@ -126,6 +126,7 @@ class DownloadDataAggregator:
             Editions are linked to records by the dcdw_uuids.
             '''
 
+            # TODO: simplify this query, it's too nested
             for item in self.db_manager.session.query(Item).filter(
                     Item.source == self.publisher):
                 for link in (
