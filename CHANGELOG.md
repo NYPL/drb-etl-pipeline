@@ -2,10 +2,11 @@
 
 ## Unreleased version -- v0.13.2
 - Added auxiliary functions to build queries for OCLC search endpoints
-- Removing aggregation result print statement
+- Removed aggregation result print statement
 - Created local.yaml file to setup environment variables when running processes locally
 - Implemented OCLC other editions call
 - Added functionality for locally generating Counter 5 downloads reports to analytics folder
+- Fixed API DBClient and refactored links API
 
 ## 2024-08-06 -- v0.13.1
 ## Added
