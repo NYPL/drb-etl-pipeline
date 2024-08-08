@@ -61,6 +61,7 @@ class DownloadsReport(Counter5Report):
         '''
         Builds counts for each title in each month in the reporting period.
         '''
+        # TODO: break up this large method
         df = pandas.DataFrame(
             [self.format_dataclass_for_csv(event) for event in events])
         df.columns = ["Book Title",

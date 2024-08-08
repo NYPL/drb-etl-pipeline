@@ -7,7 +7,7 @@ from main import load_env_file
 
 
 def main():
-    logger = createLog("runner")
+    logger = createLog("report_runner")
     load_env_file('local-compose', file_string='config/local-compose.yaml')
 
     if (len(sys.argv) <= 1):

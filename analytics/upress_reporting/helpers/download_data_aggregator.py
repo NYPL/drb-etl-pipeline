@@ -116,16 +116,6 @@ class DownloadDataAggregator:
             match_file_id = re.search(FILE_ID_REGEX, log_object)
             link_group = match_file_id.group(1)
 
-            '''
-            To go from the log event data, we need to go from the link to the 
-            item, to the edition, to the work, and to the original source record.
-
-            Links are linked to items by the item_id. 
-            Items are linked to editions by the edition_id. 
-            Editions are linked to works by the work_id.
-            Editions are linked to records by the dcdw_uuids.
-            '''
-
             # TODO: simplify this query, it's too nested
             for item in self.db_manager.session.query(Item).filter(
                     Item.source == self.publisher):
