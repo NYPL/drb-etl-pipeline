@@ -1,9 +1,12 @@
 # CHANGELOG
 
 ## Unreleased version -- v0.13.2
+- Added auxiliary functions to build queries for OCLC search endpoints
 - Removing aggregation result print statement
 - Created local.yaml file to setup environment variables when running processes locally
 - Implemented OCLC other editions call
+- Added functionality for locally generating Counter 5 downloads reports to analytics folder
+- Readded enter and exit functions to API DB client
 - Updated DevelopmentSetUpProcess with database migration command
 
 ## 2024-08-06 -- v0.13.1
