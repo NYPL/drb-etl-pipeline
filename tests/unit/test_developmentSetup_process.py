@@ -56,6 +56,7 @@ class TestDevelopmentSetupProcess:
         mockCreateQueue = mocker.patch.object(DevelopmentSetupProcess, 'createOrConnectQueue')
 
         mockFetchHathi = mocker.patch.object(DevelopmentSetupProcess, 'fetchHathiSampleData')
+        mockrunMigration = mocker.patch.object(DevelopmentSetupProcess, 'runDBMigration')
 
         mockClassify = mocker.patch('processes.developmentSetup.ClassifyProcess')
         mockCatalog = mocker.patch('processes.developmentSetup.CatalogProcess')
@@ -74,7 +75,8 @@ class TestDevelopmentSetupProcess:
             mocker.call('test_file_queue', 'test_file_key')
         ])
         mockFetchHathi.assert_called_once()
-
+        mockrunMigration.assert_called_once()
+        
         mockClassify.assert_called_with('complete', None, None, None, None)
         mockCatalog.assert_called_with('complete', None, None, None, None)
         mockCluster.assert_called_with('complete', None, None, None, None)
