@@ -1,12 +1,15 @@
-import os
+import json
 import boto3
+import os
 import re
 
-from analytics.upress_reporting.models.data.download_event import DownloadEvent
 from logger import createLog
 from model import Edition, Item, Link
+from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from model.postgres.item import ITEM_LINKS
 from managers import DBManager
+from model.postgres.record import Record
+from model.postgres.work import Work
 
 # Regexes needed to parse S3 logs
 REQUEST_REGEX = r"REST.GET.OBJECT "
@@ -30,8 +33,8 @@ class DownloadDataAggregator:
         self.bucket_name = os.environ.get("DOWNLOAD_BUCKET", None)
         self.log_path = os.environ.get("DOWNLOAD_LOG_PATH", None)
 
+        self.logger = createLog("download_data_aggregator")
         self._setup_db_manager()
-        self.logger = createLog("download_request_parser")
 
     def pull_download_events(self):
         '''
@@ -86,11 +89,12 @@ class DownloadDataAggregator:
                     )
                     for i in log_object_dict["Body"].iter_lines():
                         log_object_dict = i.decode("utf8")
-                        parse_tuple = self._match_log_info_with_frbr_data(
+                        interaction_event = self._match_log_info_with_drb_data(
                             log_object_dict)
-                        if parse_tuple:
-                            downloads_in_batch.append(DownloadEvent(
-                                parse_tuple[0], parse_tuple[1], parse_tuple[2]))
+                        if interaction_event:
+                            downloads_in_batch.append(
+                                interaction_event)
+
         return downloads_in_batch
 
     def _redact_s3_path(self, path):
@@ -103,7 +107,7 @@ class DownloadDataAggregator:
         split_path[1] = "NYPL_AWS_ID"
         return "/".join(split_path)
 
-    def _match_log_info_with_frbr_data(self, log_object):
+    def _match_log_info_with_drb_data(self, log_object):
         matchRequest = re.search(REQUEST_REGEX, log_object)
         matchReferrer = re.search(REFERRER_REGEX, log_object)
 
@@ -111,28 +115,77 @@ class DownloadDataAggregator:
             match_time = re.search(TIMESTAMP_REGEX, log_object)
             match_file_id = re.search(FILE_ID_REGEX, log_object)
             link_group = match_file_id.group(1)
-            title_parse = ""
-            id_parse = None
 
+            # TODO: simplify this query, it's too nested
             for item in self.db_manager.session.query(Item).filter(
-                Item.source == self.publisher
-            ):
+                    Item.source == self.publisher):
                 for link in (
                     self.db_manager.session.query(Link)
                     .join(ITEM_LINKS)
                     .filter(ITEM_LINKS.c.item_id == item.id)
                     .filter(Link.media_type == "application/pdf")
                     .filter(Link.url.contains(link_group.strip()))
-                    .all()
-                ):
-                    item_edit_id = item.edition_id
-                    for edit in self.db_manager.session.query(Edition).filter(
-                        Edition.id == item_edit_id
-                    ):
-                        title_parse = edit.title
-                        id_parse = edit.id
+                        .all()):
+                    for edition in self.db_manager.session.query(Edition).filter(
+                            Edition.id == item.edition_id):
+                        title = edition.title
+                        copyright_year = self._pull_copyright_year(edition)
 
-            return [title_parse, match_time.group(0), id_parse]
+                        for record in self.db_manager.session.query(Record).filter(
+                                Record.uuid.in_(edition.dcdw_uuids)):
+                            book_id = (record.source_id).split("|")[0]
+                            usage_type = self._determine_usage(record)
+                            isbns = [identifier.split(
+                                "|")[0] for identifier in record.identifiers if "isbn" in identifier]
+                            eisbns = [identifier.split(
+                                "|")[0] for identifier in record.identifiers if "eisbn" in identifier]
+
+                        for work in self.db_manager.session.query(Work).filter(
+                                Work.id == edition.work_id):
+                            authors = [author["name"]
+                                       for author in work.authors]
+                            disciplines = [subject["heading"]
+                                           for subject in work.subjects]
+
+            return InteractionEvent(
+                title=title,
+                book_id=book_id,
+                authors=authors,
+                isbns=isbns,
+                eisbns=eisbns,
+                copyright_year=copyright_year,
+                disciplines=disciplines,
+                usage_type=usage_type,
+                interaction_type=InteractionType.DOWNLOAD,
+                timestamp=match_time.group(0)
+            )
+
+    def _pull_copyright_year(self, edition):
+        for date in edition.dates:
+            if "copyright" in date["type"]:
+                return date["date"]
+
+        return None
+
+    def _determine_usage(self, record):
+        if record.has_part is not None:
+            for item in record.has_part:
+                _, uri, _, _, flag_string = tuple(item.split('|'))
+                if "pdf" in uri:
+                    flags = self._load_flags(flag_string)
+                    if (("embed" in flags.keys()) and (flags["embed"] is True)) or (
+                        ("reader" in flags.keys()) and (flags["reader"] is True)):
+                        return UsageType.FULL_ACCESS
+        return UsageType.LIMITED_ACCESS
+
+    def _load_flags(self, flag_string):
+        try:
+            flags = json.loads(flag_string)
+            return flags if isinstance(flags, dict) else {}
+        except json.decoder.JSONDecodeError:
+            self.logger.error(
+                "Unable to parse nypl_login flags...")
+        return {}
 
 
 class DownloadParsingError(Exception):
