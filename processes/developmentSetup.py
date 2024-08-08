@@ -68,6 +68,9 @@ class DevelopmentSetupProcess(CoreProcess):
         clusterProc = ClusterProcess(*procArgs)
         clusterProc.runProcess()
 
+        self.runDBMigration()
+
+    def runDBMigration(self):
         alembicArgs = [
             '--raiseerr',
             'upgrade', 'head',
