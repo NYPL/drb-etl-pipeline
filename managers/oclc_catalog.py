@@ -22,7 +22,7 @@ class OCLCCatalogManager:
         catalog_response = None
         self.attempts += 1
         catalog_query = self.CATALOG_URL.format(oclcNo, self.oclcKey)
-        
+
         if self.attempts > 3:
             return catalog_response
 
@@ -37,18 +37,18 @@ class OCLCCatalogManager:
             return None
 
         return catalog_response.text
-    
-    def get_related_oclc_numbers(self, oclc_number: int) -> Optional[list[int]]: 
+
+    def get_related_oclc_numbers(self, oclc_number: int) -> Optional[list[int]]:
         other_editions_url = f'https://americas.discovery.api.oclc.org/worldcat/search/v2/brief-bibs/{oclc_number}/other-editions'
 
         try:
             token = OCLCAuthManager.get_token()
             headers = { 'Authorization': f'Bearer {token}' }
-            
+
             # TODO: SFR-2090, SFR-2091 Determine how many records to get and how to order
             other_editions_response = requests.get(
-                other_editions_url, 
-                headers=headers, 
+                other_editions_url,
+                headers=headers,
                 params={
                     'limit': 10,
                     'orderBy': 'bestMatch'
@@ -57,16 +57,16 @@ class OCLCCatalogManager:
         except Exception as e:
             logger.error(f'Failed to query URL {other_editions_url} due to {e}')
             return None
-        
+
         if other_editions_response.status_code != 200:
             logger.warn(f'OCLC other editions request failed with status {other_editions_response.status_code}')
             return None
-        
+
         brief_records = other_editions_response.json().get('briefRecords', None)
 
         if not brief_records:
             return None
-        
+
         return [int(brief_record['oclcNumber']) for brief_record in brief_records if int(brief_record['oclcNumber']) != oclc_number]
 
 
@@ -74,7 +74,7 @@ class OCLCCatalogManager:
         """Accepts a query in the form of an OCLC keyword search or fielded search"""
         token = OCLCAuthManager.get_token()
         bibs_endpoint = self.OCLC_SEARCH_URL + 'brief-bibs'
-
+        # Limit 10 results, ordered by bestMatch, by default
         headers = { "Authorization": f"Bearer {token}" }
         try:
             bibs_response = requests.get(
