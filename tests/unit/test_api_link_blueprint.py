@@ -1,12 +1,12 @@
 from flask import Flask, request
 import pytest
 
-from api.blueprints.drbLink import linkFetch
+from api.blueprints.drbLink import get_link
 from api.utils import APIUtils
 
 class TestLinkBlueprint:
     @pytest.fixture
-    def mockUtils(self, mocker):
+    def mock_utils(self, mocker):
         return mocker.patch.multiple(
             APIUtils,
             formatResponseObject=mocker.DEFAULT,
@@ -14,49 +14,67 @@ class TestLinkBlueprint:
         )
     
     @pytest.fixture
-    def testApp(self):
-        flaskApp = Flask('test')
-        flaskApp.config['DB_CLIENT'] = 'testDBClient'
+    def test_app(self):
+        flask_app = Flask('test')
+        flask_app.config['DB_CLIENT'] = 'testDBClient'
 
-        return flaskApp
+        return flask_app
 
-    def test_linkFetch_success(self, mockUtils, testApp, mocker):
-        mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.drbLink.DBClient')
-        mockDBClient.return_value = mockDB
+    def test_get_link_success(self, mock_utils, test_app, mocker):
+        mock_db = mocker.MagicMock()
+        mock_db.__enter__.return_value = mock_db
+        mock_db_client = mocker.patch('api.blueprints.drbLink.DBClient', return_value=mock_db)
 
-        mockDB.fetchSingleLink.return_value = 'dbLinkRecord'
+        mock_db.fetchSingleLink.return_value = 'dbLinkRecord'
 
-        mockUtils['formatLinkOutput'].return_value = 'testLink'
-        mockUtils['formatResponseObject'].return_value = 'singleLinkResponse'
+        mock_utils['formatLinkOutput'].return_value = 'testLink'
+        mock_utils['formatResponseObject'].return_value = 'singleLinkResponse'
 
-        with testApp.test_request_context('/'):
-            testAPIResponse = linkFetch(1)
+        with test_app.test_request_context('/'):
+            test_api_response = get_link(1)
 
-            assert testAPIResponse == 'singleLinkResponse'
-            mockDBClient.assert_called_once_with('testDBClient')
+            assert test_api_response == 'singleLinkResponse'
+            mock_db_client.assert_called_once_with('testDBClient')
 
-            mockUtils['formatLinkOutput'].assert_called_once_with('dbLinkRecord', request=request)
-            mockUtils['formatResponseObject'].assert_called_once_with(
+            mock_utils['formatLinkOutput'].assert_called_once_with('dbLinkRecord', request=request)
+            mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'singleLink', 'testLink'
             )
 
-    def test_editionFetch_missing(self, mockUtils, testApp, mocker):
-        mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.drbLink.DBClient')
-        mockDBClient.return_value = mockDB
+    def test_get_link_missing(self, mock_utils, test_app, mocker):
+        mock_db = mocker.MagicMock()
+        mock_db.__enter__.return_value = mock_db
+        mock_db_client = mocker.patch('api.blueprints.drbLink.DBClient', return_value=mock_db)
 
-        mockDB.fetchSingleLink.return_value = None
+        mock_db.fetchSingleLink.return_value = None
+        mock_utils['formatResponseObject'].return_value = '404Response'
 
-        mockUtils['formatResponseObject'].return_value = '404Response'
+        with test_app.test_request_context('/'):
+            test_api_response = get_link(1)
 
-        with testApp.test_request_context('/'):
-            testAPIResponse = linkFetch(1)
+            assert test_api_response == '404Response'
+            mock_db_client.assert_called_once_with('testDBClient')
 
-            assert testAPIResponse == '404Response'
-            mockDBClient.assert_called_once_with('testDBClient')
+            mock_utils['formatLinkOutput'].assert_not_called()
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                404, 'singleLink', { 'message': 'No link found with id 1' }
+            )
 
-            mockUtils['formatLinkOutput'].assert_not_called()
-            mockUtils['formatResponseObject'].assert_called_once_with(
-                404, 'singleLink', {'message': 'Unable to locate link #1'}
+    def test_get_link_error(self, mock_utils, test_app, mocker):
+        mock_db = mocker.MagicMock()
+        mock_db.__enter__.return_value = mock_db
+        mock_db_client = mocker.patch('api.blueprints.drbLink.DBClient', return_value=mock_db)
+        
+        mock_db.fetchSingleLink.side_effect = Exception('Database error')
+        mock_utils['formatResponseObject'].return_value = '500Response'
+
+        with test_app.test_request_context('/'):
+            test_api_response = get_link(1)
+
+            assert test_api_response == '500Response'
+            mock_db_client.assert_called_once_with('testDBClient')
+
+            mock_utils['formatLinkOutput'].assert_not_called()
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                500, 'singleLink', { 'message': 'Unable to get link with id 1' }
             )
