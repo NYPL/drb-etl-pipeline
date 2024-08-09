@@ -143,11 +143,7 @@ class TestEditionBlueprint:
                 {'message': 'Unable to get edition with id 1'}
             )
 
-    def test_get_edition_invalid_id_error(self, mock_utils, test_app, mocker):
-        mock_db = mocker.MagicMock()
-        mock_db.__enter__.return_value = mock_db
-        mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
-
+    def test_get_edition_invalid_id_error(self, mock_utils, test_app):
         with test_app.test_request_context('/'):
             get_edition('e2d0e0aa-aa72-42a0-88fb-1aeadbec2f67')
 

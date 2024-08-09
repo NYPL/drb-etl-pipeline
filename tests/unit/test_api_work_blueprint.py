@@ -138,7 +138,7 @@ class TestWorkBlueprint:
                 {'message': 'No work found with id testUUID'}
             )
 
-    def test_get_work_misisng(self, mock_utils, test_app, mocker):
+    def test_get_work_missing(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
         mock_db_client = mocker.patch('api.blueprints.drbWork.DBClient', return_value=mock_db)

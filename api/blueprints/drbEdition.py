@@ -14,16 +14,16 @@ def get_edition(edition_id):
     logger.info(f'Getting edition with id {edition_id}')
     response_type = 'singleEdition'
 
-    try: 
+    if not is_valid_numeric_id(edition_id):
+        return APIUtils.formatResponseObject(400, response_type, { 'message': f'Edition id {edition_id} is invalid' })
+
+    try:
         with DBClient(current_app.config['DB_CLIENT']) as db_client:
             search_params = APIUtils.normalizeQueryParams(request.args)
             terms = { param: APIUtils.extractParamPairs(param, search_params) for param in ['filter'] }
             show_all = search_params.get('showAll', ['true'])[0].lower() != 'false'
             reader_version = search_params.get('readerVersion', [None])[0] or current_app.config['READER_VERSION']
             filtered_formats = APIUtils.formatFilters(terms)
-
-            if not is_valid_numeric_id(edition_id):
-                return APIUtils.formatResponseObject(400, response_type, { 'message': f'Edition id {edition_id} is invalid' })
 
             edition = db_client.fetchSingleEdition(edition_id)
 
