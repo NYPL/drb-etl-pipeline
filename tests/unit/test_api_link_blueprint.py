@@ -1,7 +1,7 @@
 from flask import Flask, request
 import pytest
 
-from api.blueprints.links import get_link
+from api.blueprints.drbLink import get_link
 from api.utils import APIUtils
 
 class TestLinkBlueprint:
@@ -23,7 +23,7 @@ class TestLinkBlueprint:
     def test_get_link_success(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.links.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbLink.DBClient', return_value=mock_db)
 
         mock_db.fetchSingleLink.return_value = 'dbLinkRecord'
 
@@ -44,7 +44,7 @@ class TestLinkBlueprint:
     def test_get_link_missing(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.links.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbLink.DBClient', return_value=mock_db)
 
         mock_db.fetchSingleLink.return_value = None
         mock_utils['formatResponseObject'].return_value = '404Response'
@@ -63,7 +63,7 @@ class TestLinkBlueprint:
     def test_get_link_error(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.links.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbLink.DBClient', return_value=mock_db)
         
         mock_db.fetchSingleLink.side_effect = Exception('Database error')
         mock_utils['formatResponseObject'].return_value = '500Response'
