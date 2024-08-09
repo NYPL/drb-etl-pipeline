@@ -348,7 +348,7 @@ class TestAPIUtils:
         testWork.id = 'testID'
 
         mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.works.DBClient')
+        mockDBClient = mocker.patch('api.blueprints.drbWork.DBClient')
         mockDBClient.return_value = mockDB
 
         with testApp.test_request_context('/'):
@@ -366,7 +366,7 @@ class TestAPIUtils:
     def test_formatWork_showAll_false(self, testWork, mocker, testApp):
 
         mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.works.DBClient')
+        mockDBClient = mocker.patch('api.blueprints.drbWork.DBClient')
         mockDBClient.return_value = mockDB
 
         with testApp.test_request_context('/'):
@@ -386,7 +386,7 @@ class TestAPIUtils:
 
     def test_formatWork_blocked_edition(self, testWork, mocker, testApp):
         mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.works.DBClient')
+        mockDBClient = mocker.patch('api.blueprints.drbWork.DBClient')
         mockDBClient.return_value = mockDB
 
         with testApp.test_request_context('/'):
@@ -406,7 +406,7 @@ class TestAPIUtils:
         testWork.id = 'testID'
 
         mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.works.DBClient')
+        mockDBClient = mocker.patch('api.blueprints.drbWork.DBClient')
         mockDBClient.return_value = mockDB
 
         mockFormatEdition = mocker.patch.object(APIUtils, 'formatEdition')
@@ -426,7 +426,7 @@ class TestAPIUtils:
         mockFormatEdition.return_value = {"testEdition": "test"}
 
         mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.editions.DBClient')
+        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient')
         mockDBClient.return_value = mockDB
 
         mockEdition = mocker.MagicMock(dcdw_uuids='testUUID')

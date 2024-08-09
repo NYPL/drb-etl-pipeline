@@ -1,7 +1,7 @@
 from flask import Flask, request
 import pytest
 
-from api.blueprints.works import get_work
+from api.blueprints.drbWork import get_work
 from api.utils import APIUtils
 
 
@@ -27,7 +27,7 @@ class TestWorkBlueprint:
     def test_get_work_success_show_all_true(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.works.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbWork.DBClient', return_value=mock_db)
 
         mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
 
@@ -54,7 +54,7 @@ class TestWorkBlueprint:
     def test_get_work_success_format(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.works.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbWork.DBClient', return_value=mock_db)
 
         query_params = {'showAll': ['true']}
         mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
@@ -89,7 +89,7 @@ class TestWorkBlueprint:
     def test_get_work_success_show_all_false(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.works.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbWork.DBClient', return_value=mock_db)
 
         mock_utils['normalizeQueryParams'].return_value = {'showAll': ['false']}
 
@@ -116,7 +116,7 @@ class TestWorkBlueprint:
     def test_get_work_missing(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.works.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbWork.DBClient', return_value=mock_db)
 
         mock_utils['normalizeQueryParams'].return_value = {}
 
@@ -141,7 +141,7 @@ class TestWorkBlueprint:
     def test_get_work_misisng(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.works.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbWork.DBClient', return_value=mock_db)
 
         mock_utils['normalizeQueryParams'].return_value = {}
 

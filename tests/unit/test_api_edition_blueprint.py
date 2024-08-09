@@ -1,7 +1,7 @@
 from flask import Flask, request
 import pytest
 
-from api.blueprints.editions import get_edition
+from api.blueprints.drbEdition import get_edition
 from api.utils import APIUtils
 
 class TestEditionBlueprint:
@@ -26,7 +26,7 @@ class TestEditionBlueprint:
     def test_get_edition_success_no_format(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.editions.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
 
         mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
 
@@ -57,7 +57,7 @@ class TestEditionBlueprint:
     def test_get_edition_success_format(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.editions.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
 
         query_params = {'showAll': ['true']}
         mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
@@ -98,7 +98,7 @@ class TestEditionBlueprint:
     def test_get_edition_missing(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.editions.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
 
         mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
         
@@ -123,7 +123,7 @@ class TestEditionBlueprint:
     def test_get_edition_error(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.editions.DBClient', return_value=mock_db)
+        mock_db_client = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
 
         mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
         
@@ -146,7 +146,7 @@ class TestEditionBlueprint:
     def test_get_edition_invalid_id_error(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
-        mocker.patch('api.blueprints.editions.DBClient', return_value=mock_db)
+        mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
 
         with test_app.test_request_context('/'):
             get_edition('e2d0e0aa-aa72-42a0-88fb-1aeadbec2f67')
