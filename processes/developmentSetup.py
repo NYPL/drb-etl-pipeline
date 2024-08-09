@@ -8,6 +8,7 @@ import requests
 import sqlalchemy as sa
 from sqlalchemy.exc import ProgrammingError
 from time import sleep
+import alembic.config
 
 from managers.db import DBManager
 from .core import CoreProcess
@@ -55,6 +56,7 @@ class DevelopmentSetupProcess(CoreProcess):
         self.fetchHathiSampleData()
 
         procArgs = ['complete'] + ([None] * 4)
+
         # FRBRize the fetched data
         classifyProc = ClassifyProcess(*procArgs)
         classifyProc.runProcess()
@@ -65,6 +67,15 @@ class DevelopmentSetupProcess(CoreProcess):
         # Group the fetched data
         clusterProc = ClusterProcess(*procArgs)
         clusterProc.runProcess()
+
+        self.runDBMigration()
+
+    def runDBMigration(self):
+        alembicArgs = [
+            '--raiseerr',
+            'upgrade', 'head',
+        ]
+        alembic.config.main(argv=alembicArgs)
 
     def initializeDB(self):
         self.adminDBConnection.generateEngine()
