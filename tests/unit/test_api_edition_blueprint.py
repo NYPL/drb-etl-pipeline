@@ -1,12 +1,12 @@
 from flask import Flask, request
 import pytest
 
-from api.blueprints.drbEdition import editionFetch
+from api.blueprints.drbEdition import get_edition
 from api.utils import APIUtils
 
 class TestEditionBlueprint:
     @pytest.fixture
-    def mockUtils(self, mocker):
+    def mock_utils(self, mocker):
         return mocker.patch.multiple(
             APIUtils,
             normalizeQueryParams=mocker.DEFAULT,
@@ -16,143 +16,138 @@ class TestEditionBlueprint:
         )
 
     @pytest.fixture
-    def testApp(self):
-        flaskApp = Flask('test')
-        flaskApp.config['DB_CLIENT'] = 'testDBClient'
-        flaskApp.config['READER_VERSION'] = 'test'
+    def test_app(self):
+        flask_app = Flask('test')
+        flask_app.config['DB_CLIENT'] = 'testDBClient'
+        flask_app.config['READER_VERSION'] = 'test'
 
-        return flaskApp
+        return flask_app
 
-    def test_editionFetch_success_noFormat(self, mockUtils, testApp, mocker):
-        mockDB = mocker.MagicMock()
-        mockDB.__enter__.return_value = mockDB
-        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
+    def test_get_edition_success_no_format(self, mock_utils, test_app, mocker):
+        mock_db = mocker.MagicMock()
+        mock_db.__enter__.return_value = mock_db
+        mock_db_client = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
 
-        mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
+        mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
 
-        mockEdition = mocker.MagicMock(dcdw_uuids='testUUID')
+        mock_edition = mocker.MagicMock(dcdw_uuids='testUUID')
 
-        mockDB.fetchSingleEdition.return_value = mockEdition
-        mockDB.fetchRecordsByUUID.return_value = 'testRecords'
+        mock_db.fetchSingleEdition.return_value = mock_edition
+        mock_db.fetchRecordsByUUID.return_value = 'testRecords'
 
-        mockUtils['formatEditionOutput'].return_value = 'testEdition'
-        mockUtils['formatResponseObject'].return_value\
+        mock_utils['formatEditionOutput'].return_value = 'testEdition'
+        mock_utils['formatResponseObject'].return_value\
             = 'singleEditionResponse'
 
-        with testApp.test_request_context('/'):
-            testAPIResponse = editionFetch(1)
+        with test_app.test_request_context('/'):
+            test_api_response = get_edition(1)
 
-            assert testAPIResponse == 'singleEditionResponse'
-            mockDBClient.assert_called_once_with('testDBClient')
+            assert test_api_response == 'singleEditionResponse'
+            mock_db_client.assert_called_once_with('testDBClient')
 
-            mockUtils['normalizeQueryParams'].assert_called_once()
-            mockUtils['formatEditionOutput'].assert_called_once_with(
-                mockEdition, records='testRecords', dbClient=mockDB, showAll=True, formats=[],
+            mock_utils['normalizeQueryParams'].assert_called_once()
+            mock_utils['formatEditionOutput'].assert_called_once_with(
+                mock_edition, records='testRecords', dbClient=mock_db, showAll=True, formats=[],
                 reader='test', request=request
             )
-            mockUtils['formatResponseObject'].assert_called_once_with(
+            mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'singleEdition', 'testEdition'
             )
 
-    def test_editionFetch_success_format(self, mockUtils, testApp, mocker):
-        mockDB = mocker.MagicMock()
-        mockDB.__enter__.return_value = mockDB
-        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
+    def test_get_edition_success_format(self, mock_utils, test_app, mocker):
+        mock_db = mocker.MagicMock()
+        mock_db.__enter__.return_value = mock_db
+        mock_db_client = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
 
-        queryParams = {'showAll': ['true']}
-        mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
+        query_params = {'showAll': ['true']}
+        mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
 
-        mockEdition = mocker.MagicMock(dcdw_uuids='testUUID')
+        mock_edition = mocker.MagicMock(dcdw_uuids='testUUID')
 
-        mockUtils['extractParamPairs'].side_effect = [
+        mock_utils['extractParamPairs'].side_effect = [
             [('format', 'requestable')]
         ]
 
-        mockDB.fetchSingleEdition.return_value = mockEdition
-        mockDB.fetchRecordsByUUID.return_value = 'testRecords'
+        mock_db.fetchSingleEdition.return_value = mock_edition
+        mock_db.fetchRecordsByUUID.return_value = 'testRecords'
 
-        mockUtils['formatEditionOutput'].return_value = 'testEdition'
-        mockUtils['formatResponseObject'].return_value\
+        mock_utils['formatEditionOutput'].return_value = 'testEdition'
+        mock_utils['formatResponseObject'].return_value\
             = 'singleEditionResponse'
 
-        with testApp.test_request_context('/'):
-            testAPIResponse = editionFetch(1)
+        with test_app.test_request_context('/'):
+            test_api_response = get_edition(1)
 
-            assert testAPIResponse == 'singleEditionResponse'
-            mockDBClient.assert_called_once_with('testDBClient')
+            assert test_api_response == 'singleEditionResponse'
+            mock_db_client.assert_called_once_with('testDBClient')
 
-            mockUtils['normalizeQueryParams'].assert_called_once()
-            mockUtils['extractParamPairs'].assert_has_calls([
-                mocker.call('filter', queryParams)
+            mock_utils['normalizeQueryParams'].assert_called_once()
+            mock_utils['extractParamPairs'].assert_has_calls([
+                mocker.call('filter', query_params)
             ])
-            mockUtils['formatEditionOutput'].assert_called_once_with(
-                mockEdition, records='testRecords', showAll=True,
-                dbClient=mockDB,request=request,
+            mock_utils['formatEditionOutput'].assert_called_once_with(
+                mock_edition, records='testRecords', showAll=True,
+                dbClient=mock_db,request=request,
                 formats=['application/html+edd', 'application/x.html+edd'], reader='test'
             )
-            mockUtils['formatResponseObject'].assert_called_once_with(
+            mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'singleEdition', 'testEdition'
             )
 
 
+    def test_get_edition_missing(self, mock_utils, test_app, mocker):
+        mock_db = mocker.MagicMock()
+        mock_db.__enter__.return_value = mock_db
+        mock_db_client = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
 
-    def test_editionFetch_missing(self, mockUtils, testApp, mocker):
-        mockDB = mocker.MagicMock()
-        mockDB.__enter__.return_value = mockDB
-        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
-
-        mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
+        mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
         
-        mockDB.fetchSingleEdition.return_value = None
+        mock_db.fetchSingleEdition.return_value = None
 
-        mockUtils['formatResponseObject'].return_value = '404Response'
+        mock_utils['formatResponseObject'].return_value = '404Response'
 
-        with testApp.test_request_context('/'):
-            testAPIResponse = editionFetch(1)
+        with test_app.test_request_context('/'):
+            test_api_response = get_edition(1)
 
-            assert testAPIResponse == '404Response'
-            mockDBClient.assert_called_once_with('testDBClient')
+            assert test_api_response == '404Response'
+            mock_db_client.assert_called_once_with('testDBClient')
 
-            mockUtils['normalizeQueryParams'].assert_called_once()
-            mockUtils['formatEditionOutput'].assert_not_called()
-            mockUtils['formatResponseObject'].assert_called_once_with(
+            mock_utils['normalizeQueryParams'].assert_called_once()
+            mock_utils['formatEditionOutput'].assert_not_called()
+            mock_utils['formatResponseObject'].assert_called_once_with(
                 404,
                 'singleEdition',
-                {'message': 'Unable to locate edition with id 1'}
+                {'message': 'No edition found with id 1'}
             )
     
-    def test_editionFetch_error(self, mockUtils, testApp, mocker):
-        mockDB = mocker.MagicMock()
-        mockDB.__enter__.return_value = mockDB
-        mockDBClient = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
+    def test_get_edition_error(self, mock_utils, test_app, mocker):
+        mock_db = mocker.MagicMock()
+        mock_db.__enter__.return_value = mock_db
+        mock_db_client = mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mock_db)
 
-        mockUtils['normalizeQueryParams'].return_value = {'showAll': ['true']}
+        mock_utils['normalizeQueryParams'].return_value = {'showAll': ['true']}
         
-        mockDB.fetchSingleEdition.side_effect = Exception('Database error')
+        mock_db.fetchSingleEdition.side_effect = Exception('Database error')
 
-        mockUtils['formatResponseObject'].return_value = '500response'
+        mock_utils['formatResponseObject'].return_value = '500response'
 
-        with testApp.test_request_context('/'):
-            testAPIResponse = editionFetch(1)
+        with test_app.test_request_context('/'):
+            test_api_response = get_edition(1)
 
-            assert testAPIResponse == '500response'
-            mockDBClient.assert_called_once_with('testDBClient')
+            assert test_api_response == '500response'
+            mock_db_client.assert_called_once_with('testDBClient')
 
-            mockUtils['formatResponseObject'].assert_called_once_with(
+            mock_utils['formatResponseObject'].assert_called_once_with(
                 500,
                 'singleEdition',
-                {'message': 'Unable to fetch edition with id 1'}
+                {'message': 'Unable to get edition with id 1'}
             )
 
-    def test_editionFetch_invalid_id_error(self, mockUtils, testApp, mocker):
-        mockDB = mocker.MagicMock()
-        mockDB.__enter__.return_value = mockDB
-        mocker.patch('api.blueprints.drbEdition.DBClient', return_value=mockDB)
+    def test_get_edition_invalid_id_error(self, mock_utils, test_app):
+        with test_app.test_request_context('/'):
+            get_edition('e2d0e0aa-aa72-42a0-88fb-1aeadbec2f67')
 
-        with testApp.test_request_context('/'):
-            editionFetch('e2d0e0aa-aa72-42a0-88fb-1aeadbec2f67')
-
-            mockUtils['formatResponseObject'].assert_called_once_with(
+            mock_utils['formatResponseObject'].assert_called_once_with(
                 400,
                 'singleEdition',
                 {'message': 'Edition id e2d0e0aa-aa72-42a0-88fb-1aeadbec2f67 is invalid'}

@@ -7,43 +7,31 @@ logger = createLog(__name__)
 
 work = Blueprint('work', __name__, url_prefix='/work')
 
-
 @work.route('/<uuid>', methods=['GET'])
-def workFetch(uuid):
-    logger.info('Fetching Work {}'.format(uuid))
+def get_work(uuid):
+    logger.info(f'Getting work with id {uuid}')
+    reponse_type = 'singleWork'
 
-    dbClient = DBClient(current_app.config['DB_CLIENT'])
-    dbClient.createSession()
+    try: 
+        with DBClient(current_app.config['DB_CLIENT']) as db_client:
+            search_params = APIUtils.normalizeQueryParams(request.args)
+            terms = { param: APIUtils.extractParamPairs(param, search_params) for param in ['filter'] }
+            show_all = search_params.get('showAll', ['true'])[0].lower() != 'false'
+            reader_version = search_params.get('readerVersion', [None])[0] or current_app.config['READER_VERSION']
+            filtered_formats = APIUtils.formatFilters(terms)
 
-    searchParams = APIUtils.normalizeQueryParams(request.args)
+            work = db_client.fetchSingleWork(uuid)
 
-    terms = {}
-    for param in ['filter']:
-        terms[param] = APIUtils.extractParamPairs(param, searchParams)
+            if not work:
+                return APIUtils.formatResponseObject(404, reponse_type, { 'message': f'No work found with id {uuid}' })
 
-    showAll = searchParams.get('showAll', ['true'])[0].lower() != 'false'
-    readerVersion = searchParams.get('readerVersion', [None])[0]\
-        or current_app.config['READER_VERSION']
-
-    filteredFormats = APIUtils.formatFilters(terms)
-
-    work = dbClient.fetchSingleWork(uuid)
-    if work:
-        statusCode = 200
-        responseBody = APIUtils.formatWorkOutput(work, None, showAll=showAll,
-            request=request, dbClient=dbClient, formats=filteredFormats, reader=readerVersion
-        )
-
-    else:
-        statusCode = 404
-        responseBody = {
-            'message': 'Unable to locate work with UUID {}'.format(uuid)
-        }
-
-    logger.warning('Work Fetch {} on /work/{}'.format(statusCode, uuid))
-
-    dbClient.closeSession()
-
-    return APIUtils.formatResponseObject(
-        statusCode, 'singleWork', responseBody
-    )
+            return APIUtils.formatResponseObject(
+                200, 
+                reponse_type,
+                APIUtils.formatWorkOutput(work, None, showAll=show_all,
+                    request=request, dbClient=db_client, formats=filtered_formats, reader=reader_version
+                )
+            )
+    except Exception as e:
+        logger.error(e)
+        return APIUtils.formatResponseObject(500, reponse_type, { 'message': f'Unable to get work with id {uuid}' })
