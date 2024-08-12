@@ -1,9 +1,9 @@
 import csv
 import pandas
 
-from helpers.download_data_aggregator import DownloadDataAggregator
-from models.reports.counter_5_report import Counter5Report
 from logger import createLog
+from models.aggregators.download_data_aggregator import DownloadDataAggregator
+from models.reports.counter_5_report import Counter5Report
 
 COLUMNS = ["Book Title",
            "Book ID",
@@ -31,7 +31,7 @@ class DownloadsReport(Counter5Report):
         self.logger.info("Building downloads report...")
 
         header = self.build_header()
-        download_events = self.download_request_parser.pull_download_events()
+        download_events = self.download_request_parser.pull_interaction_events()
         columns, final_data = self.aggregate_interaction_events(download_events)
 
         csv_file_name = f"{self.publisher}_downloads_report_{self.created}.csv"
