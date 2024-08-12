@@ -36,7 +36,7 @@ class DownloadDataAggregator(Aggregator):
 
     def pull_interaction_events(self):
         '''
-        Returns list of DownloadEvents in a given reporting period.
+        Returns list of download InteractionEvents in a given reporting period.
         '''
         download_events = []
 
@@ -44,41 +44,17 @@ class DownloadDataAggregator(Aggregator):
             folder_name = date.strftime("%Y/%m/%d")
             batch = self.load_batch(self.log_path, self.bucket_name, 
                                     folder_name)
-            downloads_per_day = self.parse_logs(batch)
+            downloads_per_day = self.parse_logs_in_batch(batch, self.bucket_name)
             download_events.extend(downloads_per_day)
 
         self.db_manager.closeConnection()
         return download_events
 
-    def parse_logs(self, batch):
+    def match_log_info_with_drb_data(self, log_object):
         '''
-        The edition title, identifier, and timestamp are parsed out of the
-        S3 server access log files for UMP download requests.
+        Check that the S3 server access log object contains a download request. 
+        If so, we parse out the edition title, identifier, and timestamp.
         '''
-        downloads_in_batch = []
-
-        for log_file in batch:
-            if "Contents" not in log_file:
-                path = self.redact_s3_path(log_file["Prefix"])
-                raise DownloadParsingError(
-                    f"Log files in path {path} do not exist.")
-            else:
-                for content in log_file["Contents"]:
-                    curr_key = str(content["Key"])
-                    log_object_dict = self.s3_client.get_object(
-                        Bucket=self.bucket_name, Key=f"{curr_key}"
-                    )
-                    for i in log_object_dict["Body"].iter_lines():
-                        log_object_dict = i.decode("utf8")
-                        interaction_event = self._match_log_info_with_drb_data(
-                            log_object_dict)
-                        if interaction_event:
-                            downloads_in_batch.append(
-                                interaction_event)
-
-        return downloads_in_batch
-
-    def _match_log_info_with_drb_data(self, log_object):
         matchRequest = re.search(REQUEST_REGEX, log_object)
         matchReferrer = re.search(REFERRER_REGEX, log_object)
 
@@ -157,8 +133,3 @@ class DownloadDataAggregator(Aggregator):
             self.logger.error(
                 "Unable to parse nypl_login flags...")
         return {}
-
-
-class DownloadParsingError(Exception):
-    def __init__(self, message=None):
-        self.message = message

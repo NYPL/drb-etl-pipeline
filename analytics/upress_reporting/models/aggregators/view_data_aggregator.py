@@ -16,15 +16,19 @@ class ViewDataAggregator(Aggregator):
         self.setup_db_manager() 
     
     def pull_interaction_events(self) -> list[InteractionEvent]:
-        return super().pull_interaction_events()
-    
-    def parse_logs(self, batch):
         '''
-        The edition title, identifier, and timestamp are parsed out of the
-        S3 server access log files for UMP download requests.
+        Returns list of view InteractionEvents in a given reporting period.
         '''
-        return []
+        # TODO: potentially move this into general aggregator?
+        view_events = []
+
+        for date in self.date_range:
+            folder_name = date.strftime("%Y/%m/%d")
+            batch = self.load_batch(self.log_path, self.bucket_name, 
+                                    folder_name)
+            views_per_day = self.parse_logs_in_batch(batch, self.bucket_name)
+            view_events.extend(views_per_day)
+
+        self.db_manager.closeConnection()
+        return view_events
     
-class ViewParsingError(Exception):
-    def __init__(self, message=None):
-        self.message = message
