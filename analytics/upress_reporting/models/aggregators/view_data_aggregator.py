@@ -1,10 +1,18 @@
 import boto3
+import re
 import os
 
 from analytics.upress_reporting.models.aggregators.aggregator import Aggregator
 from analytics.upress_reporting.models.data.interaction_event import InteractionEvent
 from logger import createLog
 from managers.db import DBManager
+
+# Regexes needed to parse S3 logs
+REQUEST_REGEX = r"REST.GET.OBJECT "
+# File ID includes the file name for the pdf object
+FILE_ID_REGEX = r"REST\.GET\.OBJECT manifests/(.+)/(.+json\s)"
+TIMESTAMP_REGEX = r"\[.+\]"
+REFERRER_REGEX = r"https://drb-qa.nypl.org/"
 
 class ViewDataAggregator(Aggregator):
     def __init__(self, *args):
@@ -31,4 +39,3 @@ class ViewDataAggregator(Aggregator):
 
         self.db_manager.closeConnection()
         return view_events
-    

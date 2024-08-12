@@ -100,9 +100,10 @@ API_PROXY_CORS_ALLOWED: (?:http[s]?:\/\/.*nypl.org|https:\/\/.*(?:nypl|sfr).*ver
 # Current NYPL Webreader version
 READER_VERSION: v2
 
+REFERRER_URL: "https://drb-qa.nypl.org/"
+
 # ANALYTICS CONFIGURATION
 PUBLISHERS: "UofM"    # publishers need to be a comma separated string
-REFERRER_URL: "https://drb-qa.nypl.org/"
 
 # Downloads Reports
 DOWNLOAD_BUCKET: "ump-pdf-repository-logs"

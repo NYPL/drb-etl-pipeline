@@ -46,8 +46,9 @@ class DownloadDataAggregator(Aggregator):
                                     folder_name)
             downloads_per_day = self.parse_logs_in_batch(batch, self.bucket_name)
             download_events.extend(downloads_per_day)
-
+        
         self.db_manager.closeConnection()
+
         return download_events
 
     def match_log_info_with_drb_data(self, log_object):
