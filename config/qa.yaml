@@ -101,8 +101,13 @@ API_PROXY_CORS_ALLOWED: (?:http[s]?:\/\/.*nypl.org|https:\/\/.*(?:nypl|sfr).*ver
 READER_VERSION: v2
 
 # ANALYTICS CONFIGURATION
+PUBLISHERS: "UofM"    # publishers need to be a comma separated string
+REFERRER_URL: "https://drb-qa.nypl.org/"
+
+# Downloads Reports
 DOWNLOAD_BUCKET: "ump-pdf-repository-logs"
 DOWNLOAD_LOG_PATH: "logs/946183545209/us-east-1/ump-pdf-repository/"
-REFERRER_URL: "https://drb-qa.nypl.org/"
-# publishers need to be a comma separated string
-PUBLISHERS: "UofM"
+
+# Views Reports
+VIEW_BUCKET: "drb-files-qa-logs"
+VIEW_LOG_PATH: "logs/946183545209/us-east-1/drb-files-qa"

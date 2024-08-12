@@ -6,6 +6,7 @@
 - Created local.yaml file to setup environment variables when running processes locally
 - Implemented OCLC other editions call
 - Added functionality for locally generating Counter 5 downloads reports to analytics folder
+- Generalize data aggregation within analytics folder
 
 ## 2024-08-06 -- v0.13.1
 ## Added
