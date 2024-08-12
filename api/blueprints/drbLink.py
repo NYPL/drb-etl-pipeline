@@ -1,6 +1,7 @@
 from flask import Blueprint, current_app, request
 from ..db import DBClient
 from ..utils import APIUtils
+from ..validation_utils import is_valid_numeric_id
 from logger import createLog
 
 logger = createLog(__name__)
@@ -11,6 +12,9 @@ link = Blueprint('link', __name__, url_prefix='/link')
 def get_link(link_id):
     logger.info(f'Getting link with id {link_id}')
     response_type = 'singleLink'
+
+    if not is_valid_numeric_id(link_id):
+        return APIUtils.formatResponseObject(400, response_type, { 'message': f'Link id {link_id} is invalid' })
 
     try:
         with DBClient(current_app.config['DB_CLIENT']) as db_client:

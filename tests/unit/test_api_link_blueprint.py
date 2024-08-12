@@ -78,3 +78,13 @@ class TestLinkBlueprint:
             mock_utils['formatResponseObject'].assert_called_once_with(
                 500, 'singleLink', { 'message': 'Unable to get link with id 1' }
             )
+
+    def test_get_link_invalid_id_error(self, mock_utils, test_app):
+        with test_app.test_request_context('/'):
+            get_link('e2d0e0aa-aa72-42a0-88fb-1aeadbec2f67')
+
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                400,
+                'singleLink',
+                {'message': 'Link id e2d0e0aa-aa72-42a0-88fb-1aeadbec2f67 is invalid'}
+            )
