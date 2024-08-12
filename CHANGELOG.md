@@ -10,6 +10,7 @@
 - Updated DevelopmentSetUpProcess with database migration method
 - Refactored info API
 - Refactored links API and added error handling
+- Refactored works and editions APIs and added error handling
 
 ## 2024-08-06 -- v0.13.1
 ## Added
