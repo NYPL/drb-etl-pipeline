@@ -7,24 +7,31 @@ logger = createLog(__name__)
 
 link = Blueprint('link', __name__, url_prefix='/link')
 
-@link.route('/<linkID>', methods=['GET'])
-def linkFetch(linkID):
-    logger.info('Fetching Link #{}'.format(linkID))
+@link.route('/<link_id>', methods=['GET'])
+def get_link(link_id):
+    logger.info(f'Getting link with id {link_id}')
+    response_type = 'singleLink'
 
-    dbClient = DBClient(current_app.config['DB_CLIENT'])
-    dbClient.createSession()
+    try:
+        with DBClient(current_app.config['DB_CLIENT']) as db_client:
+            link = db_client.fetchSingleLink(link_id)
 
-    link = dbClient.fetchSingleLink(linkID)
-
-    if link:
-        statusCode = 200
-        responseObject = APIUtils.formatLinkOutput(link, request=request)
-    else:
-        statusCode = 404
-        responseObject = {'message': 'Unable to locate link #{}'.format(linkID)}
-
-    logger.debug('Link Fetch 200 on /link/{}'.format(linkID))
-
-    dbClient.closeSession()
-
-    return APIUtils.formatResponseObject(statusCode, 'singleLink', responseObject)
+            if not link:
+                return APIUtils.formatResponseObject(
+                    404, 
+                    response_type,
+                    { 'message': f'No link found with id {link_id}' }
+                )
+            
+            return APIUtils.formatResponseObject(
+                200, 
+                response_type,
+                APIUtils.formatLinkOutput(link, request=request)
+            )
+    except Exception as e:
+        logger.error(e)
+        return APIUtils.formatResponseObject(
+            500, 
+            response_type, 
+            { 'message': f'Unable to get link with id {link_id}' }
+        )
