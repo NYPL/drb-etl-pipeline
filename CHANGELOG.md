@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased version -- v0.13.2
+## Added
 - Added auxiliary functions to build queries for OCLC search endpoints
 - Removing aggregation result print statement
 - Created local.yaml file to setup environment variables when running processes locally
@@ -8,6 +9,9 @@
 - Added functionality for locally generating Counter 5 downloads reports to analytics folder
 - Readded enter and exit functions to API DB client
 - Updated DevelopmentSetUpProcess with database migration method
+
+## Fixed
+- Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
 
 ## 2024-08-06 -- v0.13.1
 ## Added
