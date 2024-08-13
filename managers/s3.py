@@ -21,7 +21,8 @@ class S3Manager:
             's3',
             aws_access_key_id=os.environ.get('AWS_ACCESS', None),
             aws_secret_access_key=os.environ.get('AWS_SECRET', None),
-            region_name=os.environ.get('AWS_REGION', None)
+            region_name=os.environ.get('AWS_REGION', None),
+            endpoint_url=os.environ.get('S3_ENDPOINT_URL', None)
         )
 
     def createS3Bucket(self, bucketName, bucketPermissions):

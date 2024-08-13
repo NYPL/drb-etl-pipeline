@@ -42,9 +42,11 @@ HATHI_API_ROOT: https://babel.hathitrust.org/cgi/htd
 #HATHI_API_SECRET: 
 
 # AWS CONFIGURATION
-#AWS_ACCESS:
-#AWS_SECRET:
-#AWS_REGION:
+AWS_ACCESS: test
+AWS_SECRET: test
+AWS_REGION: us-east-1
+FILE_BUCKET: drb-files-local
+S3_ENDPOINT_URL: http://localhost:4566
 
 # OCLC CONFIGURATION
 OCLC_QUERY_LIMIT: '390000'
