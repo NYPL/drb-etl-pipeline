@@ -11,6 +11,7 @@
 - Refactored info API
 - Refactored links API and added error handling
 - Refactored works and editions APIs and added error handling
+- Generalize data aggregation within analytics folder
 - Updated README release steps
 
 ## 2024-08-06 -- v0.13.1
