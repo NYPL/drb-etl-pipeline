@@ -33,7 +33,8 @@ class TestS3Manager:
             's3',
             aws_access_key_id='access',
             aws_secret_access_key='secret',
-            region_name='region'
+            region_name='region',
+            endpoint_url=None
         )
 
     def test_createS3Bucket_success(self, testInstance):
