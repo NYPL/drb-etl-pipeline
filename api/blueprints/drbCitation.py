@@ -9,57 +9,41 @@ logger = createLog(__name__)
 
 citation = Blueprint('citation', __name__, url_prefix='/citation')
 
-citationSet = {'mla', 'apa', 'chicago'}
+citation_set = {'mla', 'apa', 'chicago'}
 
 @citation.route('/<uuid>', methods=['GET'])
-def citationFetch(uuid):
-    logger.info('Fetching Identifier {}'.format(uuid))
+def get_citation(uuid):
+    logger.info(f'Getting citation for work id {uuid}')
+    response_type = 'citation'
 
-    dbClient = DBClient(current_app.config['DB_CLIENT'])
-    dbClient.createSession()
+    try:
+        citation_formats = request.args.get('format', default='')
+        formats = set(citation_formats.split(','))
 
-    searchParams = APIUtils.normalizeQueryParams(request.args)
-    logger.debug(searchParams)
-
-    citeFormats = request.args.get('format') #Default value is None if no arguments set
-    formatList = citeFormats.split(',')
-    formatListSet = set(formatList)
-    logger.debug(formatListSet)
-
-    if formatListSet.issubset(citationSet) == False:
-        logger.warning('Page not found')
-        return APIUtils.formatResponseObject(
-                400, 'pageNotFound', {'message': 'Need to specify citation format'}
-            )
-
-    citationWork = dbClient.fetchSingleWork(uuid)
+        if not formats.issubset(citation_set):
+            return APIUtils.formatResponseObject(400, response_type, { 'message': 'Citation formats are invalid' })
     
-    outputCitations = {}
+        with DBClient(current_app.config['DB_CLIENT']) as db_client:
+            work_to_cite = db_client.fetchSingleWork(uuid)
 
-    for format in formatListSet:
-        logger.info(format)
-        if format == 'mla':
-            newCite = mlaGenerator(citationWork)
-        outputCitations[format] = newCite
+            if not work_to_cite:
+                return APIUtils.formatResponseObject(404, response_type, { 'message': f'No work found with id {uuid}' })
+            
+            output_citations = {}
 
-    if citationWork:
-        statusCode = 200
-        responseBody = outputCitations
-    else:
-        statusCode = 404
-        responseBody = {
-            'message': f'Unable to locate work with UUID {uuid}'
-        }
+            for format in formats:
+                if format == 'mla':
+                    mla_citation = mla_generator(work_to_cite)
+                    output_citations[format] = mla_citation
 
-    logger.info(f'Citation Fetch {statusCode} on /citation/{uuid}')
+            return APIUtils.formatResponseObject(200, response_type, output_citations)
+    except Exception as e:
+        logger.error(e)
+        return APIUtils.formatResponseObject(500, response_type, { 'message': f'Unable to get citation for work with id {uuid}' })
 
-    dbClient.closeSession()
 
-    return APIUtils.formatResponseObject(
-        statusCode, 'citation', responseBody
-    )
-
-def mlaGenerator(citationWork):
+# TODO: refactor, apply snake_case, and move into a seperate citation utils file
+def mla_generator(citationWork):
     if citationWork:
         # Made title lowercase for consistency when finding this info in the database
         if citationWork.title.lower() == "the bible":
