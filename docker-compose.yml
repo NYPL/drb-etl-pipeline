@@ -60,22 +60,8 @@ services:
         target: /src
         read_only: true
 
-  devsetup:
-    container_name: drb_local_devSetUp
-    depends_on:
-      - database
-      - elasticsearch
-    build:
-      context: .
-    command: -e local-compose -p DevelopmentSetupProcess
-    volumes:
-      - type: bind
-        source: .
-        target: /src
-        read_only: true
-
   s3:
-    container_name: drb_local_s3
+    container_name: drb-local-s3
     image: localstack/localstack:latest
     environment:
       - DEBUG=1
@@ -88,6 +74,21 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack/init-localstack-resources.sh:/etc/localstack/init/ready.d/init-localstack-resources.sh
+
+  devsetup:
+    container_name: drb_local_devSetUp
+    depends_on:
+      - database
+      - elasticsearch
+      - s3
+    build:
+      context: .
+    command: -e local-compose -p DevelopmentSetupProcess
+    volumes:
+      - type: bind
+        source: .
+        target: /src
+        read_only: true
 
 volumes:
   drb_local_dbdata:

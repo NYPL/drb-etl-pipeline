@@ -57,6 +57,6 @@ class AbstractParser(ABC):
         s3_endpoint = os.environ.get('S3_ENDPOINT_URL', None)
 
         if s3_endpoint:
-            return f'{s3_endpoint}/{s3_bucket}'
+            return f'{s3_endpoint}/{s3_bucket}/'
 
         return 'https://{}.s3.amazonaws.com/'.format(s3_bucket)

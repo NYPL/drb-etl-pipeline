@@ -88,11 +88,14 @@ class S3Manager:
 
     def getObjectFromBucket(self, objKey, bucket, md5Hash=None):
         try:
-            return self.s3Client.get_object(
-                Bucket=bucket,
-                Key=objKey,
-                IfNoneMatch=md5Hash
-            )
+            if md5Hash:
+                return self.s3Client.get_object(
+                    Bucket=bucket,
+                    Key=objKey,
+                    IfNoneMatch=md5Hash
+                )
+            
+            return self.s3Client.get_object(Bucket=bucket, Key=objKey)
         except ClientError:
             raise S3Error('Unable to get object from s3')
         
