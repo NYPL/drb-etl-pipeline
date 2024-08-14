@@ -22,9 +22,6 @@ class TestCitationBlueprint:
 
         return flask_app
 
-# Tests for when work uuid and format values are set correctly
-
-    #* Bible work before 1900 successful test
     def test_get_citation_bible_pre1900_success(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
@@ -423,18 +420,41 @@ class TestCitationBlueprint:
                 {'message': 'No work found with id testUUID'}
             )
 
-    def test_get_citation_fail2(self, mock_utils, test_app, mocker):
-        mock_db = mocker.MagicMock()
-        mock_db.__enter__.return_value = mock_db
-        mock_db_client = mocker.patch('api.blueprints.drbCitation.DBClient', return_value=mock_db)
-
+    def test_get_citation_empty_format(self, mock_utils, test_app):
         mock_utils['formatResponseObject'].return_value = '400Response'
 
         with test_app.test_request_context('/?format='):
             test_api_response = get_citation('testUUID')
 
             assert test_api_response == '400Response'
-            mock_db_client.assert_called_once_with('testDBClient')
+
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                400,
+                'citation',
+                {'message': 'Citation formats are invalid'}
+            )
+
+    def test_get_citation_missing_format(self, mock_utils, test_app):
+        mock_utils['formatResponseObject'].return_value = '400response'
+
+        with test_app.test_request_context('/'):
+            test_api_response = get_citation('testUUID')
+
+            assert test_api_response == '400response'
+
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                400,
+                'citation',
+                {'message': 'Citation formats are invalid'}
+            )
+
+    def test_get_citation_unknown_format(self, mock_utils, test_app):
+        mock_utils['formatResponseObject'].return_value = '400response'
+
+        with test_app.test_request_context('/?format=test'):
+            test_api_response = get_citation('testUUID')
+
+            assert test_api_response == '400response'
 
             mock_utils['formatResponseObject'].assert_called_once_with(
                 400,
@@ -451,7 +471,7 @@ class TestCitationBlueprint:
 
         mock_utils['formatResponseObject'].return_value = '500response'
 
-        with test_app.test_request_context('/'):
+        with test_app.test_request_context('/?format=mla'):
             test_api_response = get_citation('testUUID')
 
             assert test_api_response == '500response'

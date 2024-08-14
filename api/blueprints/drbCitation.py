@@ -17,13 +17,13 @@ def get_citation(uuid):
     response_type = 'citation'
 
     try:
+        citation_formats = request.args.get('format', default='')
+        formats = set(citation_formats.split(','))
+
+        if not formats.issubset(citation_set):
+            return APIUtils.formatResponseObject(400, response_type, { 'message': 'Citation formats are invalid' })
+    
         with DBClient(current_app.config['DB_CLIENT']) as db_client:
-            citation_formats = request.args.get('format')
-            formats = set(citation_formats.split(','))
-
-            if not formats.issubset(citation_set):
-                return APIUtils.formatResponseObject(400, response_type, { 'message': 'Citation formats are invalid' })
-
             work_to_cite = db_client.fetchSingleWork(uuid)
 
             if not work_to_cite:
