@@ -13,6 +13,7 @@
 - Refactored works and editions APIs and added error handling
 - Generalize data aggregation within analytics folder
 - Updated README release steps
+- Added error handling to citation API
 
 ## 2024-08-06 -- v0.13.1
 ## Added
