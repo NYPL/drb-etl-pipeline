@@ -43,8 +43,6 @@ class TestCitationBlueprint:
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
-
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': 'The Bible. Unknown version, testPubPlace, 1800.'}
             )
@@ -66,8 +64,6 @@ class TestCitationBlueprint:
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
-
-            mock_utils['normalizeQueryParams'].assert_called_once()
 
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': 'The Bible. Unknown version, NYPL, 2022.'}
@@ -94,8 +90,6 @@ class TestCitationBlueprint:
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
-
-            mock_utils['normalizeQueryParams'].assert_called_once()
 
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('United States, Test Agency. State of the Union Address. \
@@ -125,8 +119,6 @@ class TestCitationBlueprint:
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
-
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testTitle. Translated by transFirstName \
                                 transLastName, edited by editFirstName editLastName, \
@@ -155,8 +147,6 @@ class TestCitationBlueprint:
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
-
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testTitle. Translated by transFirstName \
                                 transLastName, \
@@ -183,8 +173,6 @@ class TestCitationBlueprint:
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
-
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testTitle. \
                                 testPubPlace, 1800.'.split())}
@@ -209,8 +197,6 @@ class TestCitationBlueprint:
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
-
-            mock_utils['normalizeQueryParams'].assert_called_once()
 
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testTitle. 2nd edition., \
@@ -240,8 +226,6 @@ class TestCitationBlueprint:
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
-
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testLastName, testFirstName. testTitle, \
                                 edited by editFirstName editLastName, \
@@ -269,8 +253,6 @@ class TestCitationBlueprint:
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
-
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testLastName, testFirstName. testTitle. \
                                 NYPL, 2022.'.split())}
@@ -297,14 +279,12 @@ class TestCitationBlueprint:
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
-
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testTitle. \
                                 NYPL, 2022.'.split())}
                 )
 
-    def test_get_citation__two_authors_work(self, mock_utils, test_app, mocker):
+    def test_get_citation_two_authors_work(self, mock_utils, test_app, mocker):
         mock_db = mocker.MagicMock()
         mock_db.__enter__.return_value = mock_db
         mock_db_client = mocker.patch('api.blueprints.drbCitation.DBClient', return_value=mock_db)
@@ -327,8 +307,6 @@ class TestCitationBlueprint:
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
-
-            mock_utils['normalizeQueryParams'].assert_called_once()
 
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testLastName, testFirstName, and testFirstName2 testLastName2. \
@@ -357,8 +335,6 @@ class TestCitationBlueprint:
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
-
-            mock_utils['normalizeQueryParams'].assert_called_once()
 
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testLastName, testFirstName, and testFirstName2 testLastName2. \
@@ -391,8 +367,6 @@ class TestCitationBlueprint:
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
-
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testLastName, testFirstName, et al. \
                                 testTitle, edited by editFirstName editLastName, \
@@ -422,8 +396,6 @@ class TestCitationBlueprint:
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
-
             mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'citation', {'mla': ' '.join('testLastName, testFirstName, et al. \
                                 testTitle. 2nd edition., \
@@ -445,7 +417,6 @@ class TestCitationBlueprint:
             assert test_api_response == '404Response'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
             mock_utils['formatResponseObject'].assert_called_once_with(
                 404,
                 'citation',
@@ -465,7 +436,6 @@ class TestCitationBlueprint:
             assert test_api_response == '400Response'
             mock_db_client.assert_called_once_with('testDBClient')
 
-            mock_utils['normalizeQueryParams'].assert_called_once()
             mock_utils['formatResponseObject'].assert_called_once_with(
                 400,
                 'citation',

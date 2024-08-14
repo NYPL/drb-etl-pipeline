@@ -18,9 +18,6 @@ def get_citation(uuid):
 
     try:
         with DBClient(current_app.config['DB_CLIENT']) as db_client:
-            searchParams = APIUtils.normalizeQueryParams(request.args)
-            logger.debug(searchParams)
-
             citation_formats = request.args.get('format')
             formats = set(citation_formats.split(','))
 
