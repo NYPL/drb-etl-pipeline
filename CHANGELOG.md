@@ -14,6 +14,7 @@
 - Refactored works and editions APIs and added error handling
 - Generalize data aggregation within analytics folder
 - Updated README release steps
+- Added local S3 docker container via localstack
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
