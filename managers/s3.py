@@ -21,7 +21,8 @@ class S3Manager:
             's3',
             aws_access_key_id=os.environ.get('AWS_ACCESS', None),
             aws_secret_access_key=os.environ.get('AWS_SECRET', None),
-            region_name=os.environ.get('AWS_REGION', None)
+            region_name=os.environ.get('AWS_REGION', None),
+            endpoint_url=os.environ.get('S3_ENDPOINT_URL', None)
         )
 
     def createS3Bucket(self, bucketName, bucketPermissions):
@@ -87,11 +88,14 @@ class S3Manager:
 
     def getObjectFromBucket(self, objKey, bucket, md5Hash=None):
         try:
-            return self.s3Client.get_object(
-                Bucket=bucket,
-                Key=objKey,
-                IfNoneMatch=md5Hash
-            )
+            if md5Hash:
+                return self.s3Client.get_object(
+                    Bucket=bucket,
+                    Key=objKey,
+                    IfNoneMatch=md5Hash
+                )
+            
+            return self.s3Client.get_object(Bucket=bucket, Key=objKey)
         except ClientError:
             raise S3Error('Unable to get object from s3')
         

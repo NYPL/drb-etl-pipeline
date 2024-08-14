@@ -37,7 +37,6 @@ class DevelopmentSetupProcess(CoreProcess):
         #Allow Database to be trashed when reinitializing local DevelopmentSetUp
         self.initializeDatabase()
 
-
         # Setup ElasticSearch index if necessary
         self.createElasticConnection()
         # Wait for ElasticSearch to be available
