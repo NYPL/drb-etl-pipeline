@@ -47,7 +47,7 @@ class ViewDataAggregator(Aggregator):
 
         if match_file_id and match_referrer and "403 AccessDenied" not in log_object:
             match_time = re.search(TIMESTAMP_REGEX, log_object)
-            # some record identifiers include slashes, so we only want to 
+            # some record identifiers include slashes, so we only want to
             # split at first occurrence
             file_name = match_file_id.group(1).split("/", 1)[1]
             record_id = file_name.split(".")[0]
@@ -67,15 +67,13 @@ class ViewDataAggregator(Aggregator):
                 ]
 
                 for edition in self.db_manager.session.query(Edition).filter(
-                    Edition.dcdw_uuids.contains(f"{{{record.uuid}}}")
-                ):
+                        Edition.dcdw_uuids.contains(f"{{{record.uuid}}}")):
                     title = edition.title
                     copyright_year, publication_year = self.pull_dates_from_edition(
                         edition)
 
                     for work in self.db_manager.session.query(Work).filter(
-                        Work.id == edition.work_id
-                    ):
+                            Work.id == edition.work_id):
                         authors = [author["name"] for author in work.authors]
                         disciplines = [subject["heading"]
                                        for subject in work.subjects]
