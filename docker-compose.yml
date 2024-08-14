@@ -1,7 +1,4 @@
-version: '3.9'
-
 services:
-
   database:
     container_name: drb_local_db
     volumes:
@@ -63,11 +60,27 @@ services:
         target: /src
         read_only: true
 
+  s3:
+    container_name: drb-local-s3
+    image: localstack/localstack:latest
+    environment:
+      - DEBUG=1
+      - LOCALSTACK_HOSTNAME=localhost
+      - TEST_AWS_ACCOUNT_ID=000000000000
+      - AWS_DEFAULT_REGION=us-east-1
+      - DOCKER_HOST=unix://var/run/docker.sock
+    ports:
+      - "4566:4566"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./localstack/init-localstack-resources.sh:/etc/localstack/init/ready.d/init-localstack-resources.sh
+
   devsetup:
     container_name: drb_local_devSetUp
     depends_on:
       - database
       - elasticsearch
+      - s3
     build:
       context: .
     command: -e local-compose -p DevelopmentSetupProcess
