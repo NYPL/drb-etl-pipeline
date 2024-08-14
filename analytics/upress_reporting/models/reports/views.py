@@ -11,7 +11,7 @@ class ViewsReport(Counter5Report):
         self.view_request_parser = ViewDataAggregator(
             self.publisher, self.pandas_date_range)
         self.logger = createLog("views_report")
-    
+
     def build_report(self):
         # TODO: move to general counter 5 class?
         self.logger.info("Building views report...")
@@ -36,7 +36,7 @@ class ViewsReport(Counter5Report):
             self.logger.info("Views report generation complete!")
         else:
             self.logger.info("No view events found in reporting period!")
-    
+
     def build_header(self):
         return {
             "Report_Name": "NYPL DRB Book Usage by Title / Views",
@@ -47,4 +47,3 @@ class ViewsReport(Counter5Report):
             "Created": self.created,
             "Created_By": self.created_by,
         }
-    
