@@ -38,5 +38,5 @@ class Counter5Controller:
     def _setup_reports(self, publisher, reporting_period):
         return [
             DownloadsReport(publisher, reporting_period)
-            # ViewsReport(publisher, reporting_period)
+            ViewsReport(publisher, reporting_period)
         ]
