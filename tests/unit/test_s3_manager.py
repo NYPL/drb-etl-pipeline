@@ -176,7 +176,8 @@ class TestS3Manager:
 
         assert testResponse == 'testObject'
         testInstance.s3Client.get_object.assert_called_once_with(
-            Bucket='testBucket', Key='testKey', IfNoneMatch=None
+            Bucket='testBucket', 
+            Key='testKey'
         )
 
     def test_getObjectFromBucket_error(self, testInstance, mocker):
