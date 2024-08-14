@@ -15,6 +15,7 @@
 - Generalized data aggregation within analytics folder
 - Updated README release steps
 - Added local S3 docker container via localstack
+- Added error handling to citation API
 - Implemented Counter 5 reporting for view counts
 
 ## Fixed
