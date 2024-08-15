@@ -19,7 +19,6 @@
 - Implemented Counter 5 reporting for view counts
 - Added error handling to fulfill API
 
-
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files
 
