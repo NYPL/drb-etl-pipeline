@@ -47,14 +47,14 @@ class FulfillProcess(CoreProcess):
         batches = self.load_batches(self.prefix, self.s3Bucket)
         if startTimeStamp:
             #Using JMESPath to extract keys from the JSON batches
-            filtered_batchKeys = batches.search(f"Contents[?to_string(LastModified) > '\"{startTimeStamp}\"'].Key")
-            for key in filtered_batchKeys:
+            filtered_batch_keys = batches.search(f"Contents[?to_string(LastModified) > '\"{startTimeStamp}\"'].Key")
+            for key in filtered_batch_keys:
                 metadataObject = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
                 self.update_manifest(metadataObject, self.s3Bucket, key)
         else:
             for batch in batches:
-                for c in batch['Contents']:
-                    key = c['Key']
+                for content in batch['Contents']:
+                    key = content['Key']
                     metadataObject = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
                     self.update_manifest(metadataObject, self.s3Bucket, key)
 
@@ -79,9 +79,11 @@ class FulfillProcess(CoreProcess):
         if metadataJSON != metadataJSONCopy:
             try:
                 fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False)
-                return self.s3Client.put_object(Bucket=bucketName, Key=currKey, \
-                                Body=fulfillManifest, ACL= 'public-read', \
-                                ContentType = 'application/json'
+                return self.s3Client.put_object(
+                    Bucket=bucketName, 
+                    Key=currKey, 
+                    Body=fulfillManifest, ACL= 'public-read', 
+                    ContentType = 'application/json'
                 )
             except ClientError as e:
                 logging.error(e)
