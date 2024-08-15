@@ -116,9 +116,6 @@ class Counter5Report(ABC):
         return csv_row
     
     def _reformat_timestamp_data(self, date):
-        '''
-        Converts strings to Pandas Timestamp objects.
-        '''
         string_date = str(date).strip("[]").split(":")[0]
         return pandas.to_datetime(string_date)
 
