@@ -12,9 +12,15 @@ from sqlalchemy import func
 # Regexes needed to parse S3 logs
 FILE_ID_REGEX = r"REST.GET.OBJECT manifests/(.*?json)\s"
 TIMESTAMP_REGEX = r"\[.+\]"
+IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 
 
 class ViewDataAggregator(Aggregator):
+    """
+    Parses S3 download logs and generates list of DownloadEvents, each corresponding 
+    to a single download request.
+    """
+
     def __init__(self, *args):
         super().__init__(*args)
         self.bucket_name = os.environ.get("VIEW_BUCKET", None)
@@ -38,15 +44,12 @@ class ViewDataAggregator(Aggregator):
         self.db_manager.closeConnection()
 
     def match_log_info_with_drb_data(self, log_object):
-        """
-        Check that the S3 server access log object contains a view request.
-        If so, we parse out the edition title, identifier, and timestamp.
-        """
         match_file_id = re.search(FILE_ID_REGEX, log_object)
         match_referrer = re.search(str(self.referrer_url), log_object)
 
         if match_file_id and match_referrer and "403 AccessDenied" not in log_object:
             match_time = re.search(TIMESTAMP_REGEX, log_object)
+            match_ip = re.search(IP_REGEX, log_object)
             # some record identifiers include slashes, so we only want to
             # split at first occurrence
             file_name = match_file_id.group(1).split("/", 1)[1]
@@ -86,6 +89,7 @@ class ViewDataAggregator(Aggregator):
                             copyright_year=copyright_year,
                             publication_year=publication_year,
                             disciplines=", ".join(disciplines),
+                            country_count=None,
                             usage_type=usage_type.value,
                             interaction_type=InteractionType.VIEW,
                             timestamp=match_time.group(0)

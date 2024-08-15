@@ -1,10 +1,14 @@
-from abc import ABC, abstractmethod
-import json
 import boto3
+import geocoder
+import json
+import re
 import os
 
+from abc import ABC, abstractmethod
 from managers.db import DBManager
 from models.data.interaction_event import InteractionEvent
+
+IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 
 
 class Aggregator(ABC):
@@ -16,9 +20,6 @@ class Aggregator(ABC):
 
     @abstractmethod
     def match_log_info_with_drb_data(self, log_object) -> InteractionEvent | None:
-        '''
-        Match S3 log info to data in DRB dbs.
-        '''
         return
 
     def setup_db_manager(self):
@@ -45,7 +46,7 @@ class Aggregator(ABC):
                                     folder_name)
             views_per_day = self.parse_logs_in_batch(batch, bucket_name)
             events.extend(views_per_day)
-            
+
         return events
 
     def load_batch(self, log_path, bucket_name, log_folder):
@@ -56,10 +57,6 @@ class Aggregator(ABC):
         return page_iterator
 
     def parse_logs_in_batch(self, batch, bucket_name):
-        '''
-        Pulls logs from a given S3 batch, then parses each log to see if 
-        it contains an InteractionEvent (e.g. view, download, etc).
-        '''
         interactions_in_batch = []
 
         for log_file in batch:
@@ -83,6 +80,11 @@ class Aggregator(ABC):
 
         return interactions_in_batch
 
+    def map_ip_to_country(self, ip):
+        if re.match(IP_REGEX, ip):
+            geocoded_ip = geocoder.ip(ip)
+            return geocoded_ip.country
+
     def pull_dates_from_edition(self, edition):
         copyright, publication = None, None
         for date in edition.dates:
@@ -92,7 +94,7 @@ class Aggregator(ABC):
                 publication = date["date"]
 
         return (copyright, publication)
-    
+
     def load_flags(self, flag_string):
         try:
             flags = json.loads(flag_string)
@@ -102,11 +104,6 @@ class Aggregator(ABC):
         return {}
 
     def _redact_s3_path(self, path):
-        '''
-        Used to remove sensitive data from S3 prefix before passing to error message.
-        Example input = "logs/123456789/us-east-1/ump-pdf-repository/2024/1/1"
-        Example output: "logs/NYPL_AWS_ID/us-east-1/ump-pdf-repository/2024/1/1"
-        '''
         split_path = path.split("/")
         split_path[1] = "NYPL_AWS_ID"
         return "/".join(split_path)

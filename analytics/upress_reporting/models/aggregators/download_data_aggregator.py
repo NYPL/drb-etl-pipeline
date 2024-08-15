@@ -36,16 +36,12 @@ class DownloadDataAggregator(Aggregator):
                              "Either DOWNLOAD_BUCKET, DOWNLOAD_LOG_PATH, REFERRER_URL is not set")
             self.logger.error(error_message)
             raise UnconfiguredEnvironment(error_message)
-        
+
         self.events = self.pull_interaction_events(
             self.log_path, self.bucket_name)
         self.db_manager.closeConnection()
 
     def match_log_info_with_drb_data(self, log_object):
-        '''
-        Check that the S3 server access log object contains a download request. 
-        If so, we parse out the edition title, identifier, and timestamp.
-        '''
         matchRequest = re.search(REQUEST_REGEX, log_object)
         matchReferrer = re.search(str(self.referrer_url), log_object)
 
@@ -67,7 +63,8 @@ class DownloadDataAggregator(Aggregator):
                     for edition in self.db_manager.session.query(Edition).filter(
                             Edition.id == item.edition_id):
                         title = edition.title
-                        copyright_year, publication_year = self.pull_dates_from_edition(edition)
+                        copyright_year, publication_year = self.pull_dates_from_edition(
+                            edition)
 
                         for record in self.db_manager.session.query(Record).filter(
                                 Record.uuid.in_(edition.dcdw_uuids)):
@@ -91,6 +88,7 @@ class DownloadDataAggregator(Aggregator):
                 copyright_year=copyright_year,
                 publication_year=publication_year,
                 disciplines=", ".join(disciplines),
+                country_count=None,
                 usage_type=usage_type.value,
                 interaction_type=InteractionType.DOWNLOAD,
                 timestamp=match_time.group(0)
