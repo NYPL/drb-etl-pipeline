@@ -16,6 +16,7 @@
 - Updated README release steps
 - Added local S3 docker container via localstack
 - Added error handling to citation API
+- Added error handling to fulfill API
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
