@@ -1,23 +1,18 @@
-import json
-import boto3
 import os
 import re
 
 from logger import createLog
 from model import Edition, Item, Link
-from models.aggregators.aggregator import Aggregator
+from models.aggregators.aggregator import Aggregator, UnconfiguredEnvironment
 from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from model.postgres.item import ITEM_LINKS
-from managers import DBManager
 from model.postgres.record import Record
 from model.postgres.work import Work
 
 # Regexes needed to parse S3 logs
 REQUEST_REGEX = r"REST.GET.OBJECT "
-# File ID includes the file name for the pdf object
 FILE_ID_REGEX = r"REST.GET.OBJECT (.+pdf\s)"
 TIMESTAMP_REGEX = r"\[.+\]"
-REFERRER_REGEX = r"https://drb-qa.nypl.org/"
 
 
 class DownloadDataAggregator(Aggregator):
@@ -33,31 +28,22 @@ class DownloadDataAggregator(Aggregator):
 
         self.logger = createLog("download_data_aggregator")
         self.setup_db_manager()
+        self.set_events()
 
-    def pull_interaction_events(self):
-        '''
-        Returns list of download InteractionEvents in a given reporting period.
-        '''
-        download_events = []
+    def set_events(self):
+        if None in (self.bucket_name, self.log_path, self.referrer_url):
+            error_message = ("One or more necessary environment variables not found:",
+                             "Either DOWNLOAD_BUCKET, DOWNLOAD_LOG_PATH, REFERRER_URL is not set")
+            self.logger.error(error_message)
+            raise UnconfiguredEnvironment(error_message)
 
-        for date in self.date_range:
-            folder_name = date.strftime("%Y/%m/%d")
-            batch = self.load_batch(self.log_path, self.bucket_name, 
-                                    folder_name)
-            downloads_per_day = self.parse_logs_in_batch(batch, self.bucket_name)
-            download_events.extend(downloads_per_day)
-        
+        self.events = self.pull_interaction_events(
+            self.log_path, self.bucket_name)
         self.db_manager.closeConnection()
 
-        return download_events
-
     def match_log_info_with_drb_data(self, log_object):
-        '''
-        Check that the S3 server access log object contains a download request. 
-        If so, we parse out the edition title, identifier, and timestamp.
-        '''
         matchRequest = re.search(REQUEST_REGEX, log_object)
-        matchReferrer = re.search(REFERRER_REGEX, log_object)
+        matchReferrer = re.search(str(self.referrer_url), log_object)
 
         if matchRequest and matchReferrer and "403 AccessDenied" not in log_object:
             match_time = re.search(TIMESTAMP_REGEX, log_object)
@@ -77,7 +63,8 @@ class DownloadDataAggregator(Aggregator):
                     for edition in self.db_manager.session.query(Edition).filter(
                             Edition.id == item.edition_id):
                         title = edition.title
-                        copyright_year = self._pull_copyright_year(edition)
+                        copyright_year, publication_year = self.pull_dates_from_edition(
+                            edition)
 
                         for record in self.db_manager.session.query(Record).filter(
                                 Record.uuid.in_(edition.dcdw_uuids)):
@@ -85,8 +72,6 @@ class DownloadDataAggregator(Aggregator):
                             usage_type = self._determine_usage(record)
                             isbns = [identifier.split(
                                 "|")[0] for identifier in record.identifiers if "isbn" in identifier]
-                            eisbns = [identifier.split(
-                                "|")[0] for identifier in record.identifiers if "eisbn" in identifier]
 
                         for work in self.db_manager.session.query(Work).filter(
                                 Work.id == edition.work_id):
@@ -98,39 +83,24 @@ class DownloadDataAggregator(Aggregator):
             return InteractionEvent(
                 title=title,
                 book_id=book_id,
-                authors=authors,
-                isbns=isbns,
-                eisbns=eisbns,
+                authors="; ".join(authors),
+                isbns=", ".join(isbns),
                 copyright_year=copyright_year,
-                disciplines=disciplines,
-                usage_type=usage_type,
+                publication_year=publication_year,
+                disciplines=", ".join(disciplines),
+                country_count=None,
+                usage_type=usage_type.value,
                 interaction_type=InteractionType.DOWNLOAD,
                 timestamp=match_time.group(0)
             )
-
-    def _pull_copyright_year(self, edition):
-        for date in edition.dates:
-            if "copyright" in date["type"]:
-                return date["date"]
-
-        return None
 
     def _determine_usage(self, record):
         if record.has_part is not None:
             for item in record.has_part:
                 _, uri, _, _, flag_string = tuple(item.split('|'))
                 if "pdf" in uri:
-                    flags = self._load_flags(flag_string)
-                    if (("embed" in flags.keys()) and (flags["embed"] is True)) or (
-                        ("reader" in flags.keys()) and (flags["reader"] is True)):
+                    flags = self.load_flags(flag_string)
+                    if (("embed" in flags) and flags["embed"]) or (
+                            ("reader" in flags) and flags["reader"]):
                         return UsageType.FULL_ACCESS
         return UsageType.LIMITED_ACCESS
-
-    def _load_flags(self, flag_string):
-        try:
-            flags = json.loads(flag_string)
-            return flags if isinstance(flags, dict) else {}
-        except json.decoder.JSONDecodeError:
-            self.logger.error(
-                "Unable to parse nypl_login flags...")
-        return {}
