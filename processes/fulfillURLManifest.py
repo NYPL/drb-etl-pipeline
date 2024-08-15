@@ -46,18 +46,17 @@ class FulfillProcess(CoreProcess):
 
         batches = self.load_batches(self.prefix, self.s3Bucket)
         if startTimeStamp:
-            filtered_batches = batches.search(f"Contents[?to_string(LastModified) > '\"{startTimeStamp}\"'].Key")
-            for batch in filtered_batches:
-                for c in batch['Contents']:
-                    currKey = c['Key']
-                    metadataObject = self.getObjectFromBucket(currKey, self.s3Bucket)
-                    self.update_manifest(metadataObject, self.s3Bucket, currKey)
+            #Using JMESPath to extract keys from the JSON batches
+            filtered_batchKeys = batches.search(f"Contents[?to_string(LastModified) > '\"{startTimeStamp}\"'].Key")
+            for key in filtered_batchKeys:
+                metadataObject = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
+                self.update_manifest(metadataObject, self.s3Bucket, key)
         else:
             for batch in batches:
                 for c in batch['Contents']:
-                    currKey = c['Key']
-                    metadataObject = self.getObjectFromBucket(currKey, self.s3Bucket)
-                    self.update_manifest(metadataObject, self.s3Bucket, currKey)
+                    key = c['Key']
+                    metadataObject = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
+                    self.update_manifest(metadataObject, self.s3Bucket, key)
 
     def update_manifest(self, metadataObject, bucketName, currKey):
 
@@ -80,34 +79,35 @@ class FulfillProcess(CoreProcess):
         if metadataJSON != metadataJSONCopy:
             try:
                 fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False)
-                return self.putObjectInBucket(
-                    fulfillManifest, currKey, bucketName
+                return self.s3Client.put_object(Bucket=bucketName, Key=currKey, \
+                                Body=fulfillManifest, ACL= 'public-read', \
+                                ContentType = 'application/json'
                 )
             except ClientError as e:
                 logging.error(e)
 
-    def linkFulfill(self, metadataJSON):
+    def linkFulfill(self, metadataJSON, counter):
         for link in metadataJSON['links']:
             fulfillLink, counter = self.fulfillReplace(link, counter)
             link['href'] = fulfillLink
 
         return (metadataJSON, counter)
             
-    def readingOrderFulfill(self, metadataJSON):
+    def readingOrderFulfill(self, metadataJSON, counter):
         for readOrder in metadataJSON['readingOrder']:
             fulfillLink, counter = self.fulfillReplace(readOrder, counter)
             readOrder['href'] = fulfillLink
 
         return (metadataJSON, counter)
 
-    def resourceFulfill(self, metadataJSON):
+    def resourceFulfill(self, metadataJSON, counter):
         for resource in metadataJSON['resources']:
             fulfillLink, counter = self.fulfillReplace(resource, counter)
             resource['href'] = fulfillLink
 
         return (metadataJSON, counter)
 
-    def tocFulfill(self, metadataJSON): 
+    def tocFulfill(self, metadataJSON, counter): 
 
         '''
         The toc dictionary has no "type" key like the previous dictionaries 
@@ -124,7 +124,7 @@ class FulfillProcess(CoreProcess):
 
         return (metadataJSON, counter)
 
-    def fulfillReplace(self, metadata):
+    def fulfillReplace(self, metadata, counter):
         if metadata['type'] == 'application/pdf' or metadata['type'] == 'application/epub+zip' \
             or metadata['type'] == 'application/epub+xml':
                 for link in self.session.query(Link) \
