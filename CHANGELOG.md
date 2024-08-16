@@ -19,6 +19,8 @@
 - Implemented Counter 5 reporting for view counts
 
 ## Fixed
+- Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
+- Resolved the errors when running the FulfillProcess on a daily and complete ingest time
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files
 
 ## 2024-08-06 -- v0.13.1

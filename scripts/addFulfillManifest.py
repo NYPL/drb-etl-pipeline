@@ -21,8 +21,8 @@ def main():
 
     batches = load_batches()
     for batch in batches:
-        for c in batch['Contents']:
-            currKey = c['Key']
+        for content in batch['Contents']:
+            currKey = content['Key']
             metadataObject = s3_client.get_object(Bucket= bucketName, Key= f'{currKey}')
             update_batch(metadataObject, bucketName, currKey)
 
@@ -59,10 +59,12 @@ def update_batch(metadataObject, bucketName, currKey):
     if metadataJSON != metadataJSONCopy:
         try:
             fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False)
-            return s3_client.put_object(Bucket=bucketName, Key=currKey, \
-                                Body=fulfillManifest, ACL= 'public-read', \
-                                ContentType = 'application/json'
-                )
+            return s3_client.put_object(
+                Bucket=bucketName, 
+                Key=currKey,
+                Body=fulfillManifest, ACL= 'public-read',
+                ContentType = 'application/json'
+            )
         except ClientError as e:
             logging.error(e)
 
