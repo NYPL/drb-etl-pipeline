@@ -1,4 +1,4 @@
-from dataclasses import dataclass, fields
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
@@ -18,11 +18,11 @@ class UsageType(Enum):
 class InteractionEvent():
     title: str
     book_id: int
-    authors: Optional[list[str]]
-    isbns: Optional[list[str]]
-    eisbns: Optional[list[str]]
+    authors: str
+    isbns: str
     copyright_year: Optional[str]
-    disciplines: Optional[list[str]]
-    usage_type: UsageType
+    publication_year: Optional[str]
+    disciplines: Optional[str]
+    usage_type: str
     interaction_type: InteractionType
     timestamp: str
