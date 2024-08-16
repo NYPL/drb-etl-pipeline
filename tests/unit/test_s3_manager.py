@@ -33,7 +33,8 @@ class TestS3Manager:
             's3',
             aws_access_key_id='access',
             aws_secret_access_key='secret',
-            region_name='region'
+            region_name='region',
+            endpoint_url=None
         )
 
     def test_createS3Bucket_success(self, testInstance):
@@ -175,7 +176,8 @@ class TestS3Manager:
 
         assert testResponse == 'testObject'
         testInstance.s3Client.get_object.assert_called_once_with(
-            Bucket='testBucket', Key='testKey', IfNoneMatch=None
+            Bucket='testBucket', 
+            Key='testKey'
         )
 
     def test_getObjectFromBucket_error(self, testInstance, mocker):

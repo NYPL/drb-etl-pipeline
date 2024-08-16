@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased version -- v0.13.2
+## Added
 - Added auxiliary functions to build queries for OCLC search endpoints
 - Removed aggregation result print statement
 - Created local.yaml file to setup environment variables when running processes locally
@@ -11,6 +12,16 @@
 - Refactored info API
 - Refactored links API and added error handling
 - Refactored works and editions APIs and added error handling
+- Generalized data aggregation within analytics folder
+- Updated README release steps
+- Added local S3 docker container via localstack
+- Added error handling to citation API
+- Implemented Counter 5 reporting for view counts
+
+## Fixed
+- Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
+- Resolved the errors when running the FulfillProcess on a daily and complete ingest time
+- Changed HATHI_DATAFILES outdated link in development, example, and local yaml files
 
 ## 2024-08-06 -- v0.13.1
 ## Added

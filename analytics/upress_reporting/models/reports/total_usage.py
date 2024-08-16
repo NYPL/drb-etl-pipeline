@@ -1,4 +1,4 @@
-from analytics.upress_reporting.models.reports.counter_5_report import Counter5Report
+from models.reports.counter_5_report import Counter5Report
 
 
 class TotalUsageReport(Counter5Report):
