@@ -11,6 +11,12 @@ logger = createLog(__name__)
 
 
 class OCLCCatalogManager:
+    """Manages creation and execution of queries to the OCLC Catalog
+        Search and Metadata APIs.
+    Raises:
+        DataError: Raised when an invalid title/author query is attempted
+        OCLCError: Raised when the query to the API fails
+    """
     CATALOG_URL = 'http://www.worldcat.org/webservices/catalog/content/{}?wskey={}'
     OCLC_SEARCH_URL = 'https://americas.discovery.api.oclc.org/worldcat/search/v2/'
 
@@ -84,10 +90,14 @@ class OCLCCatalogManager:
             )
         except (Timeout, ConnectionError):
             logger.warn(f'Failed to query {bibs_endpoint} with query {query}')
-            return self.query_catalog()
+            raise OCLCError(f'Failed to query {bibs_endpoint} with query {query}')
 
         if bibs_response.status_code != 200:
             logger.warn(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
-            return None
+            raise OCLCError(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
 
         return bibs_response.json()
+
+class OCLCError(Exception):
+    def __init__(self, message=None):
+        self.message = message
