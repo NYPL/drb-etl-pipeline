@@ -19,10 +19,10 @@ def clean_str(string):
         return ' '.join(string.replace('\r', ' ').replace('\n', ' ').split())
 
 def clean_title(title):
-    wordTokens = re.split(r'\s+', title)
+    word_tokens = re.split(r'\s+', title)
     return list(filter(
         lambda x: x not in TITLE_STOPWORDS and x != '',
-        [re.sub(r'[^\w]+', '', token.lower()) for token in wordTokens]
+        [re.sub(r'[^\w]+', '', token.lower()) for token in word_tokens]
     ))
 
 def clean_identifier(identifier):
@@ -34,12 +34,12 @@ def get_queryable_identifiers(identifiers):
             identifiers
         ))
 
-def getStrLang(string):
+def get_str_lang(string):
     try:
-        langPredict = LANG_MODEL.predict(string, threshold=0.5)
-        langCode = langPredict[0][0].split('__')[2]
+        lang_predict = LANG_MODEL.predict(string, threshold=0.5)
+        lang_code = lang_predict[0][0].split('__')[2]
     except (AttributeError, IndexError, ValueError):
         # TODO: How/where should this be logged if this remains in the utils
         # instead of being a class method?
-        langCode = 'unk'
-    return langCode
+        lang_code = 'unk'
+    return lang_code
