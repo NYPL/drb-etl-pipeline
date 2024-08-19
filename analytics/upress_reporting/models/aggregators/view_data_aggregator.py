@@ -9,24 +9,17 @@ from models.aggregators.aggregator import Aggregator, UnconfiguredEnvironment
 from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from sqlalchemy import func
 
-# Regexes needed to parse S3 logs
 FILE_ID_REGEX = r"REST.GET.OBJECT manifests/(.*?json)\s"
 TIMESTAMP_REGEX = r"\[.+\]"
 IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 
 
 class ViewDataAggregator(Aggregator):
-    """
-    Parses S3 download logs and generates list of DownloadEvents, each corresponding 
-    to a single download request.
-    """
-
     def __init__(self, *args):
         super().__init__(*args)
         self.bucket_name = os.environ.get("VIEW_BUCKET", None)
         self.log_path = os.environ.get("VIEW_LOG_PATH", None)
 
-        self.logger = createLog("view_data_aggregator")
         self.setup_db_manager()
         self.set_events()
 
@@ -36,7 +29,7 @@ class ViewDataAggregator(Aggregator):
                 "One or more necessary environment variables not found:",
                 "Either VIEW_BUCKET, VIEW_LOG_PATH, REFERRER_URL is not set",
             )
-            self.logger.error(error_message)
+            print(error_message)
             raise UnconfiguredEnvironment(error_message)
 
         self.events = self.pull_interaction_events(

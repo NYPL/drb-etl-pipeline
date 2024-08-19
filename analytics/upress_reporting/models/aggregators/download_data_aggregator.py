@@ -9,32 +9,27 @@ from model.postgres.item import ITEM_LINKS
 from model.postgres.record import Record
 from model.postgres.work import Work
 
-# Regexes needed to parse S3 logs
 REQUEST_REGEX = r"REST.GET.OBJECT "
 FILE_ID_REGEX = r"REST.GET.OBJECT (.+pdf\s)"
 TIMESTAMP_REGEX = r"\[.+\]"
 
 
 class DownloadDataAggregator(Aggregator):
-    """
-    Parses S3 download logs and generates list of DownloadEvents, each corresponding 
-    to a single download request.
-    """
-
     def __init__(self, *args):
         super().__init__(*args)
         self.bucket_name = os.environ.get("DOWNLOAD_BUCKET", None)
         self.log_path = os.environ.get("DOWNLOAD_LOG_PATH", None)
 
-        self.logger = createLog("download_data_aggregator")
         self.setup_db_manager()
         self.set_events()
 
     def set_events(self):
         if None in (self.bucket_name, self.log_path, self.referrer_url):
-            error_message = ("One or more necessary environment variables not found:",
-                             "Either DOWNLOAD_BUCKET, DOWNLOAD_LOG_PATH, REFERRER_URL is not set")
-            self.logger.error(error_message)
+            error_message = (
+                "One or more necessary environment variables not found:",             
+                "Either DOWNLOAD_BUCKET, DOWNLOAD_LOG_PATH, REFERRER_URL is not set"
+            )
+            print(error_message)
             raise UnconfiguredEnvironment(error_message)
 
         self.events = self.pull_interaction_events(

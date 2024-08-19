@@ -34,10 +34,6 @@ class Aggregator(ABC):
         self.db_manager.createSession()
 
     def pull_interaction_events(self, log_path, bucket_name) -> list[InteractionEvent]:
-        '''
-        Loads S3 logs from a given reporting period and parses InteractionEvents 
-        from each log. Use load_batch() and parse_logs_in_batch() to do so.
-        '''
         events = []
 
         for date in self.date_range:
