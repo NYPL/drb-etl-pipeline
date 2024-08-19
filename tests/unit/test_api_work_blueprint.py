@@ -37,7 +37,7 @@ class TestWorkBlueprint:
         mock_utils['formatResponseObject'].return_value = 'singleWorkResponse'
 
         with test_app.test_request_context('/?showAll=true'):
-            test_api_response = get_work('testUUID')
+            test_api_response = get_work('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'singleWorkResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -69,7 +69,7 @@ class TestWorkBlueprint:
         mock_utils['formatResponseObject'].return_value = 'singleWorkResponse'
 
         with test_app.test_request_context('/?showAll=true'):
-            test_api_response = get_work('testUUID')
+            test_api_response = get_work('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'singleWorkResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -99,7 +99,7 @@ class TestWorkBlueprint:
         mock_utils['formatResponseObject'].return_value = 'singleWorkResponse'
 
         with test_app.test_request_context('/?showAll=false'):
-            test_api_response = get_work('testUUID')
+            test_api_response = get_work('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'singleWorkResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -124,8 +124,8 @@ class TestWorkBlueprint:
 
         mock_utils['formatResponseObject'].return_value = '404Response'
 
-        with test_app.test_request_context('/testUUID?showAll=false'):
-            test_api_response = get_work('testUUID')
+        with test_app.test_request_context('/a8512b02-779b-45c6-95a3-56f90831be46?showAll=false'):
+            test_api_response = get_work('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == '404Response'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -135,7 +135,7 @@ class TestWorkBlueprint:
             mock_utils['formatResponseObject'].assert_called_once_with(
                 404,
                 'singleWork',
-                {'message': 'No work found with id testUUID'}
+                {'message': 'No work found with id a8512b02-779b-45c6-95a3-56f90831be46'}
             )
 
     def test_get_work_missing(self, mock_utils, test_app, mocker):
@@ -149,8 +149,8 @@ class TestWorkBlueprint:
 
         mock_utils['formatResponseObject'].return_value = '500Response'
 
-        with test_app.test_request_context('/testUUID?showAll=false'):
-            test_api_response = get_work('testUUID')
+        with test_app.test_request_context('/a8512b02-779b-45c6-95a3-56f90831be46?showAll=false'):
+            test_api_response = get_work('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == '500Response'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -158,5 +158,19 @@ class TestWorkBlueprint:
             mock_utils['formatResponseObject'].assert_called_once_with(
                 500,
                 'singleWork',
-                {'message': 'Unable to get work with id testUUID'}
+                {'message': 'Unable to get work with id a8512b02-779b-45c6-95a3-56f90831be46'}
+            )
+
+    def test_get_work_invalid_id(self, mock_utils, test_app):
+        mock_utils['formatResponseObject'].return_value = '400Response'
+
+        with test_app.test_request_context('/testUUID?showAll=false'):
+            test_api_response = get_work('testUUID')
+
+            assert test_api_response == '400Response'
+            
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                400,
+                'singleWork',
+                {'message': 'Work id testUUID is invalid'}
             )

@@ -10,6 +10,7 @@ from ..db import DBClient
 from ..elastic import ElasticClient
 from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
+from ..validation_utils import is_valid_uuid
 from ..opds2 import Feed, Publication
 from logger import createLog
 from model import Work, Edition
@@ -261,6 +262,9 @@ def collectionUpdate(uuid, user=None):
 def get_collection(uuid):
     logger.info(f'Getting collection with id {uuid}')
     response_type = 'fetchCollection'
+
+    if not is_valid_uuid(uuid):
+        return APIUtils.formatResponseObject(400, response_type, { 'message': f'Collection id {uuid} is invalid' })
 
     try:
         db_client = DBClient(current_app.config['DB_CLIENT'])

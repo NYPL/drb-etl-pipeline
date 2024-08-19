@@ -482,7 +482,7 @@ class TestCollectionBlueprint:
         mock_db_client = mocker.patch('api.blueprints.drbCollection.DBClient')
         mock_db_client.return_value = mock_db
 
-        collection = mocker.MagicMock(uuid="testUUID")
+        collection = mocker.MagicMock(uuid="d902fd44-7cbe-4401-b50c-5b1bda8b1059")
         mock_db.fetchSingleCollection.return_value = collection
 
         mock_feed_construct = mocker.patch(
@@ -493,7 +493,7 @@ class TestCollectionBlueprint:
         mock_utils['formatOPDS2Object'].return_value = 'testOPDS2Response'
 
         with test_app.test_request_context('/?sort=title&page=3'):
-            test_api_response = get_collection('testUUID')
+            test_api_response = get_collection('d902fd44-7cbe-4401-b50c-5b1bda8b1059')
 
             assert test_api_response == 'testOPDS2Response'
 
@@ -517,7 +517,7 @@ class TestCollectionBlueprint:
         mock_utils['formatResponseObject'].return_value = 'testErrorResponse'
 
         with test_app.test_request_context('/?sort=title&page=3'):
-            test_api_response = get_collection('testUUID')
+            test_api_response = get_collection('d902fd44-7cbe-4401-b50c-5b1bda8b1059')
 
             assert test_api_response == 'testErrorResponse'
 
@@ -526,7 +526,7 @@ class TestCollectionBlueprint:
             mock_utils['formatResponseObject'].assert_called_once_with(
                 404, 
                 'fetchCollection',
-                {'message': 'No collection found with id testUUID'}
+                {'message': 'No collection found with id d902fd44-7cbe-4401-b50c-5b1bda8b1059'}
             )
 
     def test_get_collection_error(self, test_app, mock_utils, mocker):
@@ -539,7 +539,7 @@ class TestCollectionBlueprint:
         mock_utils['formatResponseObject'].return_value = 'testErrorResponse'
 
         with test_app.test_request_context('/?sort=title&page=3'):
-            test_api_response = get_collection('testUUID')
+            test_api_response = get_collection('d902fd44-7cbe-4401-b50c-5b1bda8b1059')
 
             assert test_api_response == 'testErrorResponse'
 
@@ -548,7 +548,21 @@ class TestCollectionBlueprint:
             mock_utils['formatResponseObject'].assert_called_once_with(
                 500, 
                 'fetchCollection',
-                {'message': 'Unable to get collection with id testUUID'}
+                {'message': 'Unable to get collection with id d902fd44-7cbe-4401-b50c-5b1bda8b1059'}
+            )
+
+    def test_get_collection_invalid_id(self, test_app, mock_utils):
+        mock_utils['formatResponseObject'].return_value = '400response'
+
+        with test_app.test_request_context('/?sort=title&page=3'):
+            test_api_response = get_collection('testUUID')
+
+            assert test_api_response == '400response'
+
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                400, 
+                'fetchCollection',
+                {'message': 'Collection id testUUID is invalid'}
             )
 
     def test_collection_delete_success(self, test_app, mock_utils, mocker):
