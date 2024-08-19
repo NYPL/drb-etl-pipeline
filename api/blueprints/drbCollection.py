@@ -256,30 +256,35 @@ def collectionUpdate(uuid, user=None):
 
     return APIUtils.formatOPDS2Object(200, opdsFeed)
 
+
 @collection.route('/<uuid>', methods=['GET'])
-def collectionFetch(uuid):
-    logger.info('Fetching collection identified by {}'.format(uuid))
-
-    dbClient = DBClient(current_app.config['DB_CLIENT'])
-    dbClient.createSession()
-
-    sort = request.args.get('sort', None)
-    page = int(request.args.get('page', 1))
-    perPage = int(request.args.get('perPage', 10))
+def get_collection(uuid):
+    logger.info(f'Getting collection with id {uuid}')
+    response_type = 'fetchCollection'
 
     try:
-        collection = dbClient.fetchSingleCollection(uuid)
+        db_client = DBClient(current_app.config['DB_CLIENT'])
+        db_client.createSession()
+
+        sort = request.args.get('sort', None)
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('perPage', 10))
+
+        collection = db_client.fetchSingleCollection(uuid)
+
+        if not collection:
+            return APIUtils.formatResponseObject(404, response_type, { 'message:' f'No collection found with id {uuid}' })
+        
+        opds_feed = constructOPDSFeed(collection, db_client, sort=sort, page=page, perPage=per_page)
+
+        db_client.closeSession()
+
+        return APIUtils.formatOPDS2Object(200, opds_feed)
     except NoResultFound:
-        errMsg = {'message': 'Unable to locate collection {}'.format(uuid)}
-        return APIUtils.formatResponseObject(404, 'fetchCollection', errMsg)
-
-    opdsFeed = constructOPDSFeed(
-        collection, dbClient, sort=sort, page=page, perPage=perPage
-    )
-
-    dbClient.closeSession()
-
-    return APIUtils.formatOPDS2Object(200, opdsFeed)
+        return APIUtils.formatResponseObject(404, response_type, { 'message': f'No collection found with id {uuid}' })
+    except Exception as e:
+        logger.error(e)
+        return APIUtils.formatResponseObject(500, response_type, { 'message': f'Unable to get collection with id {uuid}' })
 
 @collection.route('/<uuid>', methods=['DELETE'])
 @validateToken
@@ -344,56 +349,56 @@ def collectionDeleteWorkEdition(uuid, user=None):
 
     return APIUtils.formatOPDS2Object(200, opdsFeed)
 
+
 @collection.route('/list', methods=['GET'])
-def collectionList():
-    logger.info('Listing all collections')
+def get_collections():
+    logger.info('Getting all collections')
+    response_type = 'collectionList'
 
     sort = request.args.get('sort', 'title')
     page = int(request.args.get('page', 1))
-    perPage = int(request.args.get('perPage', 10))
+    per_page = int(request.args.get('perPage', 10))
 
     if not re.match(r'(?:title|creator)(?::(?:asc|desc))*', sort):
         return APIUtils.formatResponseObject(
-            400, 'collectionList',
-            {'message': 'valid sort fields are title and creator'}
+            400, 
+            response_type,
+            { 'message': 'Sort fields are invalid' }
         )
 
-    dbClient = DBClient(current_app.config['DB_CLIENT'])
-    dbClient.createSession()
+    try:
+        db_client = DBClient(current_app.config['DB_CLIENT'])
+        db_client.createSession()
 
-    collections = dbClient.fetchCollections(
-        sort=sort, page=page, perPage=perPage
-    )
+        collections = db_client.fetchCollections(sort=sort, page=page, perPage=per_page)
 
-    opdsFeed = Feed()
+        opds_feed = Feed()
 
-    opdsFeed.addMetadata({
-        'title': 'Digital Research Books Collections'
-    })
+        opds_feed.addMetadata({ 'title': 'Digital Research Books Collections' })
+        opds_feed.addLink({ 'rel': 'self', 'href': request.path, 'type': 'application/opds+json' })
 
-    opdsFeed.addLink({
-        'rel': 'self',
-        'href': request.path,
-        'type': 'application/opds+json'
-    })
+        OPDSUtils.addPagingOptions(
+            opds_feed, 
+            request.full_path, 
+            len(collections),
+            page=page, 
+            perPage=per_page
+        )
 
-    OPDSUtils.addPagingOptions(
-        opdsFeed, request.full_path, len(collections),
-        page=page, perPage=perPage
-    )
+        for collection in collections:
+            uuid = collection.uuid
+            path = '/collection/{}'.format(uuid)
 
-    for collection in collections:
-        uuid = collection.uuid
+            group = constructOPDSFeed(collection, db_client, perPage=5, path=path)
 
-        path = '/collection/{}'.format(uuid)
+            opds_feed.addGroup(group)
 
-        group = constructOPDSFeed(collection, dbClient, perPage=5, path=path)
+        db_client.closeSession()
 
-        opdsFeed.addGroup(group)
-
-    dbClient.closeSession()
-
-    return APIUtils.formatOPDS2Object(200, opdsFeed)
+        return APIUtils.formatOPDS2Object(200, opds_feed)
+    except Exception as e:
+        logger.error(e)
+        return APIUtils.formatResponseObject(500, response_type, { 'message': 'Unable to get collections' })
 
 
 def constructSortMethod(sort):
