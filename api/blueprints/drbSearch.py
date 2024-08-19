@@ -10,81 +10,78 @@ search = Blueprint('search', __name__, url_prefix='/search')
 
 
 @search.route('', methods=['GET'])
-def standardQuery():
-    esClient = ElasticClient(current_app.config['REDIS_CLIENT'])
-    dbClient = DBClient(current_app.config['DB_CLIENT'])
-    dbClient.createSession()
-
-    searchParams = APIUtils.normalizeQueryParams(request.args)
-
-    terms = {}
-    for param in ['query', 'sort', 'filter', 'showAll']:
-        terms[param] = APIUtils.extractParamPairs(param, searchParams)
-
-    if terms.get('showAll', None):
-        terms['filter'].append(terms['showAll'][0])
-        del terms['showAll']
-
-    searchPage = int(searchParams.get('page', [1])[0]) - 1
-    searchSize = int(searchParams.get('size', [10])[0])
-
-    readerVersion = searchParams.get('readerVersion', [None])[0]\
-        or current_app.config['READER_VERSION']
-
-    logger.info('Executing ES Query {} with filters {}'.format(
-        searchParams, terms['filter'])
-    )
+def query():
+    response_type = 'searchResponse'
 
     try:
-        searchResult = esClient.searchQuery(
-            terms, page=searchPage, perPage=searchSize
-        )
-    except ElasticClientError as e:
-        return APIUtils.formatResponseObject(
-            400, 'searchResponse', {'message': str(e)}
-        )
+        es_client = ElasticClient(current_app.config['REDIS_CLIENT'])
+        db_client = DBClient(current_app.config['DB_CLIENT'])
+        db_client.createSession()
 
-    results = []
-    for res in searchResult.hits:
-        editionIds = [e.edition_id for e in res.meta.inner_hits.editions.hits]
+        search_params = APIUtils.normalizeQueryParams(request.args)
+        terms = { param: APIUtils.extractParamPairs(param, search_params) for param in ['query', 'sort', 'filter', 'showAll'] }
+
+        if terms.get('showAll', None):
+            terms['filter'].append(terms['showAll'][0])
+            del terms['showAll']
+
+        search_page = int(search_params.get('page', [1])[0]) - 1
+        search_size = int(search_params.get('size', [10])[0])
+        reader_version = search_params.get('readerVersion', [None])[0] or current_app.config['READER_VERSION']
+
+        logger.info('Executing ES Query {} with filters {}'.format(search_params, terms['filter']))
 
         try:
-            highlights = {
-                key: list(set(res.meta.highlight[key]))
-                for key in res.meta.highlight
-            }
-        except AttributeError:
-            highlights = {}
+            search_result = es_client.searchQuery(terms, page=search_page, perPage=search_size)
+        except ElasticClientError as e:
+            logger.error(e)
+            return APIUtils.formatResponseObject(500, response_type, { 'message': 'Unable to execute search' })
 
-        results.append((res.uuid, editionIds, highlights))
+        results = []
+        for res in search_result.hits:
+            edition_ids = [e.edition_id for e in res.meta.inner_hits.editions.hits]
 
-    if esClient.sortReversed is True:
-        results = [r for r in reversed(results)]
+            try:
+                highlights = {
+                    key: list(set(res.meta.highlight[key]))
+                    for key in res.meta.highlight
+                }
+            except AttributeError:
+                highlights = {}
 
-    filteredFormats = APIUtils.formatFilters(terms)
+            results.append((res.uuid, edition_ids, highlights))
 
-    logger.info('Executing DB Query for {} editions'.format(len(results)))
+        if es_client.sortReversed is True:
+            results = [r for r in reversed(results)]
 
-    works = dbClient.fetchSearchedWorks(results)
-    facets = APIUtils.formatAggregationResult(
-        searchResult.aggregations.to_dict()
-    )
+        filtered_formats = APIUtils.formatFilters(terms)
 
-    paging = APIUtils.formatPagingOptions(
-        searchPage + 1, searchSize, searchResult.hits.total.value
-    )
+        works = db_client.fetchSearchedWorks(results)
+        
+        facets = APIUtils.formatAggregationResult(search_result.aggregations.to_dict())
+        paging = APIUtils.formatPagingOptions(
+            search_page + 1, 
+            search_size, 
+            search_result.hits.total.value
+        )
 
-    dataBlock = {
-        'totalWorks': searchResult.hits.total.value,
-        'works': APIUtils.formatWorkOutput(
-            works, results, request=request, dbClient=dbClient, formats=filteredFormats, reader=readerVersion
-        ),
-        'paging': paging,
-        'facets': facets
-    }
+        data_block = {
+            'totalWorks': search_result.hits.total.value,
+            'works': APIUtils.formatWorkOutput(
+                works, 
+                results, 
+                request=request, 
+                dbClient=db_client, 
+                formats=filtered_formats, 
+                reader=reader_version
+            ),
+            'paging': paging,
+            'facets': facets
+        }
 
-    logger.debug('Search Query 200 on /search')
+        db_client.closeSession()
 
-    dbClient.closeSession()
-
-    return APIUtils.formatResponseObject(200, 'searchResponse', dataBlock)
+        return APIUtils.formatResponseObject(200, response_type, data_block)
+    except Exception as e:
+        logger.error(e) 
+        return APIUtils.formatResponseObject(500, response_type, { 'message': 'Unable to execute search' })

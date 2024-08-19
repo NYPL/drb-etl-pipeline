@@ -1,13 +1,13 @@
 from flask import Flask, request
 import pytest
 
-from api.blueprints.drbSearch import standardQuery
+from api.blueprints.drbSearch import query
 from api.utils import APIUtils
 from api.elastic import ElasticClientError
 
 class TestSearchBlueprint:
     @pytest.fixture
-    def mockUtils(self, mocker):
+    def mock_utils(self, mocker):
         return mocker.patch.multiple(
             APIUtils,
             normalizeQueryParams=mocker.DEFAULT,
@@ -19,7 +19,7 @@ class TestSearchBlueprint:
         )
 
     @pytest.fixture
-    def FakeHit(self, mocker):
+    def fake_hit(self, mocker):
         class FakeHit:
             def __init__(self, uuid, edition_ids):
                 self.uuid = uuid
@@ -28,25 +28,25 @@ class TestSearchBlueprint:
                     ed = mocker.MagicMock()
                     ed.edition_id = edition_id
                     editions.append(ed)
-                mockMeta = mocker.MagicMock()
-                mockMeta.inner_hits.editions.hits = editions
+                mock_beta = mocker.MagicMock()
+                mock_beta.inner_hits.editions.hits = editions
                 if int(uuid[-1]) % 2 != 0:
-                    mockMeta.highlight = {'field': ['highlight_{}'.format(uuid)]}
-                self.meta = mockMeta
+                    mock_beta.highlight = {'field': ['highlight_{}'.format(uuid)]}
+                self.meta = mock_beta
 
         return FakeHit
 
     @pytest.fixture
-    def mockHits(self, FakeHit, mocker):
+    def mock_hits(self, fake_hit, mocker):
         class FakeHits:
             def __init__(self):
                 self.total = mocker.MagicMock(value=5)
                 self.hits = [
-                    FakeHit('uuid1', ['ed1', 'ed2']),
-                    FakeHit('uuid2', ['ed3']),
-                    FakeHit('uuid3', ['ed4', 'ed5', 'ed6']),
-                    FakeHit('uuid4', ['ed7']),
-                    FakeHit('uuid5', ['ed8'])
+                    fake_hit('uuid1', ['ed1', 'ed2']),
+                    fake_hit('uuid2', ['ed3']),
+                    fake_hit('uuid3', ['ed4', 'ed5', 'ed6']),
+                    fake_hit('uuid4', ['ed7']),
+                    fake_hit('uuid5', ['ed8'])
                 ]
 
             def __iter__(self):
@@ -56,64 +56,64 @@ class TestSearchBlueprint:
         return FakeHits()
 
     @pytest.fixture
-    def testApp(self):
-        flaskApp = Flask('test')
-        flaskApp.config['DB_CLIENT'] = 'testDBClient'
-        flaskApp.config['REDIS_CLIENT'] = 'testRedisClient'
-        flaskApp.config['READER_VERSION'] = 'test'
+    def test_app(self):
+        flask_app = Flask('test')
+        flask_app.config['DB_CLIENT'] = 'testDBClient'
+        flask_app.config['REDIS_CLIENT'] = 'testRedisClient'
+        flask_app.config['READER_VERSION'] = 'test'
 
-        return flaskApp
+        return flask_app
 
-    def test_standardQuery(self, mockUtils, mockHits, testApp, mocker):
-        mockES = mocker.MagicMock()
-        mockESClient = mocker.patch('api.blueprints.drbSearch.ElasticClient')
-        mockESClient.return_value = mockES
+    def test_query(self, mock_utils, mock_hits, test_app, mocker):
+        mock_es = mocker.MagicMock()
+        mock_es_client = mocker.patch('api.blueprints.drbSearch.ElasticClient')
+        mock_es_client.return_value = mock_es
 
-        mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.drbSearch.DBClient')
-        mockDBClient.return_value = mockDB
+        mock_db = mocker.MagicMock()
+        mock_db_client = mocker.patch('api.blueprints.drbSearch.DBClient')
+        mock_db_client.return_value = mock_db
 
-        queryParams = {'query': ['q1', 'q2'], 'sort': ['s1'], 'size': [5]}
-        mockUtils['normalizeQueryParams'].return_value = queryParams
+        query_params = {'query': ['q1', 'q2'], 'sort': ['s1'], 'size': [5]}
+        mock_utils['normalizeQueryParams'].return_value = query_params
 
-        mockUtils['extractParamPairs'].side_effect = [
+        mock_utils['extractParamPairs'].side_effect = [
             ['testQueryTerms'],
             ['testSortTerms'],
             [('format', 'html')],
             ['testShowAll']
         ]
-        mockUtils['formatAggregationResult'].return_value = 'testFacets'
-        mockUtils['formatPagingOptions'].return_value = 'testPaging'
+        mock_utils['formatAggregationResult'].return_value = 'testFacets'
+        mock_utils['formatPagingOptions'].return_value = 'testPaging'
 
-        mockResponse = mocker.MagicMock()
-        mockResponse.hits = mockHits
-        mockAgg = mocker.MagicMock()
-        mockAgg.to_dict.return_value = {'aggs': []}
-        mockResponse.aggregations = mockAgg
-        mockES.searchQuery.return_value = mockResponse
+        mock_response = mocker.MagicMock()
+        mock_response.hits = mock_hits
+        mock_agg = mocker.MagicMock()
+        mock_agg.to_dict.return_value = {'aggs': []}
+        mock_response.aggregations = mock_agg
+        mock_es.searchQuery.return_value = mock_response
 
-        mockDB.fetchSearchedWorks.return_value =\
+        mock_db.fetchSearchedWorks.return_value =\
             ['work1', 'work2', 'work3', 'work4', 'work5']
 
-        mockUtils['formatWorkOutput'].return_value = 'testWorks'
+        mock_utils['formatWorkOutput'].return_value = 'testWorks'
 
-        mockUtils['formatResponseObject'].return_value = 'mockAPIResponse'
+        mock_utils['formatResponseObject'].return_value = 'mockAPIResponse'
 
-        with testApp.test_request_context('/?testing=true'):
-            testAPIResponse = standardQuery()
+        with test_app.test_request_context('/?testing=true'):
+            test_api_response = query()
 
-            assert testAPIResponse == 'mockAPIResponse'
-            mockESClient.assert_called_once_with('testRedisClient')
-            mockDBClient.assert_called_once_with('testDBClient')
+            assert test_api_response == 'mockAPIResponse'
+            mock_es_client.assert_called_once_with('testRedisClient')
+            mock_db_client.assert_called_once_with('testDBClient')
 
-            mockUtils['normalizeQueryParams'].assert_called_once
-            mockUtils['extractParamPairs'].assert_has_calls([
-                mocker.call('query', queryParams),
-                mocker.call('sort', queryParams),
-                mocker.call('filter', queryParams),
-                mocker.call('showAll', queryParams)
+            mock_utils['normalizeQueryParams'].assert_called_once
+            mock_utils['extractParamPairs'].assert_has_calls([
+                mocker.call('query', query_params),
+                mocker.call('sort', query_params),
+                mocker.call('filter', query_params),
+                mocker.call('showAll', query_params)
             ])
-            mockES.searchQuery.assert_called_once_with(
+            mock_es.searchQuery.assert_called_once_with(
                 {
                     'query': ['testQueryTerms'],
                     'sort': ['testSortTerms'],
@@ -121,28 +121,28 @@ class TestSearchBlueprint:
                 },
                 page=0, perPage=5
             )
-            testResultIds = [
+            test_result_ids = [
                 ('uuid1', ['ed1', 'ed2'], {'field': ['highlight_uuid1']}),
                 ('uuid2', ['ed3'], {}),
                 ('uuid3', ['ed4', 'ed5', 'ed6'], {'field': ['highlight_uuid3']}),
                 ('uuid4', ['ed7'], {}),
                 ('uuid5', ['ed8'], {'field': ['highlight_uuid5']})
             ]
-            mockDB.fetchSearchedWorks.assert_called_once_with(testResultIds)
-            mockUtils['formatAggregationResult'].assert_called_once_with(
+            mock_db.fetchSearchedWorks.assert_called_once_with(test_result_ids)
+            mock_utils['formatAggregationResult'].assert_called_once_with(
                 {'aggs': []}
             )
-            mockUtils['formatPagingOptions'].assert_called_once_with(1, 5, 5)
-            mockUtils['formatWorkOutput'].assert_called_once_with(
+            mock_utils['formatPagingOptions'].assert_called_once_with(1, 5, 5)
+            mock_utils['formatWorkOutput'].assert_called_once_with(
                 ['work1', 'work2', 'work3', 'work4', 'work5'],
-                testResultIds,
-                dbClient=mockDB,
+                test_result_ids,
+                dbClient=mock_db,
                 formats=['text/html'],
                 reader='test',
                 request=request
             )
 
-            mockUtils['formatResponseObject'].assert_called_once_with(
+            mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'searchResponse',
                 {
                     'totalWorks': 5,
@@ -152,32 +152,69 @@ class TestSearchBlueprint:
                 }
             )
 
-    def test_standardQuery_elastic_error(self, mockUtils, testApp, mocker):
-        mockES = mocker.MagicMock()
-        mockESClient = mocker.patch('api.blueprints.drbSearch.ElasticClient')
-        mockESClient.return_value = mockES
+    def test_query_elastic_error(self, mock_utils, test_app, mocker):
+        mock_es = mocker.MagicMock()
+        mock_es_client = mocker.patch('api.blueprints.drbSearch.ElasticClient')
+        mock_es_client.return_value = mock_es
 
         mocker.patch('api.blueprints.drbSearch.DBClient')
 
-        queryParams = {'query': ['q1', 'q2'], 'sort': ['s1'], 'size': [5]}
-        mockUtils['normalizeQueryParams'].return_value = queryParams
+        query_params = {'query': ['q1', 'q2'], 'sort': ['s1'], 'size': [5]}
+        mock_utils['normalizeQueryParams'].return_value = query_params
 
-        mockUtils['extractParamPairs'].side_effect = [
+        mock_utils['extractParamPairs'].side_effect = [
             ['testQueryTerms'],
             ['testSortTerms'],
             ['testFilterTerms'],
             ['testShowAll']
         ]
 
-        mockUtils['formatResponseObject'].return_value = 'mockAPIResponse'
+        mock_utils['formatResponseObject'].return_value = 'mockAPIResponse'
 
-        mockES.searchQuery.side_effect = ElasticClientError('Test Exception')
+        mock_es.searchQuery.side_effect = ElasticClientError('Test Exception')
 
-        with testApp.test_request_context('/?testing=true'):
-            testAPIResponse = standardQuery()
+        with test_app.test_request_context('/?testing=true'):
+            test_api_response = query()
 
-            assert testAPIResponse == 'mockAPIResponse'
+            assert test_api_response == 'mockAPIResponse'
 
-            mockUtils['formatResponseObject'].assert_called_once_with(
-                400, 'searchResponse', {'message': 'Test Exception'}
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                500, 
+                'searchResponse', 
+                { 'message': 'Unable to execute search' }
+            )
+
+    def test_query_db_error(self, mock_utils, mock_hits, test_app, mocker):
+        mock_es = mocker.MagicMock()
+        mock_es_client = mocker.patch('api.blueprints.drbSearch.ElasticClient')
+        mock_es_client.return_value = mock_es
+
+        mock_db = mocker.MagicMock()
+        mock_db_client = mocker.patch('api.blueprints.drbSearch.DBClient')
+        mock_db_client.return_value = mock_db
+
+        query_params = {'query': ['q1', 'q2'], 'sort': ['s1'], 'size': [5]}
+        mock_utils['normalizeQueryParams'].return_value = query_params
+
+        mock_utils['extractParamPairs'].side_effect = [
+            ['testQueryTerms'],
+            ['testSortTerms'],
+            [('format', 'html')],
+            ['testShowAll']
+        ]
+        mock_utils['formatAggregationResult'].return_value = 'testFacets'
+        mock_utils['formatPagingOptions'].return_value = 'testPaging'
+        mock_utils['formatResponseObject'].return_value = 'mockAPIResponse'
+
+        mock_db.fetchSearchedWorks.side_effect = Exception('Database error')
+
+        with test_app.test_request_context('/?testing=true'):
+            test_api_response = query()
+
+            assert test_api_response == 'mockAPIResponse'
+            
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                500, 
+                'searchResponse', 
+                { 'message': 'Unable to execute search' }
             )
