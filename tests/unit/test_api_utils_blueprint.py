@@ -3,14 +3,14 @@ import pytest
 import requests
 
 from api.blueprints.drbUtils import (
-    languageCounts, totalCounts, getProxyResponse
+    get_languages, get_counts, proxy_response
 )
 from api.utils import APIUtils
 
 
 class TestEditionBlueprint:
     @pytest.fixture
-    def mockUtils(self, mocker):
+    def mock_utils(self, mocker):
         return mocker.patch.multiple(
             APIUtils,
             normalizeQueryParams=mocker.DEFAULT,
@@ -20,134 +20,199 @@ class TestEditionBlueprint:
         )
     
     @pytest.fixture
-    def testApp(self):
-        flaskApp = Flask('test')
-        flaskApp.config['DB_CLIENT'] = 'testDBClient'
-        flaskApp.config['REDIS_CLIENT'] = 'testRedisClient'
+    def test_app(self):
+        flask_app = Flask('test')
+        flask_app.config['DB_CLIENT'] = 'testDBClient'
+        flask_app.config['REDIS_CLIENT'] = 'testRedisClient'
 
-        return flaskApp
+        return flask_app
 
-    def test_languageCounts(self, mockUtils, testApp, mocker):
-        mockES = mocker.MagicMock()
-        mockESClient = mocker.patch('api.blueprints.drbUtils.ElasticClient')
-        mockESClient.return_value = mockES
+    def test_get_languages(self, mock_utils, test_app, mocker):
+        mock_es = mocker.MagicMock()
+        mock_es_client = mocker.patch('api.blueprints.drbUtils.ElasticClient')
+        mock_es_client.return_value = mock_es
 
-        mockUtils['normalizeQueryParams'].return_value = {'totals': ['true']}
+        mock_utils['normalizeQueryParams'].return_value = {'totals': ['true']}
         
-        mockES.languageQuery.return_value = mocker.MagicMock(aggregations=['lang1', 'lang2'])
+        mock_es.languageQuery.return_value = mocker.MagicMock(aggregations=['lang1', 'lang2'])
 
-        mockUtils['formatLanguages'].return_value = 'testLanguageList'
-        mockUtils['formatResponseObject'].return_value = 'languageListResponse'
+        mock_utils['formatLanguages'].return_value = 'testLanguageList'
+        mock_utils['formatResponseObject'].return_value = 'languageListResponse'
 
-        with testApp.test_request_context('/?totals=true'):
-            testAPIResponse = languageCounts()
+        with test_app.test_request_context('/?totals=true'):
+            test_api_response = get_languages()
 
-            assert testAPIResponse == 'languageListResponse'
-            mockESClient.assert_called_once_with('testRedisClient')
+            assert test_api_response == 'languageListResponse'
+            mock_es_client.assert_called_once_with('testRedisClient')
 
-            mockUtils['normalizeQueryParams'].assert_called_once()
-            mockES.languageQuery.assert_called_once_with(True)
-            mockUtils['formatLanguages'].assert_called_once_with(['lang1', 'lang2'], True)
-            mockUtils['formatResponseObject'].assert_called_once_with(
+            mock_utils['normalizeQueryParams'].assert_called_once()
+            mock_es.languageQuery.assert_called_once_with(True)
+            mock_utils['formatLanguages'].assert_called_once_with(['lang1', 'lang2'], True)
+            mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'languageCounts', 'testLanguageList'
             )
 
-    def test_totalCounts(self, mockUtils, testApp, mocker):
-        mockDB = mocker.MagicMock()
-        mockDBClient = mocker.patch('api.blueprints.drbUtils.DBClient')
-        mockDBClient.return_value = mockDB
+    def test_get_languages(self, mock_utils, test_app, mocker):
+        mock_es = mocker.MagicMock()
+        mock_es_client = mocker.patch('api.blueprints.drbUtils.ElasticClient')
+        mock_es_client.return_value = mock_es
 
-        mockDB.fetchRowCounts.return_value = 'testTotalResult'
+        mock_utils['normalizeQueryParams'].return_value = {'totals': ['true']}
+        
+        mock_es.languageQuery.side_effect = Exception('Elastic search error')
 
-        mockUtils['formatTotals'].return_value = 'testTotalSummary'
-        mockUtils['formatResponseObject'].return_value = 'totalsResponse'
+        mock_utils['formatResponseObject'].return_value = 'languageListResponse'
 
-        with testApp.test_request_context('/'):
-            testAPIResponse = totalCounts()
+        with test_app.test_request_context('/?totals=true'):
+            test_api_response = get_languages()
 
-            assert testAPIResponse == 'totalsResponse'
-            mockDBClient.assert_called_once_with('testDBClient')
+            assert test_api_response == 'languageListResponse'
+            mock_es_client.assert_called_once_with('testRedisClient')
 
-            mockDB.fetchRowCounts.assert_called_once()
-            mockUtils['formatTotals'].assert_called_once_with('testTotalResult')
-            mockUtils['formatResponseObject'].assert_called_once_with(
+            mock_utils['normalizeQueryParams'].assert_called_once()
+            mock_es.languageQuery.assert_called_once_with(True)
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                500, 'languageCounts', 'Unable to get language counts'
+            )
+
+    def test_get_counts(self, mock_utils, test_app, mocker):
+        mock_db = mocker.MagicMock()
+        mock_db.__enter__.return_value = mock_db
+        mock_db_client = mocker.patch('api.blueprints.drbUtils.DBClient', return_value=mock_db)
+
+        mock_db.fetchRowCounts.return_value = 'testTotalResult'
+
+        mock_utils['formatTotals'].return_value = 'testTotalSummary'
+        mock_utils['formatResponseObject'].return_value = 'totalsResponse'
+
+        with test_app.test_request_context('/'):
+            test_api_response = get_counts()
+
+            assert test_api_response == 'totalsResponse'
+            mock_db_client.assert_called_once_with('testDBClient')
+
+            mock_db.fetchRowCounts.assert_called_once()
+            mock_utils['formatTotals'].assert_called_once_with('testTotalResult')
+            mock_utils['formatResponseObject'].assert_called_once_with(
                 200, 'totalCounts', 'testTotalSummary'
             )
 
-    def test_getProxyResponse_direct_success(self, testApp, mocker):
-        mockHead = mocker.patch.object(requests, 'head')
-        mockHead.return_value = mocker.MagicMock(status_code=200)
+    def test_get_counts_error(self, mock_utils, test_app, mocker):
+        mock_db = mocker.MagicMock()
+        mock_db.__enter__.return_value = mock_db
+        mock_db_client = mocker.patch('api.blueprints.drbUtils.DBClient', return_value=mock_db)
 
-        mockReq = mocker.patch.object(requests, 'request')
-        mockReq.return_value = mocker.MagicMock(
+        mock_db.fetchRowCounts.side_effect = Exception('Database error')
+
+        mock_utils['formatResponseObject'].return_value = 'totalsResponse'
+
+        with test_app.test_request_context('/'):
+            test_api_response = get_counts()
+
+            assert test_api_response == 'totalsResponse'
+            mock_db_client.assert_called_once_with('testDBClient')
+
+            mock_db.fetchRowCounts.assert_called_once()
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                500, 'totalCounts', 'Unable to get total counts'
+            )
+
+    def test_proxy_response_direct_success(self, test_app, mocker):
+        mock_head = mocker.patch.object(requests, 'head')
+        mock_head.return_value = mocker.MagicMock(status_code=200)
+
+        mock_req = mocker.patch.object(requests, 'request')
+        mock_req.return_value = mocker.MagicMock(
             status_code=200,
             headers={'Content-Encoding': 'block', 'Media-Type': 'allow'},
             content='Test Content'
         )
-        with testApp.test_request_context('/?proxy_url=https://www.testURL.com'):
-            testAPIResponse = getProxyResponse()
+        with test_app.test_request_context('/?proxy_url=https://www.testURL.com'):
+            test_api_response = proxy_response()
 
-            assert isinstance(testAPIResponse, Response)
-            assert testAPIResponse.status_code == 200
-            assert testAPIResponse.response == [b'Test Content']
-            assert testAPIResponse.headers['Media-Type'] == 'allow'
-            assert testAPIResponse.headers['Access-Control-Allow-Origin'] ==\
-                '*'
+            assert isinstance(test_api_response, Response)
+            assert test_api_response.status_code == 200
+            assert test_api_response.response == [b'Test Content']
+            assert test_api_response.headers['Media-Type'] == 'allow'
+            assert test_api_response.headers['Access-Control-Allow-Origin'] == '*'
 
-            mockHead.assert_called_once_with(
+            mock_head.assert_called_once_with(
                 'https://www.testURL.com',
                 headers={'User-agent': 'Mozilla/5.0'}
             )
-            mockReq.assert_called_once()
+            mock_req.assert_called_once()
 
-    def test_getProxyResponse_redirect_success(self, testApp, mocker):
-        mockHead = mocker.patch.object(requests, 'head')
-        mockHead.side_effect = [
+    def test_proxy_response_redirect_success(self, test_app, mocker):
+        mock_head = mocker.patch.object(requests, 'head')
+        mock_head.side_effect = [
             mocker.MagicMock(status_code=301, headers={'Location': '/redirectURL'}),
             mocker.MagicMock(status_code=200)
         ]
 
-        mockReq = mocker.patch.object(requests, 'request')
-        mockReq.return_value = mocker.MagicMock(
+        mock_req = mocker.patch.object(requests, 'request')
+        mock_req.return_value = mocker.MagicMock(
             status_code=200,
             headers={'Content-Encoding': 'block', 'Media-Type': 'allow'},
             content='Test Content'
         )
 
-        with testApp.test_request_context('/?proxy_url=https://www.testURL.com'):
-            testAPIResponse = getProxyResponse()
+        with test_app.test_request_context('/?proxy_url=https://www.testURL.com'):
+            test_api_response = proxy_response()
 
-            assert isinstance(testAPIResponse, Response)
-            assert testAPIResponse.status_code == 200
-            assert testAPIResponse.response == [b'Test Content']
-            assert testAPIResponse.headers['Media-Type'] == 'allow'
+            assert isinstance(test_api_response, Response)
+            assert test_api_response.status_code == 200
+            assert test_api_response.response == [b'Test Content']
+            assert test_api_response.headers['Media-Type'] == 'allow'
 
-            mockHead.assert_has_calls([
+            mock_head.assert_has_calls([
                 mocker.call('https://www.testURL.com', headers={'User-agent': 'Mozilla/5.0'}),
                 mocker.call('https://www.testURL.com/redirectURL', headers={'User-agent': 'Mozilla/5.0'})]
             )
-            mockReq.assert_called_once()
+            mock_req.assert_called_once()
 
-    def test_getProxyResponse_redirect_error(self, testApp, mocker):
-        mockHead = mocker.patch.object(requests, 'head')
-        mockHead.side_effect = [
+    def test_proxy_response_redirect_error(self, test_app, mocker):
+        mock_head = mocker.patch.object(requests, 'head')
+        mock_head.side_effect = [
             mocker.MagicMock(status_code=404, headers={'Location': '/redirectURL'}),
         ]
 
-        mockReq = mocker.patch.object(requests, 'request')
-        mockReq.return_value = mocker.MagicMock(
+        mock_req = mocker.patch.object(requests, 'request')
+        mock_req.return_value = mocker.MagicMock(
             status_code=200,
             headers={'Content-Encoding': 'block', 'Media-Type': 'allow'},
             content='Test Content'
         )
 
-        with testApp.test_request_context('/?proxy_url=https://www.testURL.com'):
-            testAPIResponse = getProxyResponse()
+        with test_app.test_request_context('/?proxy_url=https://www.testURL.com'):
+            test_api_response = proxy_response()
 
-            assert isinstance(testAPIResponse, Response)
-            assert testAPIResponse.status_code == 200
-            assert testAPIResponse.response == [b'Test Content']
-            assert testAPIResponse.headers['Media-Type'] == 'allow'
+            assert isinstance(test_api_response, Response)
+            assert test_api_response.status_code == 200
+            assert test_api_response.response == [b'Test Content']
+            assert test_api_response.headers['Media-Type'] == 'allow'
 
-            mockHead.assert_called_once_with('https://www.testURL.com', headers={'User-agent': 'Mozilla/5.0'})
-            mockReq.assert_called_once()
+            mock_head.assert_called_once_with('https://www.testURL.com', headers={'User-agent': 'Mozilla/5.0'})
+            mock_req.assert_called_once()
+
+    def test_proxy_response_request_exception(self, test_app, mocker):
+        mock_head = mocker.patch.object(requests, 'head')
+        mock_head.side_effect = [
+            mocker.MagicMock(status_code=301, headers={'Location': '/redirectURL'}),
+            mocker.MagicMock(status_code=200)
+        ]
+
+        mock_req = mocker.patch.object(requests, 'request')
+        mock_req.side_effect = Exception('Unable to make request')
+
+        with test_app.test_request_context('/?proxy_url=https://www.testURL.com'):
+            test_api_response = proxy_response()
+
+            assert isinstance(test_api_response, Response)
+            assert test_api_response.status_code == 500
+            assert test_api_response.response == [b'Unable to proxy response']
+
+            mock_head.assert_has_calls([
+                mocker.call('https://www.testURL.com', headers={'User-agent': 'Mozilla/5.0'}),
+                mocker.call('https://www.testURL.com/redirectURL', headers={'User-agent': 'Mozilla/5.0'})]
+            )
+            mock_req.assert_called_once()
