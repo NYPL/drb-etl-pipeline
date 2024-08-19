@@ -17,9 +17,12 @@
 - Added local S3 docker container via localstack
 - Added error handling to citation API
 - Implemented Counter 5 reporting for view counts
+- Added error handling to GET collection endpoints
 - Added error handling for utils API
 
 ## Fixed
+- Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
+- Resolved the errors when running the FulfillProcess on a daily and complete ingest time
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files
 
 ## 2024-08-06 -- v0.13.1
