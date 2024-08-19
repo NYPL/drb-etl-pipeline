@@ -22,7 +22,6 @@
 - Added error handling to search API
 - Added error handling to fulfill API
 
-
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
 - Resolved the errors when running the FulfillProcess on a daily and complete ingest time
