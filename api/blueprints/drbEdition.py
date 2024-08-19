@@ -9,7 +9,7 @@ logger = createLog(__name__)
 edition = Blueprint('edition', __name__, url_prefix='/edition')
 
 
-@edition.route('/<editionID>', methods=['GET'])
+@edition.route('/<edition_id>', methods=['GET'])
 def get_edition(edition_id):
     logger.info(f'Getting edition with id {edition_id}')
     response_type = 'singleEdition'
