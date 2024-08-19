@@ -293,8 +293,3 @@ class ClassifyManager:
             lambda x: re.search(r'\|(?:isbn|issn|oclc)$', x) != None,
             identifiers
         ))
-
-
-class ClassifyError(Exception):
-    def __init__(self, message=None):
-        self.message = message

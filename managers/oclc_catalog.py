@@ -98,6 +98,31 @@ class OCLCCatalogManager:
 
         return bibs_response.json()
 
+    # Should we be working with an object version of the record and passing that around instead?
+    def generate_identifier_query(self, identifier_type, identifier):
+        identifier_map = { "isbn": "bn",
+                          "issn": "in",
+                          "oclc": "no"}
+        return f"{identifier_map[identifier_type]}: {identifier}"
+
+    def generate_title_author_query(self, title, author):
+        return f"ti:{title} au:{author}"
+
+    def generate_search_query(self, identifier_type=None, identifier=None, title=None, author=None):
+        """Parses the received data and generates an OCLC search query based either
+        on an identifier (preferred) or an author/title combination.
+        """
+        if identifier and identifier_type:
+            return self.generate_identifier_query(identifier_type, identifier)
+        elif title and author:
+            return self.generate_title_author_query(title, author)
+        else:
+            raise DataError('Record lacks identifier or title/author pair')
+
 class OCLCError(Exception):
+    def __init__(self, message=None):
+        self.message = message
+
+class DataError(Exception):
     def __init__(self, message=None):
         self.message = message
