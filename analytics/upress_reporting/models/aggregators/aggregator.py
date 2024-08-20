@@ -34,26 +34,22 @@ class Aggregator(ABC):
         self.db_manager.createSession()
 
     def pull_interaction_events(self, log_path, bucket_name) -> list[InteractionEvent]:
-        '''
-        Loads S3 logs from a given reporting period and parses InteractionEvents 
-        from each log. Use load_batch() and parse_logs_in_batch() to do so.
-        '''
         events = []
 
         for date in self.date_range:
             folder_name = date.strftime("%Y/%m/%d")
-            batch = self.load_batch(log_path, bucket_name,
-                                    folder_name)
-            views_per_day = self.parse_logs_in_batch(batch, bucket_name)
-            events.extend(views_per_day)
+            batch = self.load_batch(log_path, bucket_name, folder_name)
+            events_per_day = self.parse_logs_in_batch(batch, bucket_name)
+            
+            events.extend(events_per_day)
 
         return events
 
     def load_batch(self, log_path, bucket_name, log_folder):
         prefix = log_path + log_folder + "/"
         paginator = self.s3_client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(
-            Bucket=bucket_name, Prefix=prefix)
+        page_iterator = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
+        
         return page_iterator
 
     def parse_logs_in_batch(self, batch, bucket_name):
@@ -62,28 +58,30 @@ class Aggregator(ABC):
         for log_file in batch:
             if "Contents" not in log_file:
                 path = self._redact_s3_path(log_file["Prefix"])
-                raise S3LogParsingError(
-                    f"Log files in path {path} do not exist.")
+                raise S3LogParsingError(f"Log files in path {path} do not exist.")
             else:
                 for content in log_file["Contents"]:
                     curr_key = str(content["Key"])
                     log_object_dict = self.s3_client.get_object(
-                        Bucket=bucket_name, Key=f"{curr_key}"
+                        Bucket=bucket_name, 
+                        Key=f"{curr_key}"
                     )
-                    for i in log_object_dict["Body"].iter_lines():
-                        log_object_dict = i.decode("utf8")
-                        interaction_event = self.match_log_info_with_drb_data(
-                            log_object_dict)
+
+                    for line in log_object_dict["Body"].iter_lines():
+                        log_object_dict = line.decode("utf8")
+                        interaction_event = self.match_log_info_with_drb_data(log_object_dict)
+                        
                         if interaction_event:
-                            interactions_in_batch.append(
-                                interaction_event)
+                            interactions_in_batch.append(interaction_event)
 
         return interactions_in_batch
 
-    def map_ip_to_country(self, ip):
+    def map_ip_to_country(self, ip) -> str | None:
         if re.match(IP_REGEX, ip):
             geocoded_ip = geocoder.ip(ip)
             return geocoded_ip.country
+        
+        return None
 
     def pull_dates_from_edition(self, edition):
         copyright, publication = None, None
@@ -101,8 +99,7 @@ class Aggregator(ABC):
             return flags if isinstance(flags, dict) else {}
         except json.decoder.JSONDecodeError as e:
             raise S3LogParsingError(e.msg)
-        return {}
-
+    
     def _redact_s3_path(self, path):
         split_path = path.split("/")
         split_path[1] = "NYPL_AWS_ID"

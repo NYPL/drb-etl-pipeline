@@ -20,7 +20,7 @@
 - Added error handling to GET collection endpoints
 - Added error handling for utils API
 - Added error handling to search API
-- Added mapping from IP address to country code
+- Refactored analytics report code
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 

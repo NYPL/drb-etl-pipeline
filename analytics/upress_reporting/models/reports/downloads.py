@@ -1,7 +1,5 @@
 import csv
-import pandas
 
-from logger import createLog
 from models.aggregators.download_data_aggregator import DownloadDataAggregator
 from models.reports.counter_5_report import Counter5Report
 
@@ -9,13 +7,11 @@ from models.reports.counter_5_report import Counter5Report
 class DownloadsReport(Counter5Report):
     def __init__(self, *args):
         super().__init__(*args)
-        self.download_request_parser = DownloadDataAggregator(
-            self.publisher, self.pandas_date_range)
-        self.logger = createLog("downloads_report")
+        self.download_request_parser = DownloadDataAggregator(self.publisher, self.pandas_date_range)
 
     def build_report(self):
         # TODO: building report is slow, create a follow up story?
-        self.logger.info("Building downloads report...")
+        print("Building downloads report...")
 
         header = self.build_header()
         download_events = self.download_request_parser.events
@@ -34,9 +30,9 @@ class DownloadsReport(Counter5Report):
                 for title in final_data:
                     writer.writerow(title.values())
 
-            self.logger.info("Downloads report generation complete!")
+            print("Downloads report generation complete!")
         else:
-            self.logger.info("No download events found in reporting period!")
+            print("No download events found in reporting period!")
 
     def build_header(self):
         return {
