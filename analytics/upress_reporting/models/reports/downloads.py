@@ -1,7 +1,5 @@
 import csv
-import pandas
 
-from logger import createLog
 from models.aggregators.download_data_aggregator import DownloadDataAggregator
 from models.reports.counter_5_report import Counter5Report
 

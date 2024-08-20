@@ -1,6 +1,5 @@
 import csv
 
-from logger import createLog
 from models.aggregators.view_data_aggregator import ViewDataAggregator
 from models.reports.counter_5_report import Counter5Report
 

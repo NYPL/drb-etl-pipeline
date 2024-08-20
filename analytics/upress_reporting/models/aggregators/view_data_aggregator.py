@@ -1,7 +1,6 @@
 import re
 import os
 
-from logger import createLog
 from model.postgres.edition import Edition
 from model.postgres.record import Record
 from model.postgres.work import Work
@@ -32,8 +31,7 @@ class ViewDataAggregator(Aggregator):
             print(error_message)
             raise UnconfiguredEnvironment(error_message)
 
-        self.events = self.pull_interaction_events(
-            self.log_path, self.bucket_name)
+        self.events = self.pull_interaction_events(self.log_path, self.bucket_name)
         self.db_manager.closeConnection()
 
     def match_log_info_with_drb_data(self, log_object):
@@ -43,17 +41,13 @@ class ViewDataAggregator(Aggregator):
         if match_file_id and match_referrer and "403 AccessDenied" not in log_object:
             match_time = re.search(TIMESTAMP_REGEX, log_object)
             match_ip = re.search(IP_REGEX, log_object)
-            # some record identifiers include slashes, so we only want to
-            # split at first occurrence
             file_name = match_file_id.group(1).split("/", 1)[1]
             record_id = file_name.split(".")[0]
+            records = self.db_manager.session.query(Record) \
+                .filter((Record.source == self.publisher)) \
+                .filter(func.array_to_string(Record.identifiers, ",").like("%"+record_id+"%"))
 
-            # manifest file name should be the same as one of the record identifiers
-            for record in (
-                self.db_manager.session.query(Record)
-                .filter((Record.source == self.publisher))
-                .filter(func.array_to_string(
-                    Record.identifiers, ",").like("%"+record_id+"%"))):
+            for record in records:
                 book_id = (record.source_id).split("|")[0]
                 usage_type = self._determine_usage(record)
                 isbns = [
@@ -62,14 +56,16 @@ class ViewDataAggregator(Aggregator):
                     if "isbn" in identifier
                 ]
 
-                for edition in self.db_manager.session.query(Edition).filter(
-                        Edition.dcdw_uuids.contains(f"{{{record.uuid}}}")):
-                    title = edition.title
-                    copyright_year, publication_year = self.pull_dates_from_edition(
-                        edition)
+                editions = self.db_manager.session.query(Edition) \
+                    .filter(Edition.dcdw_uuids.contains(f"{{{record.uuid}}}"))
 
-                    for work in self.db_manager.session.query(Work).filter(
-                            Work.id == edition.work_id):
+                for edition in editions:
+                    title = edition.title
+                    copyright_year, publication_year = self.pull_dates_from_edition(edition)
+
+                    works = self.db_manager.session.query(Work).filter(Work.id == edition.work_id)
+
+                    for work in works:
                         authors = [author["name"] for author in work.authors]
                         disciplines = [subject["heading"]
                                        for subject in work.subjects]
