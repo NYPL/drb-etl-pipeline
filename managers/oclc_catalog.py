@@ -35,11 +35,11 @@ class OCLCCatalogManager:
         try:
             catalog_response = requests.get(catalog_query, timeout=3)
         except (Timeout, ConnectionError):
-            logger.warn(f'Failed to query URL {catalog_query}')
+            logger.warning(f'Failed to query URL {catalog_query}')
             return self.query_catalog(oclcNo)
 
         if catalog_response.status_code != 200:
-            logger.warn(f'OCLC Catalog Request failed with status {catalog_response.status_code}')
+            logger.warning(f'OCLC Catalog Request failed with status {catalog_response.status_code}')
             return None
 
         return catalog_response.text
@@ -65,7 +65,7 @@ class OCLCCatalogManager:
             return None
 
         if other_editions_response.status_code != 200:
-            logger.warn(f'OCLC other editions request failed with status {other_editions_response.status_code}')
+            logger.warning(f'OCLC other editions request failed with status {other_editions_response.status_code}')
             return None
 
         brief_records = other_editions_response.json().get('briefRecords', None)
@@ -89,11 +89,11 @@ class OCLCCatalogManager:
                 params={'q': query}
             )
         except (Timeout, ConnectionError):
-            logger.warn(f'Failed to query {bibs_endpoint} with query {query}')
+            logger.warning(f'Failed to query {bibs_endpoint} with query {query}')
             raise OCLCError(f'Failed to query {bibs_endpoint} with query {query}')
 
         if bibs_response.status_code != 200:
-            logger.warn(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
+            logger.warning(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
             raise OCLCError(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
 
         return bibs_response.json()

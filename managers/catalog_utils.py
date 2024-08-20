@@ -43,3 +43,20 @@ def get_str_lang(string):
         # instead of being a class method?
         lang_code = 'unk'
     return lang_code
+
+def check_title(source_title, authority_title):
+        authority_code = get_str_lang(authority_title)
+        source_code = get_str_lang(source_title)
+        if authority_code == source_code:
+            clean_authority_title = clean_title(authority_title)
+            authority_anthology = True if len(set(clean_authority_title) & set(ANTHOLOGY_TOKENS)) > 0 else False
+            clean_source_title = clean_title(source_title)
+            source_anthology = True if len(set(clean_source_title) & set(ANTHOLOGY_TOKENS)) > 0 else False
+            if (
+                len(set(clean_authority_title) & set(clean_source_title)) > 0
+                and authority_anthology == source_anthology
+            ):
+                return True
+            else:
+                return False
+        return True
