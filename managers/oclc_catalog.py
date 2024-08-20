@@ -22,21 +22,19 @@ class OCLCCatalogManager:
 
     def __init__(self):
         self.oclcKey = os.environ['OCLC_API_KEY']
-        self.attempts = 0
 
-    def query_catalog(self, oclcNo):
+    def query_catalog(self, oclcNo, attempts=1):
         catalog_response = None
-        self.attempts += 1
         catalog_query = self.CATALOG_URL.format(oclcNo, self.oclcKey)
 
-        if self.attempts > 3:
+        if attempts > 3:
             return catalog_response
 
         try:
             catalog_response = requests.get(catalog_query, timeout=3)
         except (Timeout, ConnectionError):
             logger.warning(f'Failed to query URL {catalog_query}')
-            return self.query_catalog(oclcNo)
+            return self.query_catalog(oclcNo, attempts+1)
 
         if catalog_response.status_code != 200:
             logger.warning(f'OCLC Catalog Request failed with status {catalog_response.status_code}')

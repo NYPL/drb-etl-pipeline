@@ -5,6 +5,7 @@ import newrelic.agent
 from .core import CoreProcess
 from managers import OCLCCatalogManager
 from managers.oclc_catalog import OCLCError
+from managers import catalog_utils
 from model import Record
 from logger import createLog
 
