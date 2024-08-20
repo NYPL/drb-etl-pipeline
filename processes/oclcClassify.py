@@ -3,9 +3,8 @@ import os
 import newrelic.agent
 
 from .core import CoreProcess
-from managers import ClassifyManager
-from managers.oclcClassify import ClassifyError
-from mappings.oclcClassify import ClassifyMapping
+from managers import OCLCCatalogManager
+from managers.oclc_catalog import OCLCError
 from model import Record
 from logger import createLog
 
