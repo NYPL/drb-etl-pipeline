@@ -38,51 +38,47 @@ class ViewDataAggregator(Aggregator):
         match_file_id = re.search(FILE_ID_REGEX, log_object)
         match_referrer = re.search(str(self.referrer_url), log_object)
 
-        if match_file_id and match_referrer and "403 AccessDenied" not in log_object:
-            match_time = re.search(TIMESTAMP_REGEX, log_object)
-            match_ip = re.search(IP_REGEX, log_object)
-            file_name = match_file_id.group(1).split("/", 1)[1]
-            record_id = file_name.split(".")[0]
-            records = self.db_manager.session.query(Record) \
-                .filter((Record.source == self.publisher)) \
-                .filter(func.array_to_string(Record.identifiers, ",").like("%"+record_id+"%"))
+        if not match_file_id or not match_referrer or "403 AccessDenied" in log_object:
+            return None
 
-            for record in records:
-                book_id = (record.source_id).split("|")[0]
-                usage_type = self._determine_usage(record)
-                isbns = [
-                    identifier.split("|")[0]
-                    for identifier in record.identifiers
-                    if "isbn" in identifier
-                ]
+        match_time = re.search(TIMESTAMP_REGEX, log_object)
+        match_ip = re.search(IP_REGEX, log_object)
+        file_name = match_file_id.group(1).split("/", 1)[1]
+        record_id = file_name.split(".")[0]
+        record = self.db_manager.session.query(Record) \
+            .filter((Record.source == self.publisher)) \
+            .filter(func.array_to_string(Record.identifiers, ",").like("%"+record_id+"%")) \
+            .first()
+        
+        if record is None:
+            return None
 
-                editions = self.db_manager.session.query(Edition) \
-                    .filter(Edition.dcdw_uuids.contains(f"{{{record.uuid}}}"))
+        book_id = (record.source_id).split("|")[0]
+        usage_type = self._determine_usage(record)
+        isbns = [identifier.split("|")[0] for identifier in record.identifiers if "isbn" in identifier]
 
-                for edition in editions:
-                    title = edition.title
-                    copyright_year, publication_year = self.pull_dates_from_edition(edition)
+        edition = self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains(f"{{{record.uuid}}}")).first()
 
-                    works = self.db_manager.session.query(Work).filter(Work.id == edition.work_id)
+        title = edition.title
+        copyright_year, publication_year = self.pull_dates_from_edition(edition)
 
-                    for work in works:
-                        authors = [author["name"] for author in work.authors]
-                        disciplines = [subject["heading"]
-                                       for subject in work.subjects]
+        work = self.db_manager.session.get(Work, edition.work_id)
 
-                        return InteractionEvent(
-                            title=title,
-                            book_id=book_id,
-                            authors="; ".join(authors),
-                            isbns=", ".join(isbns),
-                            copyright_year=copyright_year,
-                            publication_year=publication_year,
-                            disciplines=", ".join(disciplines),
-                            country_count=None,
-                            usage_type=usage_type.value,
-                            interaction_type=InteractionType.VIEW,
-                            timestamp=match_time.group(0)
-                        )
+        authors = [author["name"] for author in work.authors]
+        disciplines = [subject["heading"] for subject in work.subjects]
+
+        return InteractionEvent(
+            title=title,
+            book_id=book_id,
+            authors="; ".join(authors),
+            isbns=", ".join(isbns),
+            copyright_year=copyright_year,
+            publication_year=publication_year,
+            disciplines=", ".join(disciplines),
+            usage_type=usage_type.value,
+            interaction_type=InteractionType.VIEW,
+            timestamp=match_time.group(0)
+        )
 
     def _determine_usage(self, record):
         if record.has_part is not None:
