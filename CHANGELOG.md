@@ -21,6 +21,7 @@
 - Added error handling for utils API
 - Added error handling to search API
 - Refactored analytics report code
+- Implemented country-level analytics report
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 

@@ -86,6 +86,7 @@ class DownloadDataAggregator(Aggregator):
         disciplines = [subject["heading"] for subject in work.subjects]
 
         return InteractionEvent(
+            country=self.map_ip_to_country(match_ip.group()),
             title=title,
             book_id=book_id,
             authors="; ".join(authors),
