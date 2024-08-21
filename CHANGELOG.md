@@ -20,12 +20,17 @@
 - Added error handling to GET collection endpoints
 - Added error handling for utils API
 - Added error handling to search API
+- Refactored analytics report code
+- Implemented country-level analytics report
+- Implemented total-usage analytics report
+- Added error handling to fulfill API
 - Added uuid API validation
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
 - Resolved the errors when running the FulfillProcess on a daily and complete ingest time
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files
+- Fixed edition API ID param
 
 ## 2024-08-06 -- v0.13.1
 ## Added
