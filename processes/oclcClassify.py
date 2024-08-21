@@ -158,9 +158,9 @@ class ClassifyProcess(CoreProcess):
 
         self.addDCDWToUpdateList(classifyRec)
 
-        self.fetchOCLCCatalogRecords(classifyRec.record.identifiers)
+        self.fetch_oclc_catalog_records(classifyRec.record.identifiers)
 
-    def fetchOCLCCatalogRecords(self, identifiers):
+    def fetch_oclc_catalog_records(self, identifiers):
         owiNo, _ = tuple(identifiers[0].split('|'))
 
         counter = 0
@@ -177,13 +177,13 @@ class ClassifyProcess(CoreProcess):
             if updateReq is False:
                 continue
 
-            self.sendCatalogLookupMessage(oclcNo, owiNo)
+            self.send_catalog_lookup_message(oclcNo, owiNo) # where do we get owi?
             counter += 1
 
         if counter > 0:
             self.setIncrementerRedis('oclcCatalog', 'API', amount=counter)
 
-    def sendCatalogLookupMessage(self, oclcNo, owiNo):
+    def send_catalog_lookup_message(self, oclcNo, owiNo):
         logger.debug('Sending OCLC# {} to queue'.format(oclcNo))
         self.sendMessageToQueue(
             self.rabbitQueue,
