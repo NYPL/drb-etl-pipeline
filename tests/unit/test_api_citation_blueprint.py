@@ -35,7 +35,7 @@ class TestCitationBlueprint:
             = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -57,7 +57,7 @@ class TestCitationBlueprint:
             = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -83,7 +83,7 @@ class TestCitationBlueprint:
             = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -111,7 +111,7 @@ class TestCitationBlueprint:
             = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -139,7 +139,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -165,7 +165,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -190,7 +190,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -218,7 +218,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -245,7 +245,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -271,7 +271,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -300,7 +300,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -328,7 +328,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -359,7 +359,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -388,7 +388,7 @@ class TestCitationBlueprint:
                 = 'citationResponse'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == 'citationResponse'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -408,8 +408,8 @@ class TestCitationBlueprint:
 
         mock_utils['formatResponseObject'].return_value = '404Response'
 
-        with test_app.test_request_context('testUUID/?format=mla'):
-            test_api_response = get_citation('testUUID')
+        with test_app.test_request_context('a8512b02-779b-45c6-95a3-56f90831be46/?format=mla'):
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == '404Response'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -417,14 +417,14 @@ class TestCitationBlueprint:
             mock_utils['formatResponseObject'].assert_called_once_with(
                 404,
                 'citation',
-                {'message': 'No work found with id testUUID'}
+                {'message': 'No work found with id a8512b02-779b-45c6-95a3-56f90831be46'}
             )
 
     def test_get_citation_empty_format(self, mock_utils, test_app):
         mock_utils['formatResponseObject'].return_value = '400Response'
 
         with test_app.test_request_context('/?format='):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == '400Response'
 
@@ -438,7 +438,7 @@ class TestCitationBlueprint:
         mock_utils['formatResponseObject'].return_value = '400response'
 
         with test_app.test_request_context('/'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == '400response'
 
@@ -452,7 +452,7 @@ class TestCitationBlueprint:
         mock_utils['formatResponseObject'].return_value = '400response'
 
         with test_app.test_request_context('/?format=test'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == '400response'
 
@@ -472,7 +472,7 @@ class TestCitationBlueprint:
         mock_utils['formatResponseObject'].return_value = '500response'
 
         with test_app.test_request_context('/?format=mla'):
-            test_api_response = get_citation('testUUID')
+            test_api_response = get_citation('a8512b02-779b-45c6-95a3-56f90831be46')
 
             assert test_api_response == '500response'
             mock_db_client.assert_called_once_with('testDBClient')
@@ -480,5 +480,19 @@ class TestCitationBlueprint:
             mock_utils['formatResponseObject'].assert_called_once_with(
                 500,
                 'citation',
-                {'message': 'Unable to get citation for work with id testUUID'}
+                {'message': 'Unable to get citation for work with id a8512b02-779b-45c6-95a3-56f90831be46'}
+            )
+
+    def test_get_citation_invalid_id(self, mock_utils, test_app):
+        mock_utils['formatResponseObject'].return_value = '400response'
+
+        with test_app.test_request_context('/?format=mla'):
+            test_api_response = get_citation('testUUID')
+
+            assert test_api_response == '400response'
+
+            mock_utils['formatResponseObject'].assert_called_once_with(
+                400,
+                'citation',
+                {'message': 'Work id testUUID is invalid'}
             )
