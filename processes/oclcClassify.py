@@ -66,6 +66,7 @@ class ClassifyProcess(CoreProcess):
         for rec in self.windowedQuery(
             Record, baseQuery, windowSize=windowSize
         ):
+            # TODO: update this to frbrize_record_v2
             self.frbrizeRecord(rec)
 
             # Update Record with status
@@ -85,7 +86,15 @@ class ClassifyProcess(CoreProcess):
     def updateClassifiedRecordsStatus(self):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
-    def frbrizeRecord(self, record):
+    def frbrize_record_v2(self, record):
+        # TODO: 1. Search OCLC via query_brief_bibs based on record data
+        # 2. Get other editions 
+        # 3. Normalize other editiosn data
+        # 4. Create DCDW records from other editions
+
+        return None
+
+    def frbrizeRecord(self, record): 
         queryableIDs = ClassifyManager.getQueryableIdentifiers(
             record.identifiers
         )
@@ -138,6 +147,9 @@ class ClassifyProcess(CoreProcess):
             self.createClassifyDCDWRecord(
                 classifyXML, classifier.addlIds, identifier, idType
             )
+
+    def create_classified_dcdw_record(self, oclc_record):
+        return None
 
     def createClassifyDCDWRecord(
         self, classifyXML, additionalOCLCs, identifier, idType
