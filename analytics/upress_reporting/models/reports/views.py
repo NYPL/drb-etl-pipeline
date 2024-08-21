@@ -1,24 +1,20 @@
 import csv
 
-from models.aggregators.view_data_aggregator import ViewDataAggregator
 from models.reports.counter_5_report import Counter5Report
 
 
 class ViewsReport(Counter5Report):
     def __init__(self, *args):
         super().__init__(*args)
-        self.view_request_parser = ViewDataAggregator(self.publisher, self.pandas_date_range)
-
-    def build_report(self):
+    
+    def build_report(self, events):
         # TODO: move to general counter 5 class?
         print("Building views report...")
 
         header = self.build_header()
-        view_events = self.view_request_parser.events
-
-        if len(view_events) > 0:
-            columns, final_data = self.aggregate_interaction_events(
-                view_events)
+        
+        if len(events) > 0:
+            columns, final_data = self.aggregate_interaction_events(events)
             csv_file_name = f"{self.publisher}_views_report_{self.created}.csv"
 
             with open(csv_file_name, 'w') as csv_file:
