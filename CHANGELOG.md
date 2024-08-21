@@ -23,6 +23,7 @@
 - Refactored analytics report code
 - Implemented country-level analytics report
 - Implemented total-usage analytics report
+- Added error handling to fulfill API
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
