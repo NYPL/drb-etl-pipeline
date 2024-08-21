@@ -32,6 +32,8 @@ class ClassifyProcess(CoreProcess):
         self.createRabbitConnection()
         self.createOrConnectQueue(self.rabbitQueue, self.rabbitRoute)
 
+        self.oclc_manager = OCLCCatalogManager()
+
         self.classifiedRecords = {}
 
     def runProcess(self):
@@ -66,7 +68,7 @@ class ClassifyProcess(CoreProcess):
         for rec in self.windowedQuery(
             Record, baseQuery, windowSize=windowSize
         ):
-            self.frbrizeRecord(rec)
+            self.frbrize_record(rec)
 
             # Update Record with status
             rec.cluster_status = False
@@ -85,19 +87,19 @@ class ClassifyProcess(CoreProcess):
     def updateClassifiedRecordsStatus(self):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
-    def frbrizeRecord(self, record):
-        queryableIDs = ClassifyManager.getQueryableIdentifiers(
+    def frbrize_record(self, record):
+        queryable_ids = catalog_utils.get_queryable_identifiers(
             record.identifiers
         )
 
-        if len(queryableIDs) < 1:
-            queryableIDs = [None]
+        if len(queryable_ids) < 1:
+            queryable_ids = [None]
 
-        for iden in queryableIDs:
+        for iden in queryable_ids:
             try:
-                identifier, idenType = tuple(iden.split('|'))
+                identifier, iden_type = tuple(iden.split('|'))
             except AttributeError:
-                identifier, idenType = (None, None)
+                identifier, iden_type = (None, None)
 
             try:
                 author, *_ = tuple(record.authors[0].split('|'))
@@ -107,34 +109,35 @@ class ClassifyProcess(CoreProcess):
             # Check if this identifier has been queried in the past 24 hours
             # Skip if it has already been looked up
             if identifier and self.checkSetRedis(
-                'classify', identifier, idenType
+                'classify', identifier, iden_type
             ):
                 continue
 
             try:
-                self.classifyRecordByMetadata(
-                    identifier, idenType, author, record.title
+                self.classify_record_by_metadata(
+                    identifier, iden_type, author, record.title
                 )
-            except ClassifyError as err:
-                logger.warning('Unable to Classify {}'.format(record))
+            except OCLCError as err:
+                logger.warning(f'Unable to retrieve {record} record from OCLC')
                 logger.debug(err.message)
 
-    def classifyRecordByMetadata(self, identifier, idType, author, title):
-        classifier = ClassifyManager(
-            iden=identifier, idenType=idType, author=author, title=title
-        )
-
-        for classifyXML in classifier.getClassifyResponse():
-            if self.checkIfClassifyWorkFetched(classifyXML) is True:
+    def classify_record_by_metadata(self, identifier, id_type, author, title):
+        query = self.oclc_manager.generate_search_query(identifier=identifier,
+                                                        identifier_type=id_type,
+                                                        author=author,
+                                                        title=title)
+        for bib in self.oclc_manager.query_brief_bibs(query)['briefRecords']:
+            if self.check_if_bib_already_retrieved(bib) is True:
                 logger.info(
-                    'Skipping Duplicate Classify Record {} ({}:{})'.format(
-                        title, identifier, idType
-                    )
+                    f'Skipping already retrieved record {title} ({identifier}:{id_type})'
                 )
                 continue
 
-            classifier.checkAndFetchAdditionalEditions(classifyXML)
+            additional_ids = self.oclc_manager.get_related_oclc_numbers(bib['oclcNumber'])
 
+            # TODO: Should we persist the bibs we get to the database and how?
+            # The DCDW save method below is what previously passed the additional OCLC nos
+            # from above to the catalog process.
             self.createClassifyDCDWRecord(
                 classifyXML, classifier.addlIds, identifier, idType
             )
@@ -188,9 +191,13 @@ class ClassifyProcess(CoreProcess):
             {'oclcNo': oclcNo, 'owiNo': owiNo}
         )
 
-    def checkIfClassifyWorkFetched(self, classifyXML):
-        workOWI = classifyXML.find(
-            './/work', namespaces=ClassifyManager.NAMESPACE
-        ).attrib['owi']
+    def check_if_bib_already_retrieved(self, bib):
+        # TODO: This code should check if the OCLC Work has already been cached
+        # during this run of this process. I am guessing we may need to tweak
+        # resources in redis rather than reusing existing Classify tables/indices?
 
-        return self.checkSetRedis('classifyWork', workOWI, 'owi')
+        #workOWI = classifyXML.find(
+        #    './/work', namespaces=ClassifyManager.NAMESPACE
+        #).attrib['owi']
+
+        return False # self.checkSetRedis('classifyWork', workOWI, 'owi')
