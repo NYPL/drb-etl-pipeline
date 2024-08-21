@@ -1,42 +1,55 @@
 import os
+import pandas
+import re
 
 from datetime import datetime
+from models.aggregators.download_data_aggregator import DownloadDataAggregator
+from models.aggregators.view_data_aggregator import ViewDataAggregator
+from models.reports.country_level import CountryLevelReport
 from models.reports.downloads import DownloadsReport
+from models.reports.total_usage import TotalUsageReport
 from models.reports.views import ViewsReport
-from nypl_py_utils.functions.log_helper import create_log
 
 
 class Counter5Controller:
-    """Class for orchestrating various Counter 5 reports"""
-
     def __init__(self, reporting_period):
-        self.logger = create_log("counter_5_controller")
         self.publishers = os.environ.get("PUBLISHERS").split(",")
+        
         if reporting_period is not None:
             self.reporting_period = reporting_period
         else:
-            # set reporting period to first month of current year
-            self.reporting_period = (
-                f"{datetime.now().year}-01-01 to {datetime.now().year}-01-31"
-            )
+            self.reporting_period = (f"{datetime.now().year}-01-01 to {datetime.now().year}-01-31")
 
     def create_reports(self):
-        self.logger.info("Generating Counter 5 reports...")
+        print("Generating Counter 5 reports...")
+
+        pandas_reporting_period = self._parse_reporting_period(self.reporting_period)
 
         for publisher in self.publishers:
-            reports = self._setup_reports(publisher, self.reporting_period)
             try:
-                for report in reports:
-                    report.build_report()
+                view_data_aggregator = ViewDataAggregator(publisher, pandas_reporting_period)
+                download_data_aggregator = DownloadDataAggregator(publisher, pandas_reporting_period)
+
+                downloads_report = DownloadsReport(publisher, self.reporting_period)
+                downloads_report.build_report(download_data_aggregator.events)
+
+                views_report = ViewsReport(publisher, self.reporting_period)
+                views_report.build_report(view_data_aggregator.events)
+
+                country_level_report = CountryLevelReport(publisher, self.reporting_period)
+                country_level_report.build_report(view_data_aggregator.events + download_data_aggregator.events)
+
+                total_usage_report = TotalUsageReport(publisher, self.reporting_period)
+                total_usage_report.build_report(view_data_aggregator.events + download_data_aggregator.events)
             except Exception as e:
-                self.logger.error(
-                    "Terminating process. Exception encountered: ", e)
+                print("Terminating process. Exception encountered: ", e)
                 raise e
 
-        self.logger.info("Done building Counter 5 reports!")
+        print("Done building Counter 5 reports!")
 
-    def _setup_reports(self, publisher, reporting_period):
-        return [
-            # DownloadsReport(publisher, reporting_period)#,
-            ViewsReport(publisher, reporting_period)
-        ]
+    def _parse_reporting_period(self, reporting_period, freq='D'):
+        date_pattern = "20[0-9][0-9](.|-|)(\\d\\d)(.|-|)(\\d\\d)"
+
+        if re.search(("^" + date_pattern + "\\sto\\s" + date_pattern), reporting_period):
+            start, end = reporting_period.split(" to ")
+            return pandas.date_range(start=start, end=end, freq=freq)

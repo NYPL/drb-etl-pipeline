@@ -16,6 +16,7 @@ class UsageType(Enum):
 
 @dataclass(init=True, repr=True)
 class InteractionEvent():
+    country: Optional[str]
     title: str
     book_id: int
     authors: str

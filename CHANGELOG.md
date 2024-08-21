@@ -20,6 +20,9 @@
 - Added error handling to GET collection endpoints
 - Added error handling for utils API
 - Added error handling to search API
+- Refactored analytics report code
+- Implemented country-level analytics report
+- Implemented total-usage analytics report
 - Added error handling to fulfill API
 
 ## Fixed
