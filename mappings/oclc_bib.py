@@ -24,7 +24,7 @@ def map_oclc_bib_to_record(oclc_bib, related_oclc_numbers=[]) -> Record:
         # TODO: should we include merged OCLC numbers? 
         identifiers=[f"{oclc_bib['oclcNumber']}|oclc"] + \
             map(lambda issn: f"{issn}|issn", oclc_bib['issns']) if oclc_bib['issns'] else [] + \
-            map(lambda isbn: f"{isbn}|issn", oclc_bib['isbns']) if oclc_bib['isbns'] else [] + \
+            map(lambda isbn: f"{isbn}|isbn", oclc_bib['isbns']) if oclc_bib['isbns'] else [] + \
             map(lambda oclc_number: f"{oclc_number}|oclc", related_oclc_numbers),
         publisher=[oclc_bib['publisher']],
         date_created=datetime.now(timezone.utc).replace(tzinfo=None),
