@@ -3,9 +3,10 @@ import os
 import newrelic.agent
 
 from .core import CoreProcess
-from managers import ClassifyManager
+from managers import ClassifyManager, OCLCCatalogManager
 from managers.oclcClassify import ClassifyError
 from mappings.oclcClassify import ClassifyMapping
+from mappings.oclc_bib import map_oclc_bib_to_record
 from model import Record
 from logger import createLog
 
@@ -66,7 +67,6 @@ class ClassifyProcess(CoreProcess):
         for rec in self.windowedQuery(
             Record, baseQuery, windowSize=windowSize
         ):
-            # TODO: update this to frbrize_record_v2
             self.frbrizeRecord(rec)
 
             # Update Record with status
@@ -85,14 +85,6 @@ class ClassifyProcess(CoreProcess):
 
     def updateClassifiedRecordsStatus(self):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
-
-    def frbrize_record_v2(self, record):
-        # TODO: 1. Search OCLC via query_brief_bibs based on record data
-        # 2. Get other editions 
-        # 3. Normalize other editiosn data
-        # 4. Create DCDW records from other editions
-
-        return None
 
     def frbrizeRecord(self, record): 
         queryableIDs = ClassifyManager.getQueryableIdentifiers(
@@ -115,18 +107,37 @@ class ClassifyProcess(CoreProcess):
 
             # Check if this identifier has been queried in the past 24 hours
             # Skip if it has already been looked up
-            if identifier and self.checkSetRedis(
-                'classify', identifier, idenType
-            ):
+            if identifier and self.checkSetRedis('classify', identifier, idenType):
                 continue
 
             try:
-                self.classifyRecordByMetadata(
-                    identifier, idenType, author, record.title
-                )
+                # TODO: switch this to classify_record_by_metadata_v2
+                self.classifyRecordByMetadata(identifier, idenType, author, record.title)
             except ClassifyError as err:
                 logger.warning('Unable to Classify {}'.format(record))
                 logger.debug(err.message)
+
+    def classify_record_by_metadata_v2(self, idenfitier, id_type, author, title):
+        # TODO: deprecate classify manager
+        classify_manager = ClassifyManager(iden=idenfitier, idenType=id_type, author=author, title=title)
+        catalog_manager = OCLCCatalogManager()
+
+        # TODO: move generate_search_query to utils file
+        search_query = classify_manager.generate_search_query()
+
+        # TODO: return brief records directly 
+        # TODO: check to see we don't return the record's bib
+        related_oclc_bibs = catalog_manager.query_brief_bibs(search_query)
+
+        for related_oclc_bib in related_oclc_bibs.get('briefRecords', []):
+            # TODO: returns only 10 records, should we get all of the records?
+            related_oclc_numbers = catalog_manager.get_related_oclc_numbers(related_oclc_bib['oclcNumber'])
+
+            # TODO: map records to DCDW and save to database
+            oclc_record = map_oclc_bib_to_record(oclc_bib=related_oclc_bib, related_oclc_numbers=related_oclc_numbers)
+
+            self.addDCDWToUpdateList(oclc_record)
+            self.fetchOCLCCatalogRecords(oclc_record.identifiers)
 
     def classifyRecordByMetadata(self, identifier, idType, author, title):
         classifier = ClassifyManager(
@@ -147,9 +158,6 @@ class ClassifyProcess(CoreProcess):
             self.createClassifyDCDWRecord(
                 classifyXML, classifier.addlIds, identifier, idType
             )
-
-    def create_classified_dcdw_record(self, oclc_record):
-        return None
 
     def createClassifyDCDWRecord(
         self, classifyXML, additionalOCLCs, identifier, idType

@@ -68,9 +68,12 @@ class ClassifyManager:
         return self.parseXMLResponse()
 
     def generate_identifier_query(self):
-        identifier_map = { "isbn": "bn",
-                          "issn": "in",
-                          "oclc": "no"}
+        identifier_map = { 
+            "isbn": "bn",
+            "issn": "in",
+            "oclc": "no"
+        }
+
         return f"{identifier_map[self.identifierType]}: {self.identifier}"
 
     def generate_author_title_query(self):

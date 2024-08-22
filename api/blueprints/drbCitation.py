@@ -1,7 +1,7 @@
-from socket import if_nametoindex
 from flask import Blueprint, request, current_app
 from ..db import DBClient
 from ..utils import APIUtils
+from ..validation_utils import is_valid_uuid
 from logger import createLog
 from datetime import date
 
@@ -15,6 +15,9 @@ citation_set = {'mla', 'apa', 'chicago'}
 def get_citation(uuid):
     logger.info(f'Getting citation for work id {uuid}')
     response_type = 'citation'
+
+    if not is_valid_uuid(uuid):
+        return APIUtils.formatResponseObject(400, response_type, { 'message': f'Work id {uuid} is invalid' })
 
     try:
         citation_formats = request.args.get('format', default='')

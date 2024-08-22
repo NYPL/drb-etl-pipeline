@@ -7,6 +7,7 @@ from models.aggregators.download_data_aggregator import DownloadDataAggregator
 from models.aggregators.view_data_aggregator import ViewDataAggregator
 from models.reports.country_level import CountryLevelReport
 from models.reports.downloads import DownloadsReport
+from models.reports.total_usage import TotalUsageReport
 from models.reports.views import ViewsReport
 
 
@@ -37,6 +38,9 @@ class Counter5Controller:
 
                 country_level_report = CountryLevelReport(publisher, self.reporting_period)
                 country_level_report.build_report(view_data_aggregator.events + download_data_aggregator.events)
+
+                total_usage_report = TotalUsageReport(publisher, self.reporting_period)
+                total_usage_report.build_report(view_data_aggregator.events + download_data_aggregator.events)
             except Exception as e:
                 print("Terminating process. Exception encountered: ", e)
                 raise e
