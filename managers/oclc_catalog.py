@@ -11,29 +11,33 @@ logger = createLog(__name__)
 
 
 class OCLCCatalogManager:
+    """Manages creation and execution of queries to the OCLC Catalog
+        Search and Metadata APIs.
+    Raises:
+        DataError: Raised when an invalid title/author query is attempted
+        OCLCError: Raised when the query to the API fails
+    """
     CATALOG_URL = 'http://www.worldcat.org/webservices/catalog/content/{}?wskey={}'
     OCLC_SEARCH_URL = 'https://americas.discovery.api.oclc.org/worldcat/search/v2/'
 
     def __init__(self):
         self.oclcKey = os.environ['OCLC_API_KEY']
-        self.attempts = 0
 
-    def query_catalog(self, oclcNo):
+    def query_catalog(self, oclcNo, attempts=1):
         catalog_response = None
-        self.attempts += 1
         catalog_query = self.CATALOG_URL.format(oclcNo, self.oclcKey)
 
-        if self.attempts > 3:
+        if attempts > 3:
             return catalog_response
 
         try:
             catalog_response = requests.get(catalog_query, timeout=3)
         except (Timeout, ConnectionError):
-            logger.warn(f'Failed to query URL {catalog_query}')
-            return self.query_catalog(oclcNo)
+            logger.warning(f'Failed to query URL {catalog_query}')
+            return self.query_catalog(oclcNo, attempts+1)
 
         if catalog_response.status_code != 200:
-            logger.warn(f'OCLC Catalog Request failed with status {catalog_response.status_code}')
+            logger.warning(f'OCLC Catalog Request failed with status {catalog_response.status_code}')
             return None
 
         return catalog_response.text
@@ -59,7 +63,7 @@ class OCLCCatalogManager:
             return None
 
         if other_editions_response.status_code != 200:
-            logger.warn(f'OCLC other editions request failed with status {other_editions_response.status_code}')
+            logger.warning(f'OCLC other editions request failed with status {other_editions_response.status_code}')
             return None
 
         brief_records = other_editions_response.json().get('briefRecords', None)
@@ -83,11 +87,40 @@ class OCLCCatalogManager:
                 params={'q': query}
             )
         except (Timeout, ConnectionError):
-            logger.warn(f'Failed to query {bibs_endpoint} with query {query}')
-            return self.query_catalog()
+            logger.warning(f'Failed to query {bibs_endpoint} with query {query}')
+            raise OCLCError(f'Failed to query {bibs_endpoint} with query {query}')
 
         if bibs_response.status_code != 200:
-            logger.warn(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
-            return None
+            logger.warning(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
+            raise OCLCError(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
 
         return bibs_response.json()
+
+    # Should we be working with an object version of the record and passing that around instead?
+    def generate_identifier_query(self, identifier_type, identifier):
+        identifier_map = { "isbn": "bn",
+                          "issn": "in",
+                          "oclc": "no"}
+        return f"{identifier_map[identifier_type]}: {identifier}"
+
+    def generate_title_author_query(self, title, author):
+        return f"ti:{title} au:{author}"
+
+    def generate_search_query(self, identifier_type=None, identifier=None, title=None, author=None):
+        """Parses the received data and generates an OCLC search query based either
+        on an identifier (preferred) or an author/title combination.
+        """
+        if identifier and identifier_type:
+            return self.generate_identifier_query(identifier_type, identifier)
+        elif title and author:
+            return self.generate_title_author_query(title, author)
+        else:
+            raise DataError('Record lacks identifier or title/author pair')
+
+class OCLCError(Exception):
+    def __init__(self, message=None):
+        self.message = message
+
+class DataError(Exception):
+    def __init__(self, message=None):
+        self.message = message
