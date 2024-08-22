@@ -67,6 +67,7 @@ class ClassifyManager:
 
         return self.parseXMLResponse()
 
+    # TODO: can we query by everything?
     def generate_identifier_query(self):
         identifier_map = { 
             "isbn": "bn",
