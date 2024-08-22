@@ -131,9 +131,9 @@ class ClassifyProcess(CoreProcess):
 
         for related_oclc_bib in related_oclc_bibs.get('briefRecords', []):
             # TODO: returns only 10 records, should we get all of the records?
+            # TODO: not sure if actually have to send this to the oclc catalog process
             related_oclc_numbers = catalog_manager.get_related_oclc_numbers(related_oclc_bib['oclcNumber'])
 
-            # TODO: map records to DCDW and save to database
             oclc_record = map_oclc_bib_to_record(oclc_bib=related_oclc_bib, related_oclc_numbers=related_oclc_numbers)
 
             self.addDCDWToUpdateList(oclc_record)
