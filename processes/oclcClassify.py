@@ -35,6 +35,8 @@ class ClassifyProcess(CoreProcess):
 
         self.classifiedRecords = {}
 
+        self.oclc_catalog_manager = OCLCCatalogManager()
+
     def runProcess(self):
         if self.process == 'daily':
             self.classifyRecords()
@@ -117,22 +119,15 @@ class ClassifyProcess(CoreProcess):
                 logger.warning('Unable to Classify {}'.format(record))
                 logger.debug(err.message)
 
-    def classify_record_by_metadata_v2(self, idenfitier, id_type, author, title):
-        # TODO: deprecate classify manager
-        classify_manager = ClassifyManager(iden=idenfitier, idenType=id_type, author=author, title=title)
-        catalog_manager = OCLCCatalogManager()
+    def classify_record_by_metadata_v2(self, identifier, identifier_type, author, title):
+        search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
 
-        # TODO: move generate_search_query to utils file
-        search_query = classify_manager.generate_search_query()
-
-        # TODO: return brief records directly 
-        # TODO: check to see we don't return the record's bib
-        related_oclc_bibs = catalog_manager.query_brief_bibs(search_query)
+        # TODO: SFR-2090: Finalize query to brief bibs
+        related_oclc_bibs = self.oclc_catalog_manager.query_brief_bibs(search_query)
 
         for related_oclc_bib in related_oclc_bibs.get('briefRecords', []):
-            # TODO: returns only 10 records, should we get all of the records?
-            # TODO: not sure if actually have to send this to the oclc catalog process
-            related_oclc_numbers = catalog_manager.get_related_oclc_numbers(related_oclc_bib['oclcNumber'])
+            # TODO: SFR-2090: Finalize call to get related oclc numbers
+            related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(related_oclc_bib['oclcNumber'])
 
             oclc_record = map_oclc_bib_to_record(oclc_bib=related_oclc_bib, related_oclc_numbers=related_oclc_numbers)
 

@@ -91,3 +91,27 @@ class OCLCCatalogManager:
             return None
 
         return bibs_response.json()
+    
+    def generate_search_query(self, identifier, identifier_type, title, author):
+        if identifier and identifier_type:
+            return self._generate_identifier_query(identifier, identifier_type)
+        elif title and author:
+            return self._generate_title_author_query(title, author)
+        else:
+            raise CatalogError('Record lacks identifier or title/author pair')
+    
+    def _generate_identifier_query(self, identifier, identifier_type):
+        identifier_map = { 
+            "isbn": "bn",
+            "issn": "in",
+            "oclc": "no"
+        }
+
+        return f"{identifier_map[identifier_type]}: {identifier}"
+
+    def _generate_title_author_query(self, title, author):
+        return f"ti:{title} au:{author}"
+
+class CatalogError(Exception):
+    def __init__(self, message=None):
+        self.message = message
