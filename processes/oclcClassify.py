@@ -126,6 +126,9 @@ class ClassifyProcess(CoreProcess):
         related_oclc_bibs = self.oclc_catalog_manager.query_brief_bibs(search_query)
 
         for related_oclc_bib in related_oclc_bibs.get('briefRecords', []):
+            if self.check_if_oclc_bib_fetched(related_oclc_bib):
+                continue
+
             # TODO: SFR-2090: Finalize call to get related oclc numbers
             related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(related_oclc_bib['oclcNumber'])
 
@@ -202,6 +205,9 @@ class ClassifyProcess(CoreProcess):
             self.rabbitRoute,
             {'oclcNo': oclcNo, 'owiNo': owiNo}
         )
+
+    def check_if_oclc_bib_fetched(self, oclc_bib) -> bool:
+        return self.checkSetRedis('classifyWork', oclc_bib['oclcNumber'], 'oclc')
 
     def checkIfClassifyWorkFetched(self, classifyXML):
         workOWI = classifyXML.find(
