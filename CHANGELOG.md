@@ -25,6 +25,7 @@
 - Implemented total-usage analytics report
 - Added error handling to fulfill API
 - Added uuid API validation
+- Implemented OCLC Classify Process v2
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 

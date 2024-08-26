@@ -67,26 +67,6 @@ class ClassifyManager:
 
         return self.parseXMLResponse()
 
-    def generate_identifier_query(self):
-        identifier_map = { "isbn": "bn",
-                          "issn": "in",
-                          "oclc": "no"}
-        return f"{identifier_map[self.identifierType]}: {self.identifier}"
-
-    def generate_author_title_query(self):
-        return f"ti:{self.title} au:{self.author}"
-
-    def generate_search_query(self):
-        """Parses the received data and generates an OCLC search query based either
-        on an identifier (preferred) or an author/title combination.
-        """
-        if self.identifier and self.identifierType:
-            return self.generate_identifier_query()
-        elif self.title and self.author:
-            return self.generate_author_title_query()
-        else:
-            raise ClassifyError('Record lacks identifier or title/author pair')
-
     def generateQueryURL(self):
         """Parses the received data and generates a Classify query based either
         on an identifier (preferred) or an author/title combination.
