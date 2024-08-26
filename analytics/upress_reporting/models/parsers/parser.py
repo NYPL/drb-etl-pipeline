@@ -11,7 +11,7 @@ from models.data.interaction_event import InteractionEvent
 IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 
 
-class Aggregator(ABC):
+class Parser(ABC):
     def __init__(self, publisher, date_range):
         self.publisher = publisher
         self.date_range = date_range
@@ -40,7 +40,7 @@ class Aggregator(ABC):
             folder_name = date.strftime("%Y/%m/%d")
             batch = self.load_batch(log_path, bucket_name, folder_name)
             events_per_day = self.parse_logs_in_batch(batch, bucket_name)
-            
+
             events.extend(events_per_day)
 
         return events
@@ -49,7 +49,7 @@ class Aggregator(ABC):
         prefix = log_path + log_folder + "/"
         paginator = self.s3_client.get_paginator("list_objects_v2")
         page_iterator = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
-        
+
         return page_iterator
 
     def parse_logs_in_batch(self, batch, bucket_name):
@@ -58,19 +58,21 @@ class Aggregator(ABC):
         for log_file in batch:
             if "Contents" not in log_file:
                 path = self._redact_s3_path(log_file["Prefix"])
-                raise S3LogParsingError(f"Log files in path {path} do not exist.")
+                raise S3LogParsingError(
+                    f"Log files in path {path} do not exist.")
             else:
                 for content in log_file["Contents"]:
                     curr_key = str(content["Key"])
                     log_object_dict = self.s3_client.get_object(
-                        Bucket=bucket_name, 
+                        Bucket=bucket_name,
                         Key=f"{curr_key}"
                     )
 
                     for line in log_object_dict["Body"].iter_lines():
                         log_object_dict = line.decode("utf8")
-                        interaction_event = self.match_log_info_with_drb_data(log_object_dict)
-                        
+                        interaction_event = self.match_log_info_with_drb_data(
+                            log_object_dict)
+
                         if interaction_event:
                             interactions_in_batch.append(interaction_event)
 
@@ -80,18 +82,15 @@ class Aggregator(ABC):
         if re.match(IP_REGEX, ip):
             geocoded_ip = geocoder.ip(ip)
             return geocoded_ip.country
-        
+
         return None
 
-    def pull_dates_from_edition(self, edition):
-        copyright, publication = None, None
+    def pull_publication_year(self, edition):
         for date in edition.dates:
-            if "copyright" in date["type"]:
-                copyright = date["date"]
             if "publication" in date["type"]:
-                publication = date["date"]
+                return date["date"]
 
-        return (copyright, publication)
+        return None
 
     def load_flags(self, flag_string):
         try:
@@ -99,7 +98,7 @@ class Aggregator(ABC):
             return flags if isinstance(flags, dict) else {}
         except json.decoder.JSONDecodeError as e:
             raise S3LogParsingError(e.msg)
-    
+
     def _redact_s3_path(self, path):
         split_path = path.split("/")
         split_path[1] = "NYPL_AWS_ID"
@@ -111,6 +110,6 @@ class S3LogParsingError(Exception):
         self.message = message
 
 
-class UnconfiguredEnvironment(Exception):
+class UnconfiguredEnvironmentError(Exception):
     def __init__(self, message=None):
         self.message = message

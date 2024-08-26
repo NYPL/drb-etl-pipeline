@@ -3,8 +3,8 @@ import pandas
 import re
 
 from datetime import datetime
-from models.aggregators.download_data_aggregator import DownloadDataAggregator
-from models.aggregators.view_data_aggregator import ViewDataAggregator
+from models.parsers.download_data_parser import DownloadDataParser
+from models.parsers.view_data_parser import ViewDataParser
 from models.reports.country_level import CountryLevelReport
 from models.reports.downloads import DownloadsReport
 from models.reports.total_usage import TotalUsageReport
@@ -27,8 +27,8 @@ class Counter5Controller:
 
         for publisher in self.publishers:
             try:
-                view_data_aggregator = ViewDataAggregator(publisher, pandas_reporting_period)
-                download_data_aggregator = DownloadDataAggregator(publisher, pandas_reporting_period)
+                view_data_aggregator = ViewDataParser(publisher, pandas_reporting_period)
+                download_data_aggregator = DownloadDataParser(publisher, pandas_reporting_period)
 
                 downloads_report = DownloadsReport(publisher, self.reporting_period)
                 downloads_report.build_report(download_data_aggregator.events)

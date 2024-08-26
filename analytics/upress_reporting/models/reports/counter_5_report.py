@@ -1,4 +1,5 @@
 import calendar
+import csv
 import pandas
 import uuid
 
@@ -37,7 +38,7 @@ class Counter5Report(ABC):
             "Book ID",
             "Authors",
             "ISBN(s)",
-            "Copyright Year",
+            "OCLC Number(s)",
             "Publication Year",
             "Disciplines",
             "Usage Type",
@@ -74,7 +75,7 @@ class Counter5Report(ABC):
             "Book ID",
             "Authors",
             "ISBN(s)",
-            "Copyright Year",
+            "OCLC Number(s)",
             "Publication Year",
             "Disciplines",
             "Usage Type",
@@ -104,6 +105,16 @@ class Counter5Report(ABC):
         
         return (df_unique.columns.tolist(), df_unique.to_dict(orient="records"))
     
+    def write_to_csv(self, file_name, header, column_names, data):
+        with open(file_name, 'w') as csv_file:
+            writer = csv.writer(csv_file, delimiter="|")
+            for key, value in header.items():
+                writer.writerow([key, value])
+            writer.writerow([])
+            writer.writerow(column_names)
+            for title in data:
+                writer.writerow(title.values())
+
     def _format_dataclass_for_csv(self, dataclass_instance: Any, include_country=False) -> List[Any]:
         if not is_dataclass(dataclass_instance):
             raise ValueError("Provided instance is not a dataclass.")

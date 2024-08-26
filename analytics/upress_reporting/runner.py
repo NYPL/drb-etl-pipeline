@@ -1,6 +1,6 @@
 import sys
 
-from analytics.upress_reporting.counter_5_controller import Counter5Controller
+from counter_5_controller import Counter5Controller
 from datetime import datetime
 from main import load_env_file
 
