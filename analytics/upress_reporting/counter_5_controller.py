@@ -3,8 +3,8 @@ import pandas
 import re
 
 from datetime import datetime
-from models.parsers.download_data_parser import DownloadDataParser
-from models.parsers.view_data_parser import ViewDataParser
+from models.pollers.download_data_poller import DownloadDataPoller
+from models.pollers.view_data_poller import ViewDataPoller
 from models.reports.country_level import CountryLevelReport
 from models.reports.downloads import DownloadsReport
 from models.reports.total_usage import TotalUsageReport
@@ -27,29 +27,36 @@ class Counter5Controller:
 
         for publisher in self.publishers:
             try:
-                view_data_aggregator = ViewDataParser(publisher, pandas_reporting_period)
-                download_data_aggregator = DownloadDataParser(publisher, pandas_reporting_period)
+                view_data_parser = ViewDataPoller(publisher, pandas_reporting_period)
+                download_data_parser = DownloadDataPoller(publisher, pandas_reporting_period)
 
                 downloads_report = DownloadsReport(publisher, self.reporting_period)
-                downloads_report.build_report(download_data_aggregator.events)
+                downloads_report.build_report(download_data_parser.events)
 
                 views_report = ViewsReport(publisher, self.reporting_period)
-                views_report.build_report(view_data_aggregator.events)
+                views_report.build_report(view_data_parser.events)
 
                 country_level_report = CountryLevelReport(publisher, self.reporting_period)
-                country_level_report.build_report(view_data_aggregator.events + download_data_aggregator.events)
+                country_level_report.build_report(view_data_parser.events + download_data_parser.events)
 
                 total_usage_report = TotalUsageReport(publisher, self.reporting_period)
-                total_usage_report.build_report(view_data_aggregator.events + download_data_aggregator.events)
+                total_usage_report.build_report(view_data_parser.events + download_data_parser.events)
             except Exception as e:
                 print("Terminating process. Exception encountered: ", e)
                 raise e
 
         print("Done building Counter 5 reports!")
 
-    def _parse_reporting_period(self, reporting_period, freq='D'):
+    def _parse_reporting_period(self, reporting_period, freq="D"):
         date_pattern = "20[0-9][0-9](.|-|)(\\d\\d)(.|-|)(\\d\\d)"
+        fiscal_quarter_pattern = "20[0-9][0-9]Q[1-4]"
 
         if re.search(("^" + date_pattern + "\\sto\\s" + date_pattern), reporting_period):
             start, end = reporting_period.split(" to ")
             return pandas.date_range(start=start, end=end, freq=freq)
+        
+        if re.search(fiscal_quarter_pattern, reporting_period):
+            period = pandas.Period(reporting_period, freq="Q-JUN")
+            return pandas.date_range(start=period.start_time,
+                                     end=period.end_time, 
+                                     freq=freq)

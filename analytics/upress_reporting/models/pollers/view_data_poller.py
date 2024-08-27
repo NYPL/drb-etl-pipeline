@@ -4,7 +4,7 @@ import os
 from model.postgres.edition import Edition
 from model.postgres.record import Record
 from model.postgres.work import Work
-from models.parsers.parser import Parser, UnconfiguredEnvironmentError
+from models.pollers.poller import Poller, UnconfiguredEnvironmentError
 from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from sqlalchemy import func
 
@@ -13,27 +13,14 @@ TIMESTAMP_REGEX = r"\[.+\]"
 IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 
 
-class ViewDataParser(Parser):
+class ViewDataPoller(Poller):
     def __init__(self, *args):
         super().__init__(*args)
         self.bucket_name = os.environ.get("VIEW_BUCKET", None)
         self.log_path = os.environ.get("VIEW_LOG_PATH", None)
 
         self.setup_db_manager()
-        self.set_events()
-
-    def set_events(self):
-        if None in (self.bucket_name, self.log_path, self.referrer_url):
-            error_message = (
-                "One or more necessary environment variables not found:",
-                "Either VIEW_BUCKET, VIEW_LOG_PATH, REFERRER_URL is not set",
-            )
-            print(error_message)
-            raise UnconfiguredEnvironmentError(error_message)
-
-        self.events = self.pull_interaction_events(
-            self.log_path, self.bucket_name)
-        self.db_manager.closeConnection()
+        self.set_events(self.bucket_name, self.log_path)
 
     def match_log_info_with_drb_data(self, log_object):
         match_file_id = re.search(FILE_ID_REGEX, log_object)

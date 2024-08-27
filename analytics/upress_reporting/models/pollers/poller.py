@@ -1,8 +1,9 @@
 import boto3
 import geocoder
 import json
-import re
 import os
+import pandas
+import re
 
 from abc import ABC, abstractmethod
 from managers.db import DBManager
@@ -11,7 +12,7 @@ from models.data.interaction_event import InteractionEvent
 IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 
 
-class Parser(ABC):
+class Poller(ABC):
     def __init__(self, publisher, date_range):
         self.publisher = publisher
         self.date_range = date_range
@@ -32,16 +33,36 @@ class Parser(ABC):
         )
         self.db_manager.generateEngine()
         self.db_manager.createSession()
+    
+    def set_events(self, bucket_name, log_path):
+        if None in (bucket_name, log_path, self.referrer_url):
+            error_message = (
+                "One or more necessary environment variables not found:",
+                "Either DOWNLOAD_BUCKET, DOWNLOAD_LOG_PATH, REFERRER_URL is not set"
+            )
+            print(error_message)
+            raise UnconfiguredEnvironmentError(error_message)
 
-    def pull_interaction_events(self, log_path, bucket_name) -> list[InteractionEvent]:
+        self.events = self.pull_interaction_events_from_logs(
+            log_path, bucket_name)
+        self.db_manager.closeConnection()
+
+    def pull_interaction_events_from_logs(self, log_path, bucket_name) -> list[InteractionEvent]:
         events = []
+        today = pandas.Timestamp.today()
 
         for date in self.date_range:
+            print("Date: ", date)
+            if date > today:
+                print("No logs exist past today's date: ", today.strftime("%b %d, %Y"))
+                break
+
             folder_name = date.strftime("%Y/%m/%d")
             batch = self.load_batch(log_path, bucket_name, folder_name)
-            events_per_day = self.parse_logs_in_batch(batch, bucket_name)
-
-            events.extend(events_per_day)
+            
+            if batch is not None:
+                events_per_day = self.parse_logs_in_batch(batch, bucket_name)
+                events.extend(events_per_day)
 
         return events
 

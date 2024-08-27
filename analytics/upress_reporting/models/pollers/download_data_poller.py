@@ -2,7 +2,7 @@ import os
 import re
 
 from model import Edition, Item, Link
-from models.parsers.parser import Parser, UnconfiguredEnvironmentError
+from models.pollers.poller import Poller, UnconfiguredEnvironmentError
 from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from model.postgres.item import ITEM_LINKS
 from model.postgres.record import Record
@@ -14,7 +14,7 @@ TIMESTAMP_REGEX = r"\[.+\]"
 IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 
 
-class DownloadDataParser(Parser):
+class DownloadDataPoller(Poller):
     def __init__(self, *args):
         super().__init__(*args)
         self.bucket_name = os.environ.get("DOWNLOAD_BUCKET", None)
@@ -23,21 +23,7 @@ class DownloadDataParser(Parser):
         self.setup_db_manager()
 
         self.set_items()
-        self.set_events()
-
-        self.db_manager.closeConnection()
-
-    def set_events(self):
-        if None in (self.bucket_name, self.log_path, self.referrer_url):
-            error_message = (
-                "One or more necessary environment variables not found:",
-                "Either DOWNLOAD_BUCKET, DOWNLOAD_LOG_PATH, REFERRER_URL is not set"
-            )
-            print(error_message)
-            raise UnconfiguredEnvironmentError(error_message)
-
-        self.events = self.pull_interaction_events(
-            self.log_path, self.bucket_name)
+        self.set_events(self.bucket_name, self.log_path)
 
     def set_items(self):
         self.items = {item.id: item for item in self.db_manager.session.query(
@@ -83,6 +69,8 @@ class DownloadDataParser(Parser):
         usage_type = self._determine_usage(record)
         isbns = [identifier.split(
             "|")[0] for identifier in record.identifiers if "isbn" in identifier]
+        oclcs = [identifier.split(
+            "|")[0] for identifier in record.identifiers if "oclc" in identifier]
 
         work = self.db_manager.session.get(Work, edition.work_id)
 
@@ -95,7 +83,7 @@ class DownloadDataParser(Parser):
             book_id=book_id,
             authors="; ".join(authors),
             isbns=", ".join(isbns),
-            oclc_numbers=None,
+            oclc_numbers=oclcs,
             publication_year=publication_year,
             disciplines=", ".join(disciplines),
             usage_type=usage_type.value,
