@@ -7,7 +7,7 @@ from processes import UofMProcess
 from managers import DBManager
 from model import Record
 
-class TestUofMProcess:
+class test_uofm_process:
     @pytest.fixture
     def test_instance(self):
         load_env_file('local', file_string='config/local.yaml')
@@ -18,8 +18,6 @@ class TestUofMProcess:
         load_env_file('local-qa', file_string='config/local-qa.yaml')
     
     def test_runProcess(self, test_instance_QA, test_instance: UofMProcess):
-        # Run process for only 1 record
-        # TODO - create S3 client and upload PDF
 
         s3_client = boto3.client("s3")
 
@@ -35,15 +33,9 @@ class TestUofMProcess:
         
         test_instance.runProcess()
         
-        # TODO - connect to S3 and get the PDF manifest
-        # assert the PDF manifest is stored
         localManifest = s3_client_local.get_object(Bucket=bucketNameLocal, Key='manifests/UofM/0472030132.json')
         assert localManifest is not None
 
-        # TODO - create a database session/client 
-        # assert DCDW record exists
-        # assert the rights are correct
-        # assert the link string is correct
         dbManager = DBManager(
             user=os.environ.get('POSTGRES_USER', None),
             pswd=os.environ.get('POSTGRES_PSWD', None),
@@ -62,14 +54,6 @@ class TestUofMProcess:
         assert recordExample != None
         assert recordExample.rights == 'UofM|in_copyright||In Copyright|'
 
-        # TODO SFR-2150 - kickoff oclc process when it's ready
-        # assert DCDW oclc records exist
+        dbManager.closeConnection()
 
-        # TODO - kickoff clustering process
-        # assert works, edition, items, links data exist
-
-        # TODO - setup elastic search client
-        # assert search document(s) exist in elastic search
-
-        # TODO - delete data in S3, postgres, and elastic search
         s3_client_local.delete_object(Bucket=bucketNameLocal, Key='manifests/UofM/0472030132.json')
