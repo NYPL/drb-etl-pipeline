@@ -22,6 +22,7 @@
 - Added error handling to search API
 - Refactored analytics report code
 - Implemented country-level analytics report
+- Added integration tests for UofM ingestion process
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
