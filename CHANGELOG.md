@@ -25,6 +25,7 @@
 - Implemented total-usage analytics report
 - Added error handling to fulfill API
 - Added uuid API validation
+- Implemented OCLC Classify Process v2
 - Address Counter 5 report feedback from business analysts
 
 ## Fixed

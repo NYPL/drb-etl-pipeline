@@ -3,9 +3,10 @@ import os
 import newrelic.agent
 
 from .core import CoreProcess
-from managers import ClassifyManager
+from managers import ClassifyManager, OCLCCatalogManager
 from managers.oclcClassify import ClassifyError
 from mappings.oclcClassify import ClassifyMapping
+from mappings.oclc_bib import map_oclc_bib_to_record
 from model import Record
 from logger import createLog
 
@@ -33,6 +34,8 @@ class ClassifyProcess(CoreProcess):
         self.createOrConnectQueue(self.rabbitQueue, self.rabbitRoute)
 
         self.classifiedRecords = {}
+
+        self.oclc_catalog_manager = OCLCCatalogManager()
 
     def runProcess(self):
         if self.process == 'daily':
@@ -85,7 +88,7 @@ class ClassifyProcess(CoreProcess):
     def updateClassifiedRecordsStatus(self):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
-    def frbrizeRecord(self, record):
+    def frbrizeRecord(self, record): 
         queryableIDs = ClassifyManager.getQueryableIdentifiers(
             record.identifiers
         )
@@ -106,18 +109,33 @@ class ClassifyProcess(CoreProcess):
 
             # Check if this identifier has been queried in the past 24 hours
             # Skip if it has already been looked up
-            if identifier and self.checkSetRedis(
-                'classify', identifier, idenType
-            ):
+            if identifier and self.checkSetRedis('classify', identifier, idenType):
                 continue
 
             try:
-                self.classifyRecordByMetadata(
-                    identifier, idenType, author, record.title
-                )
+                # TODO: switch this to classify_record_by_metadata_v2
+                self.classifyRecordByMetadata(identifier, idenType, author, record.title)
             except ClassifyError as err:
                 logger.warning('Unable to Classify {}'.format(record))
                 logger.debug(err.message)
+
+    def classify_record_by_metadata_v2(self, identifier, identifier_type, author, title):
+        search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
+
+        # TODO: SFR-2090: Finalize query to brief bibs
+        related_oclc_bibs = self.oclc_catalog_manager.query_brief_bibs(search_query)
+
+        for related_oclc_bib in related_oclc_bibs.get('briefRecords', []):
+            if self.check_if_oclc_bib_fetched(related_oclc_bib):
+                continue
+
+            # TODO: SFR-2090: Finalize call to get related oclc numbers
+            related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(related_oclc_bib['oclcNumber'])
+
+            oclc_record = map_oclc_bib_to_record(oclc_bib=related_oclc_bib, related_oclc_numbers=related_oclc_numbers)
+
+            self.addDCDWToUpdateList(oclc_record)
+            self.fetchOCLCCatalogRecords(oclc_record.identifiers)
 
     def classifyRecordByMetadata(self, identifier, idType, author, title):
         classifier = ClassifyManager(
@@ -187,6 +205,9 @@ class ClassifyProcess(CoreProcess):
             self.rabbitRoute,
             {'oclcNo': oclcNo, 'owiNo': owiNo}
         )
+
+    def check_if_oclc_bib_fetched(self, oclc_bib) -> bool:
+        return self.checkSetRedis('classifyWork', oclc_bib['oclcNumber'], 'oclc')
 
     def checkIfClassifyWorkFetched(self, classifyXML):
         workOWI = classifyXML.find(

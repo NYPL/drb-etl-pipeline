@@ -84,10 +84,34 @@ class OCLCCatalogManager:
             )
         except (Timeout, ConnectionError):
             logger.warn(f'Failed to query {bibs_endpoint} with query {query}')
-            return self.query_catalog()
+            raise OCLCCatalogError(f'Failed to query {bibs_endpoint} with query {query}')
 
         if bibs_response.status_code != 200:
             logger.warn(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
-            return None
+            raise OCLCCatalogError(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
 
         return bibs_response.json()
+    
+    def generate_search_query(self, identifier=None, identifier_type=None, title=None, author=None):
+        if identifier and identifier_type:
+            return self._generate_identifier_query(identifier, identifier_type)
+        elif title and author:
+            return self._generate_title_author_query(title, author)
+        else:
+            raise OCLCCatalogError('Record lacks identifier or title/author pair')
+    
+    def _generate_identifier_query(self, identifier, identifier_type):
+        identifier_map = { 
+            "isbn": "bn",
+            "issn": "in",
+            "oclc": "no"
+        }
+
+        return f"{identifier_map[identifier_type]}: {identifier}"
+
+    def _generate_title_author_query(self, title, author):
+        return f"ti:{title} au:{author}"
+
+class OCLCCatalogError(Exception):
+    def __init__(self, message=None):
+        self.message = message
