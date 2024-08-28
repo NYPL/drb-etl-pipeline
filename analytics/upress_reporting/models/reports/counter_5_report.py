@@ -32,7 +32,7 @@ class Counter5Report(ABC):
         return uuid.uuid4()
     
     def aggregate_interaction_events(self, events):
-        df = pandas.DataFrame([self._format_dataclass_for_csv(event) for event in events])
+        df = pandas.DataFrame([self._format_dataclass_for_df(event) for event in events])
         df.columns = [
             "Book Title",
             "Book ID",
@@ -68,7 +68,7 @@ class Counter5Report(ABC):
         return (df_unique.columns.tolist(), df_unique.to_dict(orient="records"))
     
     def aggregate_interaction_events_by_country(self, events):
-        df = pandas.DataFrame([self._format_dataclass_for_csv(event, include_country=True) for event in events])
+        df = pandas.DataFrame([self._format_dataclass_for_df(event, include_country=True) for event in events])
         df.columns = [
             "Country",
             "Book Title",
@@ -115,7 +115,7 @@ class Counter5Report(ABC):
             for title in data:
                 writer.writerow(title.values())
 
-    def _format_dataclass_for_csv(self, dataclass_instance: Any, include_country=False) -> List[Any]:
+    def _format_dataclass_for_df(self, dataclass_instance: Any, include_country=False) -> List[Any]:
         if not is_dataclass(dataclass_instance):
             raise ValueError("Provided instance is not a dataclass.")
         

@@ -45,7 +45,6 @@ class Poller(ABC):
 
         self.events = self.pull_interaction_events_from_logs(
             log_path, bucket_name)
-        self.db_manager.closeConnection()
 
     def pull_interaction_events_from_logs(self, log_path, bucket_name) -> list[InteractionEvent]:
         events = []
