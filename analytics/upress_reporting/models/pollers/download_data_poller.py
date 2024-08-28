@@ -2,7 +2,7 @@ import os
 import re
 
 from model import Edition, Item, Link
-from models.pollers.poller import Poller, UnconfiguredEnvironmentError
+from models.pollers.poller import Poller
 from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from model.postgres.item import ITEM_LINKS
 from model.postgres.record import Record
