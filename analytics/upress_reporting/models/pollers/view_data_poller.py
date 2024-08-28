@@ -21,6 +21,7 @@ class ViewDataPoller(Poller):
 
         self.setup_db_manager()
         self.set_events(self.bucket_name, self.log_path)
+        self.db_manager.closeConnection()
 
     def match_log_info_with_drb_data(self, log_object):
         match_file_id = re.search(FILE_ID_REGEX, log_object)
