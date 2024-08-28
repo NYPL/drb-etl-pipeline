@@ -22,11 +22,11 @@
 - Added error handling to search API
 - Refactored analytics report code
 - Implemented country-level analytics report
-- Added integration tests for UofM ingestion process
 - Implemented total-usage analytics report
 - Added error handling to fulfill API
 - Added uuid API validation
 - Implemented OCLC Classify Process v2
+- Added integration tests for UofM ingestion process
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
