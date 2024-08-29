@@ -45,11 +45,17 @@ class ClassifyProcess(CoreProcess):
         elif self.process == 'custom':
             self.classifyRecords(startDateTime=self.ingestPeriod)
 
+        print("FRBRizing......................")
+
+
         self.saveRecords()
         self.updateClassifiedRecordsStatus()
         self.commitChanges()
 
     def classifyRecords(self, full=False, startDateTime=None):
+
+        print("FRBRizing......................")
+
         baseQuery = self.session.query(Record)\
             .filter(
                 Record.source != 'oclcClassify'
@@ -88,11 +94,12 @@ class ClassifyProcess(CoreProcess):
     def updateClassifiedRecordsStatus(self):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
-    def frbrizeRecord(self, record): 
+    def frbrizeRecord(self, record):
         queryableIDs = ClassifyManager.getQueryableIdentifiers(
             record.identifiers
         )
 
+        print("FRBRizing......................")
         if len(queryableIDs) < 1:
             queryableIDs = [None]
 
@@ -114,7 +121,8 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 # TODO: switch this to classify_record_by_metadata_v2
-                self.classifyRecordByMetadata(identifier, idenType, author, record.title)
+                # self.classifyRecordByMetadata(identifier, idenType, author, record.title)
+                print("Would be classifying a thing!")
             except ClassifyError as err:
                 logger.warning('Unable to Classify {}'.format(record))
                 logger.debug(err.message)

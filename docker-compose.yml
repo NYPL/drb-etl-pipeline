@@ -81,6 +81,7 @@ services:
       - database
       - elasticsearch
       - s3
+      - rabbitmq
     build:
       context: .
     command: -e local-compose -p DevelopmentSetupProcess
