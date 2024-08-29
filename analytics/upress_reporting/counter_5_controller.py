@@ -27,20 +27,20 @@ class Counter5Controller:
 
         for publisher in self.publishers:
             try:
-                view_data_parser = ViewDataPoller(publisher, pandas_reporting_period)
-                download_data_parser = DownloadDataPoller(publisher, pandas_reporting_period)
+                view_data_poller = ViewDataPoller(publisher, pandas_reporting_period)
+                download_data_poller = DownloadDataPoller(publisher, pandas_reporting_period)
 
                 downloads_report = DownloadsReport(publisher, self.reporting_period)
-                downloads_report.build_report(download_data_parser.events)
+                downloads_report.build_report(download_data_poller.events)
 
                 views_report = ViewsReport(publisher, self.reporting_period)
-                views_report.build_report(view_data_parser.events)
+                views_report.build_report(view_data_poller.events)
 
                 country_level_report = CountryLevelReport(publisher, self.reporting_period)
-                country_level_report.build_report(view_data_parser.events + download_data_parser.events)
+                country_level_report.build_report(view_data_poller.events + download_data_poller.events)
 
                 total_usage_report = TotalUsageReport(publisher, self.reporting_period)
-                total_usage_report.build_report(view_data_parser.events + download_data_parser.events)
+                total_usage_report.build_report(view_data_poller.events + download_data_poller.events)
             except Exception as e:
                 print("Terminating process. Exception encountered: ", e)
                 raise e
