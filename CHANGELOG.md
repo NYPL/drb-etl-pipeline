@@ -27,6 +27,7 @@
 - Added uuid API validation
 - Implemented OCLC Classify Process v2
 - Added integration tests for UofM ingestion process
+- Updated fulfill process and script to check rights status before updating manifest
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 

@@ -43,7 +43,12 @@ def update_batch(metadataObject, bucketName, currKey):
     metadataJSON = json.loads(metadataObject['Body'].read().decode("utf-8"))
     metadataJSONCopy = copy.deepcopy(metadataJSON)
 
-    counter = 0
+    #Checking if record asscociated with manifest is public domain or in copyright
+    checkRightsStatus = 'in copyright'
+    checkRightsStatus = checkMetaData(metadataJSON, checkRightsStatus, dbManager)
+
+    if checkRightsStatus == 'in copyright':
+        counter = 0
     
     metadataJSON, counter = linkFulfill(metadataJSON, counter, dbManager)
     metadataJSON, counter = readingOrderFulfill(metadataJSON, counter, dbManager)
@@ -129,6 +134,15 @@ def fulfillFlagUpdate(metadata, dbManager):
                             newLinkFlag['fulfill_limited_access'] = True
                             link.flags = newLinkFlag
                             dbManager.commitChanges()
+
+def checkMetaData(checkRightsStatus, metadataJSON, dbManager):
+        for link in metadataJSON['links']:
+            if metadataJSON['type'] == 'application/webpub+json':
+                for link in dbManager.session.query(Link) \
+                    .filter(Link.url == metadataJSON['href'].replace('https://', '')):   
+                        if 'fulfill_limited_access' not in link.flags.keys():
+                            checkRightsStatus = 'public domain'
+                        return checkRightsStatus
 
 def load_batches():
 

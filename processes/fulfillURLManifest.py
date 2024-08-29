@@ -62,31 +62,37 @@ class FulfillProcess(CoreProcess):
 
         metadataJSON = json.loads(metadataObject['Body'].read().decode("utf-8"))
         metadataJSONCopy = copy.deepcopy(metadataJSON)
+
+        #Checking if record asscociated with manifest is public domain or in copyright
+        checkRightsStatus = 'in copyright'
+        checkRightsStatus = self.checkMetaData(metadataJSON, checkRightsStatus)
+
+        if checkRightsStatus == 'in copyright':
         
-        counter = 0
-    
-        metadataJSON, counter = self.linkFulfill(metadataJSON, counter)
-        metadataJSON, counter = self.readingOrderFulfill(metadataJSON, counter)
-        metadataJSON, counter = self.resourceFulfill(metadataJSON, counter)
-        metadataJSON, counter = self.tocFulfill(metadataJSON, counter)
+            counter = 0
+        
+            metadataJSON, counter = self.linkFulfill(metadataJSON, counter)
+            metadataJSON, counter = self.readingOrderFulfill(metadataJSON, counter)
+            metadataJSON, counter = self.resourceFulfill(metadataJSON, counter)
+            metadataJSON, counter = self.tocFulfill(metadataJSON, counter)
 
-        if counter >= 4: 
-            for link in metadataJSON['links']:
-                self.fulfillFlagUpdate(link)
+            if counter >= 4: 
+                for link in metadataJSON['links']:
+                    self.fulfillFlagUpdate(link)
 
-        self.closeConnection()
+            self.closeConnection()
 
-        if metadataJSON != metadataJSONCopy:
-            try:
-                fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False)
-                return self.s3Client.put_object(
-                    Bucket=bucketName, 
-                    Key=currKey, 
-                    Body=fulfillManifest, ACL= 'public-read', 
-                    ContentType = 'application/json'
-                )
-            except ClientError as e:
-                logging.error(e)
+            if metadataJSON != metadataJSONCopy:
+                try:
+                    fulfillManifest = json.dumps(metadataJSON, ensure_ascii = False)
+                    return self.s3Client.put_object(
+                        Bucket=bucketName, 
+                        Key=currKey, 
+                        Body=fulfillManifest, ACL= 'public-read', 
+                        ContentType = 'application/json'
+                    )
+                except ClientError as e:
+                    logging.error(e)
 
     def linkFulfill(self, metadataJSON, counter):
         for link in metadataJSON['links']:
@@ -131,8 +137,8 @@ class FulfillProcess(CoreProcess):
             or metadata['type'] == 'application/epub+xml':
                 for link in self.session.query(Link) \
                     .filter(Link.url == metadata['href'].replace('https://', '')):
-                        counter += 1            
-                        metadata['href'] = f'https://{self.host}/fulfill/{link.id}'
+                            counter += 1            
+                            metadata['href'] = f'https://{self.host}/fulfill/{link.id}'
 
         return (metadata['href'], counter)
     
@@ -148,6 +154,15 @@ class FulfillProcess(CoreProcess):
                                 newLinkFlag['fulfill_limited_access'] = True
                                 link.flags = newLinkFlag
                                 self.commitChanges()
+                        
+    def checkMetaData(self, checkRightsStatus, metadataJSON):
+         for link in metadataJSON['links']:
+            if metadataJSON['type'] == 'application/webpub+json':
+                for link in self.session.query(Link) \
+                    .filter(Link.url == metadataJSON['href'].replace('https://', '')):   
+                        if 'fulfill_limited_access' not in link.flags.keys():
+                            checkRightsStatus = 'public domain'
+                        return checkRightsStatus
 
 class FulfillError(Exception):
     pass
