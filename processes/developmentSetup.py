@@ -47,7 +47,7 @@ class DevelopmentSetupProcess(CoreProcess):
         # #Allow ElasticSearch to be trashed when reinitializing local DevelopmentSetUp
 
         # Create rabbit queues
-        print("zzzzzzzzzzzzzzzzzz")
+        print("zZzZ waiting for dependencies")
         sleep(20)
         print(os.environ.get('RABBIT_HOST', None))
         self.createRabbitConnection()

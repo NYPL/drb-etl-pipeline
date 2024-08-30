@@ -6,7 +6,7 @@ from .core import CoreProcess
 from managers import ClassifyManager, OCLCCatalogManager
 from managers.oclcClassify import ClassifyError
 from mappings.oclcClassify import ClassifyMapping
-from mappings.oclc_bib import map_oclc_bib_to_record
+from mappings.oclc_bib import oclc_mapping_v2
 from model import Record
 from logger import createLog
 
@@ -44,8 +44,6 @@ class ClassifyProcess(CoreProcess):
             self.classifyRecords(full=True)
         elif self.process == 'custom':
             self.classifyRecords(startDateTime=self.ingestPeriod)
-
-        print("FRBRizing......................")
 
 
         self.saveRecords()
@@ -121,8 +119,8 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 # TODO: switch this to classify_record_by_metadata_v2
-                # self.classifyRecordByMetadata(identifier, idenType, author, record.title)
-                print("Would be classifying a thing!")
+                self.classify_record_by_metadata_v2(identifier, idenType, author, record.title)
+                # print("Would be classifying a thing!")
             except ClassifyError as err:
                 logger.warning('Unable to Classify {}'.format(record))
                 logger.debug(err.message)
@@ -140,10 +138,10 @@ class ClassifyProcess(CoreProcess):
             # TODO: SFR-2090: Finalize call to get related oclc numbers
             related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(related_oclc_bib['oclcNumber'])
 
-            oclc_record = map_oclc_bib_to_record(oclc_bib=related_oclc_bib, related_oclc_numbers=related_oclc_numbers)
+            oclc_record = oclc_mapping_v2(oclc_bib=related_oclc_bib, related_oclc_numbers=related_oclc_numbers)
 
             self.addDCDWToUpdateList(oclc_record)
-            self.fetchOCLCCatalogRecords(oclc_record.identifiers)
+            self.fetchOCLCCatalogRecords(oclc_record.record.identifiers)
 
     def classifyRecordByMetadata(self, identifier, idType, author, title):
         classifier = ClassifyManager(
