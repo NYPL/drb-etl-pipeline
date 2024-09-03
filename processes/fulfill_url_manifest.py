@@ -1,7 +1,6 @@
 import json
 import os
 import copy
-import logging
 from botocore.exceptions import ClientError
 
 from .core import CoreProcess
@@ -11,19 +10,17 @@ from logger import createLog
 
 logger = createLog(__name__)
 
-class Fulfill_Process(CoreProcess):
+class FulfillURLManifestProcess(CoreProcess):
 
     def __init__(self, *args):
-        super(Fulfill_Process, self).__init__(*args[:4])
+        super(FulfillURLManifestProcess, self).__init__(*args[:4])
 
         self.fullImport = self.process == 'complete' 
-        self.startTimestamp = None
+        self.start_timestamp = None
 
-        # Connect to database
         self.generateEngine()
         self.createSession()
 
-        # S3 Configuration
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.host = os.environ['DRB_API_HOST']
         self.prefix = 'manifests/UofM/'
@@ -31,50 +28,53 @@ class Fulfill_Process(CoreProcess):
 
     def runProcess(self):
         if self.process == 'daily':
-            startTimeStamp = datetime.now(timezone.utc) - timedelta(days=1)
-            self.get_manifests(startTimeStamp)
+            start_timestamp = datetime.now(timezone.utc) - timedelta(days=1)
+            self.fetch_and_update_manifests(start_timestamp)
         elif self.process == 'complete':
-            self.get_manifests()
+            start_timestamp = None
+            self.fetch_and_update_manifests(start_timestamp)
         elif self.process == 'custom':
             time_stamp = self.ingestPeriod
-            startTimeStamp = datetime.strptime(time_stamp, '%Y-%m-%dT%H:%M:%S')
-            self.get_manifests(startTimeStamp)
+            start_timestamp = datetime.strptime(time_stamp, '%Y-%m-%dT%H:%M:%S')
+            self.fetch_and_update_manifests(start_timestamp)
 
-    def get_manifests(self, startTimeStamp=None):
-
-        '''Load batch of LA works based on startTimeStamp'''
+    def fetch_and_update_manifests(self, start_timestamp=None):
 
         batches = self.load_batches(self.prefix, self.s3Bucket)
-        if startTimeStamp:
+        if start_timestamp:
             #Using JMESPath to extract keys from the JSON batches
-            filtered_batch_keys = batches.search(f"Contents[?to_string(LastModified) > '\"{startTimeStamp}\"'].Key")
+            filtered_batch_keys = batches.search(f"Contents[?to_string(LastModified) > '\"{start_timestamp}\"'].Key")
             for key in filtered_batch_keys:
                 metadata_object = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
-                self.update_manifest(metadata_object, self.s3Bucket, key)
+                self.update_metadata_object(metadata_object, self.s3Bucket, key)
         else:
             for batch in batches:
                 for content in batch['Contents']:
                     key = content['Key']
                     metadata_object = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
-                    self.update_manifest(metadata_object, self.s3Bucket, key)
+                    self.update_metadata_object(metadata_object, self.s3Bucket, key)
 
-    def update_manifest(self, metadata_object, bucket_name, curr_key):
+    def update_metadata_object(self, metadata_object, bucket_name, curr_key):
 
         metadata_json = json.loads(metadata_object['Body'].read().decode("utf-8"))
         metadata_json_copy = copy.deepcopy(metadata_json)
 
-        rights_status = 'in copyright'
-        rights_status = self.check_rights_status(metadata_json, rights_status)
+        copyright_status = self.check_copyright_status(metadata_json)
 
-        if rights_status != 'in copyright':
+        if copyright_status == False:
             return
         
         counter = 0
     
-        metadata_json, counter = self.link_fulfill(metadata_json, counter)
-        metadata_json, counter = self.reading_order_fulfill(metadata_json, counter)
-        metadata_json, counter = self.resource_fulfill(metadata_json, counter)
-        metadata_json, counter = self.toc_fulfill(metadata_json, counter)
+        try:
+            metadata_json, counter = self.link_fulfill(metadata_json, counter)
+            metadata_json, counter = self.reading_order_fulfill(metadata_json, counter)
+            metadata_json, counter = self.resource_fulfill(metadata_json, counter)
+            metadata_json, counter = self.toc_fulfill(metadata_json, counter)
+        except (Exception, IndexError) as e:
+            logger.error(e)
+        except:
+            logger.error('One of the Link fulfill methods failed')  
 
         if counter >= 4: 
             for link in metadata_json['links']:
@@ -82,17 +82,21 @@ class Fulfill_Process(CoreProcess):
 
         self.closeConnection()
 
+        self.replace_manifest_object(metadata_json, metadata_json_copy, bucket_name, curr_key)
+
+    def replace_manifest_object(self, metadata_json, metadata_json_copy, bucket_name, curr_key):
         if metadata_json != metadata_json_copy:
             try:
                 fulfill_manifest = json.dumps(metadata_json, ensure_ascii = False)
                 return self.s3Client.put_object(
                     Bucket=bucket_name, 
                     Key=curr_key, 
-                    Body=fulfill_manifest, ACL= 'public-read', 
+                    Body=fulfill_manifest, 
+                    ACL= 'public-read', 
                     ContentType = 'application/json'
                 )
             except ClientError as e:
-                logging.error(e)
+                logger.error(e)
 
     def link_fulfill(self, metadata_json, counter):
         for link in metadata_json['links']:
@@ -153,14 +157,17 @@ class Fulfill_Process(CoreProcess):
                                 link.flags = newLinkFlag
                                 self.commitChanges()
                         
-    def check_rights_status(self, metadata_json, rights_status):
-        for metadata in metadata_json['links']:
-            if metadata['type'] == 'application/webpub+json':
-                for link in self.session.query(Link) \
-                    .filter(Link.url == metadata['href'].replace('https://', '')):   
-                        if 'fulfill_limited_access' not in link.flags.keys():
-                            rights_status = 'public domain'
-                        return rights_status
+    def check_copyright_status(self, metadata_json):
+        for link in metadata_json['links']:
+            if link['type'] == 'application/webpub+json':
+                for psql_link in self.session.query(Link) \
+                    .filter(Link.url == link['href'].replace('https://', '')):   
+                        if 'fulfill_limited_access' not in psql_link.flags.keys():
+                            copyright_status = False
+                        else:
+                            copyright_status = True
+
+                        return copyright_status
 
 class FulfillError(Exception):
     pass
