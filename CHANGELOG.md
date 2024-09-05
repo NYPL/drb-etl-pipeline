@@ -28,6 +28,7 @@
 - Implemented OCLC Classify Process v2
 - Added integration tests for UofM ingestion process
 - Moving up db migration in dev setup
+- Added unique constraint to work_identifiers table 
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
