@@ -26,6 +26,8 @@
 - Added error handling to fulfill API
 - Added uuid API validation
 - Implemented OCLC Classify Process v2
+- Added integration tests for UofM ingestion process
+- Moving up db migration in dev setup
 - Address Counter 5 report feedback from business analysts
 
 ## Fixed
