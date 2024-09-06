@@ -10,19 +10,10 @@ from typing import Any, List
 
 
 class Counter5Report(ABC):
-    def __init__(self, publisher, reporting_period=None):
+    def __init__(self, publisher, reporting_period):
         self.publisher = publisher
         self.created = datetime.today().strftime("%Y-%m-%d")
-        self.created_by = "NYPL"
-
-        if reporting_period is not None:
-            self.reporting_period = reporting_period
-        else:
-            self.reporting_period = f"{datetime.now().year}-01-01 to {datetime.now().year}-01-31"
-    
-    @abstractmethod
-    def build_header(self) -> dict:
-        return
+        self.reporting_period = reporting_period
 
     @abstractmethod
     def build_report(self, events):
@@ -105,6 +96,17 @@ class Counter5Report(ABC):
         
         return (df_unique.columns.tolist(), df_unique.to_dict(orient="records"))
     
+    def build_header(self, report_name, report_description):
+        return {
+            "Report_Name": report_name,
+            "Report_ID": self.generate_report_id(),
+            "Report_Description": report_description,
+            "Publisher_Name": self.publisher,
+            "Reporting_Period": self._format_reporting_period_to_string(),
+            "Created": self.created,
+            "Created_By": "NYPL",
+        }
+    
     def write_to_csv(self, file_name, header, column_names, data):
         with open(file_name, 'w') as csv_file:
             writer = csv.writer(csv_file, delimiter="|")
@@ -114,6 +116,11 @@ class Counter5Report(ABC):
             writer.writerow(column_names)
             for title in data:
                 writer.writerow(title.values())
+    
+    def _format_reporting_period_to_string(self):
+        return (self.reporting_period[0].strftime("%Y-%m-%d") + 
+                " to " + 
+                self.reporting_period[-1].strftime("%Y-%m-%d"))
 
     def _format_dataclass_for_df(self, dataclass_instance: Any, include_country=False) -> List[Any]:
         if not is_dataclass(dataclass_instance):

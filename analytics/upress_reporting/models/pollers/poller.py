@@ -1,3 +1,4 @@
+import time
 import boto3
 import geocoder
 import json
@@ -34,7 +35,7 @@ class Poller(ABC):
         self.db_manager.generateEngine()
         self.db_manager.createSession()
     
-    def set_events(self, bucket_name, log_path):
+    def get_events(self, bucket_name, log_path):
         if None in (bucket_name, log_path, self.referrer_url):
             error_message = (
                 "One or more necessary environment variables not found:",
@@ -49,9 +50,8 @@ class Poller(ABC):
     def pull_interaction_events_from_logs(self, log_path, bucket_name) -> list[InteractionEvent]:
         events = []
         today = pandas.Timestamp.today()
-
+    
         for date in self.date_range:
-            print("Date: ", date)
             if date > today:
                 print("No logs exist past today's date: ", today.strftime("%b %d, %Y"))
                 break

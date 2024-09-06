@@ -20,7 +20,7 @@ class ViewDataPoller(Poller):
         self.log_path = os.environ.get("VIEW_LOG_PATH", None)
 
         self.setup_db_manager()
-        self.set_events(self.bucket_name, self.log_path)
+        self.get_events(self.bucket_name, self.log_path)
         self.db_manager.closeConnection()
 
     def match_log_info_with_drb_data(self, log_object):
@@ -46,7 +46,7 @@ class ViewDataPoller(Poller):
         usage_type = self._determine_usage(record)
         isbns = [identifier.split(
             "|")[0] for identifier in record.identifiers if "isbn" in identifier]
-        oclcs = [identifier.split(
+        oclc_numbers = [identifier.split(
             "|")[0] for identifier in record.identifiers if "oclc" in identifier]
 
         edition = self.db_manager.session.query(Edition).filter(
@@ -66,7 +66,7 @@ class ViewDataPoller(Poller):
             book_id=book_id,
             authors="; ".join(authors),
             isbns=", ".join(isbns),
-            oclc_numbers=", ".join(oclcs),
+            oclc_numbers=", ".join(oclc_numbers),
             publication_year=publication_year,
             disciplines=", ".join(disciplines),
             usage_type=usage_type.value,

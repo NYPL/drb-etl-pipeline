@@ -1,3 +1,5 @@
+import argparse
+from ast import parse
 import os
 import pandas
 import re
@@ -12,23 +14,21 @@ from models.reports.views import ViewsReport
 
 
 class Counter5Controller:
-    def __init__(self, reporting_period):
+    def __init__(self, args):
         self.publishers = os.environ.get("PUBLISHERS").split(",")
-        
-        if reporting_period is not None:
-            self.reporting_period = reporting_period
+        parsed_args = self._parse_args(args)
+        if parsed_args is not None:
+            self.reporting_period = self._parse_reporting_period(parsed_args)
         else:
             self.reporting_period = (f"{datetime.now().year}-01-01 to {datetime.now().year}-01-31")
 
     def create_reports(self):
         print("Generating Counter 5 reports...")
 
-        pandas_reporting_period = self._parse_reporting_period(self.reporting_period)
-
         for publisher in self.publishers:
             try:
-                view_data_poller = ViewDataPoller(publisher, pandas_reporting_period)
-                download_data_poller = DownloadDataPoller(publisher, pandas_reporting_period)
+                view_data_poller = ViewDataPoller(publisher, self.reporting_period)
+                download_data_poller = DownloadDataPoller(publisher, self.reporting_period)
 
                 downloads_report = DownloadsReport(publisher, self.reporting_period)
                 downloads_report.build_report(download_data_poller.events)
@@ -47,16 +47,28 @@ class Counter5Controller:
 
         print("Done building Counter 5 reports!")
 
-    def _parse_reporting_period(self, reporting_period, freq="D"):
-        date_pattern = "20[0-9][0-9](.|-|)(\\d\\d)(.|-|)(\\d\\d)"
-        fiscal_quarter_pattern = "20[0-9][0-9]Q[1-4]"
+    def _parse_args(self, args):
+        parser = argparse.ArgumentParser(prog="Counter 5 Report Generator")
+        
+        parser.add_argument( "--start", "-s", 
+                            help="starting date in the format yyyy-mm-dd")
+        parser.add_argument("-e", "--end", 
+                            help="end date in the format yyyy-mm-dd")
+        parser.add_argument("-y", "--year", 
+                            help="fiscal year, ex. 2024")
+        parser.add_argument("-q", "--quarter", 
+                            help="fiscal quarter, ex. Q1")
+        
+        return parser.parse_args(args)
 
-        if re.search(("^" + date_pattern + "\\sto\\s" + date_pattern), reporting_period):
-            start, end = reporting_period.split(" to ")
+    def _parse_reporting_period(self, parsed_args, freq="D"):
+        if parsed_args.start and parsed_args.end:
+            start, end = parsed_args.start, parsed_args.end
             return pandas.date_range(start=start, end=end, freq=freq)
         
-        if re.search(fiscal_quarter_pattern, reporting_period):
-            period = pandas.Period(reporting_period, freq="Q-JUN")
+        if parsed_args.year and parsed_args.quarter:
+            period = pandas.Period(parsed_args.year + parsed_args.quarter,
+                                   freq="Q-JUN")
             return pandas.date_range(start=period.start_time,
                                      end=period.end_time, 
                                      freq=freq)

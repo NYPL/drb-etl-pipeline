@@ -31,11 +31,11 @@ Analytics projects are stored separately from other DRB processes and scripts, i
     ```
   Here is an example command:
     ```
-    python3 analytics/upress_reporting/runner.py "2024-03-01 to 2024-03-30"
+    python3 analytics/upress_reporting/runner.py --start 2024-03-01 --end 2024-03-30
     ```
   You can also generate a Counter 5 report using fiscal quarter notation:
     ```
-    python3 analytics/upress_reporting/runner.py "2025Q1"
+    python3 analytics/upress_reporting/runner.py --year 2025 --quarter Q1
     ```
 
 ### Local Development
