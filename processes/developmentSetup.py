@@ -36,6 +36,7 @@ class DevelopmentSetupProcess(CoreProcess):
         self.createSession()
         #Allow Database to be trashed when reinitializing local DevelopmentSetUp
         self.initializeDatabase()
+        self.runDBMigration()
 
         # Setup ElasticSearch index if necessary
         self.createElasticConnection()
@@ -66,8 +67,6 @@ class DevelopmentSetupProcess(CoreProcess):
         # Group the fetched data
         clusterProc = ClusterProcess(*procArgs)
         clusterProc.runProcess()
-
-        self.runDBMigration()
 
     def runDBMigration(self):
         alembicArgs = [

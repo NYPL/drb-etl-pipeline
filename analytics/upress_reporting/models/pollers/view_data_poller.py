@@ -4,7 +4,7 @@ import os
 from model.postgres.edition import Edition
 from model.postgres.record import Record
 from model.postgres.work import Work
-from models.aggregators.aggregator import Aggregator, UnconfiguredEnvironment
+from models.pollers.poller import Poller
 from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from sqlalchemy import func
 
@@ -13,25 +13,14 @@ TIMESTAMP_REGEX = r"\[.+\]"
 IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 
 
-class ViewDataAggregator(Aggregator):
+class ViewDataPoller(Poller):
     def __init__(self, *args):
         super().__init__(*args)
         self.bucket_name = os.environ.get("VIEW_BUCKET", None)
         self.log_path = os.environ.get("VIEW_LOG_PATH", None)
 
         self.setup_db_manager()
-        self.set_events()
-
-    def set_events(self):
-        if None in (self.bucket_name, self.log_path, self.referrer_url):
-            error_message = (
-                "One or more necessary environment variables not found:",
-                "Either VIEW_BUCKET, VIEW_LOG_PATH, REFERRER_URL is not set",
-            )
-            print(error_message)
-            raise UnconfiguredEnvironment(error_message)
-
-        self.events = self.pull_interaction_events(self.log_path, self.bucket_name)
+        self.get_events(self.bucket_name, self.log_path)
         self.db_manager.closeConnection()
 
     def match_log_info_with_drb_data(self, log_object):
@@ -49,18 +38,22 @@ class ViewDataAggregator(Aggregator):
             .filter((Record.source == self.publisher)) \
             .filter(func.array_to_string(Record.identifiers, ",").like("%"+record_id+"%")) \
             .first()
-        
+
         if record is None:
             return None
 
         book_id = (record.source_id).split("|")[0]
         usage_type = self._determine_usage(record)
-        isbns = [identifier.split("|")[0] for identifier in record.identifiers if "isbn" in identifier]
+        isbns = [identifier.split(
+            "|")[0] for identifier in record.identifiers if "isbn" in identifier]
+        oclc_numbers = [identifier.split(
+            "|")[0] for identifier in record.identifiers if "oclc" in identifier]
 
-        edition = self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains(f"{{{record.uuid}}}")).first()
+        edition = self.db_manager.session.query(Edition).filter(
+            Edition.dcdw_uuids.contains(f"{{{record.uuid}}}")).first()
 
         title = edition.title
-        copyright_year, publication_year = self.pull_dates_from_edition(edition)
+        publication_year = self.pull_publication_year(edition)
 
         work = self.db_manager.session.get(Work, edition.work_id)
 
@@ -73,7 +66,7 @@ class ViewDataAggregator(Aggregator):
             book_id=book_id,
             authors="; ".join(authors),
             isbns=", ".join(isbns),
-            copyright_year=copyright_year,
+            oclc_numbers=", ".join(oclc_numbers),
             publication_year=publication_year,
             disciplines=", ".join(disciplines),
             usage_type=usage_type.value,
@@ -95,4 +88,4 @@ class ViewDataAggregator(Aggregator):
                         if ("download" in flags) and flags["download"]:
                             return UsageType.FULL_ACCESS
 
-        return UsageType.VIEW_ONLY_NO_DOWNLOAD_ACCESS
+        return UsageType.VIEW_ACCESS
