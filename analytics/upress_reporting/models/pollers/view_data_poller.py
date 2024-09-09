@@ -42,23 +42,19 @@ class ViewDataPoller(Poller):
         if record is None:
             return None
 
-        book_id = (record.source_id).split("|")[0]
         usage_type = self._determine_usage(record)
-        isbns = [identifier.split(
-            "|")[0] for identifier in record.identifiers if "isbn" in identifier]
-        oclc_numbers = [identifier.split(
-            "|")[0] for identifier in record.identifiers if "oclc" in identifier]
+        isbns = [identifier.split("|")[0] for identifier in record.identifiers if "isbn" in identifier]
+        oclc_numbers = [identifier.split("|")[0] for identifier in record.identifiers if "oclc" in identifier]
 
         edition = self.db_manager.session.query(Edition).filter(
             Edition.dcdw_uuids.contains(f"{{{record.uuid}}}")).first()
 
+        book_id = f'{self.referrer_url}edition/{edition.id}'
         title = edition.title
         publication_year = self.pull_publication_year(edition)
 
-        work = self.db_manager.session.get(Work, edition.work_id)
-
-        authors = [author["name"] for author in work.authors]
-        disciplines = [subject["heading"] for subject in work.subjects]
+        authors = [author.split('|')[0] for author in record.authors]
+        disciplines = [subject.split('|')[0] for subject in record.subjects or []]
 
         return InteractionEvent(
             country=self.map_ip_to_country(match_ip.group()),

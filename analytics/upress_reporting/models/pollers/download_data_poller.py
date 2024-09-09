@@ -59,25 +59,20 @@ class DownloadDataPoller(Poller):
         edition = self.db_manager.session.get(Edition, item.edition_id)
 
         title = edition.title
-        publication_year = self.pull_publication_year(
-            edition)
+        publication_year = self.pull_publication_year(edition)
 
         record = self.db_manager.session.query(Record) \
             .filter(Record.uuid.in_(edition.dcdw_uuids)) \
             .filter(Record.publisher_project_source == item.publisher_project_source) \
             .first()
 
-        book_id = (record.source_id).split("|")[0]
+        book_id = f'{self.referrer_url}edition/{item.edition_id}'
         usage_type = self._determine_usage(record)
-        isbns = [identifier.split(
-            "|")[0] for identifier in record.identifiers if "isbn" in identifier]
-        oclc_numbers = [identifier.split(
-            "|")[0] for identifier in record.identifiers if "oclc" in identifier]
+        isbns = [identifier.split("|")[0] for identifier in record.identifiers if "isbn" in identifier]
+        oclc_numbers = [identifier.split("|")[0] for identifier in record.identifiers if "oclc" in identifier]
 
-        work = self.db_manager.session.get(Work, edition.work_id)
-
-        authors = [author["name"] for author in work.authors]
-        disciplines = [subject["heading"] for subject in work.subjects]
+        authors = [author.split('|')[0] for author in record.authors]
+        disciplines = [subject.split('|')[0] for subject in record.subjects or []]
 
         return InteractionEvent(
             country=self.map_ip_to_country(match_ip.group()),
@@ -85,7 +80,7 @@ class DownloadDataPoller(Poller):
             book_id=book_id,
             authors="; ".join(authors),
             isbns=", ".join(isbns),
-            oclc_numbers=oclc_numbers,
+            oclc_numbers=", ".join(oclc_numbers),
             publication_year=publication_year,
             disciplines=", ".join(disciplines),
             usage_type=usage_type.value,
