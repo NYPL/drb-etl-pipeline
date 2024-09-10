@@ -97,7 +97,7 @@ class FulfillURLManifestProcess(CoreProcess):
         return toc_links
 
     def update_with_fulfill_link(self, link):
-        if link['type'] == 'application/pdf' or link['type'] == 'application/epub+zip' or link['type'] == 'application/epub+xml':
+        if link['type'] in { 'application/pdf', 'application/epub+zip', 'application/epub+xml' }:
             link_id = self.session.query(Link).filter(Link.url == link['href'].replace('https://', '')).first().id
             link['href'] = f'https://{self.host}/fulfill/{link_id}'
 
