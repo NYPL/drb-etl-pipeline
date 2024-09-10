@@ -113,7 +113,8 @@ class ClassifyProcess(CoreProcess):
                 continue
 
             try:
-                self.classify_record_by_metadata_v2(identifier, idenType, author, record.title)
+                # TODO: switch this to classify_record_by_metadata_v2
+                self.classifyRecordByMetadata(identifier, idenType, author, record.title)
             except ClassifyError as err:
                 logger.warning('Unable to Classify {}'.format(record))
                 logger.debug(err.message)
