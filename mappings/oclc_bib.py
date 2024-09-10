@@ -14,7 +14,7 @@ def map_oclc_brief_bib_to_record(oclc_brief_bib, related_oclc_numbers=[]) -> Rec
         source='oclcClassify',
         source_id=f"{oclc_brief_bib['oclcNumber']}|oclc",
         title=oclc_brief_bib['title'],
-        authors=[oclc_brief_bib['creator']],
+        authors=[f"oclc_brief_bib['creator']|||true"],
         identifiers=(
             [f"{oclc_brief_bib['oclcNumber']}|oclc"] +
             [f"{oclc_number}|oclc" for oclc_number in related_oclc_numbers]
