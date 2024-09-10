@@ -11,7 +11,6 @@ from logger import createLog
 logger = createLog(__name__)
 
 class FulfillURLManifestProcess(CoreProcess):
-
     def __init__(self, *args):
         super(FulfillURLManifestProcess, self).__init__(*args[:4])
 
@@ -27,147 +26,101 @@ class FulfillURLManifestProcess(CoreProcess):
         self.createS3Client()
 
     def runProcess(self):
-        if self.process == 'daily':
-            start_timestamp = datetime.now(timezone.utc) - timedelta(days=1)
-            self.fetch_and_update_manifests(start_timestamp)
-        elif self.process == 'complete':
-            start_timestamp = None
-            self.fetch_and_update_manifests(start_timestamp)
-        elif self.process == 'custom':
-            time_stamp = self.ingestPeriod
-            start_timestamp = datetime.strptime(time_stamp, '%Y-%m-%dT%H:%M:%S')
-            self.fetch_and_update_manifests(start_timestamp)
+        try:
+            if self.process == 'daily':
+                start_timestamp = datetime.now(timezone.utc) - timedelta(days=1)
+                self.update_manifests(start_timestamp)
+            elif self.process == 'complete':
+                start_timestamp = None
+                self.update_manifests(start_timestamp)
+            elif self.process == 'custom':
+                time_stamp = self.ingestPeriod
+                start_timestamp = datetime.strptime(time_stamp, '%Y-%m-%dT%H:%M:%S')
+                self.update_manifests(start_timestamp)
+        finally:
+            self.closeConnection()
 
-    def fetch_and_update_manifests(self, start_timestamp=None):
-
+    def update_manifests(self, start_timestamp=None):
         batches = self.load_batches(self.prefix, self.s3Bucket)
+        
         if start_timestamp:
             #Using JMESPath to extract keys from the JSON batches
             filtered_batch_keys = batches.search(f"Contents[?to_string(LastModified) > '\"{start_timestamp}\"'].Key")
             for key in filtered_batch_keys:
-                metadata_object = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
-                self.update_metadata_object(metadata_object, self.s3Bucket, key)
+                metadata_object = self.s3Client.get_object(Bucket=self.s3Bucket, Key=key)
+                self.update_manifest_with_fulfill_links(metadata_object, self.s3Bucket, key)
         else:
             for batch in batches:
                 for content in batch['Contents']:
                     key = content['Key']
-                    metadata_object = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
-                    self.update_metadata_object(metadata_object, self.s3Bucket, key)
+                    metadata_object = self.s3Client.get_object(Bucket=self.s3Bucket, Key=key)
+                    self.update_manifest_with_fulfill_links(metadata_object, self.s3Bucket, key)
 
-    def update_metadata_object(self, metadata_object, bucket_name, curr_key):
+    def update_manifest_with_fulfill_links(self, metadata_object, bucket_name, key):
+        manifest_to_update = json.loads(metadata_object['Body'].read().decode("utf-8"))
+        original_manifest = copy.deepcopy(manifest_to_update)
 
-        metadata_json = json.loads(metadata_object['Body'].read().decode("utf-8"))
-        metadata_json_copy = copy.deepcopy(metadata_json)
-
-        copyright_status = self.check_copyright_status(metadata_json)
-
-        if copyright_status == False:
+        if not self.is_limited_access(manifest_to_update):
             return
-        
-        counter = 0
-    
-        try:
-            metadata_json, counter = self.link_fulfill(metadata_json, counter)
-            metadata_json, counter = self.reading_order_fulfill(metadata_json, counter)
-            metadata_json, counter = self.resource_fulfill(metadata_json, counter)
-            metadata_json, counter = self.toc_fulfill(metadata_json, counter)
-        except (Exception, IndexError) as e:
-            logger.error(e)
-        except:
-            logger.error('One of the Link fulfill methods failed')  
-
-        if counter >= 4: 
-            for link in metadata_json['links']:
-                self.fulfill_flag_update(link)
-
-        self.closeConnection()
-
-        self.replace_manifest_object(metadata_json, metadata_json_copy, bucket_name, curr_key)
-
-    def replace_manifest_object(self, metadata_json, metadata_json_copy, bucket_name, curr_key):
-        if metadata_json != metadata_json_copy:
-            try:
-                fulfill_manifest = json.dumps(metadata_json, ensure_ascii = False)
-                return self.s3Client.put_object(
-                    Bucket=bucket_name, 
-                    Key=curr_key, 
-                    Body=fulfill_manifest, 
-                    ACL= 'public-read', 
-                    ContentType = 'application/json'
-                )
-            except ClientError as e:
-                logger.error(e)
-
-    def link_fulfill(self, metadata_json, counter):
-        for link in metadata_json['links']:
-            fulfill_link, counter = self.fulfill_replace(link, counter)
-            link['href'] = fulfill_link
-
-        return (metadata_json, counter)
             
-    def reading_order_fulfill(self, metadata_json, counter):
-        for read_order in metadata_json['readingOrder']:
-            fulfill_link, counter = self.fulfill_replace(read_order, counter)
-            read_order['href'] = fulfill_link
+        manifest_to_update['links'] = map(lambda link: self.update_with_fulfill_link(link), manifest_to_update['links'])
+        manifest_to_update['readingOrder'] = map(lambda link: self.update_with_fulfill_link(link), manifest_to_update['readingOrder'])
+        manifest_to_update['resources'] = map(lambda link: self.update_with_fulfill_link(link), manifest_to_update['resources'])
+        manifest_to_update['toc'] = self.get_fulfill_toc_links(manifest_to_update)
 
-        return (metadata_json, counter)
+        if manifest_to_update == original_manifest:
+            return
 
-    def resource_fulfill(self, metadata_json, counter):
-        for resource in metadata_json['resources']:
-            fulfill_link, counter = self.fulfill_replace(resource, counter)
-            resource['href'] = fulfill_link
+        for link in manifest_to_update['links']:
+            self.update_fulfill_flag(link)
 
-        return (metadata_json, counter)
+        self.update_manifest_object(manifest_to_update, bucket_name, key)
 
-    def toc_fulfill(self, metadata_json, counter): 
+    def update_manifest_object(self, manifest, bucket_name, key):
+        try:
+            return self.s3Client.put_object(
+                Bucket=bucket_name, 
+                Key=key, 
+                Body=json.dumps(manifest, ensure_ascii=False), 
+                ACL= 'public-read', 
+                ContentType = 'application/json'
+            )
+        except ClientError as e:
+            logger.error(e)
 
-        '''
-        The toc dictionary has no "type" key like the previous dictionaries 
-        therefore the 'href' key is evaluated instead
-        '''
+    def get_fulfill_toc_links(self, toc_links): 
+        for toc in toc_links:
+            if 'pdf' in toc['href'] or 'epub' in toc['href']:
+                link_id = self.session.query(Link).filter(Link.url == toc['href'].replace('https://', '')).first().id
+                toc['href'] = f'https://{self.host}/fulfill/{link_id}'
 
-        for toc in metadata_json['toc']:
-            if 'pdf' in toc['href'] \
-                or 'epub' in toc['href']:
-                    for link in self.session.query(Link) \
-                        .filter(Link.url == toc['href'].replace('https://', '')):
-                            counter += 1
-                            toc['href'] = f'https://{self.host}/fulfill/{link.id}'
+        return toc_links
 
-        return (metadata_json, counter)
+    def update_with_fulfill_link(self, link):
+        if link['type'] == 'application/pdf' or link['type'] == 'application/epub+zip' or link['type'] == 'application/epub+xml':
+            link_id = self.session.query(Link).filter(Link.url == link['href'].replace('https://', '')).first().id
+            link['href'] = f'https://{self.host}/fulfill/{link_id}'
 
-    def fulfill_replace(self, metadata, counter):
-        if metadata['type'] == 'application/pdf' or metadata['type'] == 'application/epub+zip' \
-            or metadata['type'] == 'application/epub+xml':
-                for link in self.session.query(Link) \
-                    .filter(Link.url == metadata['href'].replace('https://', '')):
-                            counter += 1            
-                            metadata['href'] = f'https://{self.host}/fulfill/{link.id}'
-
-        return (metadata['href'], counter)
+        return link['href']
     
-    def fulfill_flag_update(self, metadata):
-        if metadata['type'] == 'application/webpub+json':
-            for link in self.session.query(Link) \
-                .filter(Link.url == metadata['href'].replace('https://', '')):   
-                        if 'fulfill_limited_access' in link.flags.keys():
-                            if link.flags['fulfill_limited_access'] == False:
-                                newLinkFlag = dict(link.flags)
-                                newLinkFlag['fulfill_limited_access'] = True
-                                link.flags = newLinkFlag
-                                self.commitChanges()
+    def update_fulfill_flag(self, link):
+        if link['type'] == 'application/webpub+json':
+            for db_link in self.session.query(Link).filter(Link.url == link['href'].replace('https://', '')):   
+                if 'fulfill_limited_access' in db_link.flags.keys():
+                    if db_link.flags['fulfill_limited_access'] == False:
+                        new_link_flag = dict(link.flags)
+                        new_link_flag['fulfill_limited_access'] = True
+                        link.flags = new_link_flag
+                        self.commitChanges()
                         
-    def check_copyright_status(self, metadata_json):
-        for link in metadata_json['links']:
+    def is_limited_access(self, manifest):
+        for link in manifest['links']:
             if link['type'] == 'application/webpub+json':
-                for psql_link in self.session.query(Link) \
-                    .filter(Link.url == link['href'].replace('https://', '')):   
-                        if 'fulfill_limited_access' not in psql_link.flags.keys():
-                            copyright_status = False
-                        else:
-                            copyright_status = True
-
-                        return copyright_status
+                for db_link in self.session.query(Link).filter(Link.url == link['href'].replace('https://', '')):
+                    if 'fulfill_limited_access' in db_link.flags.keys():
+                        return True
+        
+        return False
 
 class FulfillError(Exception):
     pass
