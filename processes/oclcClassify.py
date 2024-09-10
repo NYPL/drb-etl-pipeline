@@ -6,7 +6,7 @@ from .core import CoreProcess
 from managers import ClassifyManager, OCLCCatalogManager
 from managers.oclcClassify import ClassifyError
 from mappings.oclcClassify import ClassifyMapping
-from mappings.oclc_bib import map_oclc_bib_to_record
+from mappings.oclc_bib import map_oclc_brief_bib_to_record
 from model import Record
 from logger import createLog
 
@@ -132,7 +132,7 @@ class ClassifyProcess(CoreProcess):
             # TODO: SFR-2090: Finalize call to get related oclc numbers
             related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(related_oclc_bib['oclcNumber'])
 
-            oclc_record = map_oclc_bib_to_record(oclc_bib=related_oclc_bib, related_oclc_numbers=related_oclc_numbers)
+            oclc_record = map_oclc_brief_bib_to_record(oclc_brief_bib=related_oclc_bib, related_oclc_numbers=related_oclc_numbers)
 
             self.addDCDWToUpdateList(oclc_record)
             self.fetchOCLCCatalogRecords(oclc_record.identifiers)

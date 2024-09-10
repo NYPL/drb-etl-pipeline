@@ -1,6 +1,7 @@
 import pytest
 from load_env import load_env_file
 from managers import OCLCCatalogManager
+from mappings import oclc_bib
 
 class TestOCLCCatalogManager:
     @pytest.fixture
