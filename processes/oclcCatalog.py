@@ -41,7 +41,7 @@ class CatalogProcess(CoreProcess):
             )
 
             if msgProps is None:
-                if attempts <= 0:
+                if attempts <= 3:
                     waitTime = 60 * attempts
 
                     logger.info('Waiting {}s for addtl recs'.format(waitTime))
