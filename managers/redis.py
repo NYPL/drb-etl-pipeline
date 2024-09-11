@@ -25,6 +25,9 @@ class RedisManager:
             port=self.redisPort,
             socket_timeout=5
         )
+
+    def clear_cache(self):
+        self.redisClient.flushall()
     
     def checkSetRedis(self, service, identifier, idenType, expirationTime=60*60*24*7):
         queryTime = self.redisClient.get('{}/{}/{}/{}'.format(self.environment, service, identifier, idenType))

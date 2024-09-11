@@ -114,7 +114,7 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 # TODO: switch this to classify_record_by_metadata_v2
-                self.classifyRecordByMetadata(identifier, idenType, author, record.title)
+                self.classify_record_by_metadata_v2(identifier, idenType, author, record.title)
             except ClassifyError as err:
                 logger.warning('Unable to Classify {}'.format(record))
                 logger.debug(err.message)
@@ -124,19 +124,22 @@ class ClassifyProcess(CoreProcess):
 
         related_oclc_bibs = self.oclc_catalog_manager.query_bibs(search_query)
 
-        for related_oclc_bib in related_oclc_bibs.get('briefRecords', []):
-            if self.check_if_oclc_bib_fetched(related_oclc_bib):
+        for related_oclc_bib in related_oclc_bibs:
+            oclc_number = related_oclc_bib['identifier']['oclcNumber']
+            owi_number = related_oclc_bib['work']['id']
+            
+            if self.check_if_classify_work_fetched(owi_number=owi_number):
                 continue
 
-            related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(related_oclc_bib['oclcNumber'])
+            related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(oclc_number=oclc_number)
 
             oclc_record = OCLCBibMapping(
-                oclc_brief_bib=related_oclc_bib, 
+                oclc_bib=related_oclc_bib, 
                 related_oclc_numbers=related_oclc_numbers
             )
 
             self.addDCDWToUpdateList(oclc_record)
-            self.fetchOCLCCatalogRecords(oclc_record.identifiers)
+            self.fetchOCLCCatalogRecords(oclc_record.record.identifiers)
 
     def classifyRecordByMetadata(self, identifier, idType, author, title):
         classifier = ClassifyManager(
@@ -207,8 +210,8 @@ class ClassifyProcess(CoreProcess):
             {'oclcNo': oclcNo, 'owiNo': owiNo}
         )
 
-    def check_if_oclc_bib_fetched(self, oclc_bib) -> bool:
-        return self.checkSetRedis('classifyWork', oclc_bib['oclcNumber'], 'oclc')
+    def check_if_classify_work_fetched(self, owi_number: int) -> bool:
+        return self.checkSetRedis('classifyWork', owi_number, 'owi')
 
     def checkIfClassifyWorkFetched(self, classifyXML):
         workOWI = classifyXML.find(

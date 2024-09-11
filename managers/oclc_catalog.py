@@ -117,10 +117,9 @@ class OCLCCatalogManager:
                 return bibs
             
             number_of_bibs = bibs_response['numberOfRecords']
-            print(number_of_bibs)
             
             if number_of_bibs <= self.LIMIT:
-                return bibs_response['bibRecords']            
+                return bibs_response.get('bibRecords', [])            
             
             offset = self.LIMIT
             while offset <= min(number_of_bibs, self.MAX_NUMBER_OF_RECORDS):
@@ -129,7 +128,7 @@ class OCLCCatalogManager:
                 if not bibs_response:
                     continue
 
-                bibs.extend(bibs_response['bibRecords'])
+                bibs.extend(bibs_response.get('bibRecords', []))
                 offset += self.LIMIT
 
             return bibs
