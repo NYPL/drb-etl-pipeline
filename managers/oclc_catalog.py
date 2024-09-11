@@ -92,6 +92,27 @@ class OCLCCatalogManager:
 
         return bibs_response.json()
     
+    def query_bibs(self, query: str):
+        token = OCLCAuthManager.get_token()
+        bibs_endpoint = self.OCLC_SEARCH_URL + 'bibs'
+        headers = { "Authorization": f"Bearer {token}" }
+
+        try:
+            bibs_response = requests.get(
+                bibs_endpoint,
+                headers=headers,
+                params={'q': query}
+            )
+        except (Timeout, ConnectionError):
+            logger.warning(f'Failed to query {bibs_endpoint} with query {query}')
+            raise OCLCCatalogError(f'Failed to query {bibs_endpoint} with query {query}')
+
+        if bibs_response.status_code != 200:
+            logger.warning(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
+            raise OCLCCatalogError(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
+
+        return bibs_response.json()
+    
     def generate_search_query(self, identifier=None, identifier_type=None, title=None, author=None):
         if identifier and identifier_type:
             return self._generate_identifier_query(identifier, identifier_type)
