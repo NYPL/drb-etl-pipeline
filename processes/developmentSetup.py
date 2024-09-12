@@ -57,6 +57,9 @@ class DevelopmentSetupProcess(CoreProcess):
 
         procArgs = ['complete'] + ([None] * 4)
 
+        self.createRedisClient()
+        self.clear_cache()
+
         # FRBRize the fetched data
         classifyProc = ClassifyProcess(*procArgs)
         classifyProc.runProcess()
