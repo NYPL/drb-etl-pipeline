@@ -11,7 +11,7 @@ class InteractionType(Enum):
 class UsageType(Enum):
     FULL_ACCESS = "Full Access"
     LIMITED_ACCESS = "Limited Access"
-    VIEW_ACCESS = "View Only / No Download Access"
+    VIEW_ACCESS = "View Access"
 
 
 @dataclass(init=True, repr=True)

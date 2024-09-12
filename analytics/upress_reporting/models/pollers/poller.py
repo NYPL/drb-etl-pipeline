@@ -8,7 +8,7 @@ import re
 from abc import ABC, abstractmethod
 from helpers import aggregate_logs
 from managers.db import DBManager
-from models.data.interaction_event import InteractionEvent
+from models.data.interaction_event import InteractionEvent, UsageType
 
 IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 
@@ -97,6 +97,21 @@ class Poller(ABC):
             return flags if isinstance(flags, dict) else {}
         except json.decoder.JSONDecodeError as e:
             raise S3LogParsingError(e.msg)
+        
+    def determine_usage(self, record):
+        if record.has_part:
+            flags = [self.load_flags(tuple(link.split("|"))[4]) for link in record.has_part]
+
+            if any(flag.get('nypl_login', False) for flag in flags):
+                return UsageType.LIMITED_ACCESS
+
+            has_read_flag = any(flag.get('embed', False) or flag.get('reader', False) for flag in flags)
+            has_download_flag = any(flag.get('download', False) for flag in flags)
+
+            if has_read_flag and has_download_flag:
+                return UsageType.FULL_ACCESS
+
+        return UsageType.VIEW_ACCESS
 
     def _redact_s3_path(self, path):
         split_path = path.split("/")
