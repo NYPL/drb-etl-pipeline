@@ -32,8 +32,8 @@
 - Updated fulfill process to check rights status before updating manifest
 - Deleted fulfill script due to no longer being necessary
 - Updating report book ID
+- Adding OCLC query bibs call
 - Implemented script to aggregate access logs
-
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
