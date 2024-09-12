@@ -120,18 +120,18 @@ class Poller(ABC):
             raise S3LogParsingError(e.msg)
         
     def determine_usage(self, record):
-        if record.has_part is not None:
-            for item in record.has_part:
-                _, uri, _, _, flag_string = tuple(item.split("|"))
-                
-                if "manifests" in uri:
-                    flags = self.load_flags(flag_string)
-                    
-                    if ("nypl_login" in flags) and flags["nypl_login"]:
-                        return UsageType.LIMITED_ACCESS
-                    if (("embed" in flags) and flags["embed"]) or (("reader" in flags) and flags["reader"]):
-                        if ("download" in flags) and flags["download"]:
-                            return UsageType.FULL_ACCESS
+        print(record.has_part)
+        if record.has_part:
+            flags = [self.load_flags(tuple(link.split("|"))[4]) for link in record.has_part]
+
+            if any(flag.get('nypl_login', False) for flag in flags):
+                return UsageType.LIMITED_ACCESS
+
+            has_read_flag = any(flag.get('embed', False) or flag.get('reader', False) for flag in flags)
+            has_download_flag = any(flag.get('download', False) for flag in flags)
+
+            if has_read_flag and has_download_flag:
+                return UsageType.FULL_ACCESS
 
         return UsageType.VIEW_ACCESS
 
