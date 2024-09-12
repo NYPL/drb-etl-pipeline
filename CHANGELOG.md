@@ -35,6 +35,7 @@
 - Adding OCLC query bibs call
 - Finalizing OCLC implementation
 - Implemented script to aggregate access logs
+- Switching over to classify record by metadata v2
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
