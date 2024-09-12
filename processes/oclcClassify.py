@@ -121,6 +121,9 @@ class ClassifyProcess(CoreProcess):
     def classify_record_by_metadata_v2(self, identifier, identifier_type, author, title):
         search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
 
+        if not search_query:
+            return
+
         related_oclc_bibs = self.oclc_catalog_manager.query_bibs(search_query)
 
         for related_oclc_bib in related_oclc_bibs:
