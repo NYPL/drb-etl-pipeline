@@ -50,7 +50,6 @@ class Poller(ABC):
     def pull_interaction_events_from_logs(self, log_path, bucket_name, regex) -> list[InteractionEvent]:
         events = []
         today = pandas.Timestamp.today()
-        aggregated_log_folder = os.environ.get("AGGREGATED_LOG_PATH", None)
 
         aggregate_logs.aggregate_logs_in_period(self.date_range, bucket_name, 
                                                 log_path, regex, self.referrer_url)
@@ -60,13 +59,13 @@ class Poller(ABC):
                 print("No logs exist past today's date: ", today.strftime("%b %d, %Y"))
                 break
 
-            file_name = f"{aggregated_log_folder}{bucket_name}/{date.strftime('%Y/%m/%d')}/aggregated_log"
-            events_per_day = self.parse_logs_in_day(file_name)
+            file_name = f"analytics/upress_reporting/log_files/{bucket_name}/{date.strftime('%Y/%m/%d')}/aggregated_log"
+            events_per_day = self.parse_log_file(file_name)
             events.extend(events_per_day)
 
         return events
 
-    def parse_logs_in_day(self, file_name):
+    def parse_log_file(self, file_name):
         interactions_in_batch = []
 
         with open(file_name, "r") as aggregated_log_file:
