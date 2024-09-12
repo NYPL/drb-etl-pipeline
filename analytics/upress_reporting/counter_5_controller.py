@@ -45,7 +45,7 @@ class Counter5Controller:
                 print("Terminating process. Exception encountered: ", e)
                 raise e
 
-        print("Done building Counter 5 reports!")
+        print("Done building Counter 5 reports! ", datetime.now())
 
     def _parse_args(self, args):
         parser = argparse.ArgumentParser(prog="Counter 5 Report Generator")
