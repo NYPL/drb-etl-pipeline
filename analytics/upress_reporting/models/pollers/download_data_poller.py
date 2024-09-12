@@ -24,7 +24,7 @@ class DownloadDataPoller(Poller):
         self.setup_db_manager()
 
         self.set_items()
-        self.get_events(self.bucket_name, self.log_path)
+        self.get_events(self.bucket_name, self.log_path, FILE_ID_REGEX)
         self.db_manager.closeConnection()
 
     def set_items(self):

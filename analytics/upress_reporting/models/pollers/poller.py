@@ -1,4 +1,3 @@
-import time
 import boto3
 import geocoder
 import json
@@ -7,6 +6,7 @@ import pandas
 import re
 
 from abc import ABC, abstractmethod
+from helpers import aggregate_logs
 from managers.db import DBManager
 from models.data.interaction_event import InteractionEvent, UsageType
 
@@ -35,7 +35,7 @@ class Poller(ABC):
         self.db_manager.generateEngine()
         self.db_manager.createSession()
     
-    def get_events(self, bucket_name, log_path):
+    def get_events(self, bucket_name, log_path, regex):
         if None in (bucket_name, log_path, self.referrer_url):
             error_message = (
                 "One or more necessary environment variables not found:",
@@ -45,56 +45,35 @@ class Poller(ABC):
             raise UnconfiguredEnvironmentError(error_message)
 
         self.events = self.pull_interaction_events_from_logs(
-            log_path, bucket_name)
+            log_path, bucket_name, regex)
 
-    def pull_interaction_events_from_logs(self, log_path, bucket_name) -> list[InteractionEvent]:
+    def pull_interaction_events_from_logs(self, log_path, bucket_name, regex) -> list[InteractionEvent]:
         events = []
         today = pandas.Timestamp.today()
+
+        aggregate_logs.aggregate_logs_in_period(self.date_range, bucket_name, 
+                                                log_path, regex, self.referrer_url)
     
         for date in self.date_range:
             if date > today:
                 print("No logs exist past today's date: ", today.strftime("%b %d, %Y"))
                 break
 
-            folder_name = date.strftime("%Y/%m/%d")
-            batch = self.load_batch(log_path, bucket_name, folder_name)
-            
-            if batch is not None:
-                events_per_day = self.parse_logs_in_batch(batch, bucket_name)
-                events.extend(events_per_day)
+            file_name = f"analytics/upress_reporting/log_files/{bucket_name}/{date.strftime('%Y/%m/%d')}/aggregated_log"
+            events_per_day = self.parse_log_file(file_name)
+            events.extend(events_per_day)
 
         return events
 
-    def load_batch(self, log_path, bucket_name, log_folder):
-        prefix = log_path + log_folder + "/"
-        paginator = self.s3_client.get_paginator("list_objects_v2")
-        page_iterator = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
-
-        return page_iterator
-
-    def parse_logs_in_batch(self, batch, bucket_name):
+    def parse_log_file(self, file_name):
         interactions_in_batch = []
 
-        for log_file in batch:
-            if "Contents" not in log_file:
-                path = self._redact_s3_path(log_file["Prefix"])
-                raise S3LogParsingError(
-                    f"Log files in path {path} do not exist.")
-            else:
-                for content in log_file["Contents"]:
-                    curr_key = str(content["Key"])
-                    log_object_dict = self.s3_client.get_object(
-                        Bucket=bucket_name,
-                        Key=f"{curr_key}"
-                    )
+        with open(file_name, "r") as aggregated_log_file:
+            for line in aggregated_log_file:
+                interaction_event = self.match_log_info_with_drb_data(line)
 
-                    for line in log_object_dict["Body"].iter_lines():
-                        log_object_dict = line.decode("utf8")
-                        interaction_event = self.match_log_info_with_drb_data(
-                            log_object_dict)
-
-                        if interaction_event:
-                            interactions_in_batch.append(interaction_event)
+                if interaction_event:
+                    interactions_in_batch.append(interaction_event)
 
         return interactions_in_batch
 
