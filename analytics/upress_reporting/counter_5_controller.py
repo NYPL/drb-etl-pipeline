@@ -23,7 +23,7 @@ class Counter5Controller:
             self.reporting_period = (f"{datetime.now().year}-01-01 to {datetime.now().year}-01-31")
 
     def create_reports(self):
-        print("Generating Counter 5 reports...")
+        print("Generating Counter 5 reports...", datetime.now())
 
         for publisher in self.publishers:
             try:
@@ -45,7 +45,7 @@ class Counter5Controller:
                 print("Terminating process. Exception encountered: ", e)
                 raise e
 
-        print("Done building Counter 5 reports!")
+        print("Done building Counter 5 reports! ", datetime.now())
 
     def _parse_args(self, args):
         parser = argparse.ArgumentParser(prog="Counter 5 Report Generator")

@@ -20,15 +20,15 @@ class ViewDataPoller(Poller):
         self.log_path = os.environ.get("VIEW_LOG_PATH", None)
 
         self.setup_db_manager()
-        self.get_events(self.bucket_name, self.log_path)
+        self.get_events(self.bucket_name, self.log_path, FILE_ID_REGEX)
         self.db_manager.closeConnection()
 
     def match_log_info_with_drb_data(self, log_object):
         match_file_id = re.search(FILE_ID_REGEX, log_object)
-        match_referrer = re.search(str(self.referrer_url), log_object)
+        # match_referrer = re.search(str(self.referrer_url), log_object)
 
-        if not match_file_id or not match_referrer or "403 AccessDenied" in log_object:
-            return None
+        # if not match_file_id or not match_referrer or "403 AccessDenied" in log_object:
+        #     return None
 
         match_time = re.search(TIMESTAMP_REGEX, log_object)
         match_ip = re.search(IP_REGEX, log_object)
