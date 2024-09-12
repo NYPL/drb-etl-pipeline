@@ -34,7 +34,7 @@
 - Updating report book ID
 - Adding OCLC query bibs call
 - Finalizing OCLC implementation
-
+- Implemented script to aggregate access logs
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
