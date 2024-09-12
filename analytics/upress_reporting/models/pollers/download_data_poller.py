@@ -67,7 +67,7 @@ class DownloadDataPoller(Poller):
             .first()
 
         book_id = f'{self.referrer_url}edition/{item.edition_id}'
-        usage_type = self._determine_usage(record)
+        usage_type = self.determine_usage(record)
         isbns = [identifier.split("|")[0] for identifier in record.identifiers if "isbn" in identifier]
         oclc_numbers = [identifier.split("|")[0] for identifier in record.identifiers if "oclc" in identifier]
 
@@ -87,14 +87,3 @@ class DownloadDataPoller(Poller):
             interaction_type=InteractionType.DOWNLOAD,
             timestamp=match_time.group(0)
         )
-
-    def _determine_usage(self, record):
-        if record.has_part is not None:
-            for item in record.has_part:
-                _, uri, _, _, flag_string = tuple(item.split('|'))
-                if "pdf" in uri:
-                    flags = self.load_flags(flag_string)
-                    if (("embed" in flags) and flags["embed"]) or (
-                            ("reader" in flags) and flags["reader"]):
-                        return UsageType.FULL_ACCESS
-        return UsageType.LIMITED_ACCESS

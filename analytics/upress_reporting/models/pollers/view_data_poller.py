@@ -42,7 +42,7 @@ class ViewDataPoller(Poller):
         if record is None:
             return None
 
-        usage_type = self._determine_usage(record)
+        usage_type = self.determine_usage(record)
         isbns = [identifier.split("|")[0] for identifier in record.identifiers if "isbn" in identifier]
         oclc_numbers = [identifier.split("|")[0] for identifier in record.identifiers if "oclc" in identifier]
 
@@ -69,19 +69,3 @@ class ViewDataPoller(Poller):
             interaction_type=InteractionType.VIEW,
             timestamp=match_time.group(0)
         )
-
-    def _determine_usage(self, record):
-        if record.has_part is not None:
-            for item in record.has_part:
-                _, uri, _, _, flag_string = tuple(item.split("|"))
-                if "manifests" in uri:
-                    flags = self.load_flags(flag_string)
-                    if ("nypl_login" in flags) and flags["nypl_login"]:
-                        return UsageType.LIMITED_ACCESS
-                    if (("embed" in flags) and flags["embed"]) or (
-                        ("reader" in flags) and flags["reader"]
-                    ):
-                        if ("download" in flags) and flags["download"]:
-                            return UsageType.FULL_ACCESS
-
-        return UsageType.VIEW_ACCESS

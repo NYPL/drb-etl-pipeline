@@ -40,6 +40,7 @@
 - Resolved the errors when running the FulfillProcess on a daily and complete ingest time
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files
 - Fixed edition API ID param
+- Fixed usage type bug
 
 ## 2024-08-06 -- v0.13.1
 ## Added
