@@ -23,7 +23,7 @@ class Counter5Controller:
             self.reporting_period = (f"{datetime.now().year}-01-01 to {datetime.now().year}-01-31")
 
     def create_reports(self):
-        print("Generating Counter 5 reports...", datetime.now())
+        print("Generating Counter 5 reports...")
 
         for publisher in self.publishers:
             try:

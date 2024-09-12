@@ -25,15 +25,12 @@ class ViewDataPoller(Poller):
 
     def match_log_info_with_drb_data(self, log_object):
         match_file_id = re.search(FILE_ID_REGEX, log_object)
-        # match_referrer = re.search(str(self.referrer_url), log_object)
-
-        # if not match_file_id or not match_referrer or "403 AccessDenied" in log_object:
-        #     return None
-
         match_time = re.search(TIMESTAMP_REGEX, log_object)
         match_ip = re.search(IP_REGEX, log_object)
+
         file_name = match_file_id.group(1).split("/", 1)[1]
         record_id = file_name.split(".")[0]
+        
         record = self.db_manager.session.query(Record) \
             .filter((Record.source == self.publisher)) \
             .filter(func.array_to_string(Record.identifiers, ",").like("%"+record_id+"%")) \
