@@ -33,6 +33,7 @@
 - Deleted fulfill script due to no longer being necessary
 - Updating report book ID
 - Adding OCLC query bibs call
+- Finalizing OCLC implementation
 
 
 ## Fixed
