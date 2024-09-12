@@ -69,9 +69,7 @@ class Poller(ABC):
     def parse_logs_in_day(self, file_name):
         interactions_in_batch = []
 
-        print("File name ", file_name)
-
-        with open(file_name, 'r') as aggregated_log_file:
+        with open(file_name, "r") as aggregated_log_file:
             for line in aggregated_log_file:
                 interaction_event = self.match_log_info_with_drb_data(line)
 
