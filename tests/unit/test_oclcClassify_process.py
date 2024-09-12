@@ -27,6 +27,7 @@ class TestOCLCClassifyProcess:
                 self.ingestLimit = None
                 self.rabbitQueue = os.environ['OCLC_QUEUE']
                 self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']
+                self.oclc_catalog_manager = mocker.MagicMock()
         
         return TestClassifyProcess('TestProcess', 'testFile', 'testDate')
     
@@ -199,7 +200,7 @@ class TestOCLCClassifyProcess:
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
         mockRedisCheck.return_value = False
 
-        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classifyRecordByMetadata')
+        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata_v2')
 
         testInstance.frbrizeRecord(testRecord)
 
@@ -214,7 +215,7 @@ class TestOCLCClassifyProcess:
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
         mockRedisCheck.return_value = False
 
-        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classifyRecordByMetadata')
+        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata_v2')
 
         testRecord.authors = []
         testInstance.frbrizeRecord(testRecord)
@@ -230,7 +231,7 @@ class TestOCLCClassifyProcess:
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
         mockRedisCheck.return_value = True
 
-        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classifyRecordByMetadata')
+        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata_v2')
 
         testRecord.authors = []
         testInstance.frbrizeRecord(testRecord)
@@ -245,7 +246,7 @@ class TestOCLCClassifyProcess:
 
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
 
-        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classifyRecordByMetadata')
+        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata_v2')
 
         testInstance.frbrizeRecord(testRecord)
 
