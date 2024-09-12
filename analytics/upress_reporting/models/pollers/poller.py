@@ -120,7 +120,6 @@ class Poller(ABC):
             raise S3LogParsingError(e.msg)
         
     def determine_usage(self, record):
-        print(record.has_part)
         if record.has_part:
             flags = [self.load_flags(tuple(link.split("|"))[4]) for link in record.has_part]
 
