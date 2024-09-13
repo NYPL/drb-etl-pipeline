@@ -120,11 +120,7 @@ class ClassifyProcess(CoreProcess):
                 logger.debug(err.message)
 
     def classify_record_by_metadata_v2(self, identifier, identifier_type, author, title):
-
-        try:
-            search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
-        except:
-            return
+        search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
 
         related_oclc_bibs = self.oclc_catalog_manager.query_bibs(search_query)
 
