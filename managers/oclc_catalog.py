@@ -1,6 +1,6 @@
 import os
 import requests
-from requests.exceptions import Timeout, ConnectionError
+from requests.exceptions import Timeout, ConnectionError, JSONDecodeError
 from typing import Optional
 
 from logger import createLog
@@ -97,9 +97,13 @@ class OCLCCatalogManager:
 
             if other_editions_response.status_code != 200:
                 logger.warning(
-                            f"Other editions query for no {oclc_number} failed "
-                            f"With status {other_editions_response.status_code} "
-                            f"and reason {other_editions_response.json()['type']}")
+                            f'OCLC search bibs request for query {oclc_number} failed '
+                            f'with status {other_editions_response.status_code}')
+                try:
+                            oclc_error_type = other_editions_response.json()["type"]
+                            logger.debug(f'{oclc_number} request failure reason: {oclc_error_type}')
+                except (JSONDecodeError, KeyError):
+                    logger.debug(f'No OCLC error type given for {oclc_number} request')
                 return None
 
             return other_editions_response.json()
@@ -159,16 +163,19 @@ class OCLCCatalogManager:
 
             if bibs_response.status_code != 200:
                 logger.warning(
-                            f"OCLC search bibs request for query {query} failed "
-                            f"with status {bibs_response.status_code} "
-                            f"and reason {bibs_response.json()['type']}")
+                            f'OCLC search bibs request for query {query} failed '
+                            f'with status {bibs_response.status_code}')
+                try:
+                            oclc_error_type = bibs_response.json()["type"]
+                            logger.debug(f'Query failure reason: {oclc_error_type}')
+                except (JSONDecodeError, KeyError):
+                    logger.debug('No OCLC error type given')
                 return None
-            
             return bibs_response.json()
         except Exception as e:
             logger.error(f'Failed to query {bibs_endpoint} with query {query}. Exception: {e}')
             return None
-    
+
     def generate_search_query(self, identifier=None, identifier_type=None, title=None, author=None):
         if identifier and identifier_type:
             return self._generate_identifier_query(identifier, identifier_type)
