@@ -97,7 +97,7 @@ class OCLCCatalogManager:
 
             if other_editions_response.status_code != 200:
                 logger.warning(
-                            f'OCLC search bibs request for query {oclc_number} failed '
+                            f'OCLC search bibs request for OCLC no {oclc_number} failed '
                             f'with status {other_editions_response.status_code}')
                 try:
                             oclc_error_type = other_editions_response.json()["type"]
