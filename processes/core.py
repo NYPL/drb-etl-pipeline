@@ -24,7 +24,7 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
         existing = self.session.query(Record)\
             .filter(Record.source_id == rec.record.source_id).first()
         if existing:
-            logger.debug('Existing record', existing)
+            logger.debug('Existing record: ' + str(existing))
             rec.updateExisting(existing)
 
             try:
@@ -34,7 +34,7 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
 
             self.records.add(existing)
         else:
-            logger.debug('New record', rec.record)
+            logger.debug('New record: ' + str(rec.record))
             self.records.add(rec.record)
 
         if len(self.records) >= self.batchSize:
