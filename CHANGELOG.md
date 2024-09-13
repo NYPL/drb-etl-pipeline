@@ -36,7 +36,7 @@
 - Finalizing OCLC implementation
 - Implemented script to aggregate access logs
 - Switching over to classify record by metadata v2
-- Upgrading flask and flask-cors
+- Upgrading flask-cors
 
 ## Fixed
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files 
