@@ -25,8 +25,18 @@ class Counter5Controller:
     def create_reports(self):
         print("Generating Counter 5 reports...")
 
+        # TODO: aggregate log files
+
+        # TODO: get all records and editions from publisher backlists stored in config
+
+        # TODO: map records/editions data to reporting model
+
+        # TODO: create a map of record_id to record
+        # TODO: create a map of each relevant part in record.has_part to record_id 
+        
         for publisher in self.publishers:
             try:
+                # TODO: pass in prepped data
                 view_data_poller = ViewDataPoller(publisher, self.reporting_period)
                 download_data_poller = DownloadDataPoller(publisher, self.reporting_period)
 
