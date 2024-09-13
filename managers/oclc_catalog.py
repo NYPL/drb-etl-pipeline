@@ -108,7 +108,7 @@ class OCLCCatalogManager:
 
             return other_editions_response.json()
         except Exception as e:
-            logger.error(f'Failed to query other editions endpoint {other_editions_url}: Exception: {e}')
+            logger.error(f'Failed to query other editions endpoint {other_editions_url}', e)
             return None
 
     def _get_oclc_number_from_bibs(self, oclc_number: int, oclc_bibs) -> int:
@@ -140,9 +140,9 @@ class OCLCCatalogManager:
 
             return bibs
         except Exception as e:
-            logger.error(f'Failed to query search bibs with query {query}. Exception: {e}')
+            logger.error(f'Failed to query search bibs with query {query}', e)
             return bibs
-    
+
     def _search_bibs(self, query: str, offset: int=0):
         try:
             token = OCLCAuthManager.get_token()
