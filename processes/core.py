@@ -2,6 +2,11 @@ from managers import DBManager, RabbitMQManager, RedisManager, ElasticsearchMana
 from model import Record
 from static.manager import StaticManager
 
+from logger import createLog
+
+
+logger = createLog(__name__)
+
 
 class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, StaticManager,
                   ElasticsearchManager, S3Manager):
@@ -19,17 +24,17 @@ class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, Stat
         existing = self.session.query(Record)\
             .filter(Record.source_id == rec.record.source_id).first()
         if existing:
-            print('EXISTING', existing)
+            logger.debug('Existing record: ' + str(existing))
             rec.updateExisting(existing)
 
             try:
                 self.records.remove(existing)
             except KeyError:
-                print('Record not in current set')
+                logger.debug('Record not in current set')
 
             self.records.add(existing)
         else:
-            print('NEW', rec.record)
+            logger.debug('New record: ' + str(rec.record))
             self.records.add(rec.record)
 
         if len(self.records) >= self.batchSize:
