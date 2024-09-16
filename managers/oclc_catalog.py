@@ -1,6 +1,6 @@
 import os
 import requests
-from requests.exceptions import Timeout, ConnectionError
+from requests.exceptions import Timeout, ConnectionError, JSONDecodeError
 from typing import Optional
 
 from logger import createLog
@@ -96,17 +96,24 @@ class OCLCCatalogManager:
             )
 
             if other_editions_response.status_code != 200:
-                logger.warning(f'OCLC other editions request failed with status {other_editions_response.status_code}')
+                logger.warning(
+                            f'OCLC search bibs request for OCLC no {oclc_number} failed '
+                            f'with status {other_editions_response.status_code}')
+                try:
+                            oclc_error_type = other_editions_response.json()["type"]
+                            logger.debug(f'{oclc_number} request failure reason: {oclc_error_type}')
+                except (JSONDecodeError, KeyError):
+                    logger.debug(f'No OCLC error type given for {oclc_number} request')
                 return None
-            
+
             return other_editions_response.json()
-        except Exception as e: 
+        except Exception as e:
             logger.error(f'Failed to query other editions endpoint {other_editions_url}', e)
             return None
-        
+
     def _get_oclc_number_from_bibs(self, oclc_number: int, oclc_bibs) -> int:
         return [int(edition['oclcNumber']) for edition in oclc_bibs if int(edition['oclcNumber']) != oclc_number]
-  
+
     def query_bibs(self, query: str):
         bibs = []
 
@@ -135,7 +142,7 @@ class OCLCCatalogManager:
         except Exception as e:
             logger.error(f'Failed to query search bibs with query {query}', e)
             return bibs
-    
+
     def _search_bibs(self, query: str, offset: int=0):
         try:
             token = OCLCAuthManager.get_token()
@@ -155,14 +162,20 @@ class OCLCCatalogManager:
             )
 
             if bibs_response.status_code != 200:
-                logger.warning(f'OCLC search bibs request failed with status {bibs_response.status_code}')
+                logger.warning(
+                            f'OCLC search bibs request for query {query} failed '
+                            f'with status {bibs_response.status_code}')
+                try:
+                            oclc_error_type = bibs_response.json()["type"]
+                            logger.debug(f'Query failure reason: {oclc_error_type}')
+                except (JSONDecodeError, KeyError):
+                    logger.debug('No OCLC error type given')
                 return None
-            
             return bibs_response.json()
         except Exception as e:
-            logger.error(f'Failed to query {bibs_endpoint} with query {query}', e)
+            logger.error(f'Failed to query {bibs_endpoint} with query {query}. Exception: {e}')
             return None
-    
+
     def generate_search_query(self, identifier=None, identifier_type=None, title=None, author=None):
         if identifier and identifier_type:
             return self._generate_identifier_query(identifier, identifier_type)

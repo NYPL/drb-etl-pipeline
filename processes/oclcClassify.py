@@ -4,6 +4,7 @@ import newrelic.agent
 
 from .core import CoreProcess
 from managers import ClassifyManager, OCLCCatalogManager
+from managers.oclc_catalog import OCLCCatalogError
 from managers.oclcClassify import ClassifyError
 from mappings.oclcClassify import ClassifyMapping
 from mappings.oclc_bib import OCLCBibMapping
@@ -114,7 +115,7 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 self.classify_record_by_metadata_v2(identifier, idenType, author, record.title)
-            except ClassifyError as err:
+            except (ClassifyError, OCLCCatalogError) as err:
                 logger.warning('Unable to Classify {}'.format(record))
                 logger.debug(err.message)
 
