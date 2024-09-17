@@ -92,11 +92,20 @@ class OCLCBibMapping(Core):
         if not authors:
             return None
         
-        return [f'{author_name}|||true' for author in authors if (author_name := self._get_author_name(author))]
+        return [f'{author_name}|||true' for author in authors if (author_name := self._get_contributor_name(author))]
     
-    def _get_author_name(self, author) -> str:
-        first_name = self._get_name(author.get('firstName'))
-        second_name = self._get_name(author.get('secondName'))
+    def _map_contributors(self, contributors) -> Optional[list[str]]:
+        if not contributors:
+            return None
+        
+        return [
+            f"{contributor_name}|||{', '.join(list(map(lambda relator: relator.get('term', ''), contributor.get('relators', []))))}"
+            for contributor in contributors if (contributor_name := self._get_contributor_name(contributor))
+        ]
+    
+    def _get_contributor_name(self, contributor) -> str:
+        first_name = self._get_name(contributor.get('firstName'))
+        second_name = self._get_name(contributor.get('secondName'))
 
         if not first_name and not second_name:
             return None
@@ -111,12 +120,3 @@ class OCLCBibMapping(Core):
             return None
 
         return name_data.get('text') or name_data.get('romanizedText')
-    
-    def _map_contributors(self, contributors) -> Optional[list[str]]:
-        if not contributors:
-            return None
-
-        return [
-            f"{contributor['secondName']['text']}, {contributor['firstName']['text']}|||{', '.join(list(map(lambda relator: relator.get('term', ''), contributor.get('relators', []))))}"
-            for contributor in contributors
-        ]
