@@ -12,9 +12,7 @@ class OCLCBibMapping(Core):
         creators = self._get_creators(oclc_bib)
         authors = self._get_authors(creators)
         contributors = self._get_contributors(creators)
-
-        print(creators)
-
+        
         self.record = Record(
             uuid=uuid4(),
             frbr_status='complete',
