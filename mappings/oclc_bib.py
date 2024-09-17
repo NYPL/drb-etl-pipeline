@@ -47,7 +47,7 @@ class OCLCBibMapping(Core):
 
         return list(
             filter(
-                lambda creator: creator.get('secondName') and creator.get('firstName'), 
+                lambda creator: creator.get('secondName') or creator.get('firstName'), 
                 oclc_bib['contributor'].get('creators', [])
             )
         )
@@ -91,8 +91,26 @@ class OCLCBibMapping(Core):
     def _map_authors(self, authors) -> Optional[list[str]]:
         if not authors:
             return None
+        
+        return [f'{author_name}|||true' for author in authors if (author_name := self._get_author_name(author))]
+    
+    def _get_author_name(self, author) -> str:
+        first_name = self._get_name(author.get('firstName'))
+        second_name = self._get_name(author.get('secondName'))
 
-        return [f"{author['secondName']['text']}, {author['firstName']['text']}|||true" for author in authors]
+        if not first_name and not second_name:
+            return None
+
+        if first_name and second_name:
+            return f'{second_name}, {first_name}'
+        
+        return f'{first_name or second_name}'
+        
+    def _get_name(self, name_data) -> str:
+        if not name_data:
+            return None
+
+        return name_data.get('text') or name_data.get('romanizedText') or None
     
     def _map_contributors(self, contributors) -> Optional[list[str]]:
         if not contributors:
