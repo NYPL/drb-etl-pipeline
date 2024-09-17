@@ -110,7 +110,7 @@ class OCLCBibMapping(Core):
         if not name_data:
             return None
 
-        return name_data.get('text') or name_data.get('romanizedText') or None
+        return name_data.get('text') or name_data.get('romanizedText')
     
     def _map_contributors(self, contributors) -> Optional[list[str]]:
         if not contributors:
