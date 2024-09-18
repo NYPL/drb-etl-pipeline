@@ -8,38 +8,32 @@ from .core import Core
 
 class OCLCBibMapping(Core):
     def __init__(self, oclc_bib, related_oclc_numbers=[]):
-        identifiers = oclc_bib['identifier']
+        self.record = self._map_to_record(oclc_bib, related_oclc_numbers)
+
+    def _map_to_record(self, oclc_bib, related_oclc_numbers=[]) -> Record:
+        identifiers = oclc_bib.get('identifier', {})
         creators = self._get_creators(oclc_bib)
         authors = self._get_authors(creators)
         contributors = self._get_contributors(creators)
         
-        self.record = Record(
+        return Record(
             uuid=uuid4(),
             frbr_status='complete',
             cluster_status=False,
             source='oclcClassify',
-            source_id=f"{oclc_bib['work']['id']}|owi",
-            title=oclc_bib['title']['mainTitles'][0]['text'],
+            source_id=f"{oclc_bib.get('work', {}).get('id')}|owi",
+            title=oclc_bib.get('title', {}).get('mainTitles', [{}])[0].get('text'),
             subjects=self._map_subjects(oclc_bib),
             authors=self._map_authors(authors),
             contributors=self._map_contributors(contributors),
             identifiers=(
-                [f"{oclc_bib['work']['id']}|owi"] +
-                [f"{identifiers['oclcNumber']}|oclc"] +
+                [f"{oclc_bib.get('work', {}).get('id')}|owi"] +
+                [f"{identifiers.get('oclcNumber')}|oclc"] +
                 [f"{oclc_number}|oclc" for oclc_number in related_oclc_numbers]
             ),
             date_created=datetime.now(timezone.utc).replace(tzinfo=None),
             date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
         )
-
-    def createMapping(self):
-        pass
-
-    def applyFormatting(self):
-        pass
-
-    def applyMapping(self):
-        pass
 
     def _get_creators(self, oclc_bib):
         if not oclc_bib.get('contributor'): 
@@ -48,7 +42,7 @@ class OCLCBibMapping(Core):
         return list(
             filter(
                 lambda creator: creator.get('secondName') or creator.get('firstName'), 
-                oclc_bib['contributor'].get('creators', [])
+                oclc_bib.get('contributor', {}).get('creators', [])
             )
         )
     
@@ -79,14 +73,18 @@ class OCLCBibMapping(Core):
         )
     
     def _is_author(self, creator):
-        for role in set(map(lambda relator: relator.get('term').lower(), creator.get('relators', []))):
+        for role in set(map(lambda relator: relator.get('term', '').lower(), creator.get('relators', []))):
             if 'author' in role.lower() or 'writer' in role.lower():
                 return True
         
         return False
     
     def _map_subjects(self, oclc_bib) -> list[str]:
-        return [f"{subject['subjectName']['text']}||{subject.get('vocabulary', '')}" for subject in oclc_bib.get('subjects', [])]
+        return [
+            f"{subject_name}||{subject.get('vocabulary', '')}" 
+            for subject in oclc_bib.get('subjects', [])
+            if (subject_name := subject.get('subjectName', {}).get('text'))
+        ]
     
     def _map_authors(self, authors) -> Optional[list[str]]:
         if not authors:
@@ -120,3 +118,12 @@ class OCLCBibMapping(Core):
             return None
 
         return name_data.get('text') or name_data.get('romanizedText')
+    
+    def createMapping(self):
+        pass
+
+    def applyFormatting(self):
+        pass
+
+    def applyMapping(self):
+        pass

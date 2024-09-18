@@ -65,3 +65,20 @@ def test_oclc_bib_mapping_no_second_name():
     oclc_bib_mapping = OCLCBibMapping(base_oclc_bib)
 
     assert ['Hathi|||true'] == oclc_bib_mapping.record.authors
+
+def test_oclc_bib_mapping_fallback_to_romanized_text():
+    base_oclc_bib['contributor'] = {
+        'creators': [{
+            'firstName': {
+                'romanizedText': 'Homer'
+            },
+            'secondName': {
+                'romanizedText': 'Simpson'
+            },
+            'isPrimary': True
+        }]
+    }
+
+    oclc_bib_mapping = OCLCBibMapping(base_oclc_bib)
+
+    assert ['Simpson, Homer|||true'] == oclc_bib_mapping.record.authors
