@@ -52,9 +52,7 @@ class OCLCBibMapping(Core):
 
         return list(
             filter(
-                lambda creator: 
-                    creator.get('isPrimary', False) or 
-                    self._is_author(creator), 
+                lambda creator: creator.get('isPrimary', False) or self._is_author(creator), 
                 creators
             )
         )
@@ -65,9 +63,7 @@ class OCLCBibMapping(Core):
 
         return list(
             filter(
-                lambda creator: 
-                    not creator.get('isPrimary', False) and 
-                    not self._is_author(creator), 
+                lambda creator: not creator.get('isPrimary', False) and not self._is_author(creator), 
                 creators
             )
         )
@@ -90,7 +86,11 @@ class OCLCBibMapping(Core):
         if not authors:
             return None
         
-        return [f'{author_name}|||true' for author in authors if (author_name := self._get_contributor_name(author))]
+        return [
+            f'{author_name}|||true' 
+            for author in authors 
+            if (author_name := self._get_contributor_name(author))
+        ]
     
     def _map_contributors(self, contributors) -> Optional[list[str]]:
         if not contributors:
@@ -98,10 +98,11 @@ class OCLCBibMapping(Core):
         
         return [
             f"{contributor_name}|||{', '.join(list(map(lambda relator: relator.get('term', ''), contributor.get('relators', []))))}"
-            for contributor in contributors if (contributor_name := self._get_contributor_name(contributor))
+            for contributor in contributors 
+            if (contributor_name := self._get_contributor_name(contributor))
         ]
     
-    def _get_contributor_name(self, contributor) -> str:
+    def _get_contributor_name(self, contributor) -> Optional[str]:
         first_name = self._get_name(contributor.get('firstName'))
         second_name = self._get_name(contributor.get('secondName'))
 
@@ -113,7 +114,7 @@ class OCLCBibMapping(Core):
         
         return f'{first_name or second_name}'
         
-    def _get_name(self, name_data) -> str:
+    def _get_name(self, name_data) -> Optional[str]:
         if not name_data:
             return None
 
