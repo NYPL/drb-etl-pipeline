@@ -49,6 +49,7 @@
 - Changed HATHI_DATAFILES outdated link in development, example, and local yaml files
 - Fixed edition API ID param
 - Fixed usage type bug
+- Fixed OCLC bib author mapping
 
 ## 2024-08-06 -- v0.13.1
 
