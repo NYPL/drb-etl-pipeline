@@ -115,9 +115,8 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 self.classify_record_by_metadata_v2(identifier, idenType, author, record.title)
-            except (ClassifyError, OCLCCatalogError) as err:
-                logger.warning('Unable to Classify {}'.format(record))
-                logger.debug(err.message)
+            except Exception as e:
+                logger.warning(f'Unable to classify {record} due to {e.message}')
 
     def classify_record_by_metadata_v2(self, identifier, identifier_type, author, title):
         search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
@@ -125,8 +124,12 @@ class ClassifyProcess(CoreProcess):
         related_oclc_bibs = self.oclc_catalog_manager.query_bibs(search_query)
 
         for related_oclc_bib in related_oclc_bibs:
-            oclc_number = related_oclc_bib['identifier']['oclcNumber']
-            owi_number = related_oclc_bib['work']['id']
+            oclc_number = related_oclc_bib.get('identifier', {}).get('oclcNumber')
+            owi_number = related_oclc_bib.get('work', {}).get('id')
+
+            if not oclc_number or not owi_number:
+                logger.warning(f'Unable to get identifiers for bib: {related_oclc_bib}')
+                continue
             
             if self.check_if_classify_work_fetched(owi_number=owi_number):
                 continue
