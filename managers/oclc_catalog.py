@@ -100,7 +100,7 @@ class OCLCCatalogManager:
             if other_editions_response.status_code != 200:
                 logger.warning(
                     f'OCLC other editions request for OCLC number {oclc_number} failed with status: {status_code} '
-                    f'and reason: {self._get_error_type(other_editions_response)}'
+                    f'due to: {self._get_error_detail(other_editions_response)}'
                 )
 
                 return None
@@ -165,7 +165,7 @@ class OCLCCatalogManager:
             if status_code != 200:
                 logger.warning(
                     f'OCLC search bibs request for query {query} failed with status: {status_code} '
-                    f'and reason: {self._get_error_type(bibs_response)}'
+                    f'due to: {self._get_error_detail(bibs_response)}'
                 )
                 
                 return None
@@ -195,13 +195,13 @@ class OCLCCatalogManager:
     def _generate_title_author_query(self, title, author):
         return f"ti:{title} au:{author}"
     
-    def _get_error_type(oclc_response) -> Optional[str]:
-        default_error_type = 'unknown'
+    def _get_error_detail(oclc_response) -> Optional[str]:
+        default_error_detail = 'unknown'
 
         try:
-            return oclc_response.json().get('type', default_error_type)
+            return oclc_response.json().get('detail', default_error_detail)
         except Exception:
-            return default_error_type
+            return default_error_detail
 
 class OCLCCatalogError(Exception):
     def __init__(self, message=None):
