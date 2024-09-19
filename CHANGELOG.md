@@ -41,6 +41,7 @@
 - Adding more specific logging and exception handling around OCLC manager errors
 - Upgrading flask-cors
 - implement restApi testing using pytest
+- add search-a-collection test to rest_api tests
 
 ## Fixed
 
