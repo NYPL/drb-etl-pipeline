@@ -24,20 +24,20 @@ class CatalogProcess(CoreProcess):
 
         self.oclcCatalogManager = OCLCCatalogManager()
 
-    def runProcess(self):
-        self.receiveAndProcessMessages()
+    def runProcess(self, max_attempts: int=3):
+        self.receiveAndProcessMessages(max_attempts=max_attempts)
 
         self.saveRecords()
         self.commitChanges()
 
-    def receiveAndProcessMessages(self):
+    def receiveAndProcessMessages(self, max_attempts: int=3):
         attempts = 1
 
         while True:
             msgProps, _, msgBody = self.getMessageFromQueue(os.environ['OCLC_QUEUE'])
 
             if msgProps is None:
-                if attempts <= 3:
+                if attempts <= max_attempts:
                     waitTime = 60 * attempts
 
                     logger.info(f'Waiting {waitTime}s for OCLC catalog messages')

@@ -56,7 +56,7 @@ class DevelopmentSetupProcess(CoreProcess):
         classifyProc.runProcess()
 
         catalogProc = CatalogProcess(*procArgs)
-        catalogProc.runProcess()
+        catalogProc.runProcess(max_attempts=1)
         
         clusterProc = ClusterProcess(*procArgs)
         clusterProc.runProcess()
