@@ -161,9 +161,7 @@ class CatalogMapping(XMLMapping):
         self.record.source_id = self.record.identifiers[0]
         self.record.frbr_status = 'complete'
 
-        logger.info('Formatting OCLC Catalog record {}'.format(
-            self.record.source_id
-        ))
+        logger.info(f'Formatting OCLC Catalog record with id: {self.record.source_id}')
 
         # Parse language field
         logger.debug('Parsing ISO lang code from 008 fixed field')

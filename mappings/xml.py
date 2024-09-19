@@ -2,6 +2,9 @@ from itertools import zip_longest
 from lxml import etree
 
 from .core import Core
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class XMLMapping(Core):
@@ -19,7 +22,7 @@ class XMLMapping(Core):
                 else:
                     fieldData = [f for s in structure for f in self.getFieldData(s)]
             except IndexError:
-                print('Missing data from field {}'.format(field))
+                logger.debug(f'Missing data from field: {field}')
                 continue
             
             setattr(newRecord, field, fieldData)
