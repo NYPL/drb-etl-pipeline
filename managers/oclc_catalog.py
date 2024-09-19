@@ -74,7 +74,7 @@ class OCLCCatalogManager:
 
             return related_oclc_numbers
         except Exception as e:
-            logger.error(f'Failed to get related OCLC numbers for {oclc_number}', e)
+            logger.error(f'Failed to get related OCLC numbers for {oclc_number} due to {e}')
             return related_oclc_numbers
         
     def _get_other_editions(self, oclc_number: int, offset: int=0):
@@ -107,7 +107,7 @@ class OCLCCatalogManager:
 
             return other_editions_response.json()
         except Exception as e:
-            logger.error(f'Failed to query other editions endpoint {other_editions_url}', e)
+            logger.error(f'Failed to query other editions endpoint {other_editions_url} due to {e}')
             return None
 
     def _get_oclc_number_from_bibs(self, oclc_number: int, oclc_bibs) -> int:
