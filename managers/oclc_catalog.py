@@ -139,7 +139,7 @@ class OCLCCatalogManager:
 
             return bibs
         except Exception as e:
-            logger.error(f'Failed to query search bibs with query {query} due to {e.message}')
+            logger.error(f'Failed to query search bibs with query {query} due to {e}')
             return bibs
 
     def _search_bibs(self, query: str, offset: int=0):
@@ -172,7 +172,7 @@ class OCLCCatalogManager:
             
             return bibs_response.json()
         except Exception as e:
-            logger.error(f'Failed to query {bibs_endpoint} with query {query} due to {e.message}')
+            logger.error(f'Failed to query {bibs_endpoint} with query {query} due to {e}')
             return None
 
     def generate_search_query(self, identifier=None, identifier_type=None, title=None, author=None):
