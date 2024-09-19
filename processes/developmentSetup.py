@@ -8,7 +8,6 @@ import requests
 import sqlalchemy as sa
 from sqlalchemy.exc import ProgrammingError
 from time import sleep
-import alembic.config
 
 from managers.db import DBManager
 from .core import CoreProcess
@@ -35,7 +34,6 @@ class DevelopmentSetupProcess(CoreProcess):
         self.createSession()
 
         self.initializeDatabase()
-        self.runDBMigration()
 
         self.createElasticConnection()
         self.waitForElasticSearch()
@@ -60,16 +58,6 @@ class DevelopmentSetupProcess(CoreProcess):
         
         clusterProc = ClusterProcess(*procArgs)
         clusterProc.runProcess()
-
-    def runDBMigration(self):
-        try:
-            alembicArgs = [
-                '--raiseerr',
-                'upgrade', 'head',
-            ]
-            alembic.config.main(argv=alembicArgs)
-        except Exception as e:
-            print(f'Failed to run database migration due to: {e}')
 
     def initializeDB(self):
         self.adminDBConnection.generateEngine()
