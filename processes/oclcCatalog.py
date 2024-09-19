@@ -16,11 +16,9 @@ class CatalogProcess(CoreProcess):
     def __init__(self, *args):
         super(CatalogProcess, self).__init__(*args[:4], batchSize=50)
 
-        # PostgreSQL Connection
         self.generateEngine()
         self.createSession()
 
-        # RabbitMQ Connection
         self.createRabbitConnection()
         self.createChannel()
 
@@ -36,15 +34,13 @@ class CatalogProcess(CoreProcess):
         attempts = 1
 
         while True:
-            msgProps, _, msgBody = self.getMessageFromQueue(
-                os.environ['OCLC_QUEUE']
-            )
+            msgProps, _, msgBody = self.getMessageFromQueue(os.environ['OCLC_QUEUE'])
 
             if msgProps is None:
                 if attempts <= 3:
                     waitTime = 60 * attempts
 
-                    logger.info('Waiting {}s for addtl recs'.format(waitTime))
+                    logger.info(f'Waiting {waitTime}s for OCLC catalog messages')
 
                     sleep(waitTime)
 
@@ -52,10 +48,10 @@ class CatalogProcess(CoreProcess):
 
                     continue
                 else:
-                    logger.info('No messages to process, exiting')
+                    logger.info('Exiting OCLC catalog process - no more messages.')
                     break
 
-            attempts = 1  # Reset attempt counter for further batches
+            attempts = 1
 
             self.processCatalogQuery(msgBody)
             self.acknowledgeMessageProcessed(msgProps.delivery_tag)
@@ -65,17 +61,19 @@ class CatalogProcess(CoreProcess):
         oclcNo = message['oclcNo']
         
         catalogXML = self.oclcCatalogManager.query_catalog(oclcNo)
+
+        if not catalogXML:
+            return
         
-        if catalogXML:
-            self.parseCatalogRecord(catalogXML, message['owiNo'])
+        self.parseCatalogRecord(catalogXML, message['owiNo'])
 
 
     def parseCatalogRecord(self, catalogXML, owiNo):
         try:
             parseMARC = etree.fromstring(catalogXML.encode('utf-8'))
-        except etree.XMLSyntaxError as err:
-            logger.error('OCLC Catalog returned invalid XML')
-            logger.debug(err)
+        except etree.XMLSyntaxError as e:
+            logger.error(f'OCLC catalog MARC xml is invalid for work id: {owiNo}')
+            logger.debug(e)
             return None
 
         catalogRec = CatalogMapping(
@@ -88,8 +86,8 @@ class CatalogProcess(CoreProcess):
             catalogRec.applyMapping()
             catalogRec.record.identifiers.append('{}|owi'.format(owiNo))
             self.addDCDWToUpdateList(catalogRec)
-        except Exception as err:
-            logger.error('Err querying OCLC Rec {}'.format(
-                catalogRec.record.source_id
-            ))
-            logger.debug(err)
+        except Exception as e:
+            logger.error(
+                f'Unable to parse OCLC catalog record with id {catalogRec.record.source_id} due to {e}'
+            )
+            logger.debug(e)
