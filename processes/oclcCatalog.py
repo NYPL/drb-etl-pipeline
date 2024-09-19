@@ -58,23 +58,24 @@ class CatalogProcess(CoreProcess):
 
     def processCatalogQuery(self, msgBody):
         message = json.loads(msgBody)
-        oclcNo = message['oclcNo']
+        oclcNo = message.get('oclcNo')
+        owiNo = message.get('owiNo')
         
         catalogXML = self.oclcCatalogManager.query_catalog(oclcNo)
 
         if not catalogXML:
             return
         
-        self.parseCatalogRecord(catalogXML, message['owiNo'])
+        self.parseCatalogRecord(catalogXML, oclcNo, owiNo)
 
 
-    def parseCatalogRecord(self, catalogXML, owiNo):
+    def parseCatalogRecord(self, catalogXML, oclcNo, owiNo):
         try:
             parseMARC = etree.fromstring(catalogXML.encode('utf-8'))
         except etree.XMLSyntaxError as e:
-            logger.error(f'OCLC catalog MARC xml is invalid for work id: {owiNo}')
+            logger.error(f'OCLC catalog MARC xml is invalid for OCLC number: {oclcNo}')
             logger.debug(e)
-            return None
+            return
 
         catalogRec = CatalogMapping(
             parseMARC,
