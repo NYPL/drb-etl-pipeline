@@ -115,18 +115,24 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 self.classify_record_by_metadata_v2(identifier, idenType, author, record.title)
-            except (ClassifyError, OCLCCatalogError) as err:
-                logger.warning('Unable to Classify {}'.format(record))
-                logger.debug(err.message)
+            except Exception as e:
+                logger.warning(f'Unable to classify {record} due to {e}')
 
     def classify_record_by_metadata_v2(self, identifier, identifier_type, author, title):
         search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
 
         related_oclc_bibs = self.oclc_catalog_manager.query_bibs(search_query)
 
+        if not len(related_oclc_bibs):
+            logger.warning(f'No OCLC bibs returned for query {search_query}')
+
         for related_oclc_bib in related_oclc_bibs:
-            oclc_number = related_oclc_bib['identifier']['oclcNumber']
-            owi_number = related_oclc_bib['work']['id']
+            oclc_number = related_oclc_bib.get('identifier', {}).get('oclcNumber')
+            owi_number = related_oclc_bib.get('work', {}).get('id')
+
+            if not oclc_number or not owi_number:
+                logger.warning(f'Unable to get identifiers for bib: {related_oclc_bib}')
+                continue
             
             if self.check_if_classify_work_fetched(owi_number=owi_number):
                 continue
@@ -194,6 +200,7 @@ class ClassifyProcess(CoreProcess):
 
         for oclcNo, updateReq in checkedIDs:
             if updateReq is False:
+                logger.debug(f'Skipping catalog lookup process for OCLC number {oclcNo}')
                 continue
 
             self.sendCatalogLookupMessage(oclcNo, owiNo)
@@ -202,13 +209,11 @@ class ClassifyProcess(CoreProcess):
         if counter > 0:
             self.setIncrementerRedis('oclcCatalog', 'API', amount=counter)
 
-    def sendCatalogLookupMessage(self, oclcNo, owiNo):
-        logger.debug('Sending OCLC# {} to queue'.format(oclcNo))
-        self.sendMessageToQueue(
-            self.rabbitQueue,
-            self.rabbitRoute,
-            {'oclcNo': oclcNo, 'owiNo': owiNo}
-        )
+    def sendCatalogLookupMessage(self, oclc_number, owiNo):
+        catalog_lookup_message = { 'oclcNo': oclc_number, 'owiNo': owiNo }
+        logger.debug(f'Sending catalog lookup message {catalog_lookup_message} to queue')
+        
+        self.sendMessageToQueue(self.rabbitQueue, self.rabbitRoute, catalog_lookup_message)
 
     def check_if_classify_work_fetched(self, owi_number: int) -> bool:
         return self.checkSetRedis('classifyWork', owi_number, 'owi')

@@ -42,6 +42,7 @@
 - Upgrading flask-cors
 - implement restApi testing using pytest
 - add search-a-collection test to rest_api tests
+- Improving error handling and logging to OCLC classify process
 
 ## Fixed
 

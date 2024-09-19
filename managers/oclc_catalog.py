@@ -74,7 +74,7 @@ class OCLCCatalogManager:
 
             return related_oclc_numbers
         except Exception as e:
-            logger.error(f'Failed to get related OCLC numbers for {oclc_number}', e)
+            logger.error(f'Failed to get related OCLC numbers for {oclc_number} due to {e}')
             return related_oclc_numbers
         
     def _get_other_editions(self, oclc_number: int, offset: int=0):
@@ -95,20 +95,19 @@ class OCLCCatalogManager:
                 }
             )
 
+            status_code = other_editions_response.status_code
+
             if other_editions_response.status_code != 200:
                 logger.warning(
-                            f'OCLC search bibs request for OCLC no {oclc_number} failed '
-                            f'with status {other_editions_response.status_code}')
-                try:
-                            oclc_error_type = other_editions_response.json()["type"]
-                            logger.debug(f'{oclc_number} request failure reason: {oclc_error_type}')
-                except (JSONDecodeError, KeyError):
-                    logger.debug(f'No OCLC error type given for {oclc_number} request')
+                    f'OCLC other editions request for OCLC number {oclc_number} failed with status: {status_code} '
+                    f'due to: {self._get_error_detail(other_editions_response)}'
+                )
+
                 return None
 
             return other_editions_response.json()
         except Exception as e:
-            logger.error(f'Failed to query other editions endpoint {other_editions_url}', e)
+            logger.error(f'Failed to query other editions endpoint {other_editions_url} due to {e}')
             return None
 
     def _get_oclc_number_from_bibs(self, oclc_number: int, oclc_bibs) -> int:
@@ -140,7 +139,7 @@ class OCLCCatalogManager:
 
             return bibs
         except Exception as e:
-            logger.error(f'Failed to query search bibs with query {query}', e)
+            logger.error(f'Failed to query search bibs with query {query} due to {e}')
             return bibs
 
     def _search_bibs(self, query: str, offset: int=0):
@@ -161,19 +160,19 @@ class OCLCCatalogManager:
                 }
             )
 
-            if bibs_response.status_code != 200:
+            status_code = bibs_response.status_code
+
+            if status_code != 200:
                 logger.warning(
-                            f'OCLC search bibs request for query {query} failed '
-                            f'with status {bibs_response.status_code}')
-                try:
-                            oclc_error_type = bibs_response.json()["type"]
-                            logger.debug(f'Query failure reason: {oclc_error_type}')
-                except (JSONDecodeError, KeyError):
-                    logger.debug('No OCLC error type given')
+                    f'OCLC search bibs request for query {query} failed with status: {status_code} '
+                    f'due to: {self._get_error_detail(bibs_response)}'
+                )
+                
                 return None
+            
             return bibs_response.json()
         except Exception as e:
-            logger.error(f'Failed to query {bibs_endpoint} with query {query}. Exception: {e}')
+            logger.error(f'Failed to query {bibs_endpoint} with query {query} due to {e}')
             return None
 
     def generate_search_query(self, identifier=None, identifier_type=None, title=None, author=None):
@@ -195,6 +194,14 @@ class OCLCCatalogManager:
 
     def _generate_title_author_query(self, title, author):
         return f"ti:{title} au:{author}"
+    
+    def _get_error_detail(oclc_response) -> Optional[str]:
+        default_error_detail = 'unknown'
+
+        try:
+            return oclc_response.json().get('detail', default_error_detail)
+        except Exception:
+            return default_error_detail
 
 class OCLCCatalogError(Exception):
     def __init__(self, message=None):
