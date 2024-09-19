@@ -139,6 +139,8 @@ class ClassifyProcess(CoreProcess):
 
             related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(oclc_number=oclc_number)
 
+            logger.info(f'Found {len(related_oclc_numbers)} related OCLC numbers for OCLC number: {oclc_number}')
+
             oclc_record = OCLCBibMapping(
                 oclc_bib=related_oclc_bib, 
                 related_oclc_numbers=related_oclc_numbers

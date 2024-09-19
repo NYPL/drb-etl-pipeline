@@ -160,17 +160,10 @@ class CatalogMapping(XMLMapping):
         self.record.source = 'oclcCatalog'
         self.record.source_id = self.record.identifiers[0]
         self.record.frbr_status = 'complete'
-
-        logger.info(f'Formatting OCLC Catalog record with id: {self.record.source_id}')
-
-        # Parse language field
-        logger.debug('Parsing ISO lang code from 008 fixed field')
+        
         _, _, lang_3, *_ = tuple(self.record.languages[0].split('|'))
         self.record.languages = [('||{}'.format(lang_3[35:38]))]
-
-        # Parse has_part fields (fetch only top 10 for perfomance reasons)
-        logger.debug('Parsing has_part links for valid/resolvable URLs')
-
+        
         self.record.has_part = self.record.has_part[:10]
 
         self.record.has_part = list(filter(None, [
