@@ -51,12 +51,13 @@ class ClassifyProcess(CoreProcess):
         self.commitChanges()
 
     def classifyRecords(self, full=False, startDateTime=None):
-        baseQuery = self.session.query(Record)\
-            .filter(
-                Record.source != 'oclcClassify'
-                and Record.source != 'oclcCatalog'
-            )\
-            .filter(Record.frbr_status == 'to_do')
+        baseQuery = (
+            self.session.query(Record)
+                .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')
+                .filter(Record.frbr_status == 'to_do')
+                # TODO: fill in source_id to test against a specific record
+                .filter(Record.source_id == '')
+        )
 
         if full is False:
             if not startDateTime:
