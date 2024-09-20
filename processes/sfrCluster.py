@@ -46,6 +46,7 @@ class ClusterProcess(CoreProcess):
                 .filter(Record.cluster_status == False)
                 .filter(Record.source != 'oclcClassify')
                 .filter(Record.source != 'oclcCatalog')
+                # TODO: fill in source_id to test against a specific record
                 .filter(Record.source_id == '')
         )
 
