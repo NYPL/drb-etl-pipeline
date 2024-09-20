@@ -64,10 +64,11 @@ class CatalogProcess(CoreProcess):
         catalogXML = self.oclcCatalogManager.query_catalog(oclcNo)
 
         if not catalogXML:
+            logger.warning(f'Unable to get catalog XML for OCLC number {oclcNo}')
             return
         
         self.parseCatalogRecord(catalogXML, oclcNo, owiNo)
-
+        logger.info(f'Processed OCLC catalog query for OCLC number {oclcNo}')
 
     def parseCatalogRecord(self, catalogXML, oclcNo, owiNo):
         try:

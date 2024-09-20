@@ -19,28 +19,27 @@ class OCLCCatalogManager:
     BEST_MATCH = 'bestMatch'
 
     def __init__(self):
-        self.oclcKey = os.environ['OCLC_API_KEY']
-        self.attempts = 0
+        self.oclc_key = os.environ['OCLC_API_KEY']
 
-    def query_catalog(self, oclcNo):
-        catalog_response = None
-        self.attempts += 1
-        catalog_query = self.CATALOG_URL.format(oclcNo, self.oclcKey)
+    def query_catalog(self, oclc_no):
+        catalog_query = self.CATALOG_URL.format(oclc_no, self.oclc_key)
 
-        if self.attempts > 3:
-            return catalog_response
+        for _ in range(0, 3):
+            try:
+                catalog_response = requests.get(catalog_query, timeout=3)
 
-        try:
-            catalog_response = requests.get(catalog_query, timeout=3)
-        except (Timeout, ConnectionError):
-            logger.warning(f'Failed to query URL {catalog_query}')
-            return self.query_catalog(oclcNo)
+                if catalog_response.status_code != 200:
+                    logger.warning(f'OCLC catalog request failed with status {catalog_response.status_code}')
+                    return None
 
-        if catalog_response.status_code != 200:
-            logger.warning(f'OCLC Catalog Request failed with status {catalog_response.status_code}')
-            return None
-
-        return catalog_response.text
+                return catalog_response.text
+            except (Timeout, ConnectionError):
+                logger.warning(f'Could not connect to {catalog_query} or timed out')
+            except Exception as e:
+                logger.error(f'Failed to query catalog with query {catalog_query} due to {e}')
+                return None
+            
+        return None
 
     def get_related_oclc_numbers(self, oclc_number: int) -> list[int]:
         related_oclc_numbers = []
