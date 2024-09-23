@@ -5,7 +5,7 @@ BASE_URL = "https://drb-api-qa.nypl.org"
 
 def test_get_collection():
 
-    url = BASE_URL + "/collection/3650664c-c8be-4d07-8d64-2d7003b02048"
+    url = BASE_URL + "/collection/list?sort=title"
     response = requests.get(url)
 
     assert response.status_code is not None
