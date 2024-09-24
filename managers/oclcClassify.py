@@ -86,39 +86,6 @@ class ClassifyManager:
         """
         return ' '.join(string.replace('\r', ' ').replace('\n', ' ').split())
 
-    def generateAuthorTitleURL(self):
-        """Generates an author/title query for Classify.
-        Raises:
-            DataError: Raised if no author is received, which can cause
-            unexpectedly large results to be returned for a query.
-        """
-        titleAuthorParam = 'title={}&author={}'.format(self.title, self.author)
-
-        self.query = "{}?{}".format(ClassifyManager.CLASSIFY_ROOT, titleAuthorParam)
-
-        self.addClassifyOptions()
-
-    def generateIdentifierURL(self):
-        """Creates a query based of an identifier and its type. If either field
-        is missing for this request, default to an author/title search.
-        """
-        self.query = "{}?{}={}".format(
-            ClassifyManager.CLASSIFY_ROOT,
-            self.identifierType,
-            self.identifier
-        )
-        self.addClassifyOptions()
-
-    def addClassifyOptions(self):
-        """Adds standard options to the Classify queries. "summary=false"
-        indicates that a full set of edition records should be returned with a
-        single work response and "maxRecs" controls the upper limit on the
-        number of possible editions returned with a work.
-        """
-        self.query = '{}&summary=false&startRec={}&maxRecs=500'.format(
-            self.query, self.start
-        )
-
     def execQuery(self):
         """Executes the constructed query against the OCLC endpoint
         Raises:
