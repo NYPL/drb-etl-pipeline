@@ -1,5 +1,4 @@
 import fasttext
-from lxml import etree
 import re
 import requests
 import os
@@ -102,72 +101,6 @@ class ClassifyManager:
         classifyResp.raise_for_status()
 
         self.rawXML = classifyResp.text
-
-    def parseXMLResponse(self):
-        try:
-            parseXML = etree.fromstring(self.rawXML.encode('utf-8'))
-        except Exception:
-            print('Classify returned invalid XML')
-            raise ClassifyError('Invalid XML received from Classify service')
-
-        # Check for the type of response we recieved
-        # 2: Single-Work Response
-        # 4: Multi-Work Response
-        # 101: Invalid Identifier
-        # 102: No Results found for query
-        # 200: Internal OCLC Classify API error
-        # Other: Raise Error
-        responseXML = parseXML.find('.//response', namespaces=self.NAMESPACE)
-        responseCode = int(responseXML.get('code'))
-
-        if responseCode == 102:
-            logger.info('Did not find any information for this query')
-            raise ClassifyError(message='No matching Classify records found')
-        elif responseCode == 200:
-            raise ClassifyError(message='Internal Classify API error encountered')
-        elif responseCode == 101:
-            logger.info('Invalid identifier received. Cleaning and retrying')
-            oldID = self.identifier
-            cleanIdentifier = ClassifyManager.cleanIdentifier(self.identifier)
-            if oldID == cleanIdentifier:
-                raise ClassifyError('Unable to query identifier, invalid')
-            multiRec = ClassifyManager(
-                iden=cleanIdentifier,
-                idenType=self.identifierType,
-                title=self.title,
-                author=self.author
-            )
-            return multiRec.getClassifyResponse()
-        elif responseCode == 2:
-            logger.info('Got Single Work, parsing work and edition data')
-
-            return [parseXML]
-        elif responseCode == 4:
-            logger.info('Got Multiwork response, iterate through works to get details')
-            works = parseXML.findall('.//work', namespaces=self.NAMESPACE)
-            outRecords = []
-            for work in works:
-                oclcID = work.get('wi')
-                oclcTitle = work.get('title', None)
-
-                if self.checkTitle(oclcTitle) is False:
-                    logger.debug('Found title mismatch with {}. Skipping'.format(
-                        oclcTitle
-                    ))
-                    continue
-
-                multiRec = ClassifyManager(
-                    iden=oclcID,
-                    idenType='oclc',
-                    title=oclcTitle,
-                    author=self.author
-                )
-                outRecords.append(multiRec.getClassifyResponse()[0])
-
-            return outRecords
-        else:
-            logger.warning(responseXML)
-            raise ClassifyError(message='Got unexpected response code')
 
     def checkTitle(self, oclcTitle):
         oclcCode = ClassifyManager.getStrLang(oclcTitle)
