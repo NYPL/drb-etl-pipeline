@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta, timezone
 import os
 import newrelic.agent
+import re
 
 from .core import CoreProcess
-from managers import ClassifyManager, OCLCCatalogManager
-from managers.oclc_catalog import OCLCCatalogError
-from managers.oclcClassify import ClassifyError
+from managers import OCLCCatalogManager
 from mappings.oclcClassify import ClassifyMapping
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
@@ -89,10 +88,11 @@ class ClassifyProcess(CoreProcess):
     def updateClassifiedRecordsStatus(self):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
-    def frbrizeRecord(self, record): 
-        queryableIDs = ClassifyManager.getQueryableIdentifiers(
+    def frbrizeRecord(self, record):
+        queryableIDs = list(filter(
+            lambda x: re.search(r'\|(?:isbn|issn|oclc)$', x) != None,
             record.identifiers
-        )
+        ))
 
         if len(queryableIDs) < 1:
             queryableIDs = [None]
@@ -147,44 +147,6 @@ class ClassifyProcess(CoreProcess):
             self.addDCDWToUpdateList(oclc_record)
             self.fetchOCLCCatalogRecords(oclc_record.record.identifiers)
 
-    def classifyRecordByMetadata(self, identifier, idType, author, title):
-        classifier = ClassifyManager(
-            iden=identifier, idenType=idType, author=author, title=title
-        )
-
-        for classifyXML in classifier.getClassifyResponse():
-            if self.checkIfClassifyWorkFetched(classifyXML) is True:
-                logger.info(
-                    'Skipping Duplicate Classify Record {} ({}:{})'.format(
-                        title, identifier, idType
-                    )
-                )
-                continue
-
-            classifier.checkAndFetchAdditionalEditions(classifyXML)
-
-            self.createClassifyDCDWRecord(
-                classifyXML, classifier.addlIds, identifier, idType
-            )
-
-    def createClassifyDCDWRecord(
-        self, classifyXML, additionalOCLCs, identifier, idType
-    ):
-        classifyRec = ClassifyMapping(
-            classifyXML,
-            {'oclc': 'http://classify.oclc.org'},
-            {},
-            (identifier, idType)
-        )
-
-        classifyRec.applyMapping()
-
-        classifyRec.extendIdentifiers(additionalOCLCs)
-
-        self.addDCDWToUpdateList(classifyRec)
-
-        self.fetchOCLCCatalogRecords(classifyRec.record.identifiers)
-
     def fetchOCLCCatalogRecords(self, identifiers):
         owiNo, _ = tuple(identifiers[0].split('|'))
 
@@ -212,15 +174,8 @@ class ClassifyProcess(CoreProcess):
     def sendCatalogLookupMessage(self, oclc_number, owiNo):
         catalog_lookup_message = { 'oclcNo': oclc_number, 'owiNo': owiNo }
         logger.debug(f'Sending catalog lookup message {catalog_lookup_message} to queue')
-        
+
         self.sendMessageToQueue(self.rabbitQueue, self.rabbitRoute, catalog_lookup_message)
 
     def check_if_classify_work_fetched(self, owi_number: int) -> bool:
         return self.checkSetRedis('classifyWork', owi_number, 'owi')
-
-    def checkIfClassifyWorkFetched(self, classifyXML):
-        workOWI = classifyXML.find(
-            './/work', namespaces=ClassifyManager.NAMESPACE
-        ).attrib['owi']
-
-        return self.checkSetRedis('classifyWork', workOWI, 'owi')
