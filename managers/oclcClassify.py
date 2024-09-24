@@ -120,10 +120,6 @@ class ClassifyManager:
 
         return True
 
-    def checkAndFetchAdditionalEditions(self, classifyXML):
-        if len(classifyXML.findall('.//oclc:edition', namespaces=self.NAMESPACE)) >= 500:
-            self.fetchAdditionalIdentifiers()
-
     @classmethod
     def getStrLang(cls, string):
         try:
