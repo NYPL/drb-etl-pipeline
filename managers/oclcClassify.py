@@ -124,25 +124,6 @@ class ClassifyManager:
         if len(classifyXML.findall('.//oclc:edition', namespaces=self.NAMESPACE)) >= 500:
             self.fetchAdditionalIdentifiers()
 
-    def fetchAdditionalIdentifiers(self):
-        xpathNamespace = dict(list(filter(lambda x: x[0] is not None, self.NAMESPACE.items())))
-
-        while True:
-            self.start = self.start + 500
-            print('Fetching editions {} to {}'.format(self.start, self.start + 500))
-
-            self.generateQueryURL()
-            self.execQuery()
-
-            nextPageXML = etree.fromstring(self.rawXML.encode('utf-8'))
-
-            oclcNos = nextPageXML.xpath('.//oclc:editions/oclc:edition/@oclc', namespaces=xpathNamespace)
-
-            if len(oclcNos) < 1:
-                break
-
-            self.addlIds.extend(['{}|oclc'.format(oclc) for oclc in oclcNos])
-
     @classmethod
     def getStrLang(cls, string):
         try:
