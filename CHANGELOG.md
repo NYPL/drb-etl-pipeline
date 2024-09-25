@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Unreleased version -- v0.14.1
+
+## Added
+
+- Add get-collection-list to rest_api tests
+
 ## 2024-09-23 v0.14.0
 
 ## Added
@@ -43,6 +49,7 @@
 - implement restApi testing using pytest
 - add search-a-collection test to rest_api tests
 - Improving error handling and logging to OCLC classify process
+- add get-collection-list to rest_api tests
 
 ## Fixed
 
