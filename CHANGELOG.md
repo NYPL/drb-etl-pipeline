@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Unreleased version -- v0.14.1
+
+## Added
+
+- Add get-collection-list to rest_api tests
+
 ## Unreleased version -- v0.13.2
 
 ## Added
