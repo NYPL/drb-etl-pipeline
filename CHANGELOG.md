@@ -6,7 +6,7 @@
 
 - Add get-collection-list to rest_api tests
 
-## Unreleased version -- v0.13.2
+## 2024-09-23 v0.14.0
 
 ## Added
 
