@@ -271,5 +271,5 @@ class TestOCLCClassifyProcess:
             'test_oclc_queue', 'test_oclc_key', {'oclcNo': '1', 'owiNo': '1'}
         )
 
-    def test_get_queryable_identifiers(self):
-        assert ClassifyProcess._get_queryable_identifiers(['1|isbn', '2|test']) == ['1|isbn']
+    def test_get_queryable_identifiers(self, testInstance):
+        assert testInstance._get_queryable_identifiers(['1|isbn', '2|test']) == ['1|isbn']
