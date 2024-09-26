@@ -5,7 +5,6 @@ import re
 
 from .core import CoreProcess
 from managers import OCLCCatalogManager
-from mappings.oclcClassify import ClassifyMapping
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
 from logger import createLog
