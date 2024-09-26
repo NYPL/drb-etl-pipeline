@@ -176,7 +176,7 @@ class ClassifyProcess(CoreProcess):
     def check_if_classify_work_fetched(self, owi_number: int) -> bool:
         return self.checkSetRedis('classifyWork', owi_number, 'owi')
 
-    def _get_queryable_identifiers(identifiers):
+    def _get_queryable_identifiers(self, identifiers):
         return list(filter(
             lambda x: re.search(r'\|(?:isbn|issn|oclc)$', x) != None,
             identifiers
