@@ -4,7 +4,10 @@ import requests
 import re
 from requests.exceptions import ConnectionError, InvalidURL, MissingSchema, ReadTimeout 
 
+from logger import createLog
 import managers.parsers as parsers
+
+logger = createLog(__name__)
 
 
 class DOABLinkManager:
@@ -42,7 +45,7 @@ class DOABLinkManager:
             try:
                 parser = self.selectParser(partURI, partType)
             except LinkError:
-                print('Unable to parse {}'.format(partURI))
+                logger.debug(f'Unable to parse link {partURI}')
                 continue
 
             if parser.uri in self.linksProcessed:

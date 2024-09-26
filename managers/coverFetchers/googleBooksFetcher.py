@@ -2,8 +2,10 @@ import os
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
+from logger import createLog
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
-from model import OpenLibraryCover
+
+logger = createLog(__name__)
 
 
 class GoogleBooksFetcher(AbstractFetcher):
@@ -33,7 +35,7 @@ class GoogleBooksFetcher(AbstractFetcher):
         return False
 
     def fetchVolume(self, value, source):
-        print('Fetching Google Books cover for {}({})'.format(value, source))
+        logger.info(f'Fetching Google Books cover for {value} ({source})')
 
         googleSearchURI = self.GOOGLE_BOOKS_SEARCH.format(source, value, self.apiKey)
 

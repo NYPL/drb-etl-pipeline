@@ -1,8 +1,11 @@
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
+from logger import createLog
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
 from model import OpenLibraryCover
+
+logger = createLog(__name__)
 
 
 class OpenLibraryFetcher(AbstractFetcher):
@@ -30,7 +33,7 @@ class OpenLibraryFetcher(AbstractFetcher):
         return False
 
     def fetchVolumeCover(self, value, source):
-        print('Fetching openLibrary cover for {}({})'.format(value, source))
+        logger.info(f'Fetching openLibrary cover for {value} ({source})')
 
         coverRow = self.session.query(OpenLibraryCover)\
             .filter(OpenLibraryCover.name == source)\

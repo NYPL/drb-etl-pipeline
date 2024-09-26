@@ -5,6 +5,7 @@
 ## Added
 
 - Add get-collection-list to rest_api tests
+- Changed print statements to New Relic logging
 
 ## 2024-09-23 v0.14.0
 
