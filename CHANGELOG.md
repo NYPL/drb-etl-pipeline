@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Unreleased version
+
+## Removed
+- Deleted unused code and unit tests following replacement of OCLC Classify service
+
 ## 2024-09-23 v0.14.0
 
 ## Added
