@@ -178,7 +178,7 @@ class TestOCLCClassifyProcess:
         mockBulkSave.assert_called_once_with(['rec1', 'rec2', 'rec3'])
 
     def test_frbrizeRecord_success_valid_author(self, testInstance, testRecord, mocker):
-        mockIdentifiers = mocker.patch.object(ClassifyManager, 'getQueryableIdentifiers')
+        mockIdentifiers = mocker.patch.object(ClassifyProcess, '_get_queryable_identifiers')
         mockIdentifiers.return_value = ['1|test']
 
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
