@@ -178,6 +178,6 @@ class ClassifyProcess(CoreProcess):
 
     def _get_queryable_identifiers(self, identifiers):
         return list(filter(
-            lambda x: re.search(r'\|(?:isbn|issn|oclc)$', x) != None,
+            lambda id: re.search(r'\|(?:isbn|issn|oclc)$', id) != None,
             identifiers
         ))
