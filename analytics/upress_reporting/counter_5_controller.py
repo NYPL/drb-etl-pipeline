@@ -24,7 +24,6 @@ class Counter5Controller:
 
     def create_reports(self):
         print("Generating Counter 5 reports...")
-
         # TODO: aggregate log files
 
         # TODO: get all records and editions from publisher backlists stored in config
