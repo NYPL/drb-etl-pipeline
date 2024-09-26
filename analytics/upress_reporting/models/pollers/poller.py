@@ -59,13 +59,19 @@ class Poller(ABC):
                 print("No logs exist past today's date: ", today.strftime("%b %d, %Y"))
                 break
 
-            file_name = f"analytics/upress_reporting/log_files/{bucket_name}/{date.strftime('%Y/%m/%d')}/aggregated_log"
-            events_per_day = self.parse_log_file(file_name)
+            formatted_date = date.strftime('%Y/%m/%d')
+            file_name = f"analytics/upress_reporting/log_files/{bucket_name}/{formatted_date}/aggregated_log"
+
+            if not os.path.isfile(file_name):
+                print(f"There are no logs for {formatted_date}. Attempting to access logs beyond this date...")
+                continue
+
+            events_per_day = self.parse_aggregated_log_file(file_name)
             events.extend(events_per_day)
 
         return events
 
-    def parse_log_file(self, file_name):
+    def parse_aggregated_log_file(self, file_name):
         interactions_in_batch = []
 
         with open(file_name, "r") as aggregated_log_file:
