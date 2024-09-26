@@ -88,10 +88,7 @@ class ClassifyProcess(CoreProcess):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
     def frbrizeRecord(self, record):
-        queryableIDs = list(filter(
-            lambda x: re.search(r'\|(?:isbn|issn|oclc)$', x) != None,
-            record.identifiers
-        ))
+        queryableIDs = self._get_queryable_identifiers(record.identifiers)
 
         if len(queryableIDs) < 1:
             queryableIDs = [None]
@@ -178,3 +175,9 @@ class ClassifyProcess(CoreProcess):
 
     def check_if_classify_work_fetched(self, owi_number: int) -> bool:
         return self.checkSetRedis('classifyWork', owi_number, 'owi')
+
+    def _get_queryable_identifiers(identifiers):
+        return list(filter(
+            lambda x: re.search(r'\|(?:isbn|issn|oclc)$', x) != None,
+            identifiers
+        ))
