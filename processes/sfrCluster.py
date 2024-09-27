@@ -224,7 +224,7 @@ class ClusterProcess(CoreProcess):
         esWorks = []
 
         for dbWork in dbWorks:
-            print('Generating ES for {}'.format(dbWork))
+            logger.debug('Generating ES for {}'.format(dbWork))
             elasticManager = SFRElasticRecordManager(dbWork)
             elasticManager.getCreateWork()
             esWorks.append(elasticManager.work)

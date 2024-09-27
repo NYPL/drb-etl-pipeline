@@ -40,7 +40,7 @@ class HathiFetcher(AbstractFetcher):
         return False
 
     def fetchVolumeCover(self, htid):
-        print('Fetching hathi cover for {}'.format(htid))
+        logger.info(f'Fetching hathi cover for {htid}')
 
         metsURL = '{}/structure/{}?format=json&v=2'.format(self.apiRoot, htid)
 

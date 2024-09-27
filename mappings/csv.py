@@ -1,5 +1,7 @@
 from .core import Core
+from logger import createLog
 
+logger = createLog(__name__)
 
 class CSVMapping(Core):
     def __init__(self, source, statics):
@@ -20,7 +22,7 @@ class CSVMapping(Core):
                         for s in structure
                     ]
             except IndexError:
-                print('Missing data from field {}'.format(field))
+                logger.debug(f'Missing CSV data from field {field}')
                 continue
 
             setattr(newRecord, field, fieldData)
