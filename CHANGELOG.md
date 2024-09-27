@@ -1,6 +1,14 @@
 # CHANGELOG
 
-## Unreleased version -- v0.13.2
+## Unreleased version -- v0.14.1
+
+## Added
+- Add get-collection-list to rest_api tests
+
+## Removed
+- Deleted unused code and unit tests following replacement of OCLC Classify service
+
+## 2024-09-23 v0.14.0
 
 ## Added
 
@@ -41,6 +49,9 @@
 - Adding more specific logging and exception handling around OCLC manager errors
 - Upgrading flask-cors
 - implement restApi testing using pytest
+- add search-a-collection test to rest_api tests
+- Improving error handling and logging to OCLC classify process
+- add get-collection-list to rest_api tests
 
 ## Fixed
 
@@ -50,6 +61,7 @@
 - Fixed edition API ID param
 - Fixed usage type bug
 - Fixed OCLC bib author mapping
+- Fixed OCLC catalog query attempts bug
 - Implemented business analyst feedback on Counter 5 report formatting
 
 ## 2024-08-06 -- v0.13.1
