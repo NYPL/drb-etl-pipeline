@@ -36,7 +36,8 @@ def aggregate_logs_in_day(s3_bucket: str, s3_path: str, folder_name: str,
 
 def aggregate_logs_in_period(date_range: pandas.DatetimeIndex, s3_bucket: str,
                              s3_path: str, regex: str, referrer_url: str):
-    shutil.rmtree(f"analytics/upress_reporting/log_files/{s3_bucket}", ignore_errors=True)
+    shutil.rmtree(
+        f"analytics/upress_reporting/log_files/{s3_bucket}", ignore_errors=True)
     today = pandas.Timestamp.today()
 
     for date in date_range:
