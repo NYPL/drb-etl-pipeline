@@ -5,7 +5,7 @@ from ..elastic import ElasticClient
 from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
 from ..opds2 import Feed, Link, Metadata, Navigation, Publication, Facet, Group
-from logging import logger
+from app_logging import logger
 
 opds = Blueprint('opds', __name__, url_prefix='/opds')
 

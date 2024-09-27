@@ -5,7 +5,7 @@ import os
 import requests
 
 from .core import CoreProcess
-from logging import logger
+from app_logging import logger
 from mappings.doab import DOABMapping
 from mappings.core import MappingError
 from managers import DOABLinkManager

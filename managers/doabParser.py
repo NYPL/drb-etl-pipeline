@@ -4,7 +4,7 @@ import requests
 import re
 from requests.exceptions import ConnectionError, InvalidURL, MissingSchema, ReadTimeout 
 
-from logging import logger
+from app_logging import logger
 import managers.parsers as parsers
 
 

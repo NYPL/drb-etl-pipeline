@@ -7,7 +7,7 @@ import re
 from .core import CoreProcess
 from managers import GutenbergManager
 from mappings.gutenberg import GutenbergMapping
-from logging import logger
+from app_logging import logger
 
 
 class GutenbergProcess(CoreProcess):

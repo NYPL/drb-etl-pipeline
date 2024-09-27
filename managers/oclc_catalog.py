@@ -3,7 +3,7 @@ import requests
 from requests.exceptions import Timeout, ConnectionError
 from typing import Optional
 
-from logging import logger
+from app_logging import logger
 from managers.oclc_auth import OCLCAuthManager
 
 

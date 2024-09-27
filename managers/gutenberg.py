@@ -5,7 +5,7 @@ import re
 import requests
 import yaml
 
-from logging import logger
+from app_logging import logger
 
 
 class GutenbergManager:

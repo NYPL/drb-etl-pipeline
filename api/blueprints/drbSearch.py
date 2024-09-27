@@ -2,7 +2,7 @@ from flask import Blueprint, request, current_app
 from ..elastic import ElasticClient, ElasticClientError
 from ..db import DBClient
 from ..utils import APIUtils
-from logging import logger
+from app_logging import logger
 
 
 search = Blueprint('search', __name__, url_prefix='/search')

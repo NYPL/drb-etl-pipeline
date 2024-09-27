@@ -7,7 +7,7 @@ from .core import CoreProcess
 from managers import OCLCCatalogManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
-from logging import logger
+from app_logging import logger
 
 
 class ClassifyProcess(CoreProcess):

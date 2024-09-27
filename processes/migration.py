@@ -1,6 +1,6 @@
 from alembic import config
 from .core import CoreProcess
-from logging import logger
+from app_logging import logger
 
 
 class MigrationProcess(CoreProcess):

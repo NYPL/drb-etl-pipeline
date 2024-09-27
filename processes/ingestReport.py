@@ -4,7 +4,7 @@ from sqlalchemy import func
 from .core import CoreProcess
 from model import Work, Edition, Item, Record
 from managers import SmartSheetManager
-from logging import logger
+from app_logging import logger
 
 
 class IngestReportProcess(CoreProcess):

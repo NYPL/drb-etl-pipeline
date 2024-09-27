@@ -9,7 +9,7 @@ from requests.exceptions import ReadTimeout, HTTPError
 from .core import CoreProcess
 from mappings.muse import MUSEMapping
 from managers import MUSEError, MUSEManager
-from logging import logger
+from app_logging import logger
 
 
 class MUSEProcess(CoreProcess):

@@ -7,7 +7,7 @@ import re
 from uuid import uuid4
 
 from model import Work, Edition, Item, Identifier, Link, Rights
-from logging import logger
+from app_logging import logger
 
 
 class SFRRecordManager:

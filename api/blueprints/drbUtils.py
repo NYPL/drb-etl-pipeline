@@ -7,7 +7,7 @@ from urllib.parse import unquote_plus, urlparse
 from ..db import DBClient
 from ..elastic import ElasticClient
 from ..utils import APIUtils
-from logging import logger
+from app_logging import logger
 
 
 utils = Blueprint('utils', __name__, url_prefix='/utils')

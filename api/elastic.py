@@ -5,7 +5,7 @@ import os
 import re
 
 from .utils import APIUtils
-from logging import logger
+from app_logging import logger
 
 
 class ElasticClient():

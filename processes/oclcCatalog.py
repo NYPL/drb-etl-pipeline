@@ -6,7 +6,7 @@ from time import sleep
 from .core import CoreProcess
 from managers import OCLCCatalogManager
 from mappings.oclcCatalog import CatalogMapping
-from logging import logger
+from app_logging import logger
 
 
 class CatalogProcess(CoreProcess):

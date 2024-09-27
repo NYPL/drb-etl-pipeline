@@ -7,7 +7,7 @@ import os
 from sqlalchemy.exc import DataError
 from waitress import serve
 
-from logging import logger
+from app_logging import logger
 from .blueprints import (
     search, work, info, edition, utils, link, opds, collection, citation, fulfill
 )

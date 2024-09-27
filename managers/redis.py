@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import os
 from redis import Redis
 
-from logging import logger
+from app_logging import logger
 
 
 class RedisManager:

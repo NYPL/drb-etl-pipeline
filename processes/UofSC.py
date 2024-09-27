@@ -6,7 +6,7 @@ from .core import CoreProcess
 from mappings.core import MappingError
 from mappings.UofSC import UofSCMapping
 from managers import WebpubManifest
-from logging import logger
+from app_logging import logger
 
 
 class UofSCProcess(CoreProcess):

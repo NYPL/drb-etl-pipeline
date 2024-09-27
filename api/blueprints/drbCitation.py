@@ -2,7 +2,7 @@ from flask import Blueprint, request, current_app
 from ..db import DBClient
 from ..utils import APIUtils
 from ..validation_utils import is_valid_uuid
-from logging import logger
+from app_logging import logger
 from datetime import date
 
 citation = Blueprint('citation', __name__, url_prefix='/citation')

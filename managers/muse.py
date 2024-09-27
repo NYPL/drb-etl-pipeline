@@ -5,7 +5,7 @@ import requests
 from requests.exceptions import ReadTimeout, ConnectionError, HTTPError
 
 from managers import WebpubManifest
-from logging import logger
+from app_logging import logger
 
 
 class MUSEManager:

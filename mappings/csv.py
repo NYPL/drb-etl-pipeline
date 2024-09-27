@@ -1,5 +1,5 @@
 from .core import Core
-from logging import logger
+from app_logging import logger
 
 
 class CSVMapping(Core):

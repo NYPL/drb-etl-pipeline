@@ -7,7 +7,7 @@ from math import ceil
 from model import Collection, Edition
 import re
 from model.postgres.collection import COLLECTION_EDITIONS
-from logging import logger
+from app_logging import logger
 from botocore.exceptions import ClientError
 from urllib.parse import urlparse
 

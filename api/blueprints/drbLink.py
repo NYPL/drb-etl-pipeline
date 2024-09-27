@@ -2,7 +2,7 @@ from flask import Blueprint, current_app, request
 from ..db import DBClient
 from ..utils import APIUtils
 from ..validation_utils import is_valid_numeric_id
-from logging import logger
+from app_logging import logger
 
 link = Blueprint('link', __name__, url_prefix='/link')
 

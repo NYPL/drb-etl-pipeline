@@ -7,7 +7,7 @@ import mimetypes
 import os
 from zipfile import ZipFile
 
-from logging import logger
+from app_logging import logger
 
 
 class S3Manager:

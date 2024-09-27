@@ -4,7 +4,7 @@ import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
 from mappings.xml import XMLMapping
-from logging import logger
+from app_logging import logger
 
 
 class CatalogMapping(XMLMapping):

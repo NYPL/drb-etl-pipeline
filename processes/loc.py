@@ -6,7 +6,7 @@ from .core import CoreProcess
 from mappings.core import MappingError
 from mappings.loc import LOCMapping
 from managers import WebpubManifest
-from logging import logger
+from app_logging import logger
 from datetime import datetime, timedelta, timezone
 
 LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=50&at=results&sb=timestamp_desc'

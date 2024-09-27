@@ -8,7 +8,7 @@ from urllib.error import HTTPError
 from mappings.core import MappingError
 from mappings.UofM import UofMMapping
 from managers import WebpubManifest
-from logging import logger
+from app_logging import logger
 
 
 class UofMProcess(CoreProcess):

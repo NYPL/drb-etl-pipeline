@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 from .core import CoreProcess
 from datetime import datetime, timedelta, timezone
 from model import Link
-from logging import logger
+from app_logging import logger
 
 
 class FulfillURLManifestProcess(CoreProcess):

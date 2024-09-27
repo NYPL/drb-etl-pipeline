@@ -8,7 +8,7 @@ from requests.exceptions import ReadTimeout, HTTPError
 
 from .core import CoreProcess
 from mappings.hathitrust import HathiMapping
-from logging import logger
+from app_logging import logger
 
 
 class HathiTrustProcess(CoreProcess):

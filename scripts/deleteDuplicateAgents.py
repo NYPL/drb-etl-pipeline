@@ -5,7 +5,6 @@ import logging
 from model import Work, Edition
 from managers import DBManager, SFRRecordManager
 from Levenshtein import jaro_winkler
-from logging import logger
 from sqlalchemy import or_, func
 
 def main(dryRun=False):

@@ -3,7 +3,7 @@ import os
 import requests
 from requests.exceptions import ReadTimeout
 
-from logging import logger
+from app_logging import logger
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
 
 

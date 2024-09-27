@@ -12,7 +12,7 @@ from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.exceptions import ConvergenceWarning
 
-from logging import logger
+from app_logging import logger
 
 
 class FeatureSelector(BaseEstimator, TransformerMixin):

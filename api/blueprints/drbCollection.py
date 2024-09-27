@@ -12,7 +12,7 @@ from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
 from ..validation_utils import is_valid_uuid
 from ..opds2 import Feed, Publication
-from logging import logger
+from app_logging import logger
 from model import Work, Edition
 from model.postgres.collection import COLLECTION_EDITIONS
 

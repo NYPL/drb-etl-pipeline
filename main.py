@@ -5,7 +5,7 @@ import argparse
 import inspect
 
 from load_env import load_env_file
-from logging import logger
+from app_logging import logger
 
 #NEW_RELIC_LICENSE_KEY = Put license key here
 #ENVIRONMENT = Put environment here
