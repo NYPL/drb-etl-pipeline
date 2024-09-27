@@ -1,6 +1,6 @@
 import os
 import requests
-from requests.exceptions import Timeout, ConnectionError, JSONDecodeError
+from requests.exceptions import Timeout, ConnectionError
 from typing import Optional
 
 from logger import createLog

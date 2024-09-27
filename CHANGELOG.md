@@ -3,8 +3,10 @@
 ## Unreleased version -- v0.14.1
 
 ## Added
-
 - Add get-collection-list to rest_api tests
+
+## Removed
+- Deleted unused code and unit tests following replacement of OCLC Classify service
 
 ## 2024-09-23 v0.14.0
 
