@@ -7,9 +7,7 @@ from elasticsearch_dsl import connections, Index
 from elastic_transport import ConnectionTimeout
 
 from model import ESWork
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class ElasticsearchManager:

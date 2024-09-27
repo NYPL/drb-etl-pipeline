@@ -1,11 +1,9 @@
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
-from logger import createLog
+from logging import logger
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
 from model import OpenLibraryCover
-
-logger = createLog(__name__)
 
 
 class OpenLibraryFetcher(AbstractFetcher):

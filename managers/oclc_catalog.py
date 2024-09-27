@@ -3,11 +3,8 @@ import requests
 from requests.exceptions import Timeout, ConnectionError
 from typing import Optional
 
-from logger import createLog
+from logging import logger
 from managers.oclc_auth import OCLCAuthManager
-
-
-logger = createLog(__name__)
 
 
 class OCLCCatalogManager:

@@ -8,9 +8,7 @@ from .core import CoreProcess
 from mappings.core import MappingError
 from mappings.met import METMapping
 from managers import WebpubManifest
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class METProcess(CoreProcess):

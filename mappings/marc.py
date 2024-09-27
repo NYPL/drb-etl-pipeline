@@ -1,9 +1,7 @@
 import re
 
 from .core import Core
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class MARCMapping(Core):

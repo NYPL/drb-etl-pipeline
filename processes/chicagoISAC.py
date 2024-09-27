@@ -6,9 +6,8 @@ from .core import CoreProcess
 from mappings.core import MappingError
 from mappings.chicagoISAC import ChicagoISACMapping
 from managers import WebpubManifest
-from logger import createLog
+from logging import logger
 
-logger = createLog(__name__)
 
 class ChicagoISACProcess(CoreProcess):
 

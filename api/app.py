@@ -7,13 +7,11 @@ import os
 from sqlalchemy.exc import DataError
 from waitress import serve
 
-from logger import createLog
+from logging import logger
 from .blueprints import (
     search, work, info, edition, utils, link, opds, collection, citation, fulfill
 )
 from .utils import APIUtils
-
-logger = createLog(__name__)
 
 
 class FlaskAPI:

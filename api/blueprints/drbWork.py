@@ -2,11 +2,10 @@ from flask import Blueprint, request, current_app
 from ..db import DBClient
 from ..utils import APIUtils
 from ..validation_utils import is_valid_uuid
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 work = Blueprint('work', __name__, url_prefix='/work')
+
 
 @work.route('/<uuid>', methods=['GET'])
 def get_work(uuid):

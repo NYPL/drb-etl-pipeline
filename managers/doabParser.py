@@ -4,10 +4,8 @@ import requests
 import re
 from requests.exceptions import ConnectionError, InvalidURL, MissingSchema, ReadTimeout 
 
-from logger import createLog
+from logging import logger
 import managers.parsers as parsers
-
-logger = createLog(__name__)
 
 
 class DOABLinkManager:

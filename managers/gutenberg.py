@@ -5,9 +5,7 @@ import re
 import requests
 import yaml
 
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class GutenbergManager:

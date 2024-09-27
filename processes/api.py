@@ -1,8 +1,6 @@
 from .core import CoreProcess
 from api.app import FlaskAPI
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class APIProcess(CoreProcess):

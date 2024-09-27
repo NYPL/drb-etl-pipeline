@@ -1,6 +1,4 @@
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 
 def fetchAutomaticCollectionEditions(dbClient, esClient, collectionId, page: int, perPage: int):

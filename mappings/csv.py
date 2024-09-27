@@ -1,7 +1,6 @@
 from .core import Core
-from logger import createLog
+from logging import logger
 
-logger = createLog(__name__)
 
 class CSVMapping(Core):
     def __init__(self, source, statics):

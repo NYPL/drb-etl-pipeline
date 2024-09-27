@@ -3,10 +3,7 @@ import os
 import requests
 from requests.exceptions import Timeout, ConnectionError
 
-from logger import createLog
-
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class OCLCAuthManager:

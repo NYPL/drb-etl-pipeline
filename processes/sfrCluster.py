@@ -7,10 +7,7 @@ from sqlalchemy.orm.exc import StaleDataError
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
 from model import Record, Work, Edition
-from logger import createLog
-
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class ClusterProcess(CoreProcess):

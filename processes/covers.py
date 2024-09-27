@@ -5,9 +5,7 @@ from .core import CoreProcess
 from managers import CoverManager
 from model import Edition, Link
 from model.postgres.edition import EDITION_LINKS
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class CoverProcess(CoreProcess):

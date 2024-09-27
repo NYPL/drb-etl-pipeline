@@ -4,9 +4,7 @@ from pika.credentials import PlainCredentials
 from pika.exceptions import ConnectionWrongStateError, StreamLostError, ChannelClosedByBroker
 import os
 
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class RabbitMQManager:

@@ -2,10 +2,8 @@ from flask import Blueprint, request, current_app
 from ..db import DBClient
 from ..utils import APIUtils
 from ..validation_utils import is_valid_uuid
-from logger import createLog
+from logging import logger
 from datetime import date
-
-logger = createLog(__name__)
 
 citation = Blueprint('citation', __name__, url_prefix='/citation')
 

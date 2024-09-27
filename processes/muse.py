@@ -9,10 +9,7 @@ from requests.exceptions import ReadTimeout, HTTPError
 from .core import CoreProcess
 from mappings.muse import MUSEMapping
 from managers import MUSEError, MUSEManager
-from logger import createLog
-
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class MUSEProcess(CoreProcess):

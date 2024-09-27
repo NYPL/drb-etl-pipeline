@@ -2,9 +2,7 @@ from itertools import zip_longest
 from lxml import etree
 
 from .core import Core
-from logger import createLog
-
-logger = createLog(__name__)
+from logging import logger
 
 
 class XMLMapping(Core):
