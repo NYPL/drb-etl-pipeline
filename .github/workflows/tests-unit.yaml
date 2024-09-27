@@ -5,15 +5,6 @@ on:
     actions: [ opened ]
 
 jobs:
-  changelog:
-    name: Updates Changelog
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: dangoslen/changelog-enforcer@v1.4.0
-        with:
-          changeLogPath: "CHANGELOG.md"
-          skipLabel: "no-changelog"
   test:
     runs-on: ubuntu-latest
     steps:
