@@ -54,7 +54,9 @@ class Counter5Report(ABC):
 
         df_unique.drop(columns=["Timestamp", "Interaction Type"], axis=1, inplace=True)
         df_unique.loc[:, monthly_columns] = df_unique[monthly_columns].fillna(0)
-        df_unique.loc[:, "Reporting Period Total"] = df_unique[monthly_columns].sum(axis=1)
+        
+        monthly_col_idx = df_unique.columns.get_loc(monthly_columns[0])
+        df_unique.insert(loc=monthly_col_idx, column="Reporting Period Total", value=df_unique[monthly_columns].sum(axis=1))
         
         return (df_unique.columns.tolist(), df_unique.to_dict(orient="records"))
     
@@ -92,16 +94,23 @@ class Counter5Report(ABC):
 
         df_unique.drop(columns=["Timestamp", "Interaction Type"], axis=1, inplace=True)
         df_unique.loc[:, monthly_columns] = df_unique[monthly_columns].fillna(0)
-        df_unique.loc[:, "Reporting Period Total"] = df_unique[monthly_columns].sum(axis=1)
+
+        monthly_col_idx = df_unique.columns.get_loc(monthly_columns[0])
+        print("Monthly col idx ", monthly_col_idx)
+        df_unique.insert(loc=monthly_col_idx, column="Reporting Period Total", value=df_unique[monthly_columns].sum(axis=1))
         
         return (df_unique.columns.tolist(), df_unique.to_dict(orient="records"))
     
     def build_header(self, report_name, report_description):
+        """TODO: Add further Record.source mappings to publishers as we advance 
+        in project (ex. University of Louisiana, Lafayette)"""
+        publisher_mappings = {"UofM": "University of Michigan", "mit": "MIT Press"}
+        
         return {
             "Report_Name": report_name,
             "Report_ID": self.generate_report_id(),
             "Report_Description": report_description,
-            "Publisher_Name": self.publisher,
+            "Publisher_Name": publisher_mappings.get(self.publisher, ""),
             "Reporting_Period": self._format_reporting_period_to_string(),
             "Created": self.created,
             "Created_By": "NYPL",
