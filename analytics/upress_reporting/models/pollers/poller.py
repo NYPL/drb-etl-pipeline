@@ -34,7 +34,7 @@ class Poller(ABC):
         )
         self.db_manager.generateEngine()
         self.db_manager.createSession()
-    
+
     def get_events(self, bucket_name, log_path, regex):
         if None in (bucket_name, log_path, self.referrer_url):
             error_message = (
@@ -51,15 +51,20 @@ class Poller(ABC):
         events = []
         today = pandas.Timestamp.today()
 
-        aggregate_logs.aggregate_logs_in_period(self.date_range, bucket_name, 
-                                                log_path, regex, self.referrer_url)
-    
+        aggregate_logs.aggregate_logs_in_period(date_range=self.date_range,
+                                                s3_bucket=bucket_name,
+                                                s3_path=log_path,
+                                                regex=regex,
+                                                referrer_url=self.referrer_url)
+
         for date in self.date_range:
             if date > today:
-                print("No logs exist past today's date: ", today.strftime("%b %d, %Y"))
+                print("No logs exist past today's date: ",
+                      today.strftime("%b %d, %Y"))
                 break
 
-            file_name = f"analytics/upress_reporting/log_files/{bucket_name}/{date.strftime('%Y/%m/%d')}/aggregated_log"
+            file_name = f"analytics/upress_reporting/log_files/{
+                bucket_name}/{date.strftime('%Y/%m/%d')}/aggregated_log"
             events_per_day = self.parse_log_file(file_name)
             events.extend(events_per_day)
 
@@ -97,16 +102,19 @@ class Poller(ABC):
             return flags if isinstance(flags, dict) else {}
         except json.decoder.JSONDecodeError as e:
             raise S3LogParsingError(e.msg)
-        
+
     def determine_usage(self, record):
         if record.has_part:
-            flags = [self.load_flags(tuple(link.split("|"))[4]) for link in record.has_part]
+            flags = [self.load_flags(tuple(link.split("|"))[4])
+                     for link in record.has_part]
 
             if any(flag.get('nypl_login', False) for flag in flags):
                 return UsageType.LIMITED_ACCESS
 
-            has_read_flag = any(flag.get('embed', False) or flag.get('reader', False) for flag in flags)
-            has_download_flag = any(flag.get('download', False) for flag in flags)
+            has_read_flag = any(flag.get('embed', False) or flag.get(
+                'reader', False) for flag in flags)
+            has_download_flag = any(flag.get('download', False)
+                                    for flag in flags)
 
             if has_read_flag and has_download_flag:
                 return UsageType.FULL_ACCESS
