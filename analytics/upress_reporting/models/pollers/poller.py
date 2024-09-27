@@ -51,8 +51,11 @@ class Poller(ABC):
         events = []
         today = pandas.Timestamp.today()
 
-        aggregate_logs.aggregate_logs_in_period(self.date_range, bucket_name,
-                                                log_path, regex, self.referrer_url)
+        aggregate_logs.aggregate_logs_in_period(date_range=self.date_range,
+                                                s3_bucket=bucket_name,
+                                                s3_path=log_path,
+                                                regex=regex,
+                                                referrer_url=self.referrer_url)
 
         for date in self.date_range:
             if date > today:

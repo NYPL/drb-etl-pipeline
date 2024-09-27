@@ -50,6 +50,7 @@
 - Fixed edition API ID param
 - Fixed usage type bug
 - Fixed OCLC bib author mapping
+- Implemented business analyst feedback on Counter 5 report formatting
 
 ## 2024-08-06 -- v0.13.1
 
