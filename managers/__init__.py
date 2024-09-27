@@ -5,7 +5,6 @@ from .gutenberg import GutenbergManager
 from .kMeans import KMeansManager
 from .oclc_auth import OCLCAuthManager
 from .oclc_catalog import OCLCCatalogManager
-from .oclcClassify import ClassifyManager
 from .nyplApi import NyplApiManager
 from .webpubManifest import WebpubManifest
 from .rabbitmq import RabbitMQManager
