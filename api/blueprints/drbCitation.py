@@ -40,8 +40,8 @@ def get_citation(uuid):
                     output_citations[format] = mla_citation
 
             return APIUtils.formatResponseObject(200, response_type, output_citations)
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception(f'Unable to get citation for work with id {uuid}')
         return APIUtils.formatResponseObject(500, response_type, { 'message': f'Unable to get citation for work with id {uuid}' })
 
 

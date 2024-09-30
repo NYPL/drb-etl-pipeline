@@ -34,7 +34,7 @@ def query():
         try:
             search_result = es_client.searchQuery(terms, page=search_page, perPage=search_size)
         except ElasticClientError as e:
-            logger.error(e)
+            logger.exception('Unable to execute search')
             return APIUtils.formatResponseObject(500, response_type, { 'message': 'Unable to execute search' })
 
         results = []
@@ -82,6 +82,6 @@ def query():
         db_client.closeSession()
 
         return APIUtils.formatResponseObject(200, response_type, data_block)
-    except Exception as e:
-        logger.error(e) 
+    except Exception:
+        logger.exception('Unable to execute search') 
         return APIUtils.formatResponseObject(500, response_type, { 'message': 'Unable to execute search' })

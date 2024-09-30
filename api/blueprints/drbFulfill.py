@@ -44,8 +44,8 @@ def fulfill_item(link_id):
 
         if requires_authorization:
             return redirect_to_link_url(link.url)
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception(f'Unable to fulfill link with id {link_id}')
         return APIUtils.formatResponseObject(
             500, 
             response_type, 
