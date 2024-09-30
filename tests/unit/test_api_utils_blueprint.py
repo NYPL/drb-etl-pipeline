@@ -8,7 +8,7 @@ from api.blueprints.drbUtils import (
 from api.utils import APIUtils
 
 
-class TestEditionBlueprint:
+class TestUtilsBlueprint:
     @pytest.fixture
     def mock_utils(self, mocker):
         return mocker.patch.multiple(
