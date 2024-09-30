@@ -11,7 +11,7 @@ logger = createLog(__name__)
 
 
 class OCLCCatalogManager:
-    CATALOG_URL = 'http://www.worldcat.org/webservices/catalog/content/{}?wskey={}'
+    CATALOG_URL = 'https://metadata.api.oclc.org/worldcat/manage/bibs/{}'
     OCLC_SEARCH_URL = 'https://americas.discovery.api.oclc.org/worldcat/search/v2/'
     ITEM_TYPES = ['archv', 'audiobook', 'book', 'encyc', 'jrnl']
     LIMIT = 50
@@ -22,7 +22,7 @@ class OCLCCatalogManager:
         self.oclc_key = os.environ['OCLC_API_KEY']
 
     def query_catalog(self, oclc_no):
-        catalog_query = self.CATALOG_URL.format(oclc_no, self.oclc_key)
+        catalog_query = self.CATALOG_URL.format(oclc_no)
 
         for _ in range(0, 3):
             try:
@@ -75,12 +75,12 @@ class OCLCCatalogManager:
         except Exception as e:
             logger.error(f'Failed to get related OCLC numbers for {oclc_number} due to {e}')
             return related_oclc_numbers
-        
+
     def _get_other_editions(self, oclc_number: int, offset: int=0):
         other_editions_url = f'https://americas.discovery.api.oclc.org/worldcat/search/v2/brief-bibs/{oclc_number}/other-editions'
 
         try:
-            token = OCLCAuthManager.get_token()
+            token = OCLCAuthManager.get_search_token()
             headers = { 'Authorization': f'Bearer {token}' }
 
             other_editions_response = requests.get(
@@ -143,7 +143,7 @@ class OCLCCatalogManager:
 
     def _search_bibs(self, query: str, offset: int=0):
         try:
-            token = OCLCAuthManager.get_token()
+            token = OCLCAuthManager.get_search_token()
             bibs_endpoint = self.OCLC_SEARCH_URL + 'bibs'
             headers = { "Authorization": f"Bearer {token}" }
 
