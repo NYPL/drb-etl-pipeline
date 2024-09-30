@@ -12,7 +12,7 @@ services:
   elasticsearch:
     # Use the latest version of Elasticsearch supported by Amazon AWS ES.
     container_name: drb_local_es
-    image: elasticsearch:8.4.0
+    image: elasticsearch:8.15.0
     ports:
       - 9200:9200
     environment:
