@@ -26,7 +26,9 @@ class OCLCCatalogManager:
 
         for _ in range(0, 3):
             try:
-                catalog_response = requests.get(catalog_query, timeout=3)
+                token = OCLCAuthManager.get_metadata_token()
+                headers = { 'Authorization': f'Bearer {token}' }
+                catalog_response = requests.get(catalog_query, headers=headers, timeout=3)
 
                 if catalog_response.status_code != 200:
                     logger.warning(f'OCLC catalog request failed with status {catalog_response.status_code}')
