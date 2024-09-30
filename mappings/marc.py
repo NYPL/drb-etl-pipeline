@@ -1,6 +1,9 @@
 import re
 
 from .core import Core
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class MARCMapping(Core):
@@ -17,7 +20,7 @@ class MARCMapping(Core):
                 else:
                     fieldData = [f for s in structure for f in self.getFieldData(s)]
             except IndexError:
-                print('Missing data from field {}'.format(field))
+                logger.debug(f'Missing MARC data from field {field}')
                 continue
             
             setattr(newRecord, field, fieldData)

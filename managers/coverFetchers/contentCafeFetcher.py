@@ -3,7 +3,10 @@ import os
 import requests
 from requests.exceptions import ReadTimeout
 
+from logger import createLog
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
+
+logger = createLog(__name__)
 
 
 class ContentCafeFetcher(AbstractFetcher):
@@ -33,7 +36,7 @@ class ContentCafeFetcher(AbstractFetcher):
         return False
 
     def fetchVolumeCover(self, isbn):
-        print('Fetching contentcafe cover for {}'.format(isbn))
+        logger.info(f'Fetching contentcafe cover for {isbn}')
 
         jacketURL = self.CONTENT_CAFE_URL.format(self.apiUser, self.apiPswd, isbn)
 

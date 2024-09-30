@@ -13,85 +13,167 @@ logger = createLog(__name__)
 class OCLCCatalogManager:
     CATALOG_URL = 'http://www.worldcat.org/webservices/catalog/content/{}?wskey={}'
     OCLC_SEARCH_URL = 'https://americas.discovery.api.oclc.org/worldcat/search/v2/'
+    ITEM_TYPES = ['archv', 'audiobook', 'book', 'encyc', 'jrnl']
+    LIMIT = 50
+    MAX_NUMBER_OF_RECORDS = 100
+    BEST_MATCH = 'bestMatch'
 
     def __init__(self):
-        self.oclcKey = os.environ['OCLC_API_KEY']
-        self.attempts = 0
+        self.oclc_key = os.environ['OCLC_API_KEY']
 
-    def query_catalog(self, oclcNo):
-        catalog_response = None
-        self.attempts += 1
-        catalog_query = self.CATALOG_URL.format(oclcNo, self.oclcKey)
+    def query_catalog(self, oclc_no):
+        catalog_query = self.CATALOG_URL.format(oclc_no, self.oclc_key)
 
-        if self.attempts > 3:
-            return catalog_response
+        for _ in range(0, 3):
+            try:
+                catalog_response = requests.get(catalog_query, timeout=3)
+
+                if catalog_response.status_code != 200:
+                    logger.warning(f'OCLC catalog request failed with status {catalog_response.status_code}')
+                    return None
+
+                return catalog_response.text
+            except (Timeout, ConnectionError):
+                logger.warning(f'Could not connect to {catalog_query} or timed out')
+            except Exception as e:
+                logger.error(f'Failed to query catalog with query {catalog_query} due to {e}')
+                return None
+            
+        return None
+
+    def get_related_oclc_numbers(self, oclc_number: int) -> list[int]:
+        related_oclc_numbers = []
 
         try:
-            catalog_response = requests.get(catalog_query, timeout=3)
-        except (Timeout, ConnectionError):
-            logger.warn(f'Failed to query URL {catalog_query}')
-            return self.query_catalog(oclcNo)
+            other_editions_response = self._get_other_editions(oclc_number=oclc_number, offset=0)
 
-        if catalog_response.status_code != 200:
-            logger.warn(f'OCLC Catalog Request failed with status {catalog_response.status_code}')
-            return None
+            if not other_editions_response:
+                return related_oclc_numbers
+            
+            number_of_related_bibs = other_editions_response['numberOfRecords']
+            
+            if number_of_related_bibs <= self.LIMIT:
+                related_oclc_bibs = other_editions_response['briefRecords']
 
-        return catalog_response.text
+                return self._get_oclc_number_from_bibs(oclc_number=oclc_number, oclc_bibs=related_oclc_bibs)
+            
+            offset = self.LIMIT
+            while offset <= min(number_of_related_bibs, self.MAX_NUMBER_OF_RECORDS):
+                other_editions_response = self._get_other_editions(oclc_number=oclc_number, offset=offset)
 
-    def get_related_oclc_numbers(self, oclc_number: int) -> Optional[list[int]]:
+                if not other_editions_response:
+                    continue
+
+                related_oclc_bibs = other_editions_response['briefRecords']
+
+                related_oclc_numbers.extend(
+                    self._get_oclc_number_from_bibs(oclc_number=oclc_number, oclc_bibs=related_oclc_bibs)
+                )
+                offset += self.LIMIT
+
+            return related_oclc_numbers
+        except Exception as e:
+            logger.error(f'Failed to get related OCLC numbers for {oclc_number} due to {e}')
+            return related_oclc_numbers
+        
+    def _get_other_editions(self, oclc_number: int, offset: int=0):
         other_editions_url = f'https://americas.discovery.api.oclc.org/worldcat/search/v2/brief-bibs/{oclc_number}/other-editions'
 
         try:
             token = OCLCAuthManager.get_token()
             headers = { 'Authorization': f'Bearer {token}' }
 
-            # TODO: SFR-2090, SFR-2091 Determine how many records to get and how to order
             other_editions_response = requests.get(
                 other_editions_url,
                 headers=headers,
                 params={
-                    'limit': 10,
-                    'orderBy': 'bestMatch'
+                    'offset': offset or None,
+                    'limit': self.LIMIT,
+                    'orderBy': self.BEST_MATCH,
+                    'itemTypes': self.ITEM_TYPES
                 }
             )
+
+            status_code = other_editions_response.status_code
+
+            if other_editions_response.status_code != 200:
+                logger.warning(
+                    f'OCLC other editions request for OCLC number {oclc_number} failed with status: {status_code} '
+                    f'due to: {self._get_error_detail(other_editions_response)}'
+                )
+
+                return None
+
+            return other_editions_response.json()
         except Exception as e:
-            logger.error(f'Failed to query URL {other_editions_url} due to {e}')
+            logger.error(f'Failed to query other editions endpoint {other_editions_url} due to {e}')
             return None
 
-        if other_editions_response.status_code != 200:
-            logger.warn(f'OCLC other editions request failed with status {other_editions_response.status_code}')
-            return None
+    def _get_oclc_number_from_bibs(self, oclc_number: int, oclc_bibs) -> int:
+        return [int(edition['oclcNumber']) for edition in oclc_bibs if int(edition['oclcNumber']) != oclc_number]
 
-        brief_records = other_editions_response.json().get('briefRecords', None)
+    def query_bibs(self, query: str):
+        bibs = []
 
-        if not brief_records:
-            return None
-
-        return [int(brief_record['oclcNumber']) for brief_record in brief_records if int(brief_record['oclcNumber']) != oclc_number]
-
-
-    def query_brief_bibs(self, query: str):
-        """Accepts a query in the form of an OCLC keyword search or fielded search"""
-        token = OCLCAuthManager.get_token()
-        bibs_endpoint = self.OCLC_SEARCH_URL + 'brief-bibs'
-        # Limit 10 results, ordered by bestMatch, by default
-        headers = { "Authorization": f"Bearer {token}" }
         try:
+            bibs_response = self._search_bibs(query=query, offset=0)
+
+            if not bibs_response:
+                return bibs
+            
+            number_of_bibs = bibs_response['numberOfRecords']
+            
+            if number_of_bibs <= self.LIMIT:
+                return bibs_response.get('bibRecords', [])            
+            
+            offset = self.LIMIT
+            while offset <= min(number_of_bibs, self.MAX_NUMBER_OF_RECORDS):
+                bibs_response = self._search_bibs(query=query, offset=offset)
+
+                if not bibs_response:
+                    continue
+
+                bibs.extend(bibs_response.get('bibRecords', []))
+                offset += self.LIMIT
+
+            return bibs
+        except Exception as e:
+            logger.error(f'Failed to query search bibs with query {query} due to {e}')
+            return bibs
+
+    def _search_bibs(self, query: str, offset: int=0):
+        try:
+            token = OCLCAuthManager.get_token()
+            bibs_endpoint = self.OCLC_SEARCH_URL + 'bibs'
+            headers = { "Authorization": f"Bearer {token}" }
+
             bibs_response = requests.get(
                 bibs_endpoint,
                 headers=headers,
-                params={'q': query}
+                params={
+                    'q': query,
+                    'offset': offset or None,
+                    'limit': self.LIMIT,
+                    'orderBy': self.BEST_MATCH,
+                    'itemType': self.ITEM_TYPES
+                }
             )
-        except (Timeout, ConnectionError):
-            logger.warn(f'Failed to query {bibs_endpoint} with query {query}')
-            raise OCLCCatalogError(f'Failed to query {bibs_endpoint} with query {query}')
 
-        if bibs_response.status_code != 200:
-            logger.warn(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
-            raise OCLCCatalogError(f'OCLC Catalog Request failed with status {bibs_response.status_code}')
+            status_code = bibs_response.status_code
 
-        return bibs_response.json()
-    
+            if status_code != 200:
+                logger.warning(
+                    f'OCLC search bibs request for query {query} failed with status: {status_code} '
+                    f'due to: {self._get_error_detail(bibs_response)}'
+                )
+                
+                return None
+            
+            return bibs_response.json()
+        except Exception as e:
+            logger.error(f'Failed to query {bibs_endpoint} with query {query} due to {e}')
+            return None
+
     def generate_search_query(self, identifier=None, identifier_type=None, title=None, author=None):
         if identifier and identifier_type:
             return self._generate_identifier_query(identifier, identifier_type)
@@ -111,6 +193,14 @@ class OCLCCatalogManager:
 
     def _generate_title_author_query(self, title, author):
         return f"ti:{title} au:{author}"
+    
+    def _get_error_detail(oclc_response) -> Optional[str]:
+        default_error_detail = 'unknown'
+
+        try:
+            return oclc_response.json().get('detail', default_error_detail)
+        except Exception:
+            return default_error_detail
 
 class OCLCCatalogError(Exception):
     def __init__(self, message=None):

@@ -1,5 +1,3 @@
-import csv
-
 from models.reports.counter_5_report import Counter5Report
 
 
@@ -8,35 +6,19 @@ class DownloadsReport(Counter5Report):
         super().__init__(*args)
     
     def build_report(self, events):
-        # TODO: building report is slow, create a follow up story?
         print("Building downloads report...")
 
-        header = self.build_header()
-
         if len(events) > 0:
+            file_name = f"{self.publisher}_downloads_report_{self.created}.csv"
+            header = self.build_header(report_name="NYPL DRB Book Usage by Title / Downloads",
+                                       report_description="Downloads of your books from NYPL's Digital Research Books by title.")
             columns, final_data = self.aggregate_interaction_events(events)
-            csv_file_name = f"{self.publisher}_downloads_report_{self.created}.csv"
             
-            with open(csv_file_name, 'w') as csv_file:
-                writer = csv.writer(csv_file, delimiter="|")
-                for key, value in header.items():
-                    writer.writerow([key, value])
-                writer.writerow([])
-                writer.writerow(columns)
-                for title in final_data:
-                    writer.writerow(title.values())
-
+            self.write_to_csv(file_name=file_name,
+                              header=header,
+                              column_names=columns,
+                              data=final_data)
+            
             print("Downloads report generation complete!")
         else:
             print("No download events found in reporting period!")
-
-    def build_header(self):
-        return {
-            "Report_Name": "NYPL DRB Book Usage by Title / Downloads",
-            "Report_ID": self.generate_report_id(),
-            "Report_Description": "Downloads of your books from NYPL's Digital Research Books by title.",
-            "Publisher_Name": self.publisher,
-            "Reporting_Period": self.reporting_period,
-            "Created": self.created,
-            "Created_By": self.created_by,
-        }

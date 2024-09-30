@@ -1,4 +1,7 @@
 from .core import Core
+from logger import createLog
+
+logger = createLog(__name__)
 
 
 class SQLMapping(Core):
@@ -32,12 +35,10 @@ class SQLMapping(Core):
             except KeyError:
                 pass
             except IndexError:
-                print(structure, sourceValue)
+                logger.debug(f'Failed to get {sourceValue} data {structure} from due to IndexError')
                 raise IndexError
             except TypeError as err:
-                print(structure, sourceValue)
-                for key, value in sourceValue.items():
-                    print(key, value, type(value))
+                logger.debug(f'Failed to get {sourceValue} data from {structure} due to TypeError')
                 raise err
         elif sourceValue != None:
             try:

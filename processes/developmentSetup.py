@@ -8,7 +8,6 @@ import requests
 import sqlalchemy as sa
 from sqlalchemy.exc import ProgrammingError
 from time import sleep
-import alembic.config
 
 from managers.db import DBManager
 from .core import CoreProcess
@@ -31,49 +30,34 @@ class DevelopmentSetupProcess(CoreProcess):
         super(DevelopmentSetupProcess, self).__init__(*args[:4])
 
     def runProcess(self):
-        # Setup database if necessary
         self.generateEngine()
         self.createSession()
-        #Allow Database to be trashed when reinitializing local DevelopmentSetUp
+
         self.initializeDatabase()
-        self.runDBMigration()
 
-        # Setup ElasticSearch index if necessary
         self.createElasticConnection()
-        # Wait for ElasticSearch to be available
-        # (Necessary for docker-compose local development)
         self.waitForElasticSearch()
-        # Initialize ElasticSearch index
         self.createElasticSearchIndex()
-        #Allow ElasticSearch to be trashed when reinitializing local DevelopmentSetUp
 
-        # Create rabbit queues
         self.createRabbitConnection()
         self.createOrConnectQueue(os.environ['OCLC_QUEUE'], os.environ['OCLC_ROUTING_KEY'])
         self.createOrConnectQueue(os.environ['FILE_QUEUE'], os.environ['FILE_ROUTING_KEY'])
 
-        # Populate with set of sample data from sources
         self.fetchHathiSampleData()
 
         procArgs = ['complete'] + ([None] * 4)
 
-        # FRBRize the fetched data
+        self.createRedisClient()
+        self.clear_cache()
+
         classifyProc = ClassifyProcess(*procArgs)
         classifyProc.runProcess()
 
         catalogProc = CatalogProcess(*procArgs)
-        catalogProc.runProcess()
-
-        # Group the fetched data
+        catalogProc.runProcess(max_attempts=1)
+        
         clusterProc = ClusterProcess(*procArgs)
         clusterProc.runProcess()
-
-    def runDBMigration(self):
-        alembicArgs = [
-            '--raiseerr',
-            'upgrade', 'head',
-        ]
-        alembic.config.main(argv=alembicArgs)
 
     def initializeDB(self):
         self.adminDBConnection.generateEngine()

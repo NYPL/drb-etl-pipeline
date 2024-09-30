@@ -8,10 +8,13 @@ class TestOCLCCatalogManager:
         load_env_file('local-compose', file_string='config/local-compose.yaml')
         return OCLCCatalogManager()
 
-    def test_query_brief_bibs(self, test_instance: OCLCCatalogManager):
-        assert test_instance.query_brief_bibs('ti:The Waves')['numberOfRecords'] > 1000
+    def test_query_bibs(self, test_instance: OCLCCatalogManager):
+        bibs = test_instance.query_bibs('ti:The Waves')
+
+        assert len(bibs) > 0
 
     def test_query_other_editions(self, test_instance: OCLCCatalogManager):
-        print(test_instance.get_related_oclc_numbers(1))
-        assert test_instance.get_related_oclc_numbers(1) is not None
-
+        related_oclc_numbers = test_instance.get_related_oclc_numbers(1)
+        
+        assert len(related_oclc_numbers) > 0
+        assert 1 not in set(related_oclc_numbers)

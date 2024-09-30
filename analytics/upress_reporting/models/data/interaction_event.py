@@ -11,7 +11,7 @@ class InteractionType(Enum):
 class UsageType(Enum):
     FULL_ACCESS = "Full Access"
     LIMITED_ACCESS = "Limited Access"
-    VIEW_ONLY_NO_DOWNLOAD_ACCESS = "View Only / No Download Access"
+    VIEW_ACCESS = "View Access"
 
 
 @dataclass(init=True, repr=True)
@@ -21,7 +21,7 @@ class InteractionEvent():
     book_id: int
     authors: str
     isbns: str
-    copyright_year: Optional[str]
+    oclc_numbers: Optional[str]
     publication_year: Optional[str]
     disciplines: Optional[str]
     usage_type: str
