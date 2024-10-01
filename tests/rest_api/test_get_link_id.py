@@ -20,3 +20,4 @@ def test_get_collection():
     response_json = response.json()
     
     assert response_json is not None
+
