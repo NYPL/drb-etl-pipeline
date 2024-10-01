@@ -12,6 +12,7 @@ logger = createLog(__name__)
 
 class OCLCCatalogManager:
     CATALOG_URL = 'http://www.worldcat.org/webservices/catalog/content/{}?wskey={}'
+    METADATA_BIB_URL = 'https://metadata.api.oclc.org/worldcat/manage/bibs/{}'
     OCLC_SEARCH_URL = 'https://americas.discovery.api.oclc.org/worldcat/search/v2/'
     ITEM_TYPES = ['archv', 'audiobook', 'book', 'encyc', 'jrnl']
     LIMIT = 50
@@ -20,6 +21,29 @@ class OCLCCatalogManager:
 
     def __init__(self):
         self.oclc_key = os.environ['OCLC_API_KEY']
+
+    def query_catalog_v2(self, oclc_no):
+        catalog_query = self.CATALOG_URL.format(oclc_no, self.oclc_key)
+
+        for _ in range(0, 3):
+            try:
+                token = OCLCAuthManager.get_metadata_token()
+                headers = { 'Authorization': f'Bearer {token}' }
+                
+                catalog_response = requests.get(catalog_query, headers=headers, timeout=3)
+
+                if catalog_response.status_code != 200:
+                    logger.warning(f'OCLC catalog request failed with status {catalog_response.status_code}')
+                    return None
+
+                return catalog_response.text
+            except (Timeout, ConnectionError):
+                logger.warning(f'Could not connect to {catalog_query} or timed out')
+            except Exception as e:
+                logger.error(f'Failed to query catalog with query {catalog_query} due to {e}')
+                return None
+            
+        return None
 
     def query_catalog(self, oclc_no):
         catalog_query = self.CATALOG_URL.format(oclc_no, self.oclc_key)
@@ -75,12 +99,12 @@ class OCLCCatalogManager:
         except Exception as e:
             logger.error(f'Failed to get related OCLC numbers for {oclc_number} due to {e}')
             return related_oclc_numbers
-        
+
     def _get_other_editions(self, oclc_number: int, offset: int=0):
         other_editions_url = f'https://americas.discovery.api.oclc.org/worldcat/search/v2/brief-bibs/{oclc_number}/other-editions'
 
         try:
-            token = OCLCAuthManager.get_token()
+            token = OCLCAuthManager.get_search_token()
             headers = { 'Authorization': f'Bearer {token}' }
 
             other_editions_response = requests.get(
@@ -143,7 +167,7 @@ class OCLCCatalogManager:
 
     def _search_bibs(self, query: str, offset: int=0):
         try:
-            token = OCLCAuthManager.get_token()
+            token = OCLCAuthManager.get_search_token()
             bibs_endpoint = self.OCLC_SEARCH_URL + 'bibs'
             headers = { "Authorization": f"Bearer {token}" }
 
@@ -194,7 +218,7 @@ class OCLCCatalogManager:
     def _generate_title_author_query(self, title, author):
         return f"ti:{title} au:{author}"
     
-    def _get_error_detail(oclc_response) -> Optional[str]:
+    def _get_error_detail(self, oclc_response) -> Optional[str]:
         default_error_detail = 'unknown'
 
         try:
