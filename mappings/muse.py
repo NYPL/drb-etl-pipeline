@@ -68,6 +68,8 @@ class MUSEMapping(MARCMapping):
         # Take first title as they are in order of preference
         self.record.title = self.record.title[0]
 
+        self.record.id = [self.clean_identifier(id) for id in self.record.identifiers]
+
         # Extract language code from 008 fixed data field
         self.record.languages = [self.extractLanguage(l) for l in self.record.languages]
 
@@ -119,3 +121,11 @@ class MUSEMapping(MARCMapping):
         self.record.has_part.append(
             '{}|{}|muse|{}|{}'.format(lastItemNo, url, mediaType, flags)
         )
+
+    def clean_identifier(self, identifier):
+        oclc_number_prefix = '(OCoLC)'
+
+        if identifier.startswith(oclc_number_prefix):
+            return identifier[len(oclc_number_prefix):]
+        
+        return identifier 
