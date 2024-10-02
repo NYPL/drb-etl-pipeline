@@ -1,5 +1,8 @@
 from mappings.marc import MARCMapping
 
+DEFAULT_PUBLISHER = 'John Hopkins University Press||'
+
+
 class MUSEMapping(MARCMapping):
     def __init__(self, source):
         super(MUSEMapping, self).__init__(source, {})
@@ -69,18 +72,15 @@ class MUSEMapping(MARCMapping):
         self.record.title = self.record.title[0]
 
         self.record.id = [self.cleanup_identifier(id) for id in self.record.identifiers]
-
-        # Extract language code from 008 fixed data field
+        
         self.record.languages = [self.extract_language(language) for language in self.record.languages]
 
-        # Extract publication date from 008 fixed field if 264 field is missing
         if len(self.record.dates) < 1:
             publication_date = self.source['008'].data[11:15]
             self.record.dates.append('{}|publication_date'.format(publication_date))
-
-        # If publisher missing, assume JHU
+        
         if len(self.record.publisher) < 1:
-            self.record.publisher.append('John Hopkins University Press||')
+            self.record.publisher.append(DEFAULT_PUBLISHER)
 
         self.record.subjects = [self.clean_up_subject_head(subject) for subject in self.record.subjects]
 
@@ -109,7 +109,8 @@ class MUSEMapping(MARCMapping):
 
     def extract_language(self, language):
         _, _, marc_data, *_ = language.split('|')
-        return '||{}'.format(marc_data[35:38])
+        print(marc_data)
+        return '||{}'.format(marc_data[35:38] or marc_data)
 
     def add_has_part_link(self, url, media_type, flags):
         last_item_no = int(self.record.has_part[-1][0])
