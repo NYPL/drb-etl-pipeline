@@ -43,9 +43,9 @@ def test_apply_formatting():
 def test_clean_up_subject_head():
     muse_mapping = MUSEMapping(test_source)
     
-    cleanSubject = muse_mapping.clean_up_subject_head('first -- second. -- -- |||')
+    cleaned_subject = muse_mapping.clean_up_subject_head('first -- second. -- -- |||')
 
-    assert cleanSubject == 'first -- second|||'
+    assert cleaned_subject == 'first -- second|||'
 
 def test_extract_language():
     muse_mapping = MUSEMapping(test_source)
