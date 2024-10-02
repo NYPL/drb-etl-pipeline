@@ -19,14 +19,11 @@ class ClusterProcess(CoreProcess):
 
         self.ingestLimit = int(args[4]) if args[4] else None
 
-        # PostgreSQL Connection
         self.generateEngine()
         self.createSession()
 
-        # Redis Connection
         self.createRedisClient()
-
-        # ElasticSearch Connection
+        
         self.createElasticConnection()
         self.createElasticSearchIngestPipeline()
         self.createElasticSearchIndex()
@@ -70,6 +67,9 @@ class ClusterProcess(CoreProcess):
                 logger.warning('Skipping record {}'.format(rec))
                 self.updateMatchedRecordsStatus([rec.id])
                 self.session.commit()
+            except Exception:
+                logger.exception(f'Failed to cluster record {rec}')
+                continue
 
             if len(indexingWorks) >= 50:
                 self.updateElasticSearch(indexingWorks, deletingWorks)
