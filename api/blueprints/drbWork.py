@@ -36,6 +36,6 @@ def get_work(uuid):
                     request=request, dbClient=db_client, formats=filtered_formats, reader=reader_version
                 )
             )
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception(f'Unable to get work with id {uuid}')
         return APIUtils.formatResponseObject(500, response_type, { 'message': f'Unable to get work with id {uuid}' })

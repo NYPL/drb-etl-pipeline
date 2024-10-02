@@ -39,6 +39,6 @@ def get_edition(edition_id):
                     edition, request=request, records=records, dbClient=db_client, showAll=show_all, formats=filtered_formats, reader=reader_version
                 )
             )
-    except Exception as e: 
-        logger.error(e)
+    except Exception: 
+        logger.exception(f'Unable to get edition with id {edition_id}')
         return APIUtils.formatResponseObject(500, response_type, { 'message': f'Unable to get edition with id {edition_id}' })

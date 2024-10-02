@@ -286,8 +286,8 @@ def get_collection(uuid):
         return APIUtils.formatOPDS2Object(200, opds_feed)
     except NoResultFound:
         return APIUtils.formatResponseObject(404, response_type, { 'message': f'No collection found with id {uuid}' })
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception(f'Unable to get collection with id {uuid}')
         return APIUtils.formatResponseObject(500, response_type, { 'message': f'Unable to get collection with id {uuid}' })
 
 @collection.route('/<uuid>', methods=['DELETE'])
@@ -400,8 +400,8 @@ def get_collections():
         db_client.closeSession()
 
         return APIUtils.formatOPDS2Object(200, opds_feed)
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception('Unable to get collections')
         return APIUtils.formatResponseObject(500, response_type, { 'message': 'Unable to get collections' })
 
 
