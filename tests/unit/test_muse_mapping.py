@@ -39,10 +39,10 @@ class TestMUSEMapping:
 
     def test_applyFormatting(self, testMapping, mocker):
 
-        mockCleanSubject = mocker.patch.object(MUSEMapping, 'cleanUpSubjectHead')
+        mockCleanSubject = mocker.patch.object(MUSEMapping, 'clean_up_subject_head')
         mockCleanSubject.side_effect = [1, 2, 3]
 
-        mockExtractLanguage = mocker.patch.object(MUSEMapping, 'extractLanguage')
+        mockExtractLanguage = mocker.patch.object(MUSEMapping, 'extract_language')
         mockExtractLanguage.side_effect = ['lng1', 'lng2']
 
         testMapping.applyFormatting()
@@ -54,15 +54,15 @@ class TestMUSEMapping:
         assert testMapping.record.languages == ['lng1', 'lng2']
         assert testMapping.record.dates[0] == '2000|publication_date'
 
-    def test_cleanUpSubjectHead(self, testMapping):
-        cleanSubject = testMapping.cleanUpSubjectHead('first -- second. -- -- |||')
+    def test_clean_up_subject_head(self, testMapping):
+        cleanSubject = testMapping.clean_up_subject_head('first -- second. -- -- |||')
 
         assert cleanSubject == 'first -- second|||'
 
-    def test_extractLanguage(self, testMapping):
-        assert testMapping.extractLanguage('||100607s2011    mdu     o      00 0 eng d  z  ') == '||eng'
+    def test_extract_language(self, testMapping):
+        assert testMapping.extract_language('||100607s2011    mdu     o      00 0 eng d  z  ') == '||eng'
 
-    def test_addHasPartLink(self, testMapping):
-        testMapping.addHasPartLink('newURL', 'pdf+json', 'pdfFlags')
+    def test_add_has_part_link(self, testMapping):
+        testMapping.add_has_part_link('newURL', 'pdf+json', 'pdfFlags')
 
         assert testMapping.record.has_part[1] == '1|newURL|muse|pdf+json|pdfFlags'

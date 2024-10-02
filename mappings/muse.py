@@ -68,61 +68,57 @@ class MUSEMapping(MARCMapping):
         # Take first title as they are in order of preference
         self.record.title = self.record.title[0]
 
-        self.record.id = [self.clean_identifier(id) for id in self.record.identifiers]
+        self.record.id = [self.cleanup_identifier(id) for id in self.record.identifiers]
 
         # Extract language code from 008 fixed data field
-        self.record.languages = [self.extractLanguage(l) for l in self.record.languages]
+        self.record.languages = [self.extract_language(language) for language in self.record.languages]
 
         # Extract publication date from 008 fixed field if 264 field is missing
         if len(self.record.dates) < 1:
-            pubDate = self.source['008'].data[11:15]
-            self.record.dates.append('{}|publication_date'.format(pubDate))
+            publication_date = self.source['008'].data[11:15]
+            self.record.dates.append('{}|publication_date'.format(publication_date))
 
         # If publisher missing, assume JHU
         if len(self.record.publisher) < 1:
             self.record.publisher.append('John Hopkins University Press||')
 
-        # Clean up subjects to remove spots for missing subheadings
-        self.record.subjects = [
-            self.cleanUpSubjectHead(s)
-            for s in self.record.subjects
-        ]
+        self.record.subjects = [self.clean_up_subject_head(subject) for subject in self.record.subjects]
 
-        # Add Rights statement
         self.record.rights = '{}|{}||{}|'.format(
-            'muse', 'https://creativecommons.org/licenses/by-nc/4.0/',
+            'muse', 
+            'https://creativecommons.org/licenses/by-nc/4.0/',
             'Creative Commons Attribution-NonCommercial 4.0 International'
         )
 
-    def cleanUpSubjectHead(self, subject):
-        subjectStr, *subjectMeta = subject.split('|')
-        subjectParts = subjectStr.split('--')
+    def clean_up_subject_head(self, subject):
+        subject_str, *subject_metadata = subject.split('|')
+        subject_parts = subject_str.split('--')
 
-        outParts = []
+        out_parts = []
 
-        for part in subjectParts:
-            cleanPart = part.strip(' .')
+        for part in subject_parts:
+            clean_parts = part.strip(' .')
             
-            if cleanPart == '': continue
+            if clean_parts == '': continue
 
-            outParts.append(cleanPart)
+            out_parts.append(clean_parts)
 
-        cleanSubject = ' -- '.join([p for p in outParts])
+        cleaned_subject = ' -- '.join([part for part in out_parts])
 
-        return '|'.join([cleanSubject] + subjectMeta)
+        return '|'.join([cleaned_subject] + subject_metadata)
 
-    def extractLanguage(self, language):
-        _, _, marcData, *_ = language.split('|')
-        return '||{}'.format(marcData[35:38])
+    def extract_language(self, language):
+        _, _, marc_data, *_ = language.split('|')
+        return '||{}'.format(marc_data[35:38])
 
-    def addHasPartLink(self, url, mediaType, flags):
-        lastItemNo = int(self.record.has_part[-1][0])
+    def add_has_part_link(self, url, media_type, flags):
+        last_item_no = int(self.record.has_part[-1][0])
 
         self.record.has_part.append(
-            '{}|{}|muse|{}|{}'.format(lastItemNo, url, mediaType, flags)
+            '{}|{}|muse|{}|{}'.format(last_item_no, url, media_type, flags)
         )
 
-    def clean_identifier(self, identifier):
+    def cleanup_identifier(self, identifier):
         oclc_number_prefix = '(OCoLC)'
 
         if identifier.startswith(oclc_number_prefix):
