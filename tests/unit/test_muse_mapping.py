@@ -21,7 +21,7 @@ def test_create_mapping():
 def test_apply_formatting():
     muse_mapping = MUSEMapping(test_source)
     record = Record()
-    record.identifiers = ['1|muse', '2|test', '3|other']
+    record.identifiers = ['1|muse', '2|test', '3|other', '4|(OCoLC)123']
     record.title = ['Main Title', 'Secondary Title']
     record.subjects = ['subj1', 'subj2', 'subj3']
     record.has_part = ['1|testURL|muse|testType|testFlags']
@@ -35,6 +35,7 @@ def test_apply_formatting():
     assert muse_mapping.record.source == 'muse'
     assert muse_mapping.record.source_id == '1'
     assert muse_mapping.record.title == 'Main Title'
+    assert muse_mapping.record.identifiers == ['1|muse', '2|test', '3|other', '4|123']
     assert muse_mapping.record.subjects == ['subj1', 'subj2', 'subj3']
     assert muse_mapping.record.languages == ['||lng1', '||lng2']
     assert muse_mapping.record.dates[0] == '2000|publication_date'
@@ -56,9 +57,9 @@ def test_extract_language():
 def test_cleanup_identifier():
     muse_mapping = MUSEMapping(test_source)
 
-    cleaned_identifier = muse_mapping.cleanup_identifier('(OCoLC)12235')
+    cleaned_identifier = muse_mapping.cleanup_identifier('4|(OCoLC)12235')
 
-    assert cleaned_identifier == '12235'
+    assert cleaned_identifier == '4|12235'
 
 def test_add_has_part_link():
     muse_mapping = MUSEMapping(test_source)

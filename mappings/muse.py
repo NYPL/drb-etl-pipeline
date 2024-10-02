@@ -71,7 +71,7 @@ class MUSEMapping(MARCMapping):
         # Take first title as they are in order of preference
         self.record.title = self.record.title[0]
 
-        self.record.id = [self.cleanup_identifier(id) for id in self.record.identifiers]
+        self.record.identifiers = [self.cleanup_identifier(id) for id in self.record.identifiers]
         
         self.record.languages = [self.extract_language(language) for language in self.record.languages]
 
@@ -121,8 +121,9 @@ class MUSEMapping(MARCMapping):
 
     def cleanup_identifier(self, identifier):
         oclc_number_prefix = '(OCoLC)'
+        id_type, id = identifier.split('|')
 
-        if identifier.startswith(oclc_number_prefix):
-            return identifier[len(oclc_number_prefix):]
+        if id.startswith(oclc_number_prefix):
+            return f'{id_type}|{id[len(oclc_number_prefix):]}'
         
         return identifier 
