@@ -73,7 +73,11 @@ class MUSEMapping(MARCMapping):
 
         self.record.identifiers = [self.cleanup_identifier(id) for id in self.record.identifiers]
         
-        self.record.languages = [self.extract_language(language) for language in self.record.languages]
+        self.record.languages = [
+            extracted_langauge
+            for language in self.record.languages
+            if (extracted_langauge := self.extract_language(language))
+        ]
 
         if len(self.record.dates) < 1:
             publication_date = self.source['008'].data[11:15]
@@ -109,8 +113,13 @@ class MUSEMapping(MARCMapping):
 
     def extract_language(self, language):
         _, _, marc_data, *_ = language.split('|')
-        print(marc_data)
-        return '||{}'.format(marc_data[35:38] or marc_data)
+        marc_data = marc_data.split(' ')
+
+        # MARC data example: 100607s2011 mdu o 00 0 eng d
+        if len(marc_data) >= 7:
+            return f'||{marc_data[5]}'
+
+        return None
 
     def add_has_part_link(self, url, media_type, flags):
         last_item_no = int(self.record.has_part[-1][0])
@@ -121,9 +130,10 @@ class MUSEMapping(MARCMapping):
 
     def cleanup_identifier(self, identifier):
         oclc_number_prefix = '(OCoLC)'
-        id_type, id = identifier.split('|')
+        id, id_type = identifier.split('|')
+        id = id.strip()
 
         if id.startswith(oclc_number_prefix):
-            return f'{id_type}|{id[len(oclc_number_prefix):]}'
+            return f'{id[len(oclc_number_prefix):]}|{id_type}'
         
-        return identifier 
+        return f'{id}|{id_type}'

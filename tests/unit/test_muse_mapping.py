@@ -22,11 +22,11 @@ def test_create_mapping():
 def test_apply_formatting():
     muse_mapping = MUSEMapping(test_source)
     record = Record()
-    record.identifiers = ['1|muse', '2|test', '3|other', '4|(OCoLC)123']
+    record.identifiers = ['1|muse', '2|test', '3|other', '(OCoLC)123|oclc']
     record.title = ['Main Title', 'Secondary Title']
     record.subjects = ['subj1', 'subj2', 'subj3']
     record.has_part = ['1|testURL|muse|testType|testFlags']
-    record.languages = ['||lng1', '||lng2']
+    record.languages = ['||100607s2011 mdu o 00 0 lng1 d', '||100607s2011 mdu o 00 0 lng2 d']
     record.publisher = []
     record.dates = []
     muse_mapping.record = record
@@ -36,7 +36,7 @@ def test_apply_formatting():
     assert muse_mapping.record.source == 'muse'
     assert muse_mapping.record.source_id == '1'
     assert muse_mapping.record.title == 'Main Title'
-    assert muse_mapping.record.identifiers == ['1|muse', '2|test', '3|other', '4|123']
+    assert muse_mapping.record.identifiers == ['1|muse', '2|test', '3|other', '123|oclc']
     assert muse_mapping.record.subjects == ['subj1', 'subj2', 'subj3']
     assert muse_mapping.record.languages == ['||lng1', '||lng2']
     assert muse_mapping.record.dates[0] == '2000|publication_date'
@@ -53,7 +53,7 @@ def test_clean_up_subject_head():
 def test_extract_language():
     muse_mapping = MUSEMapping(test_source)
 
-    extracted_language = muse_mapping.extract_language('||100607s2011    mdu     o      00 0 eng d  z  ')
+    extracted_language = muse_mapping.extract_language('||100607s2011 mdu o 00 0 eng d')
 
     assert extracted_language == '||eng'
 
@@ -61,9 +61,9 @@ def test_extract_language():
 def test_cleanup_identifier():
     muse_mapping = MUSEMapping(test_source)
 
-    cleaned_identifier = muse_mapping.cleanup_identifier('4|(OCoLC)12235')
+    cleaned_identifier = muse_mapping.cleanup_identifier('(OCoLC)1223|oclc')
 
-    assert cleaned_identifier == '4|12235'
+    assert cleaned_identifier == '1223|oclc'
 
 
 def test_add_has_part_link():
