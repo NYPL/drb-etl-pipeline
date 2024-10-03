@@ -68,7 +68,7 @@ class MUSEManager:
 
     def addReadableLinks(self):
         if self.pdfDownloadURL:
-            self.record.addHasPartLink(
+            self.record.add_has_part_link(
                 self.pdfDownloadURL,
                 'application/pdf',
                 json.dumps({'download': True, 'reader': False, 'catalog': False})
@@ -76,14 +76,14 @@ class MUSEManager:
 
         if self.epubURL:
             self.s3EpubPath = 'epubs/muse/{}.epub'.format(self.museID)
-            self.record.addHasPartLink(
+            self.record.add_has_part_link(
                 self.constructS3Link(self.s3EpubPath),
                 'application/epub+zip',
                 json.dumps({'download': True, 'reader': False, 'catalog': False})
             )
 
             self.epubReadPath = 'epubs/muse/{}/manifest.json'.format(self.museID)
-            self.record.addHasPartLink(
+            self.record.add_has_part_link(
                 self.constructS3Link(self.epubReadPath),
                 'application/webpub+json',
                 json.dumps({'download': False, 'reader': True, 'catalog': False})
@@ -92,7 +92,7 @@ class MUSEManager:
         self.constructWebpubManifest()
         if self.pdfWebpubManifest:
             self.s3PDFReadPath = 'manifests/muse/{}.json'.format(self.museID)
-            self.record.addHasPartLink(
+            self.record.add_has_part_link(
                 self.createManifestInS3(self.s3PDFReadPath),
                 'application/webpub+json',
                 json.dumps({'reader': True, 'download': False, 'catalog': False})

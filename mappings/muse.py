@@ -1,5 +1,8 @@
 from mappings.marc import MARCMapping
 
+DEFAULT_PUBLISHER = 'John Hopkins University Press||'
+
+
 class MUSEMapping(MARCMapping):
     def __init__(self, source):
         super(MUSEMapping, self).__init__(source, {})
@@ -68,54 +71,69 @@ class MUSEMapping(MARCMapping):
         # Take first title as they are in order of preference
         self.record.title = self.record.title[0]
 
-        # Extract language code from 008 fixed data field
-        self.record.languages = [self.extractLanguage(l) for l in self.record.languages]
-
-        # Extract publication date from 008 fixed field if 264 field is missing
-        if len(self.record.dates) < 1:
-            pubDate = self.source['008'].data[11:15]
-            self.record.dates.append('{}|publication_date'.format(pubDate))
-
-        # If publisher missing, assume JHU
-        if len(self.record.publisher) < 1:
-            self.record.publisher.append('John Hopkins University Press||')
-
-        # Clean up subjects to remove spots for missing subheadings
-        self.record.subjects = [
-            self.cleanUpSubjectHead(s)
-            for s in self.record.subjects
+        self.record.identifiers = [self.cleanup_identifier(id) for id in self.record.identifiers]
+        
+        self.record.languages = [
+            extracted_langauge
+            for language in self.record.languages
+            if (extracted_langauge := self.extract_language(language))
         ]
 
-        # Add Rights statement
+        if len(self.record.dates) < 1:
+            publication_date = self.source['008'].data[11:15]
+            self.record.dates.append('{}|publication_date'.format(publication_date))
+        
+        if len(self.record.publisher) < 1:
+            self.record.publisher.append(DEFAULT_PUBLISHER)
+
+        self.record.subjects = [self.clean_up_subject_head(subject) for subject in self.record.subjects]
+
         self.record.rights = '{}|{}||{}|'.format(
-            'muse', 'https://creativecommons.org/licenses/by-nc/4.0/',
+            'muse', 
+            'https://creativecommons.org/licenses/by-nc/4.0/',
             'Creative Commons Attribution-NonCommercial 4.0 International'
         )
 
-    def cleanUpSubjectHead(self, subject):
-        subjectStr, *subjectMeta = subject.split('|')
-        subjectParts = subjectStr.split('--')
+    def clean_up_subject_head(self, subject):
+        subject_str, *subject_metadata = subject.split('|')
+        subject_parts = subject_str.split('--')
 
-        outParts = []
+        out_parts = []
 
-        for part in subjectParts:
-            cleanPart = part.strip(' .')
+        for part in subject_parts:
+            clean_parts = part.strip(' .')
             
-            if cleanPart == '': continue
+            if clean_parts == '': continue
 
-            outParts.append(cleanPart)
+            out_parts.append(clean_parts)
 
-        cleanSubject = ' -- '.join([p for p in outParts])
+        cleaned_subject = ' -- '.join([part for part in out_parts])
 
-        return '|'.join([cleanSubject] + subjectMeta)
+        return '|'.join([cleaned_subject] + subject_metadata)
 
-    def extractLanguage(self, language):
-        _, _, marcData, *_ = language.split('|')
-        return '||{}'.format(marcData[35:38])
+    def extract_language(self, language):
+        _, _, marc_data, *_ = language.split('|')
+        marc_data = marc_data.split(' ')
 
-    def addHasPartLink(self, url, mediaType, flags):
-        lastItemNo = int(self.record.has_part[-1][0])
+        # MARC data example: 100607s2011 mdu o 00 0 eng d
+        if len(marc_data) >= 7:
+            return f'||{marc_data[5]}'
+
+        return None
+
+    def add_has_part_link(self, url, media_type, flags):
+        last_item_no = int(self.record.has_part[-1][0])
 
         self.record.has_part.append(
-            '{}|{}|muse|{}|{}'.format(lastItemNo, url, mediaType, flags)
+            '{}|{}|muse|{}|{}'.format(last_item_no, url, media_type, flags)
         )
+
+    def cleanup_identifier(self, identifier):
+        oclc_number_prefix = '(OCoLC)'
+        id, id_type = identifier.split('|')
+        id = id.strip()
+
+        if id.startswith(oclc_number_prefix):
+            return f'{id[len(oclc_number_prefix):]}|{id_type}'
+        
+        return f'{id}|{id_type}'
