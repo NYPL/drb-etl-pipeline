@@ -1,0 +1,7 @@
+ERROR    api.blueprints.drbCitation:drbCitation.py:44 Unable to get citation for work with id a8512b02-779b-45c6-95a3-56f90831be46
+Traceback (most recent call last):
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/api/blueprints/drbCitation.py", line 39, in get_citation
+    mla_citation = mla_generator(work_to_cite)
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/api/blueprints/drbCitation.py", line 59, in mla_generator
+    if listGovDocOnly[0]["value"] == "1":
+IndexError: list index out of range
