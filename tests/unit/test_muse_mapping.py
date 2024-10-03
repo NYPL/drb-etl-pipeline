@@ -18,6 +18,7 @@ def test_create_mapping():
     ]).issubset(set(muse_mapping.mapping.keys()))
     assert muse_mapping.mapping['is_part_of'] == ('490', '{a}|{v}|volume')
 
+
 def test_apply_formatting():
     muse_mapping = MUSEMapping(test_source)
     record = Record()
@@ -40,12 +41,14 @@ def test_apply_formatting():
     assert muse_mapping.record.languages == ['||lng1', '||lng2']
     assert muse_mapping.record.dates[0] == '2000|publication_date'
 
+
 def test_clean_up_subject_head():
     muse_mapping = MUSEMapping(test_source)
     
     cleaned_subject = muse_mapping.clean_up_subject_head('first -- second. -- -- |||')
 
     assert cleaned_subject == 'first -- second|||'
+
 
 def test_extract_language():
     muse_mapping = MUSEMapping(test_source)
@@ -54,12 +57,14 @@ def test_extract_language():
 
     assert extracted_language == '||eng'
 
+
 def test_cleanup_identifier():
     muse_mapping = MUSEMapping(test_source)
 
     cleaned_identifier = muse_mapping.cleanup_identifier('4|(OCoLC)12235')
 
     assert cleaned_identifier == '4|12235'
+
 
 def test_add_has_part_link():
     muse_mapping = MUSEMapping(test_source)
