@@ -7,7 +7,6 @@ from models.pollers.poller import Poller
 from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from model.postgres.item import ITEM_LINKS
 from model.postgres.record import Record
-from model.postgres.work import Work
 
 REQUEST_REGEX = r"REST.GET.OBJECT "
 FILE_ID_REGEX = r"REST.GET.OBJECT (.+pdf\s)"

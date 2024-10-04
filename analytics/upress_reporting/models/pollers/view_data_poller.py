@@ -3,7 +3,6 @@ import os
 
 from model.postgres.edition import Edition
 from model.postgres.record import Record
-from model.postgres.work import Work
 from models.pollers.poller import Poller
 from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
 from sqlalchemy import func

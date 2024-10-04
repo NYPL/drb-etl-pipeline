@@ -1,30 +1,85 @@
 import argparse
-from ast import parse
 import os
 import pandas
-import re
 
 from datetime import datetime
+from helpers import aggregate_logs
+from managers.db import DBManager
+from model.postgres.edition import Edition
+from model.postgres.item import Item
 from models.pollers.download_data_poller import DownloadDataPoller
 from models.pollers.view_data_poller import ViewDataPoller
+from model.postgres.record import Record
 from models.reports.country_level import CountryLevelReport
 from models.reports.downloads import DownloadsReport
 from models.reports.total_usage import TotalUsageReport
 from models.reports.views import ViewsReport
+from typing import List
+
+VIEW_FILE_ID_REGEX = r"REST.GET.OBJECT manifests/(.*?json)\s"
+DOWNLOAD_FILE_ID_REGEX = r"REST.GET.OBJECT (.+pdf\s)"
 
 
 class Counter5Controller:
     def __init__(self, args):
         self.publishers = os.environ.get("PUBLISHERS").split(",")
+        
         parsed_args = self._parse_args(args)
         if parsed_args is not None:
             self.reporting_period = self._parse_reporting_period(parsed_args)
         else:
             self.reporting_period = (f"{datetime.now().year}-01-01 to {datetime.now().year}-01-31")
+        
+        self.setup_db_manager()
+    
+    def setup_db_manager(self):
+        self.db_manager = DBManager(
+            user=os.environ.get("POSTGRES_USER", None),
+            pswd=os.environ.get("POSTGRES_PSWD", None),
+            host=os.environ.get("POSTGRES_HOST", None),
+            port=os.environ.get("POSTGRES_PORT", None),
+            db=os.environ.get("POSTGRES_NAME", None),
+        )
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+    
+    def pull_aggregated_logs(self):
+        referrer_url = os.environ.get("REFERRER_URL", None)
+        
+        aggregate_logs.aggregate_logs_in_period(date_range=self.reporting_period, 
+                                                s3_bucket=os.environ.get("VIEW_BUCKET", None), 
+                                                s3_path=os.environ.get("VIEW_LOG_PATH", None),
+                                                regex=VIEW_FILE_ID_REGEX,
+                                                referrer_url=referrer_url)
+        
+        aggregate_logs.aggregate_logs_in_period(date_range=self.reporting_period, 
+                                                s3_bucket=os.environ.get("DOWNLOAD_BUCKET", None), 
+                                                s3_path=os.environ.get("DOWNLOAD_LOG_PATH", None),
+                                                regex=DOWNLOAD_FILE_ID_REGEX,
+                                                referrer_url=referrer_url)
+    
+    def pull_publisher_data(self, publisher):
+        records = self.db_manager.session.query(Record) \
+            .filter((Record.source == publisher)).all()
+        editions = self.db_manager.session.query(Edition) \
+            .filter((Edition.source == publisher)).all()
+        
+        return (records, editions)
+    
+    def build_reporting_model(self, records: List[Record], editions: List[Edition]):
+        editions_uuids = {"|".join(edition.dcdw_uuids): edition for edition in editions}
+        records_dict = {}
+        
+        for record in records:
+            related_editions = [value for key, value in editions_uuids.items() if record.uuid in key.lower()]
+            records_dict["|".join(record.has_part)] = {"record_data": record, "associated_edition": related_editions[0]}
+        
+        return records_dict
+
 
     def create_reports(self):
         print("Generating Counter 5 reports...")
-        # TODO: aggregate log files
+        # TODO: aggregate log files -> * one for views and one for downloads (this is agnostic of publisher)
 
         # TODO: get all records and editions from publisher backlists stored in config
 
@@ -33,9 +88,15 @@ class Counter5Controller:
         # TODO: create a map of record_id to record
         # TODO: create a map of each relevant part in record.has_part to record_id 
         
+        # self.pull_aggregated_logs()
+
         for publisher in self.publishers:
             try:
                 # TODO: pass in prepped data
+                records, editions = self.pull_publisher_data(publisher)
+                records_dict = self.build_reporting_model(records, editions)
+                print("Records dict ", records_dict)
+
                 view_data_poller = ViewDataPoller(publisher, self.reporting_period)
                 download_data_poller = DownloadDataPoller(publisher, self.reporting_period)
 
@@ -53,7 +114,8 @@ class Counter5Controller:
             except Exception as e:
                 print("Terminating process. Exception encountered: ", e)
                 raise e
-
+        
+        self.db_manager.closeConnection()
         print("Done building Counter 5 reports! ", datetime.now())
 
     def _parse_args(self, args):
