@@ -8,6 +8,7 @@ from mappings.loc import LOCMapping
 from managers import WebpubManifest
 from logger import createLog
 from datetime import datetime, timedelta, timezone
+import traceback
 
 logger = createLog(__name__)
 
@@ -51,6 +52,8 @@ class LOCProcess(CoreProcess):
 
         self.saveRecords()
         self.commitChanges()
+
+        logger.info(f'Ingested {len(self.records)} LOC records')
     
 
     def importLOCRecords(self, startTimeStamp=None):
@@ -83,6 +86,9 @@ class LOCProcess(CoreProcess):
             # An HTTP error will occur when the sp parameter value
             # passes the last page number of the collection search reuslts
             while sp < 100000:
+                if self.ingestLimit and count >= self.ingestLimit:
+                    break
+
                 openAccessURL = '{}&sp={}'.format(LOC_ROOT_OPEN_ACCESS, sp)
                 jsonData = self.fetchPageJSON(openAccessURL)
                 LOCData = jsonData.json()
@@ -129,6 +135,9 @@ class LOCProcess(CoreProcess):
             # An HTTP error will occur when the sp parameter value
             # passes the last page number of the collection search reuslts
             while sp < 100000:
+                if self.ingestLimit and count >= self.ingestLimit:
+                    break
+
                 digitizedURL = '{}&sp={}'.format(LOC_ROOT_DIGIT, sp)
                 jsonData = self.fetchPageJSON(digitizedURL)
                 LOCData = jsonData.json()
@@ -170,14 +179,18 @@ class LOCProcess(CoreProcess):
         try:
             LOCRec = LOCMapping(record)
             LOCRec.applyMapping()
+
+            if LOCRec.record.authors is None:
+                logger.warning(f'Unable to map author in LOC record {LOCRec.record} ')
+                return
+            
             self.addHasPartMapping(record, LOCRec.record)
             self.storePDFManifest(LOCRec.record)
             self.storeEpubsInS3(LOCRec.record)
             self.addDCDWToUpdateList(LOCRec)
-            
-        except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
-            logger.exception(e)
-            logger.warn(LOCError('Unable to process LOC record'))
+        except Exception:
+            logger.info(f'{traceback.print_exc()}')
+            logger.exception(f'Unable to process LOC record')
             
     def addHasPartMapping(self, resultsRecord, record):
         if 'pdf' in resultsRecord['resources'][0].keys():
