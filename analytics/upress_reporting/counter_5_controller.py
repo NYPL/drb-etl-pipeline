@@ -89,7 +89,7 @@ class Counter5Controller:
         # TODO: create a map of each relevant part in record.has_part to record_id 
         
         # self.pull_aggregated_logs()
-
+        
         for publisher in self.publishers:
             try:
                 # TODO: pass in prepped data
