@@ -28,7 +28,6 @@ class TestDOABProcess:
 
                 self.ingestOffset = 0
                 self.ingestLimit = 10000
-                self.records = []
 
         return TestDOAB()
 
