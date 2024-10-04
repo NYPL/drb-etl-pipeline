@@ -29,7 +29,7 @@ def main(args):
     offset = args.offset
     options = args.options
 
-    logger.info('Staring Process {} in {}'.format(process, environment))
+    logger.info('Starting process {} in {}'.format(process, environment))
     logger.debug('Process Args Type: {}, Limit: {}, Offset: {}, Date: {}, File: {}, Record: {}'.format(
         procType, limit, offset, startDate, customFile, singleRecord
     ))
