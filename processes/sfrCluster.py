@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from math import ceil
 import re
-from sqlalchemy.exc import DataError
+from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 
 from .core import CoreProcess
@@ -101,7 +101,7 @@ class ClusterProcess(CoreProcess):
 
         try:
             self.session.flush()
-        except (DataError, StaleDataError) as e:
+        except (IntegrityError, DataError, StaleDataError) as e:
             self.session.rollback()
             logger.error('Unable to cluster {}'.format(rec))
             logger.debug(e)

@@ -39,7 +39,8 @@ class SFRRecordManager:
 
         matchedWorks.sort(key=lambda x: x[1])
 
-        allIdentifiers = self.work.identifiers
+        allIdentifiers = self.work.identifiers.copy()
+
 
         for edition in self.work.editions:
             allIdentifiers.extend(edition.identifiers)
