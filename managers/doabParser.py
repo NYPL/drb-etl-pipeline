@@ -72,7 +72,12 @@ class DOABLinkManager:
         self.record.has_part = parsedLinks
     
     @staticmethod
-    def findFinalURI(uri, mediaType):
+    def findFinalURI(uri, mediaType, redirects=0):
+        max_redirects = 5
+
+        if redirects > max_redirects:
+            return (uri, mediaType)
+
         try:
             uriHeader = requests.head(uri, allow_redirects=False, timeout=15)
             headers = dict((key.lower(), value) for key, value in uriHeader.headers.items())
@@ -93,7 +98,9 @@ class DOABLinkManager:
                 uriRoot = re.split(r'(?<![\/:])\/{1}', uri)[0]
                 redirectURI = '{}{}'.format(uriRoot, redirectURI)
 
-            return DOABLinkManager.findFinalURI(redirectURI, mediaType)
+            redirects += 1
+
+            return DOABLinkManager.findFinalURI(redirectURI, mediaType, redirects)
         
         return (uri, mediaType)
 

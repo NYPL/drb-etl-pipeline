@@ -130,6 +130,10 @@ class DOABProcess(CoreProcess):
 
     def downloadOAIRecords(self, fullOrPartial, startTimestamp, resumptionToken=None):
         doabURL = os.environ['DOAB_OAI_URL']
+        headers = {
+            # Pass a user-agent header to prevent 403 unauthorized responses from DOAB
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
 
         urlParams = 'verb=ListRecords'
         if resumptionToken:
@@ -143,7 +147,7 @@ class DOABProcess(CoreProcess):
 
         doabURL = '{}{}'.format(doabURL, urlParams)
 
-        doabResponse = requests.get(doabURL, stream=True, timeout=30)
+        doabResponse = requests.get(doabURL, stream=True, timeout=30, headers=headers)
 
         if doabResponse.status_code == 200:
             content = bytes()
