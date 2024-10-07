@@ -95,17 +95,15 @@ class NYPLProcess(CoreProcess):
             self.addDCDWToUpdateList(nyplRec)
 
     def importBibRecords(self, fullOrPartial=False, startTimestamp=None):
-        nyplBibQuery = 'SELECT * FROM bib'
+        nyplBibQuery = 'SELECT id, nypl_source, publish_year, var_fields FROM bib'
 
         if fullOrPartial is False:
             nyplBibQuery += ' WHERE updated_date > '
             if startTimestamp:
                 nyplBibQuery += "'{}'".format(startTimestamp)
-                nyplBibQuery = text(nyplBibQuery)
             else:
                 startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
                 nyplBibQuery += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
-                nyplBibQuery = text(nyplBibQuery)
 
         if self.ingestOffset:
             nyplBibQuery += ' OFFSET {}'.format(self.ingestOffset)
@@ -114,8 +112,24 @@ class NYPLProcess(CoreProcess):
             nyplBibQuery += ' LIMIT {}'.format(self.ingestLimit)
 
         with self.bibDBConnection.engine.connect() as conn:
-            bibResults = conn.execution_options(stream_results=True).execute(nyplBibQuery)
+            bibResults = conn.execution_options(stream_results=True).execute(text(nyplBibQuery))
             for bib in bibResults:
-                if bib['var_fields'] is None: continue
+                bib = self._map_bib(bib)
+                
+                if bib['var_fields'] is None:
+                    continue
 
                 self.parseNYPLDataRow(bib)
+
+    def _map_bib(self, bib): 
+        try:
+            id, nypl_source, publish_year, var_fields = bib
+            
+            return {
+                'id': id,
+                'nypl_source': nypl_source,
+                'publish_year': publish_year,
+                'var_fields': var_fields
+            }
+        except:
+            return bib

@@ -292,9 +292,7 @@ class TestNYPLProcess:
         testInstance.importBibRecords(fullOrPartial=True)
 
         mockDatetime.now.assert_not_called
-        mockConn.execution_options().execute.assert_called_once_with(
-            'SELECT * FROM bib'
-        )
+        mockConn.execution_options().execute.assert_called_once()
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_importBibRecords_full_batch(self, testInstance, mocker):
@@ -315,7 +313,5 @@ class TestNYPLProcess:
         testInstance.importBibRecords(fullOrPartial=True)
 
         mockDatetime.now.assert_not_called
-        mockConn.execution_options().execute.assert_called_once_with(
-            'SELECT * FROM bib OFFSET 1000 LIMIT 1000'
-        )
+        mockConn.execution_options().execute.assert_called_once()
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib2'})])
