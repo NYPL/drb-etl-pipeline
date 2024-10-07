@@ -52,6 +52,8 @@ class GutenbergProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
+        logger.info(f'Ingested {len(self.records)} Gutenberg records')
+
     def importRDFRecords(self, fullImport=False, startTimestamp=None):
         orderDirection = 'DESC'
         orderField = 'PUSHED_AT'
