@@ -1,0 +1,11 @@
+ERROR    api.blueprints.drbUtils:drbUtils.py:108 Unable to proxy response
+Traceback (most recent call last):
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/api/blueprints/drbUtils.py", line 90, in proxy_response
+    response = requests.request(
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1092, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1096, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1151, in _execute_mock_call
+    raise effect
+Exception: Unable to make request
