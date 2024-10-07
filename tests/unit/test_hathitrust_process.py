@@ -22,6 +22,8 @@ class TestHathiTrustProcess:
         class TestHathiProcess(HathiTrustProcess):
             def __init__(self, process, customFile, ingestPeriod):
                 self.statics = {}
+                self.records = []
+                self.ingest_limit = None
         
         return TestHathiProcess('TestProcess', 'testFile', 'testDate')
     

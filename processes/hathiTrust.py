@@ -17,6 +17,9 @@ class HathiTrustProcess(CoreProcess):
 
     def __init__(self, *args):
         super(HathiTrustProcess, self).__init__(*args[:4], batchSize=1000)
+
+        self.ingest_limit = int(args[4]) if args[4] else None
+
         self.generateEngine()
         self.createSession()
 
@@ -30,6 +33,8 @@ class HathiTrustProcess(CoreProcess):
 
         self.saveRecords()
         self.commitChanges()
+
+        logger.info(f'Ingested {len(self.records)} Hathi Trust records')
 
     def importRemoteRecords(self, fullOrPartial=False):
         self.importFromHathiTrustDataFile(fullDump=fullOrPartial)
@@ -94,9 +99,15 @@ class HathiTrustProcess(CoreProcess):
             self.readHathiFile(hathiTSV)
 
     def readHathiFile(self, hathiTSV):
+        processed_record_count = 0
+
         while True:
+            if self.ingest_limit and processed_record_count >= self.ingest_limit:
+                break
+
             try:
                 row = next(hathiTSV)
+                logger.info('Reading row')
             except csv.Error as e:
                 logger.warning('Unable to read TSV row')
                 logger.debug(e)
@@ -107,3 +118,4 @@ class HathiTrustProcess(CoreProcess):
 
             if row is not None and row[2] not in self.HATHI_RIGHTS_SKIPS:
                 self.parseHathiDataRow(row)
+                processed_record_count += 1
