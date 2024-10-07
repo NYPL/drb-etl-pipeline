@@ -54,6 +54,8 @@ class DOABProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
+        logger.info(f'Ingested {len(self.records)} DOAB records')
+
     def parseDOABRecord(self, oaiRec):
         try:
             doabRec = DOABMapping(oaiRec, self.OAI_NAMESPACES, self.statics)
@@ -150,7 +152,7 @@ class DOABProcess(CoreProcess):
 
             return BytesIO(content)
 
-        raise DOABError('Unable to load Project MUSE MARC file')
+        raise DOABError(f'Received {doabResponse.status_code} status code from {doabURL}')
 
     def createManifestInS3(self, manifestPath, manifestJSON):
         self.putObjectInBucket(manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket)
