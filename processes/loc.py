@@ -8,7 +8,6 @@ from mappings.loc import LOCMapping
 from managers import WebpubManifest
 from logger import createLog
 from datetime import datetime, timedelta, timezone
-import traceback
 
 logger = createLog(__name__)
 
@@ -189,7 +188,6 @@ class LOCProcess(CoreProcess):
             self.storeEpubsInS3(LOCRec.record)
             self.addDCDWToUpdateList(LOCRec)
         except Exception:
-            logger.info(f'{traceback.print_exc()}')
             logger.exception(f'Unable to process LOC record')
             
     def addHasPartMapping(self, resultsRecord, record):
