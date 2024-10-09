@@ -6,8 +6,8 @@ from sqlalchemy.ext.mutable import MutableList
 from .base import Base, Core
 
 WORK_IDENTIFIERS = Table('work_identifiers', Base.metadata,
-    Column('work_id', Integer, ForeignKey('works.id', ondelete='CASCADE')),
-    Column('identifier_id', Integer, ForeignKey('identifiers.id', ondelete='CASCADE'))
+    Column('work_id', Integer, ForeignKey('works.id', ondelete='CASCADE'), unique=True),
+    Column('identifier_id', Integer, ForeignKey('identifiers.id', ondelete='CASCADE'), unique=True)
 )
 
 WORK_RIGHTS = Table('work_rights', Base.metadata,
