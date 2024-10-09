@@ -1,6 +1,5 @@
 import os
 import re
-import time
 import pandas
 import shutil
 
@@ -21,7 +20,7 @@ def aggregate_logs_in_day(s3_bucket: str, s3_path: str, folder_name: str,
 
         filename = os.fsdecode(file)
 
-        with open(aggregated_log_file, "a+") as aggregated_log:
+        with open(aggregated_log_file, "a") as aggregated_log:
             with open(f"{download_folder}/{filename}", "r") as log_file:
                 for line in log_file:
                     match_file_id = re.search(file_id_regex, line)
@@ -32,12 +31,13 @@ def aggregate_logs_in_day(s3_bucket: str, s3_path: str, folder_name: str,
 
                     aggregated_log.write(line)
 
-            os.remove(f"{download_folder}/{filename}")
+            os.remove(f'{download_folder}/{filename}')
 
 
 def aggregate_logs_in_period(date_range: pandas.DatetimeIndex, s3_bucket: str,
                              s3_path: str, regex: str, referrer_url: str):
-    shutil.rmtree(f"analytics/upress_reporting/log_files/{s3_bucket}", ignore_errors=True)
+    shutil.rmtree(
+        f"analytics/upress_reporting/log_files/{s3_bucket}", ignore_errors=True)
     today = pandas.Timestamp.today()
 
     for date in date_range:

@@ -18,7 +18,7 @@ class UsageType(Enum):
 class InteractionEvent():
     country: Optional[str]
     title: str
-    book_id: int
+    book_id: str
     authors: str
     isbns: str
     oclc_numbers: Optional[str]
