@@ -101,7 +101,7 @@ class ClusterProcess(CoreProcess):
 
         try:
             self.session.flush()
-        except (IntegrityError, DataError, StaleDataError) as e:
+        except Exception as e:
             self.session.rollback()
             logger.error('Unable to cluster {}'.format(rec))
             logger.debug(e)
