@@ -10,7 +10,7 @@ class DownloadsReport(Counter5Report):
 
         if len(events) > 0:
             file_name = f"{self.publisher}_downloads_report_{self.created}.csv"
-            header = self.build_header(report_name="NYPL DRB Book Usage by Title / Downloads",
+            header = self.build_header(report_name="NYPL DRB Total Item Requests by Title / Downloads",
                                        report_description="Downloads of your books from NYPL's Digital Research Books by title.")
             columns, final_data = self.aggregate_interaction_events(events, reporting_data)
             

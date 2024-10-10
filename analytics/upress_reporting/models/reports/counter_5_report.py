@@ -6,6 +6,7 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import fields, is_dataclass
 from datetime import datetime
+from models.data.interaction_event import InteractionEvent
 from typing import Any, List
 
 
@@ -23,12 +24,7 @@ class Counter5Report(ABC):
         return uuid.uuid4()
 
     def aggregate_interaction_events(self, events, reporting_data):
-        print("hiii")
-        print(reporting_data.loc[reporting_data["accessed"] == False])
-        exit()
-        df = pandas.DataFrame(
-            [self._format_dataclass_for_df(event) for event in events])
-        df.columns = [
+        columns = [
             "Book Title",
             "Book ID",
             "Authors",
@@ -40,9 +36,11 @@ class Counter5Report(ABC):
             "Metric Type",
             "Timestamp"
         ]
-        df["Timestamp"] = df["Timestamp"].apply(self._reformat_timestamp_data)
-        df_unique = df.drop_duplicates(subset="Book ID")
-        df_grouped_by_id_and_month = df.groupby(
+
+        accessed_titles_df = self._create_events_df(events, columns)
+        accessed_titles_df["Timestamp"] = accessed_titles_df["Timestamp"].apply(
+            self._reformat_timestamp_data)
+        df_grouped_by_id_and_month = accessed_titles_df.groupby(
             ["Book ID", pandas.Grouper(freq='M', key='Timestamp')])
         monthly_columns = []
 
@@ -52,29 +50,30 @@ class Counter5Report(ABC):
                 calendar.month_name[int(month)], year)
             f"{month}-{year}"
 
-            if column_name not in df_unique.columns:
+            if column_name not in accessed_titles_df.columns:
                 monthly_columns.append(column_name)
-                df_unique[column_name] = pandas.Series()
+                accessed_titles_df[column_name] = pandas.Series()
 
-            df_unique.loc[df_unique["Book ID"] == key[0],
-                          column_name] = group["Book ID"].count()
+            accessed_titles_df.loc[accessed_titles_df["Book ID"] == key[0],
+                                column_name] = group["Book ID"].count()
 
-        df_unique.drop(
+        accessed_titles_df.drop(
             columns=["Timestamp"], axis=1, inplace=True)
-        df_unique.loc[:,
-                      monthly_columns] = df_unique[monthly_columns].fillna(0)
+        accessed_titles_df.loc[:,
+                            monthly_columns] = accessed_titles_df[monthly_columns].fillna(0)
 
-        monthly_col_idx = df_unique.columns.get_loc(monthly_columns[0])
-        df_unique.insert(loc=monthly_col_idx, column="Reporting Period Total",
-                         value=df_unique[monthly_columns].sum(axis=1))
+        zeroed_out_titles_df = self._format_zeroed_out_titles(
+            reporting_data, columns, monthly_columns)
 
-        return (df_unique.columns.tolist(), df_unique.to_dict(orient="records"))
+        merged_df = pandas.concat([accessed_titles_df, zeroed_out_titles_df], ignore_index=True)
+        monthly_col_idx = merged_df.columns.get_loc(monthly_columns[0])
+        merged_df.insert(loc=monthly_col_idx, column="Reporting Period Total",
+                               value=merged_df[monthly_columns].sum(axis=1))
 
-    def aggregate_interaction_events_by_country(self, events):
-        df = pandas.DataFrame([self._format_dataclass_for_df(
-            event, include_country=True) for event in events])
-        df.columns = [
-            "Country",
+        return (merged_df.columns.tolist(), merged_df.to_dict(orient="records"))
+
+    def aggregate_interaction_events_by_country(self, events, reporting_data):
+        columns = [
             "Book Title",
             "Book ID",
             "Authors",
@@ -86,9 +85,13 @@ class Counter5Report(ABC):
             "Metric Type",
             "Timestamp"
         ]
-        df["Timestamp"] = df["Timestamp"].apply(self._reformat_timestamp_data)
-        df_unique = df.drop_duplicates(subset=["Country", "Book ID"])
-        df_grouped_by_country_id_and_month = df.groupby(
+
+        accessed_titles_df = self._create_events_df(events=events, 
+                                                    columns=columns, 
+                                                    include_country=True)
+        accessed_titles_df["Timestamp"] = accessed_titles_df["Timestamp"].apply(
+            self._reformat_timestamp_data)
+        df_grouped_by_country_id_and_month = accessed_titles_df.groupby(
             ["Country", "Book ID", pandas.Grouper(freq='M', key='Timestamp')])
         monthly_columns = []
 
@@ -99,23 +102,27 @@ class Counter5Report(ABC):
                 calendar.month_name[int(month)], year)
             f"{month}-{year}"
 
-            if column_name not in df_unique.columns:
+            if column_name not in accessed_titles_df.columns:
                 monthly_columns.append(column_name)
-                df_unique[column_name] = pandas.Series()
+                accessed_titles_df[column_name] = pandas.Series()
 
-            df_unique.loc[(df_unique["Country"] == country) & (
-                df_unique["Book ID"] == book_id), column_name] = group["Book ID"].count()
+            accessed_titles_df.loc[(accessed_titles_df["Country"] == country) & (
+                accessed_titles_df["Book ID"] == book_id), column_name] = group["Book ID"].count()
+            
+        zeroed_out_titles_df = self._format_zeroed_out_titles(
+            reporting_data, columns, monthly_columns)
 
-        df_unique.drop(
+        accessed_titles_df.drop(
             columns=["Timestamp"], axis=1, inplace=True)
-        df_unique.loc[:,
-                      monthly_columns] = df_unique[monthly_columns].fillna(0)
+        accessed_titles_df.loc[:,
+                      monthly_columns] = accessed_titles_df[monthly_columns].fillna(0)
 
-        monthly_col_idx = df_unique.columns.get_loc(monthly_columns[0])
-        df_unique.insert(loc=monthly_col_idx, column="Reporting Period Total",
-                         value=df_unique[monthly_columns].sum(axis=1))
+        merged_df = pandas.concat([accessed_titles_df, zeroed_out_titles_df], ignore_index=True)
+        monthly_col_idx = merged_df.columns.get_loc(monthly_columns[0])
+        merged_df.insert(loc=monthly_col_idx, column="Reporting Period Total",
+                         value=merged_df[monthly_columns].sum(axis=1))
 
-        return (df_unique.columns.tolist(), df_unique.to_dict(orient="records"))
+        return (merged_df.columns.tolist(), merged_df.to_dict(orient="records"))
 
     def build_header(self, report_name, report_description):
         """TODO: Add further Record.source mappings to publishers as we advance 
@@ -135,25 +142,51 @@ class Counter5Report(ABC):
 
     def write_to_csv(self, file_name, header, column_names, data):
         with open(file_name, 'w') as csv_file:
-            writer = csv.writer(csv_file, delimiter="|")
+            writer = csv.writer(csv_file, delimiter="|", quoting=csv.QUOTE_NONE)
             for key, value in header.items():
                 writer.writerow([key, value])
             writer.writerow([])
             writer.writerow(column_names)
             for title in data:
                 writer.writerow(title.values())
-    
-    # def _format_unaccessed_titles(self, df):
-    #     df_grouped = df.groupby(["accessed"])
-    #     unaccessed_titles = df_grouped.loc[df_grouped["accessed"] == True]
-    #     print("Unaccessed titles ", unaccessed_titles)
-    #     exit()
-    #     return 
+
+    def _format_zeroed_out_titles(self, df, columns, monthly_columns):
+        unaccessed_titles = df.loc[df["accessed"] == False]
+        recarray = unaccessed_titles.to_records()
+
+        zeroed_out_events = [InteractionEvent(
+            country=None,
+            title=title.title,
+            book_id=title.book_id,
+            authors=title.authors,
+            isbns=title.isbns,
+            oclc_numbers=title.oclc_numbers,
+            publication_year=title.publication_year,
+            disciplines=title.disciplines,
+            usage_type=title.usage_type,
+            interaction_type=None,
+            timestamp=None) for title in recarray]
+
+        zeroed_out_df = self._create_events_df(zeroed_out_events, columns)
+
+        for month in monthly_columns:
+            zeroed_out_df[month] = 0
+
+        return zeroed_out_df
 
     def _format_reporting_period_to_string(self):
         return (self.reporting_period[0].strftime("%Y-%m-%d") +
                 " to " +
                 self.reporting_period[-1].strftime("%Y-%m-%d"))
+
+    def _create_events_df(self, events, columns, include_country=False):
+        df = pandas.DataFrame(
+            [self._format_dataclass_for_df(event, include_country) for event in events])
+        df.columns = columns
+        
+        if include_country:
+            return df.drop_duplicates(subset=["Country", "Book ID"])
+        return df.drop_duplicates(subset="Book ID")
 
     def _format_dataclass_for_df(self, dataclass_instance: Any, include_country=False) -> List[Any]:
         if not is_dataclass(dataclass_instance):
@@ -164,7 +197,6 @@ class Counter5Report(ABC):
         for field in fields(dataclass_instance):
             if field.name == 'country' and not include_country:
                 continue
-
             csv_row.append(getattr(dataclass_instance, field.name))
 
         return csv_row

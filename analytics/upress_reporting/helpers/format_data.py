@@ -12,8 +12,9 @@ def format_to_interaction_event(data, referrer_url):
     oclc_numbers = [identifier.split(
         "|")[0] for identifier in data.identifiers if "oclc" in identifier]
 
-    authors = [author.split('|')[0] for author in data.authors]
-    disciplines = [subject.split('|')[0]
+    authors = [author.split("|")[0] 
+               for author in data.authors]
+    disciplines = [subject.split("|")[0]
                    for subject in data.subjects or []]
     search_col = _parse_has_part(data)
 
@@ -21,11 +22,11 @@ def format_to_interaction_event(data, referrer_url):
         "title": data.title,
         "publication_year": publication_year,
         "book_id": f'{referrer_url}edition/{data.id}',
-        "usage_type": usage_type,
-        "isbns": isbns,
-        "oclc_numbers": oclc_numbers,
-        "authors": authors,
-        "disciplines": disciplines,
+        "usage_type": usage_type.value,
+        "isbns": ", ".join(isbns),
+        "oclc_numbers": ", ".join(oclc_numbers),
+        "authors": "; ".join(authors),
+        "disciplines": ", ".join(disciplines),
         "search_col": search_col,
         "accessed": data.accessed
     }

@@ -3,8 +3,8 @@ import os
 import pandas
 
 from datetime import datetime
-from analytics.upress_reporting.helpers.format_data import format_to_interaction_event
 from helpers import aggregate_logs
+from helpers.format_data import format_to_interaction_event
 from managers.db import DBManager
 from models.data.interaction_event import InteractionType
 from models.pollers.poller import Poller
@@ -69,9 +69,7 @@ class Counter5Controller:
                     filtered_publisher_data)
                 
                 df = pandas.DataFrame(normalized_publisher_data)
-                df.set_index(["search_col"], inplace=True)
-                print("wtf")
-                print(print(df.loc[df["accessed"] == False]))
+                df.set_index("search_col", inplace=True)
 
                 # TODO: pass in prepped data
                 view_data_poller = Poller(date_range=self.reporting_period,
@@ -85,24 +83,24 @@ class Counter5Controller:
                                               bucket_name=self.download_bucket,
                                               interaction_type=InteractionType.DOWNLOAD)
 
-                downloads_report = DownloadsReport(
-                    publisher, self.reporting_period)
+                downloads_report = DownloadsReport(publisher, self.reporting_period)
                 downloads_report.build_report(download_data_poller.events,
                                               download_data_poller.reporting_data)
 
                 views_report = ViewsReport(publisher, self.reporting_period)
                 views_report.build_report(view_data_poller.events,
                                           view_data_poller.reporting_data)
+                
+                merged_reporting_data = pandas.concat([download_data_poller.reporting_data, view_data_poller.reporting_data], ignore_index=True)
+                merged_reporting_data = merged_reporting_data.sort_values(["accessed"]).drop_duplicates(subset=["book_id"], keep="last")
 
-                country_level_report = CountryLevelReport(
-                    publisher, self.reporting_period)
+                country_level_report = CountryLevelReport(publisher, self.reporting_period)
                 country_level_report.build_report(view_data_poller.events + download_data_poller.events,
-                                                  download_data_poller.reporting_data)
+                                                  merged_reporting_data)
 
-                total_usage_report = TotalUsageReport(
-                    publisher, self.reporting_period)
+                total_usage_report = TotalUsageReport(publisher, self.reporting_period)
                 total_usage_report.build_report(view_data_poller.events + download_data_poller.events,
-                                                view_data_poller.reporting_data)
+                                                merged_reporting_data)
 
             except Exception as e:
                 print("Terminating process. Exception encountered: ", e)
