@@ -67,9 +67,9 @@ class ClusterProcess(CoreProcess):
                 logger.warning('Skipping record {}'.format(rec))
                 self.updateMatchedRecordsStatus([rec.id])
                 self.session.commit()
-            except Exception:
+            except Exception as e:
                 logger.exception(f'Failed to cluster record {rec}')
-                continue
+                raise e
 
             if len(indexingWorks) >= 50:
                 self.updateElasticSearch(indexingWorks, deletingWorks)
