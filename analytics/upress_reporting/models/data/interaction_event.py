@@ -18,12 +18,12 @@ class UsageType(Enum):
 class InteractionEvent():
     country: Optional[str]
     title: str
-    book_id: int
+    book_id: str
     authors: str
     isbns: str
     oclc_numbers: Optional[str]
     publication_year: Optional[str]
     disciplines: Optional[str]
     usage_type: str
-    interaction_type: InteractionType
-    timestamp: str
+    interaction_type: Optional[str]
+    timestamp: Optional[str]
