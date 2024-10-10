@@ -5,7 +5,7 @@ class ViewsReport(Counter5Report):
     def __init__(self, *args):
         super().__init__(*args)
     
-    def build_report(self, events):
+    def build_report(self, events, reporting_data):
         # TODO: move to general counter 5 class?
         print("Building views report...")
 
@@ -13,7 +13,7 @@ class ViewsReport(Counter5Report):
             file_name = f"{self.publisher}_views_report_{self.created}.csv"
             header = self.build_header(report_name="NYPL DRB Book Usage by Title / Views",
                                        report_description="Views of your books from NYPL's Digital Research Books by title.")
-            columns, final_data = self.aggregate_interaction_events(events)
+            columns, final_data = self.aggregate_interaction_events(events, reporting_data)
             
             self.write_to_csv(file_name=file_name, 
                               header=header, 

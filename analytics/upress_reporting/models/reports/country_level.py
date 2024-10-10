@@ -5,7 +5,7 @@ class CountryLevelReport(Counter5Report):
     def __init__(self, *args):
         super().__init__(*args)
 
-    def build_report(self, events):
+    def build_report(self, events, reporting_data):
         print("Building country-level report...")
         
         if len(events) > 0:

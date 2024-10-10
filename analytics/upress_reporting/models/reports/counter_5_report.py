@@ -16,13 +16,16 @@ class Counter5Report(ABC):
         self.reporting_period = reporting_period
 
     @abstractmethod
-    def build_report(self, events):
+    def build_report(self, events, reporting_data):
         return
 
     def generate_report_id(self):
         return uuid.uuid4()
 
-    def aggregate_interaction_events(self, events):
+    def aggregate_interaction_events(self, events, reporting_data):
+        print("hiii")
+        print(reporting_data.loc[reporting_data["accessed"] == False])
+        exit()
         df = pandas.DataFrame(
             [self._format_dataclass_for_df(event) for event in events])
         df.columns = [
@@ -34,7 +37,7 @@ class Counter5Report(ABC):
             "Publication Year",
             "Disciplines",
             "Usage Type",
-            "Interaction Type",
+            "Metric Type",
             "Timestamp"
         ]
         df["Timestamp"] = df["Timestamp"].apply(self._reformat_timestamp_data)
@@ -57,7 +60,7 @@ class Counter5Report(ABC):
                           column_name] = group["Book ID"].count()
 
         df_unique.drop(
-            columns=["Timestamp", "Interaction Type"], axis=1, inplace=True)
+            columns=["Timestamp"], axis=1, inplace=True)
         df_unique.loc[:,
                       monthly_columns] = df_unique[monthly_columns].fillna(0)
 
@@ -80,7 +83,7 @@ class Counter5Report(ABC):
             "Publication Year",
             "Disciplines",
             "Usage Type",
-            "Interaction Type",
+            "Metric Type",
             "Timestamp"
         ]
         df["Timestamp"] = df["Timestamp"].apply(self._reformat_timestamp_data)
@@ -104,12 +107,11 @@ class Counter5Report(ABC):
                 df_unique["Book ID"] == book_id), column_name] = group["Book ID"].count()
 
         df_unique.drop(
-            columns=["Timestamp", "Interaction Type"], axis=1, inplace=True)
+            columns=["Timestamp"], axis=1, inplace=True)
         df_unique.loc[:,
                       monthly_columns] = df_unique[monthly_columns].fillna(0)
 
         monthly_col_idx = df_unique.columns.get_loc(monthly_columns[0])
-        print("Monthly col idx ", monthly_col_idx)
         df_unique.insert(loc=monthly_col_idx, column="Reporting Period Total",
                          value=df_unique[monthly_columns].sum(axis=1))
 
@@ -119,7 +121,7 @@ class Counter5Report(ABC):
         """TODO: Add further Record.source mappings to publishers as we advance 
         in project (ex. University of Louisiana, Lafayette)"""
         publisher_mappings = {
-            "UofMichigan Press": "University of Michigan", "mit": "MIT Press"}
+            "UofMichigan Press": "University of Michigan Press"}
 
         return {
             "Report_Name": report_name,
@@ -140,6 +142,13 @@ class Counter5Report(ABC):
             writer.writerow(column_names)
             for title in data:
                 writer.writerow(title.values())
+    
+    # def _format_unaccessed_titles(self, df):
+    #     df_grouped = df.groupby(["accessed"])
+    #     unaccessed_titles = df_grouped.loc[df_grouped["accessed"] == True]
+    #     print("Unaccessed titles ", unaccessed_titles)
+    #     exit()
+    #     return 
 
     def _format_reporting_period_to_string(self):
         return (self.reporting_period[0].strftime("%Y-%m-%d") +

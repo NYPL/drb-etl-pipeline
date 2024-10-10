@@ -1,10 +1,9 @@
 import geocoder
-import json
 import os
 import pandas
 import re
 
-from models.data.interaction_event import InteractionEvent, InteractionType, UsageType
+from models.data.interaction_event import InteractionEvent, InteractionType
 
 IP_REGEX = r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}"
 REQUEST_REGEX = r"REST.GET.OBJECT "
@@ -12,7 +11,7 @@ TIMESTAMP_REGEX = r"\[.+\]"
 
 
 class Poller():
-    def __init__(self, date_range, reporting_data,
+    def __init__(self, date_range, reporting_data: pandas.DataFrame,
                  file_id_regex, bucket_name, interaction_type):
         self.date_range = date_range
         self.reporting_data = reporting_data
@@ -77,91 +76,42 @@ class Poller():
         if self.interaction_type == InteractionType.VIEW:
             file_name = match_file_id.group(1).split("/", 1)[1]
         else:
-            file_name = match_file_id.group(1)
+            file_name = match_file_id.group(1).strip().split("\"")[0]
 
-        drb_data_match = [
-            data for key, data in self.reporting_data.items() if file_name in key.lower()]
-
-        if not drb_data_match or len(drb_data_match) < 1:
+        drb_data_match = self.reporting_data.loc[self.reporting_data.index.str.contains(
+            file_name)]
+        
+        if drb_data_match.empty:
             return None
 
-        match_data = drb_data_match[0]
-
-        title = match_data.title
-        publication_year = self._pull_publication_year(match_data)
-
-        book_id = f'{self.referrer_url}edition/{match_data.id}'
-        usage_type = self._determine_usage(match_data)
-        isbns = [identifier.split(
-            "|")[0] for identifier in match_data.identifiers if "isbn" in identifier]
-        oclc_numbers = [identifier.split(
-            "|")[0] for identifier in match_data.identifiers if "oclc" in identifier]
-
-        authors = [author.split('|')[0] for author in match_data.authors]
-        disciplines = [subject.split('|')[0]
-                       for subject in match_data.subjects or []]
+        match_data = drb_data_match.iloc[0].to_dict()
+        match_idx = drb_data_match.index[0]
+        self.reporting_data.at[match_idx, "accessed"] = True
 
         return InteractionEvent(
             country=self._map_ip_to_country(match_ip.group()),
-            title=title,
-            book_id=book_id,
-            authors="; ".join(authors),
-            isbns=", ".join(isbns),
-            oclc_numbers=", ".join(oclc_numbers),
-            publication_year=publication_year,
-            disciplines=", ".join(disciplines),
-            usage_type=usage_type.value,
-            interaction_type=InteractionType.DOWNLOAD,
+            title=match_data["title"],
+            book_id=match_data["book_id"],
+            authors="; ".join(match_data["authors"]),
+            isbns=", ".join(match_data["isbns"]),
+            oclc_numbers=", ".join(match_data["oclc_numbers"]),
+            publication_year=match_data["publication_year"],
+            disciplines=", ".join(match_data["disciplines"]),
+            usage_type=match_data["usage_type"],
+            interaction_type=self.interaction_type.value,
             timestamp=match_time[0]
         )
-
+    
     def _map_ip_to_country(self, ip) -> str | None:
         if re.match(IP_REGEX, ip):
             geocoded_ip = geocoder.ip(ip)
             return geocoded_ip.country
         return None
 
-    def _pull_publication_year(self, edition):
-        for date in edition.dates:
-            if "publication" in date["type"]:
-                return date["date"]
-        return None
-
-    def _determine_usage(self, match_data):
-        if match_data.has_part:
-            flags = [self._load_flags(tuple(link.split("|"))[4])
-                     for link in match_data.has_part]
-
-            if any(flag.get('nypl_login', False) for flag in flags):
-                return UsageType.LIMITED_ACCESS
-
-            has_read_flag = any(flag.get('embed', False) or flag.get(
-                'reader', False) for flag in flags)
-            has_download_flag = any(flag.get('download', False)
-                                    for flag in flags)
-
-            if has_read_flag and has_download_flag:
-                return UsageType.FULL_ACCESS
-
-        return UsageType.VIEW_ACCESS
-
-    def _load_flags(self, flag_string):
-        try:
-            flags = json.loads(flag_string)
-            return flags if isinstance(flags, dict) else {}
-        except json.decoder.JSONDecodeError as e:
-            raise S3LogParsingError(e.msg)
-
     def _redact_s3_path(self, path):
         split_path = path.split("/")
         split_path[1] = "NYPL_AWS_ID"
         return "/".join(split_path)
-
-
-class S3LogParsingError(Exception):
-    def __init__(self, message=None):
-        self.message = message
-
 
 class UnconfiguredEnvironmentError(Exception):
     def __init__(self, message=None):

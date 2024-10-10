@@ -1,4 +1,5 @@
 from .helpers.aggregate_logs import aggregate_logs_in_period
+from .helpers.format_data import format_to_interaction_event
 
 from .models.data import interaction_event
 from .models.pollers import poller
