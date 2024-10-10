@@ -13,8 +13,8 @@ levels = {
 }
 
 
-def createLog(module):
-    logger = logging.getLogger(module)
+def create_logger(name: str):
+    logger = logging.getLogger(name)
     consoleLog = logging.StreamHandler(stream=sys.stdout)
 
     logLevel = os.environ.get('LOG_LEVEL', 'warning').lower()
@@ -28,3 +28,8 @@ def createLog(module):
     logger.addHandler(consoleLog)
 
     return logger
+
+
+stage = os.getenv('STAGE', 'qa')
+
+logger = create_logger(f'drb-etl-pipeline-{stage}')
