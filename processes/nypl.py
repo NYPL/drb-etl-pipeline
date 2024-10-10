@@ -38,8 +38,6 @@ class NYPLProcess(CoreProcess):
         self.cce_api = os.environ['BARDO_CCE_API']
 
     def runProcess(self):
-        logger.info(f'Running {self.process} NYPL ingestion process')
-
         try:
             if self.process == 'daily':
                 self.import_bib_records()
@@ -48,7 +46,7 @@ class NYPLProcess(CoreProcess):
             elif self.process == 'custom':
                 self.import_bib_records(start_timestamp=self.ingestPeriod)
             else: 
-                logger.warning(f'Unknown NYPL ingesttion process type {self.process}')
+                logger.warning(f'Unknown NYPL ingestion process type {self.process}')
                 return
             
             self.saveRecords()
