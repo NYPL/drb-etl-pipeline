@@ -25,6 +25,7 @@ class TestGutenbergProcess:
                 self.s3Bucket = os.environ['FILE_BUCKET']
                 self.fileQueue = os.environ['FILE_QUEUE']
                 self.fileRoute = os.environ['FILE_ROUTING_KEY']
+                self.records = []
         
         return TestGutenbergProcess('TestProcess', 'testFile', 'testDate')
 

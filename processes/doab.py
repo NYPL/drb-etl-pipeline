@@ -5,9 +5,12 @@ import os
 import requests
 
 from .core import CoreProcess
+from logger import createLog
 from mappings.doab import DOABMapping
 from mappings.core import MappingError
 from managers import DOABLinkManager
+
+logger = createLog(__name__)
 
 class DOABProcess(CoreProcess):
     ROOT_NAMESPACE = {None: 'http://www.openarchives.org/OAI/2.0/'}
@@ -51,6 +54,8 @@ class DOABProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
+        logger.info(f'Ingested {len(self.records)} DOAB records')
+
     def parseDOABRecord(self, oaiRec):
         try:
             doabRec = DOABMapping(oaiRec, self.OAI_NAMESPACES, self.statics)
@@ -86,7 +91,7 @@ class DOABProcess(CoreProcess):
             try:
                 self.parseDOABRecord(oaidcRecord)
             except DOABError as e:
-                print('ERROR', e)
+                logger.error(f'Error parsing DOAB record {oaidcRecord}')
 
     def importOAIRecords(self, fullOrPartial=False, startTimestamp=None):
         resumptionToken = None
@@ -109,7 +114,7 @@ class DOABProcess(CoreProcess):
                 try:
                     self.parseDOABRecord(record)
                 except DOABError as e:
-                    print('ERROR', e)
+                    logger.error(f'Error parsing DOAB record {record}')
 
             recordsProcessed += 100
 
@@ -125,6 +130,10 @@ class DOABProcess(CoreProcess):
 
     def downloadOAIRecords(self, fullOrPartial, startTimestamp, resumptionToken=None):
         doabURL = os.environ['DOAB_OAI_URL']
+        headers = {
+            # Pass a user-agent header to prevent 403 unauthorized responses from DOAB
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
 
         urlParams = 'verb=ListRecords'
         if resumptionToken:
@@ -138,7 +147,7 @@ class DOABProcess(CoreProcess):
 
         doabURL = '{}{}'.format(doabURL, urlParams)
 
-        doabResponse = requests.get(doabURL, stream=True, timeout=30)
+        doabResponse = requests.get(doabURL, stream=True, timeout=30, headers=headers)
 
         if doabResponse.status_code == 200:
             content = bytes()
@@ -147,7 +156,7 @@ class DOABProcess(CoreProcess):
 
             return BytesIO(content)
 
-        raise DOABError('Unable to load Project MUSE MARC file')
+        raise DOABError(f'Received {doabResponse.status_code} status code from {doabURL}')
 
     def createManifestInS3(self, manifestPath, manifestJSON):
         self.putObjectInBucket(manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket)

@@ -68,7 +68,7 @@ class TestOCLCCatalogProcess:
         testInstance.processCatalogQuery('{"oclcNo": 1, "owiNo": 1}')
 
         testInstance.oclcCatalogManager.query_catalog.assert_called_once_with(1)
-        mockParser.assert_called_once_with('testXML', 1)
+        mockParser.assert_called_once_with('testXML', 1, 1)
 
     def test_processCatalogQuery_no_record_found(self, testInstance, mocker):
         testInstance.oclcCatalogManager.query_catalog.return_value = None
@@ -89,7 +89,7 @@ class TestOCLCCatalogProcess:
 
         mockAdd = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
-        testInstance.parseCatalogRecord('rawXML', 1)
+        testInstance.parseCatalogRecord('rawXML', 1, 1)
 
         mockXMLParser.assert_called_once_with(b'rawXML')
         mockMapping.assert_called_once_with(
@@ -110,7 +110,7 @@ class TestOCLCCatalogProcess:
 
         mockAdd = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
-        testInstance.parseCatalogRecord('rawXML', 1)
+        testInstance.parseCatalogRecord('rawXML', 1, 1)
 
         mockXMLParser.assert_called_once_with(b'rawXML')
         mockMapping.assert_called_once_with(
@@ -126,7 +126,7 @@ class TestOCLCCatalogProcess:
 
         mockAdd = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
-        testInstance.parseCatalogRecord('rawXML', 1)
+        testInstance.parseCatalogRecord('rawXML', 1, 1)
 
         mockMapping.assert_not_called()
         mockCatalogRec.applyMapping.assert_not_called()

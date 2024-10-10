@@ -13,8 +13,7 @@ class TestOCLCCatalogManager:
         return OCLCCatalogManager()
 
     def test_initializer(self, testInstance):
-        assert testInstance.oclcKey == 'test_api_key'
-        assert testInstance.attempts == 0
+        assert testInstance.oclc_key == 'test_api_key'
 
     def test_query_catalog_success(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()

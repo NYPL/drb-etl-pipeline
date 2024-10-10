@@ -32,8 +32,8 @@ def get_link(link_id):
                 response_type,
                 APIUtils.formatLinkOutput(link, request=request)
             )
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception(f'Unable to get link with id {link_id}')
         return APIUtils.formatResponseObject(
             500, 
             response_type, 

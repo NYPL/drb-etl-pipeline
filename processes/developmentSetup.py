@@ -8,158 +8,172 @@ import requests
 import sqlalchemy as sa
 from sqlalchemy.exc import ProgrammingError
 from time import sleep
-import alembic.config
 
 from managers.db import DBManager
 from .core import CoreProcess
+from logger import createLog
 from mappings.hathitrust import HathiMapping
 from .oclcClassify import ClassifyProcess
 from .oclcCatalog import CatalogProcess
 from .sfrCluster import ClusterProcess
 
+logger = createLog(__name__)
+
+
 class DevelopmentSetupProcess(CoreProcess):
     def __init__(self, *args):
-        self.adminDBConnection = DBManager(
+        self.admin_db_manager = DBManager(
             user=os.environ['ADMIN_USER'],
             pswd=os.environ['ADMIN_PSWD'],
             host=os.environ['POSTGRES_HOST'],
             port=os.environ['POSTGRES_PORT'],
             db='postgres'
         )
-        self.initializeDB()
+
+        self.initialize_db()
 
         super(DevelopmentSetupProcess, self).__init__(*args[:4])
 
     def runProcess(self):
-        # Setup database if necessary
-        self.generateEngine()
-        self.createSession()
-        #Allow Database to be trashed when reinitializing local DevelopmentSetUp
-        self.initializeDatabase()
-        self.runDBMigration()
+        try:
+            self.generateEngine()
+            self.createSession()
 
-        # Setup ElasticSearch index if necessary
-        self.createElasticConnection()
-        # Wait for ElasticSearch to be available
-        # (Necessary for docker-compose local development)
-        self.waitForElasticSearch()
-        # Initialize ElasticSearch index
-        self.createElasticSearchIndex()
-        #Allow ElasticSearch to be trashed when reinitializing local DevelopmentSetUp
+            self.initializeDatabase()
 
-        # Create rabbit queues
-        self.createRabbitConnection()
-        self.createOrConnectQueue(os.environ['OCLC_QUEUE'], os.environ['OCLC_ROUTING_KEY'])
-        self.createOrConnectQueue(os.environ['FILE_QUEUE'], os.environ['FILE_ROUTING_KEY'])
+            self.createElasticConnection()
+            self.wait_for_elastic_search()
+            self.createElasticSearchIndex()
 
-        # Populate with set of sample data from sources
-        self.fetchHathiSampleData()
+            self.createRabbitConnection()
+            self.createOrConnectQueue(os.environ['OCLC_QUEUE'], os.environ['OCLC_ROUTING_KEY'])
+            self.createOrConnectQueue(os.environ['FILE_QUEUE'], os.environ['FILE_ROUTING_KEY'])
 
-        procArgs = ['complete'] + ([None] * 4)
+            self.fetch_hathi_sample_data()
 
-        self.createRedisClient()
-        self.clear_cache()
+            process_args = ['complete'] + ([None] * 4)
 
-        # FRBRize the fetched data
-        classifyProc = ClassifyProcess(*procArgs)
-        classifyProc.runProcess()
+            self.createRedisClient()
+            self.clear_cache()
 
-        catalogProc = CatalogProcess(*procArgs)
-        catalogProc.runProcess()
+            classify_process = ClassifyProcess(*process_args)
+            classify_process.runProcess()
 
-        # Group the fetched data
-        clusterProc = ClusterProcess(*procArgs)
-        clusterProc.runProcess()
+            catalog_process = CatalogProcess(*process_args)
+            catalog_process.runProcess(max_attempts=1)
+            
+            cluster_process = ClusterProcess(*process_args)
+            cluster_process.runProcess()
+        except Exception:
+            logger.exception(f'Failed to run development setup process')
 
-    def runDBMigration(self):
-        alembicArgs = [
-            '--raiseerr',
-            'upgrade', 'head',
-        ]
-        alembic.config.main(argv=alembicArgs)
+    def initialize_db(self):
+        self.admin_db_manager.generateEngine()
 
-    def initializeDB(self):
-        self.adminDBConnection.generateEngine()
-        with self.adminDBConnection.engine.connect() as conn:
-            conn.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            try:
-                conn.execute(
-                    sa.text(f"CREATE DATABASE {os.environ['POSTGRES_NAME']}"),
-                )
-            except ProgrammingError:
-                pass
+        with self.admin_db_manager.engine.connect() as admin_db_connection:
+            admin_db_connection.connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
-            try:
-                conn.execute(
-                    sa.text(
-                        f"CREATE USER {os.environ['POSTGRES_USER']} "
-                        f"WITH PASSWORD '{os.environ['POSTGRES_PSWD']}'",
-                    ),
-                )
-                conn.execute(
-                    sa.text(
-                        f"GRANT ALL PRIVILEGES ON DATABASE {os.environ['POSTGRES_NAME']} "
-                        f"TO {os.environ['POSTGRES_USER']}",
-                    ),
-                )
-            except ProgrammingError:
-                pass
+            self.create_database(admin_db_connection)
+            self.create_database_user(admin_db_connection)
 
-        self.adminDBConnection.engine.dispose()
+        self.admin_db_manager.engine.dispose()
 
-    def fetchHathiSampleData(self):
-        self.importFromHathiTrustDataFile()
-        self.saveRecords()
-        self.commitChanges()
+    def create_database(self, db_connection):
+        try:
+            db_connection.execute(
+                sa.text(f"CREATE DATABASE {os.environ['POSTGRES_NAME']}"),
+            )
+        except ProgrammingError:
+            pass
+        except Exception as e:
+            logger.exception('Failed to create database')
+            raise e
 
-    def waitForElasticSearch(self):
+    def create_database_user(self, db_connection):
+        try:
+            db_connection.execute(
+                sa.text(
+                    f"CREATE USER {os.environ['POSTGRES_USER']} "
+                    f"WITH PASSWORD '{os.environ['POSTGRES_PSWD']}'",
+                ),
+            )
+            db_connection.execute(
+                sa.text(
+                    f"GRANT ALL PRIVILEGES ON DATABASE {os.environ['POSTGRES_NAME']} "
+                    f"TO {os.environ['POSTGRES_USER']}",
+                ),
+            )
+        except ProgrammingError:
+            pass
+        except Exception as e:
+            logger.exception('Failed to create database user')
+            raise e
+        
+    def wait_for_elastic_search(self):
         increment = 5
-        totalTime = 0
-        while True and totalTime < 60:
+        max_time = 60
+
+        for _ in range(0, max_time, increment):
             try:
                 self.es.info()
                 break
             except ConnectionError:
                 pass
+            except Exception as e:
+                logger.exception('Failed to wait for elastic search')
+                raise e
 
-            totalTime += increment
             sleep(increment)
 
-    @staticmethod
-    def returnHathiDateFormat(strDate):
-        if 'T' in strDate and '-' in strDate:
-            return '%Y-%m-%dT%H:%M:%S%z'
-        elif 'T' in strDate:
-            return '%Y-%m-%dT%H:%M:%S'
-        else:
-            return '%Y-%m-%d %H:%M:%S %z'
+    def fetch_hathi_sample_data(self):
+        self.import_from_hathi_trust_data_file()
 
-    def importFromHathiTrustDataFile(self):
-        fileList = requests.get(os.environ['HATHI_DATAFILES'])
-        if fileList.status_code != 200:
-            raise IOError('Unable to load data files')
+        self.saveRecords()
+        self.commitChanges()
 
-        fileJSON = fileList.json()
+    def import_from_hathi_trust_data_file(self):
+        hathi_files_response = requests.get(os.environ['HATHI_DATAFILES'])
 
-        fileJSON.sort(
-            key=lambda x: datetime.strptime(
-                x['created'],
-                self.returnHathiDateFormat(x['created'])
+        if hathi_files_response.status_code != 200:
+            raise Exception('Unable to load Hathi Trust data files')
+
+        hathi_files_json = hathi_files_response.json()
+
+        hathi_files_json.sort(
+            key=lambda file: datetime.strptime(
+                file['created'],
+                self.map_to_hathi_date_format(file['created'])
             ).timestamp(),
             reverse=True
         )
 
-        with open('/tmp/tmp_hathi.txt.gz', 'wb') as hathiTSV:
-            hathiReq = requests.get(fileJSON[0]['url'])
-            hathiTSV.write(hathiReq.content)
+        temp_hathi_file = '/tmp/tmp_hathi.txt.gz'
+        in_copyright_statuses = { 'ic', 'icus', 'ic-world', 'und' }
 
-        with gzip.open('/tmp/tmp_hathi.txt.gz', 'rt') as unzipTSV:
-            hathiTSV = csv.reader(unzipTSV, delimiter='\t')
-            for i, row in enumerate(hathiTSV):
-                if row[2] not in ['ic', 'icus', 'ic-world', 'und']:
-                    hathiRec = HathiMapping(row, self.statics)
-                    hathiRec.applyMapping()
-                    self.addDCDWToUpdateList(hathiRec)
+        with open(temp_hathi_file, 'wb') as hathi_tsv_file:
+            hathi_data_response = requests.get(hathi_files_json[0]['url'])
 
-                if i >= 500:
+            hathi_tsv_file.write(hathi_data_response.content)
+
+        with gzip.open(temp_hathi_file, 'rt') as unzipped_tsv_file:
+            hathi_tsv_file = csv.reader(unzipped_tsv_file, delimiter='\t')
+
+            for number_of_books_ingested, book in enumerate(hathi_tsv_file):
+                if number_of_books_ingested > 500:
                     break
+
+                book_right = book[2]
+
+                if book_right not in in_copyright_statuses:
+                    hathi_record = HathiMapping(book, self.statics)
+                    hathi_record.applyMapping()
+
+                    self.addDCDWToUpdateList(hathi_record)
+    
+    def map_to_hathi_date_format(self, date: str):
+        if 'T' in date and '-' in date:
+            return '%Y-%m-%dT%H:%M:%S%z'
+        elif 'T' in date:
+            return '%Y-%m-%dT%H:%M:%S'
+        else:
+            return '%Y-%m-%d %H:%M:%S %z'

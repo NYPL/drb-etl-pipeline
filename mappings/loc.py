@@ -33,9 +33,9 @@ class LOCMapping(JSONMapping):
         self.record.source = 'loc'
         if self.record.medium:
             self.record.medium = self.record.medium[0]
-        if len(self.record.is_part_of) == 0:
+        if self.record.is_part_of and len(self.record.is_part_of) == 0:
             self.record.is_part_of = None
-        if len(self.record.abstract) == 0:
+        if self.record.abstract and len(self.record.abstract) == 0:
             self.record.abstract = None
 
         #Convert string repr of list to actual list
@@ -62,6 +62,9 @@ class LOCMapping(JSONMapping):
         lccnNumber = self.record.identifiers[0][0]  #lccnNumber comes in as an array and we need the string inside the array
         sourceID = lccnNumber
         if 'call_number' in newIdentifier.keys():
+            if not isinstance(newIdentifier['call_number'], list):
+                    newIdentifier['call_number'] = list(newIdentifier['call_number'])
+
             newIdentifier['call_number'][0] = f'{newIdentifier["call_number"][0]}|call_number'
             callNumber = newIdentifier['call_number'][0].strip(' ')
         else: 
@@ -77,7 +80,7 @@ class LOCMapping(JSONMapping):
                 if ':' not in elem:
                     createdPublishedList = elem.split(',', 1)
                     pubLocation = createdPublishedList[0].strip(' ')
-                    if ',' in createdPublishedList[1]:
+                    if len(createdPublishedList) >= 2 and ',' in createdPublishedList[1]:
                         pubOnly = createdPublishedList[1].split(',')[0].strip(' ')
                         pubArray.append(pubOnly)
                     spatialString = pubLocation

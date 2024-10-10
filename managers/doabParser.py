@@ -4,7 +4,10 @@ import requests
 import re
 from requests.exceptions import ConnectionError, InvalidURL, MissingSchema, ReadTimeout 
 
+from logger import createLog
 import managers.parsers as parsers
+
+logger = createLog(__name__)
 
 
 class DOABLinkManager:
@@ -42,7 +45,7 @@ class DOABLinkManager:
             try:
                 parser = self.selectParser(partURI, partType)
             except LinkError:
-                print('Unable to parse {}'.format(partURI))
+                logger.debug(f'Unable to parse link {partURI}')
                 continue
 
             if parser.uri in self.linksProcessed:
@@ -69,7 +72,12 @@ class DOABLinkManager:
         self.record.has_part = parsedLinks
     
     @staticmethod
-    def findFinalURI(uri, mediaType):
+    def findFinalURI(uri, mediaType, redirects=0):
+        max_redirects = 5
+
+        if redirects > max_redirects:
+            return (uri, mediaType)
+
         try:
             uriHeader = requests.head(uri, allow_redirects=False, timeout=15)
             headers = dict((key.lower(), value) for key, value in uriHeader.headers.items())
@@ -90,7 +98,9 @@ class DOABLinkManager:
                 uriRoot = re.split(r'(?<![\/:])\/{1}', uri)[0]
                 redirectURI = '{}{}'.format(uriRoot, redirectURI)
 
-            return DOABLinkManager.findFinalURI(redirectURI, mediaType)
+            redirects += 1
+
+            return DOABLinkManager.findFinalURI(redirectURI, mediaType, redirects)
         
         return (uri, mediaType)
 

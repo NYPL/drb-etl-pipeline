@@ -92,6 +92,9 @@ class OpenEditionParser(AbstractParser):
 
         accessElement = oePage.find(id='book-access')
 
+        if not accessElement:
+            return []
+
         accessLinks = accessElement.find_all('a')
 
         return list(filter(None, [self.parseBookLink(l) for l in accessLinks]))

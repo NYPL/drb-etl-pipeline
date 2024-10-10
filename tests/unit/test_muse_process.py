@@ -22,6 +22,8 @@ class TestMUSEProcess:
         class TestMUSE(MUSEProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
+                self.records = []
+                self.ingest_limit = None
 
         return TestMUSE()
 

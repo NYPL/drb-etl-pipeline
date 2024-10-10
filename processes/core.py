@@ -1,4 +1,4 @@
-from managers import DBManager, RabbitMQManager, RedisManager, ElasticsearchManager, S3Manager, NyplApiManager
+from managers import DBManager, RabbitMQManager, RedisManager, ElasticsearchManager, S3Manager
 from model import Record
 from static.manager import StaticManager
 
@@ -8,7 +8,7 @@ from logger import createLog
 logger = createLog(__name__)
 
 
-class CoreProcess(DBManager, NyplApiManager, RabbitMQManager, RedisManager, StaticManager,
+class CoreProcess(DBManager, RabbitMQManager, RedisManager, StaticManager,
                   ElasticsearchManager, S3Manager):
     def __init__(self, process, customFile, ingestPeriod, singleRecord, batchSize=500):
         super(CoreProcess, self).__init__()

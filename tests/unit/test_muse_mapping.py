@@ -1,68 +1,76 @@
 import pytest
 
 from mappings.muse import MUSEMapping
+from model import Record
+
+test_source = { 
+    '008': type('data-object', (object,), { 'data' : 'testingdate2000pla' })
+}
+
+def test_create_mapping():
+    muse_mapping = MUSEMapping(test_source)
+    
+    assert set([
+        'identifiers', 'authors', 'title', 'alternative', 'has_version',
+        'publisher', 'spatial', 'dates', 'languages', 'extent',
+        'table_of_contents', 'abstract', 'subjects', 'contributors',
+        'is_part_of', 'has_part'
+    ]).issubset(set(muse_mapping.mapping.keys()))
+    assert muse_mapping.mapping['is_part_of'] == ('490', '{a}|{v}|volume')
 
 
-class TestMUSEMapping:
-    @pytest.fixture
-    def testRecord(self, mocker):
-        mockRecord = mocker.MagicMock()
-        mockRecord.identifiers = ['1|muse', '2|test', '3|other']
-        mockRecord.title = ['Main Title', 'Secondary Title']
-        mockRecord.subjects = ['subj1', 'subj2', 'subj3']
-        mockRecord.has_part = ['1|testURL|muse|testType|testFlags']
-        mockRecord.languages = ['||lang1', '||lang2']
-        mockRecord.dates = []
+def test_apply_formatting():
+    muse_mapping = MUSEMapping(test_source)
+    record = Record()
+    record.identifiers = ['1|muse', '2|test', '3|other', '(OCoLC)123|oclc']
+    record.title = ['Main Title', 'Secondary Title']
+    record.subjects = ['subj1', 'subj2', 'subj3']
+    record.has_part = ['1|testURL|muse|testType|testFlags']
+    record.languages = ['||100607s2011 mdu o 00 0 lng1 d', '||100607s2011 mdu o 00 0 lng2 d']
+    record.publisher = []
+    record.dates = []
+    muse_mapping.record = record
 
-        return mockRecord
+    muse_mapping.applyFormatting()
 
-    @pytest.fixture
-    def testMapping(self, testRecord, mocker):
-        class TestMapping(MUSEMapping):
-            def __init__(self):
-                self.mapping = None
-                self.record = testRecord
-                self.source = {'008': mocker.MagicMock(data='testingdate2000pla')}
-        
-        return TestMapping()
+    assert muse_mapping.record.source == 'muse'
+    assert muse_mapping.record.source_id == '1'
+    assert muse_mapping.record.title == 'Main Title'
+    assert muse_mapping.record.identifiers == ['1|muse', '2|test', '3|other', '123|oclc']
+    assert muse_mapping.record.subjects == ['subj1', 'subj2', 'subj3']
+    assert muse_mapping.record.languages == ['||lng1', '||lng2']
+    assert muse_mapping.record.dates[0] == '2000|publication_date'
 
-    def test_createMapping(self, testMapping):
-        recordMapping = testMapping.createMapping()
 
-        assert list(recordMapping.keys()) == [
-            'identifiers', 'authors', 'title', 'alternative', 'has_version',
-            'publisher', 'spatial', 'dates', 'languages', 'extent',
-            'table_of_contents', 'abstract', 'subjects', 'contributors',
-            'is_part_of', 'has_part'
-        ]
-        assert recordMapping['is_part_of'] == ('490', '{a}|{v}|volume')
+def test_clean_up_subject_head():
+    muse_mapping = MUSEMapping(test_source)
+    
+    cleaned_subject = muse_mapping.clean_up_subject_head('first -- second. -- -- |||')
 
-    def test_applyFormatting(self, testMapping, mocker):
+    assert cleaned_subject == 'first -- second|||'
 
-        mockCleanSubject = mocker.patch.object(MUSEMapping, 'cleanUpSubjectHead')
-        mockCleanSubject.side_effect = [1, 2, 3]
 
-        mockExtractLanguage = mocker.patch.object(MUSEMapping, 'extractLanguage')
-        mockExtractLanguage.side_effect = ['lng1', 'lng2']
+def test_extract_language():
+    muse_mapping = MUSEMapping(test_source)
 
-        testMapping.applyFormatting()
+    extracted_language = muse_mapping.extract_language('||100607s2011 mdu o 00 0 eng d')
 
-        assert testMapping.record.source == 'muse'
-        assert testMapping.record.source_id == '1'
-        assert testMapping.record.title == 'Main Title'
-        assert testMapping.record.subjects == [1, 2, 3]
-        assert testMapping.record.languages == ['lng1', 'lng2']
-        assert testMapping.record.dates[0] == '2000|publication_date'
+    assert extracted_language == '||eng'
 
-    def test_cleanUpSubjectHead(self, testMapping):
-        cleanSubject = testMapping.cleanUpSubjectHead('first -- second. -- -- |||')
 
-        assert cleanSubject == 'first -- second|||'
+def test_cleanup_identifier():
+    muse_mapping = MUSEMapping(test_source)
 
-    def test_extractLanguage(self, testMapping):
-        assert testMapping.extractLanguage('||100607s2011    mdu     o      00 0 eng d  z  ') == '||eng'
+    cleaned_identifier = muse_mapping.cleanup_identifier('(OCoLC)1223|oclc')
 
-    def test_addHasPartLink(self, testMapping):
-        testMapping.addHasPartLink('newURL', 'pdf+json', 'pdfFlags')
+    assert cleaned_identifier == '1223|oclc'
 
-        assert testMapping.record.has_part[1] == '1|newURL|muse|pdf+json|pdfFlags'
+
+def test_add_has_part_link():
+    muse_mapping = MUSEMapping(test_source)
+    muse_mapping.record = Record()
+    muse_mapping.record.has_part = ['1|test_url|muse|epub|flags']
+
+    muse_mapping.add_has_part_link('newURL', 'pdf+json', 'pdfFlags')
+
+    assert muse_mapping.record.has_part[1] == '1|newURL|muse|pdf+json|pdfFlags'    

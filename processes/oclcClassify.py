@@ -1,12 +1,10 @@
 from datetime import datetime, timedelta, timezone
 import os
 import newrelic.agent
+import re
 
 from .core import CoreProcess
-from managers import ClassifyManager, OCLCCatalogManager
-from managers.oclc_catalog import OCLCCatalogError
-from managers.oclcClassify import ClassifyError
-from mappings.oclcClassify import ClassifyMapping
+from managers import OCLCCatalogManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
 from logger import createLog
@@ -89,10 +87,8 @@ class ClassifyProcess(CoreProcess):
     def updateClassifiedRecordsStatus(self):
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
-    def frbrizeRecord(self, record): 
-        queryableIDs = ClassifyManager.getQueryableIdentifiers(
-            record.identifiers
-        )
+    def frbrizeRecord(self, record):
+        queryableIDs = self._get_queryable_identifiers(record.identifiers)
 
         if len(queryableIDs) < 1:
             queryableIDs = [None]
@@ -115,18 +111,24 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 self.classify_record_by_metadata_v2(identifier, idenType, author, record.title)
-            except (ClassifyError, OCLCCatalogError) as err:
-                logger.warning('Unable to Classify {}'.format(record))
-                logger.debug(err.message)
+            except Exception as e:
+                logger.warning(f'Unable to classify {record} due to {e}')
 
     def classify_record_by_metadata_v2(self, identifier, identifier_type, author, title):
         search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
 
         related_oclc_bibs = self.oclc_catalog_manager.query_bibs(search_query)
 
+        if not len(related_oclc_bibs):
+            logger.warning(f'No OCLC bibs returned for query {search_query}')
+
         for related_oclc_bib in related_oclc_bibs:
-            oclc_number = related_oclc_bib['identifier']['oclcNumber']
-            owi_number = related_oclc_bib['work']['id']
+            oclc_number = related_oclc_bib.get('identifier', {}).get('oclcNumber')
+            owi_number = related_oclc_bib.get('work', {}).get('id')
+
+            if not oclc_number or not owi_number:
+                logger.warning(f'Unable to get identifiers for bib: {related_oclc_bib}')
+                continue
             
             if self.check_if_classify_work_fetched(owi_number=owi_number):
                 continue
@@ -140,44 +142,6 @@ class ClassifyProcess(CoreProcess):
 
             self.addDCDWToUpdateList(oclc_record)
             self.fetchOCLCCatalogRecords(oclc_record.record.identifiers)
-
-    def classifyRecordByMetadata(self, identifier, idType, author, title):
-        classifier = ClassifyManager(
-            iden=identifier, idenType=idType, author=author, title=title
-        )
-
-        for classifyXML in classifier.getClassifyResponse():
-            if self.checkIfClassifyWorkFetched(classifyXML) is True:
-                logger.info(
-                    'Skipping Duplicate Classify Record {} ({}:{})'.format(
-                        title, identifier, idType
-                    )
-                )
-                continue
-
-            classifier.checkAndFetchAdditionalEditions(classifyXML)
-
-            self.createClassifyDCDWRecord(
-                classifyXML, classifier.addlIds, identifier, idType
-            )
-
-    def createClassifyDCDWRecord(
-        self, classifyXML, additionalOCLCs, identifier, idType
-    ):
-        classifyRec = ClassifyMapping(
-            classifyXML,
-            {'oclc': 'http://classify.oclc.org'},
-            {},
-            (identifier, idType)
-        )
-
-        classifyRec.applyMapping()
-
-        classifyRec.extendIdentifiers(additionalOCLCs)
-
-        self.addDCDWToUpdateList(classifyRec)
-
-        self.fetchOCLCCatalogRecords(classifyRec.record.identifiers)
 
     def fetchOCLCCatalogRecords(self, identifiers):
         owiNo, _ = tuple(identifiers[0].split('|'))
@@ -194,6 +158,7 @@ class ClassifyProcess(CoreProcess):
 
         for oclcNo, updateReq in checkedIDs:
             if updateReq is False:
+                logger.debug(f'Skipping catalog lookup process for OCLC number {oclcNo}')
                 continue
 
             self.sendCatalogLookupMessage(oclcNo, owiNo)
@@ -202,20 +167,17 @@ class ClassifyProcess(CoreProcess):
         if counter > 0:
             self.setIncrementerRedis('oclcCatalog', 'API', amount=counter)
 
-    def sendCatalogLookupMessage(self, oclcNo, owiNo):
-        logger.debug('Sending OCLC# {} to queue'.format(oclcNo))
-        self.sendMessageToQueue(
-            self.rabbitQueue,
-            self.rabbitRoute,
-            {'oclcNo': oclcNo, 'owiNo': owiNo}
-        )
+    def sendCatalogLookupMessage(self, oclc_number, owiNo):
+        catalog_lookup_message = { 'oclcNo': oclc_number, 'owiNo': owiNo }
+        logger.debug(f'Sending catalog lookup message {catalog_lookup_message} to queue')
+
+        self.sendMessageToQueue(self.rabbitQueue, self.rabbitRoute, catalog_lookup_message)
 
     def check_if_classify_work_fetched(self, owi_number: int) -> bool:
         return self.checkSetRedis('classifyWork', owi_number, 'owi')
 
-    def checkIfClassifyWorkFetched(self, classifyXML):
-        workOWI = classifyXML.find(
-            './/work', namespaces=ClassifyManager.NAMESPACE
-        ).attrib['owi']
-
-        return self.checkSetRedis('classifyWork', workOWI, 'owi')
+    def _get_queryable_identifiers(self, identifiers):
+        return list(filter(
+            lambda id: re.search(r'\|(?:isbn|issn|oclc)$', id) != None,
+            identifiers
+        ))

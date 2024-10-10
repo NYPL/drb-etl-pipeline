@@ -12,7 +12,7 @@ services:
   elasticsearch:
     # Use the latest version of Elasticsearch supported by Amazon AWS ES.
     container_name: drb_local_es
-    image: elasticsearch:8.4.0
+    image: elasticsearch:8.15.0
     ports:
       - 9200:9200
     environment:
@@ -74,21 +74,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack/init-localstack-resources.sh:/etc/localstack/init/ready.d/init-localstack-resources.sh
-
-  devsetup:
-    container_name: drb_local_devSetUp
-    depends_on:
-      - database
-      - elasticsearch
-      - s3
-    build:
-      context: .
-    command: -e local-compose -p DevelopmentSetupProcess
-    volumes:
-      - type: bind
-        source: .
-        target: /src
-        read_only: true
 
 volumes:
   drb_local_dbdata:

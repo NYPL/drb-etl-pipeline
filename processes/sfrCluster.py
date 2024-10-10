@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from math import ceil
 import re
-from sqlalchemy.exc import DataError
+from sqlalchemy.exc import DataError, IntegrityError
 from sqlalchemy.orm.exc import StaleDataError
 
 from .core import CoreProcess
@@ -19,14 +19,11 @@ class ClusterProcess(CoreProcess):
 
         self.ingestLimit = int(args[4]) if args[4] else None
 
-        # PostgreSQL Connection
         self.generateEngine()
         self.createSession()
 
-        # Redis Connection
         self.createRedisClient()
-
-        # ElasticSearch Connection
+        
         self.createElasticConnection()
         self.createElasticSearchIngestPipeline()
         self.createElasticSearchIndex()
@@ -70,6 +67,9 @@ class ClusterProcess(CoreProcess):
                 logger.warning('Skipping record {}'.format(rec))
                 self.updateMatchedRecordsStatus([rec.id])
                 self.session.commit()
+            except Exception as e:
+                logger.exception(f'Failed to cluster record {rec}')
+                raise e
 
             if len(indexingWorks) >= 50:
                 self.updateElasticSearch(indexingWorks, deletingWorks)
@@ -101,7 +101,7 @@ class ClusterProcess(CoreProcess):
 
         try:
             self.session.flush()
-        except (DataError, StaleDataError) as e:
+        except Exception as e:
             self.session.rollback()
             logger.error('Unable to cluster {}'.format(rec))
             logger.debug(e)
@@ -224,7 +224,7 @@ class ClusterProcess(CoreProcess):
         esWorks = []
 
         for dbWork in dbWorks:
-            print('Generating ES for {}'.format(dbWork))
+            logger.debug('Generating ES for {}'.format(dbWork))
             elasticManager = SFRElasticRecordManager(dbWork)
             elasticManager.getCreateWork()
             esWorks.append(elasticManager.work)

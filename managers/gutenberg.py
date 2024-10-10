@@ -5,6 +5,10 @@ import re
 import requests
 import yaml
 
+from logger import createLog
+
+logger = createLog(__name__)
+
 
 class GutenbergManager:
     def __init__(self, repoOrder, repoSortField, startTime, pageSize):
@@ -84,7 +88,7 @@ class GutenbergManager:
                 self.parseYAML(rdfResponse['data']['repository']['yaml']['text'])
             ))
         except (TypeError, etree.XMLSyntaxError):
-            print('Unable to load metadata files for {}'.format(workID))
+            logger.error(f'Unable to load metadata files for work {workID}')
 
     def parseRDF(self, rdfText):
         return etree.fromstring(rdfText.encode('utf-8'))
@@ -105,7 +109,7 @@ class GutenbergManager:
             else:
                 raise GutenbergError('Unable to execute GraphQL query {}. Status {}'.format(query, graphReq.status_code))
         except Exception as e:
-            print(e)
+            logger.debug(f'Failed to query Gutenberg GraphQL API due to {e}')
             raise GutenbergError('Encountered unexpected error querying GraphQL')
 
     @staticmethod

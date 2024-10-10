@@ -1,6 +1,7 @@
 import pytest
 
 from mappings.core import MappingError
+from model import Record
 from processes.loc import LOCProcess
 from tests.helper import TestHelpers
 
@@ -49,7 +50,10 @@ class TestLOCProcess:
             addDCDWToUpdateList=mocker.DEFAULT
         )
 
-        mockMapping = mocker.MagicMock(record='testRecord')
+        test_record = Record(authors=[])
+
+        mockMapping = mocker.MagicMock()
+        mockMapping.record = test_record
         mockMapper = mocker.patch('processes.loc.LOCMapping')
         mockMapper.return_value = mockMapping
         
@@ -57,8 +61,8 @@ class TestLOCProcess:
 
         mockMapping.applyMapping.assert_called_once()
 
-        processMocks['addHasPartMapping'].assert_called_once_with(mockMapping, 'testRecord')
-        processMocks['storePDFManifest'].assert_called_once_with('testRecord')
+        processMocks['addHasPartMapping'].assert_called_once_with(mockMapping, test_record)
+        processMocks['storePDFManifest'].assert_called_once_with(test_record)
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
 
     def test_processlocRecord_error(self, mocker):

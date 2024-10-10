@@ -2,6 +2,8 @@ import datetime
 from io import BytesIO
 import pytest
 import requests
+from unittest import mock
+
 
 from processes.doab import DOABProcess, DOABError
 from mappings.core import MappingError
@@ -28,6 +30,7 @@ class TestDOABProcess:
 
                 self.ingestOffset = 0
                 self.ingestLimit = 10000
+                self.records = []
 
         return TestDOAB()
 
@@ -211,7 +214,9 @@ class TestDOABProcess:
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
             'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc',
-            stream=True, timeout=30
+            stream=True, 
+            timeout=30,
+            headers=mock.ANY
         )
 
     def test_downloadOAIRecords_daily(self, testProcess, mockOAIQuery, mocker):
@@ -223,7 +228,9 @@ class TestDOABProcess:
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
             'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc&from=1900-01-01',
-            stream=True, timeout=30
+            stream=True, 
+            timeout=30,
+            headers=mock.ANY
         )
 
     def test_downloadOAIRecords_custom(self, testProcess, mockOAIQuery):
@@ -232,7 +239,9 @@ class TestDOABProcess:
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
             'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc&from=2020-01-01',
-            stream=True, timeout=30
+            stream=True, 
+            timeout=30,
+            headers=mock.ANY
         )
 
     def test_downloadOAIRecords_error(self, testProcess, mockOAIQuery, mocker):
@@ -249,7 +258,9 @@ class TestDOABProcess:
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
             'test_doab_urlverb=ListRecords&resumptionToken=testRes',
-            stream=True, timeout=30
+            stream=True, 
+            timeout=30,
+            headers=mock.ANY
         )
 
     def test_parseDOABRecord_success(self, testProcess, mocker):

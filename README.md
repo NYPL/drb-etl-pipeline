@@ -169,19 +169,18 @@ We use git tags to tag releases and github's release feature to deploy.  The ste
   1. Decide on a new version number (assume 0.12.0 for the following steps)
   2. Make sure your local `main` branch is up to date
   3. Create a new branch named as the version number
-  4. Update the `CHANGELOG.md` 'unreleased version' header with the current date and new version number, e.g. '2023-04-03 -- v0.12.0'
-  5. Commit your change and push to your branch. 
-  6. Create a PR titled the Release <version number>
-  7. Once the PR is approved, squash and merge the change into main.
-  8. In github, navigate to the 'Releases' tab and click on 'Draft a new release'
-  9. Choose to create a new tag (e.g. v0.12.0), set `main` as the target, and name your release after the new version number
+  4. Commit your change and push to your branch. 
+  5. Create a PR titled the Release <version number>
+  6. Once the PR is approved, squash and merge the change into main.
+  7. In github, navigate to the 'Releases' tab and click on 'Draft a new release'
+  8. Choose to create a new tag (e.g. v0.12.0), set `main` as the target, and name your release after the new version number
      ('v0.12.0')
-  10. Add the changes in the `CHANGELOG.md` to the release notes.
-  11. Give the team a heads up in  `#researchnow_aka_sfr` in Slack, make sure the release is 'Set as the latest release', and hit 'Publish release'
-  12. Check the repo's `Actions` tab to observe the progress of the deployment to production
+  9.  Summarize the changes in the release notes since the last deployment.
+  10. Give the team a heads up in  `#researchnow_aka_sfr` in Slack, make sure the release is 'Set as the latest release', and hit 'Publish release'
+  11. Check the repo's `Actions` tab to observe the progress of the deployment to production
     - Note that the deployment job merely kicks off an ECS service update. To fully verify success, you'll need to check the
       `Deployments` tab for the relevant service / cluster in the ECS console.
-  13. Send a message to `#researchnow_aka_sfr` in Slack to notify folks when the release finishes.
+  12. Send a message to `#researchnow_aka_sfr` in Slack to notify folks when the release finishes.
 
 And you're done!
 

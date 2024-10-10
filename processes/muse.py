@@ -21,14 +21,13 @@ class MUSEProcess(CoreProcess):
     def __init__(self, *args):
         super(MUSEProcess, self).__init__(*args[:4])
 
-        # Create database session
+        self.ingest_limit = int(args[4]) if args[4] else None
+
         self.generateEngine()
         self.createSession()
 
-        # Create AWS S3 Client
         self.createS3Client()
 
-        # Connect to epub processing queue
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
         self.createRabbitConnection()
@@ -46,6 +45,8 @@ class MUSEProcess(CoreProcess):
 
         self.saveRecords()
         self.commitChanges()
+
+        logger.info(f'Ingested {len(self.records)} MUSE records')
 
     def parseMuseRecord(self, marcRec):
         museRec = MUSEMapping(marcRec)
@@ -93,7 +94,12 @@ class MUSEProcess(CoreProcess):
 
         marcReader = MARCReader(museFile)
 
+        processed_record_count = 0
+
         for record in marcReader:
+            if self.ingest_limit and processed_record_count >= self.ingest_limit:
+                break
+
             if (startDateTime or recID) \
                     and self.recordToBeUpdated(record, startDateTime, recID)\
                     is False:
@@ -101,6 +107,7 @@ class MUSEProcess(CoreProcess):
 
             try:
                 self.parseMuseRecord(record)
+                processed_record_count += 1
             except MUSEError as e:
                 logger.warning('Unable to parse MUSE record')
                 logger.debug(e)

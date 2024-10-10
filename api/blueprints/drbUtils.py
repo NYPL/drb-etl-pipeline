@@ -38,8 +38,8 @@ def get_languages():
             response_type,
             APIUtils.formatLanguages(language_query_results.aggregations, work_counts)
         )
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception('Unable to get language counts')
         return APIUtils.formatResponseObject(500, response_type, 'Unable to get language counts')
 
 
@@ -52,8 +52,8 @@ def get_counts():
             total_counts = db_client.fetchRowCounts()
 
         return APIUtils.formatResponseObject(200, response_type, APIUtils.formatTotals(total_counts))
-    except Exception as e:
-        logger.error(e)
+    except Exception:
+        logger.exception('Unable to get total counts')
         return APIUtils.formatResponseObject(500, response_type, 'Unable to get total counts')
 
 
@@ -105,5 +105,5 @@ def proxy_response():
 
         return Response(response.content, response.status_code, headers)
     except Exception as e:
-        logger.error(e)
+        logger.exception('Unable to proxy response')
         return Response('Unable to proxy response', 500)

@@ -4,6 +4,11 @@ from pika.credentials import PlainCredentials
 from pika.exceptions import ConnectionWrongStateError, StreamLostError, ChannelClosedByBroker
 import os
 
+from logger import createLog
+
+logger = createLog(__name__)
+
+
 class RabbitMQManager:
     def __init__(self, host=None, port=None, virtual_host=None, exchange=None, user=None, pswd=None):
         super(RabbitMQManager, self).__init__()
@@ -61,7 +66,7 @@ class RabbitMQManager:
                 body=message
             )
         except (ConnectionWrongStateError, StreamLostError):
-            print('Stale connection. Trying to reconnect')
+            logger.debug('Stale RabbitMQ connection - reconnecting.')
             # Connection timed out. Reconnect and try again
             self.createRabbitConnection()
             self.createOrConnectQueue(queueName, routingKey)
