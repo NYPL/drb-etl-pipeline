@@ -3,123 +3,103 @@ import os
 import requests
 
 from .core import CoreProcess
+from logger import createLog
 from managers.db import DBManager
+from managers.nyplApi import NyplApiManager
 from mappings.nypl import NYPLMapping
 from sqlalchemy import text
+
+logger = createLog(__name__)
 
 
 class NYPLProcess(CoreProcess):
     def __init__(self, *args):
         super(NYPLProcess, self).__init__(*args[:4])
 
-        self.ingestLimit = args[4] or None
-        self.ingestOffset = args[5] or None
+        self.ingest_limit = args[4] or None
+        self.ingest_offset = args[5] or None
 
         self.generateEngine()
         self.createSession()
-        self.generateAccessToken()
 
-        self.bibDBConnection = DBManager(
+        self.bib_db_connection = DBManager(
             user=os.environ['NYPL_BIB_USER'],
             pswd=os.environ['NYPL_BIB_PSWD'],
             host=os.environ['NYPL_BIB_HOST'],
             port=os.environ['NYPL_BIB_PORT'],
             db=os.environ['NYPL_BIB_NAME']
         )
-        self.bibDBConnection.generateEngine()
+        self.bib_db_connection.generateEngine()
 
-        self.locationCodes = self.loadLocationCodes()
-        self.cceAPI = os.environ['BARDO_CCE_API']
+        self.nypl_api_manager = NyplApiManager()
+        self.nypl_api_manager.generateAccessToken()
 
-    def loadLocationCodes(self):
-        return requests.get(os.environ['NYPL_LOCATIONS_BY_CODE']).json()
-
-    def isPDResearchBib(self, bib):
-        currentYear = datetime.today().year
-        try:
-            pubYear = int(bib['publish_year'])
-        except (KeyError, TypeError):
-            pubYear = currentYear
-
-        if pubYear > 1965:
-            return False
-        elif pubYear > currentYear - 95:
-            copyrightStatus = self.getCopyrightStatus(bib['var_fields'])
-            if copyrightStatus is False: return False
-
-        bibStatus = self.queryApi('bibs/{}/{}/is-research'.format(
-            bib['nypl_source'], bib['id']
-        ))
-
-        return True if bibStatus.get('isResearch', False) is True else False
-
-    def getCopyrightStatus(self, varFields):
-        lccnData = list(filter(lambda x: x.get('marcTag', None) == '010', varFields))
-        if not len(lccnData) == 1:
-            return False
-
-        lccnNo = lccnData[0]['subfields'][0]['content'].replace('sn', '').strip()
-
-        copyrightURL = '{}/lccn/{}'.format(self.cceAPI, lccnNo)
-        copyrightRegResponse = requests.get(copyrightURL)
-        if copyrightRegResponse.status_code != 200:
-            return False
-
-        copyrightRegData = copyrightRegResponse.json()
-        if len(copyrightRegData['data']['results']) > 0:
-            return False if len(copyrightRegData['data']['results'][0]['renewals']) > 0 else True
-
-        return False
-
-    def fetchBibItems(self, bib):
-        return self.queryApi('bibs/{}/{}/items'.format(
-            bib['nypl_source'], bib['id']
-        )).get('data', [])
+        self.location_codes = self.load_location_codes()
+        self.cce_api = os.environ['BARDO_CCE_API']
 
     def runProcess(self):
-        if self.process == 'daily':
-            self.importBibRecords()
-        elif self.process == 'complete':
-            self.importBibRecords(fullOrPartial=True)
-        elif self.process == 'custom':
-            self.importBibRecords(startTimestamp=self.ingestPeriod)
+        try:
+            if self.process == 'daily':
+                self.import_bib_records()
+            elif self.process == 'complete':
+                self.import_bib_records(full_or_partial=True)
+            elif self.process == 'custom':
+                self.import_bib_records(start_timestamp=self.ingestPeriod)
+            else: 
+                logger.warning(f'Unknown NYPL ingestion process type {self.process}')
+                return
+            
+            self.saveRecords()
+            self.commitChanges()
 
-        self.saveRecords()
-        self.commitChanges()
+            logger.info(f'Ingested {len(self.records)} NYPL records')
+        except Exception:
+            logger.exception(f'Failed to ingest NYPL records')
 
-    def parseNYPLDataRow(self, dataRow):
-        if self.isPDResearchBib(dict(dataRow)):
-            bibItems = self.fetchBibItems(dict(dataRow))
-            nyplRec = NYPLMapping(dataRow, bibItems, self.statics, self.locationCodes)
-            nyplRec.applyMapping()
-            self.addDCDWToUpdateList(nyplRec)
+    def import_bib_records(self, full_or_partial=False, start_timestamp=None):
+        nypl_bib_query = 'SELECT id, nypl_source, publish_year, var_fields FROM bib'
 
-    def importBibRecords(self, fullOrPartial=False, startTimestamp=None):
-        nyplBibQuery = 'SELECT id, nypl_source, publish_year, var_fields FROM bib'
-
-        if fullOrPartial is False:
-            nyplBibQuery += ' WHERE updated_date > '
-            if startTimestamp:
-                nyplBibQuery += "'{}'".format(startTimestamp)
+        if full_or_partial is False:
+            nypl_bib_query += ' WHERE updated_date > '
+            if start_timestamp:
+                nypl_bib_query += "'{}'".format(start_timestamp)
             else:
                 startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-                nyplBibQuery += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
+                nypl_bib_query += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
 
-        if self.ingestOffset:
-            nyplBibQuery += ' OFFSET {}'.format(self.ingestOffset)
+        if self.ingest_offset:
+            nypl_bib_query += ' OFFSET {}'.format(self.ingest_offset)
 
-        if self.ingestLimit:
-            nyplBibQuery += ' LIMIT {}'.format(self.ingestLimit)
+        if self.ingest_limit:
+            nypl_bib_query += ' LIMIT {}'.format(self.ingest_limit)
 
-        with self.bibDBConnection.engine.connect() as conn:
-            bibResults = conn.execution_options(stream_results=True).execute(text(nyplBibQuery))
-            for bib in bibResults:
+        with self.bib_db_connection.engine.connect() as conn:
+            bib_results = conn.execution_options(stream_results=True).execute(text(nypl_bib_query))
+            
+            for bib in bib_results:
                 bib = self._map_bib(bib)
                 
                 if bib['var_fields'] is None:
                     continue
 
-                self.parseNYPLDataRow(bib)
+                self.parse_nypl_bib(bib)
+
+    def parse_nypl_bib(self, bib):
+        try:
+            if self.is_pd_research_bib(dict(bib)):
+                bib_items = self.fetch_bib_items(dict(bib))
+                
+                nypl_record = NYPLMapping(bib, bib_items, self.statics, self.location_codes)
+                nypl_record.applyMapping()
+                
+                self.addDCDWToUpdateList(nypl_record)
+        except Exception:
+            logger.exception('Failed to parse NYPL bib {}'.format(bib.get('id')))
+
+    def fetch_bib_items(self, bib):
+        bib_endpoint = 'bibs/{}/{}/items'.format(bib['nypl_source'], bib['id'])
+
+        return self.nypl_api_manager.queryApi(bib_endpoint).get('data', [])
 
     def _map_bib(self, bib): 
         try:
@@ -133,3 +113,48 @@ class NYPLProcess(CoreProcess):
             }
         except:
             return bib
+
+    def load_location_codes(self):
+        return requests.get(os.environ['NYPL_LOCATIONS_BY_CODE']).json()
+
+    def is_pd_research_bib(self, bib):
+        current_year = datetime.today().year
+
+        try:
+            pub_year = int(bib['publish_year'])
+        except Exception:
+            pub_year = current_year
+
+        if pub_year > 1965:
+            return False
+        elif pub_year > current_year - 95:
+            copyright_status = self.get_copyright_status(bib['var_fields'])
+            
+            if not copyright_status: 
+                return False
+
+        bib_status = self.nypl_api_manager.queryApi('bibs/{}/{}/is-research'.format(bib['nypl_source'], bib['id']))
+
+        return bib_status.get('isResearch', False) is True
+
+    def get_copyright_status(self, var_fields):
+        lccn_data = list(filter(lambda field: field.get('marcTag', None) == '010', var_fields))
+
+        if not len(lccn_data) == 1:
+            return False
+
+        lccn_no = lccn_data[0]['subfields'][0]['content'].replace('sn', '').strip()
+
+        copyright_url = f'{self.cce_api}/lccn/{lccn_no}'
+
+        copyright_response = requests.get(copyright_url)
+        
+        if copyright_response.status_code != 200:
+            return False
+
+        copyright_data = copyright_response.json()
+
+        if len(copyright_data['data']['results']) > 0:
+            return False if len(copyright_data['data']['results'][0]['renewals']) > 0 else True
+
+        return False   
