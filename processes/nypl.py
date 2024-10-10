@@ -3,10 +3,13 @@ import os
 import requests
 
 from .core import CoreProcess
+from logger import createLog
 from managers.db import DBManager
 from managers.nyplApi import NyplApiManager
 from mappings.nypl import NYPLMapping
 from sqlalchemy import text
+
+logger = createLog(__name__)
 
 
 class NYPLProcess(CoreProcess):
@@ -35,15 +38,83 @@ class NYPLProcess(CoreProcess):
         self.cce_api = os.environ['BARDO_CCE_API']
 
     def runProcess(self):
-        if self.process == 'daily':
-            self.import_bib_records()
-        elif self.process == 'complete':
-            self.import_bib_records(full_or_partial=True)
-        elif self.process == 'custom':
-            self.import_bib_records(start_timestamp=self.ingestPeriod)
+        logger.info(f'Running {self.process} NYPL ingestion process')
 
-        self.saveRecords()
-        self.commitChanges()
+        try:
+            if self.process == 'daily':
+                self.import_bib_records()
+            elif self.process == 'complete':
+                self.import_bib_records(full_or_partial=True)
+            elif self.process == 'custom':
+                self.import_bib_records(start_timestamp=self.ingestPeriod)
+            else: 
+                logger.warning(f'Unknown NYPL ingesttion process type {self.process}')
+                return
+            
+            self.saveRecords()
+            self.commitChanges()
+
+            logger.info(f'Ingested {len(self.records)} NYPL records')
+        except Exception:
+            logger.exception(f'Failed to ingest NYPL records')
+
+    def import_bib_records(self, full_or_partial=False, start_timestamp=None):
+        nypl_bib_query = 'SELECT id, nypl_source, publish_year, var_fields FROM bib'
+
+        if full_or_partial is False:
+            nypl_bib_query += ' WHERE updated_date > '
+            if start_timestamp:
+                nypl_bib_query += "'{}'".format(start_timestamp)
+            else:
+                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+                nypl_bib_query += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
+
+        if self.ingest_offset:
+            nypl_bib_query += ' OFFSET {}'.format(self.ingest_offset)
+
+        if self.ingest_limit:
+            nypl_bib_query += ' LIMIT {}'.format(self.ingest_limit)
+
+        with self.bib_db_connection.engine.connect() as conn:
+            bib_results = conn.execution_options(stream_results=True).execute(text(nypl_bib_query))
+            
+            for bib in bib_results:
+                bib = self._map_bib(bib)
+                
+                if bib['var_fields'] is None:
+                    continue
+
+                self.parse_nypl_bib(bib)
+
+    def parse_nypl_bib(self, bib):
+        try:
+            if self.is_pd_research_bib(dict(bib)):
+                bib_items = self.fetch_bib_items(dict(bib))
+                
+                nypl_record = NYPLMapping(bib, bib_items, self.statics, self.location_codes)
+                nypl_record.applyMapping()
+                
+                self.addDCDWToUpdateList(nypl_record)
+        except Exception:
+            logger.exception('Failed to parse NYPL bib {}'.format(bib.get('id')))
+
+    def fetch_bib_items(self, bib):
+        bib_endpoint = 'bibs/{}/{}/items'.format(bib['nypl_source'], bib['id'])
+
+        return self.nypl_api_manager.queryApi(bib_endpoint).get('data', [])
+
+    def _map_bib(self, bib): 
+        try:
+            id, nypl_source, publish_year, var_fields = bib
+            
+            return {
+                'id': id,
+                'nypl_source': nypl_source,
+                'publish_year': publish_year,
+                'var_fields': var_fields
+            }
+        except:
+            return bib
 
     def load_location_codes(self):
         return requests.get(os.environ['NYPL_LOCATIONS_BY_CODE']).json()
@@ -88,59 +159,4 @@ class NYPLProcess(CoreProcess):
         if len(copyright_data['data']['results']) > 0:
             return False if len(copyright_data['data']['results'][0]['renewals']) > 0 else True
 
-        return False
-
-    def fetch_bib_items(self, bib):
-        bib_endpoint = 'bibs/{}/{}/items'.format(bib['nypl_source'], bib['id'])
-
-        return self.nypl_api_manager.queryApi(bib_endpoint).get('data', [])
-
-    def parse_nypl_data_row(self, data_row):
-        if self.is_pd_research_bib(dict(data_row)):
-            bibItems = self.fetch_bib_items(dict(data_row))
-            
-            nyplRec = NYPLMapping(data_row, bibItems, self.statics, self.location_codes)
-            nyplRec.applyMapping()
-            
-            self.addDCDWToUpdateList(nyplRec)
-
-    def import_bib_records(self, full_or_partial=False, start_timestamp=None):
-        nypl_bib_query = 'SELECT id, nypl_source, publish_year, var_fields FROM bib'
-
-        if full_or_partial is False:
-            nypl_bib_query += ' WHERE updated_date > '
-            if start_timestamp:
-                nypl_bib_query += "'{}'".format(start_timestamp)
-            else:
-                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-                nypl_bib_query += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
-
-        if self.ingest_offset:
-            nypl_bib_query += ' OFFSET {}'.format(self.ingest_offset)
-
-        if self.ingest_limit:
-            nypl_bib_query += ' LIMIT {}'.format(self.ingest_limit)
-
-        with self.bib_db_connection.engine.connect() as conn:
-            bib_results = conn.execution_options(stream_results=True).execute(text(nypl_bib_query))
-            
-            for bib in bib_results:
-                bib = self._map_bib(bib)
-                
-                if bib['var_fields'] is None:
-                    continue
-
-                self.parse_nypl_data_row(bib)
-
-    def _map_bib(self, bib): 
-        try:
-            id, nypl_source, publish_year, var_fields = bib
-            
-            return {
-                'id': id,
-                'nypl_source': nypl_source,
-                'publish_year': publish_year,
-                'var_fields': var_fields
-            }
-        except:
-            return bib
+        return False   

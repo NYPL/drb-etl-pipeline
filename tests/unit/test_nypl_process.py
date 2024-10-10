@@ -188,7 +188,7 @@ class TestNYPLProcess:
 
         assert testItems == []
 
-    def test_parse_nypl_data_row_research(self, testInstance, mocker):
+    def test_parse_nypl_bib_research(self, testInstance, mocker):
         processorMocks = mocker.patch.multiple(
             NYPLProcess,
             is_pd_research_bib=mocker.DEFAULT,
@@ -203,7 +203,7 @@ class TestNYPLProcess:
         mockRecord = mocker.MagicMock()
         mockMapping.return_value = mockRecord
 
-        testInstance.parse_nypl_data_row({'id': 1})
+        testInstance.parse_nypl_bib({'id': 1})
 
         processorMocks['is_pd_research_bib'].assert_called_once_with({'id': 1})
         processorMocks['fetch_bib_items'].assert_called_once_with({'id': 1})
@@ -214,7 +214,7 @@ class TestNYPLProcess:
         processorMocks['addDCDWToUpdateList'].assert_called_once_with(mockRecord)
 
 
-    def test_parse_nypl_data_row_not_research(self, testInstance, mocker):
+    def test_parse_nypl_bib_not_research(self, testInstance, mocker):
         processorMocks = mocker.patch.multiple(
             NYPLProcess,
             is_pd_research_bib=mocker.DEFAULT,
@@ -225,7 +225,7 @@ class TestNYPLProcess:
 
         processorMocks['is_pd_research_bib'].return_value = False
 
-        testInstance.parse_nypl_data_row({'id': 1})
+        testInstance.parse_nypl_bib({'id': 1})
 
         processorMocks['is_pd_research_bib'].assert_called_once_with({'id': 1})
         processorMocks['fetch_bib_items'].assert_not_called
@@ -236,7 +236,7 @@ class TestNYPLProcess:
         mockDatetime = mocker.patch('processes.nypl.datetime')
         mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
-        mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_data_row')
+        mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_bib')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
         mockConn.execution_options().execute.return_value = [
@@ -257,7 +257,7 @@ class TestNYPLProcess:
         mockDatetime = mocker.patch('processes.nypl.datetime')
         mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
-        mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_data_row')
+        mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_bib')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
         mockConn.execution_options().execute.return_value = [
@@ -277,7 +277,7 @@ class TestNYPLProcess:
     def test_import_bib_records_full(self, testInstance, mocker):
         mockDatetime = mocker.patch('processes.nypl.datetime')
 
-        mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_data_row')
+        mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_bib')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
         mockConn.execution_options().execute.return_value = [
@@ -297,7 +297,7 @@ class TestNYPLProcess:
     def test_import_bib_records_full_batch(self, testInstance, mocker):
         mockDatetime = mocker.patch('processes.nypl.datetime')
 
-        mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_data_row')
+        mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_bib')
 
         mockConn = mocker.MagicMock(name='Mock Connection')
         mockConn.execution_options().execute.return_value = [
