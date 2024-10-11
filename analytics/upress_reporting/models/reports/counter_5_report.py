@@ -57,8 +57,6 @@ class Counter5Report(ABC):
             accessed_titles_df.loc[accessed_titles_df["Book ID"] == key[0],
                                 column_name] = group["Book ID"].count()
 
-        accessed_titles_df.drop(
-            columns=["Timestamp"], axis=1, inplace=True)
         accessed_titles_df.loc[:,
                             monthly_columns] = accessed_titles_df[monthly_columns].fillna(0)
 
@@ -66,6 +64,8 @@ class Counter5Report(ABC):
             reporting_data, columns, monthly_columns)
 
         merged_df = pandas.concat([accessed_titles_df, zeroed_out_titles_df], ignore_index=True)
+        merged_df.drop(
+            columns=["Timestamp"], axis=1, inplace=True)
         monthly_col_idx = merged_df.columns.get_loc(monthly_columns[0])
         merged_df.insert(loc=monthly_col_idx, column="Reporting Period Total",
                                value=merged_df[monthly_columns].sum(axis=1))
@@ -112,12 +112,12 @@ class Counter5Report(ABC):
         zeroed_out_titles_df = self._format_zeroed_out_titles(
             reporting_data, columns, monthly_columns)
 
-        accessed_titles_df.drop(
-            columns=["Timestamp"], axis=1, inplace=True)
         accessed_titles_df.loc[:,
                       monthly_columns] = accessed_titles_df[monthly_columns].fillna(0)
 
         merged_df = pandas.concat([accessed_titles_df, zeroed_out_titles_df], ignore_index=True)
+        merged_df.drop(
+            columns=["Timestamp"], axis=1, inplace=True)
         monthly_col_idx = merged_df.columns.get_loc(monthly_columns[0])
         merged_df.insert(loc=monthly_col_idx, column="Reporting Period Total",
                          value=merged_df[monthly_columns].sum(axis=1))

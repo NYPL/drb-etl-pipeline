@@ -53,7 +53,7 @@ class Counter5Controller:
     def create_reports(self):
         print("Generating Counter 5 reports...", datetime.now())
         # TODO: aggregate log files -> * one for views and one for downloads (this is agnostic of publisher)
-        # self.pull_aggregated_logs()
+        self.pull_aggregated_logs()
 
         # TODO: get all records and editions from publisher backlists stored in config
         # TODO: map records/editions data to reporting model

@@ -1,4 +1,3 @@
-
 import json
 
 from models.data.interaction_event import UsageType
