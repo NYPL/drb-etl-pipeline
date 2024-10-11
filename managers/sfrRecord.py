@@ -3,7 +3,7 @@ from datetime import date, datetime, timezone
 import json
 from Levenshtein import jaro_winkler
 import pycountry
-import re, copy
+import re
 from uuid import uuid4
 
 from model import Work, Edition, Item, Identifier, Link, Rights
@@ -39,7 +39,7 @@ class SFRRecordManager:
 
         matchedWorks.sort(key=lambda x: x[1])
 
-        allIdentifiers = copy.deepcopy(self.work.identifiers)
+        allIdentifiers = self.work.identifiers.copy()
 
         for edition in self.work.editions:
             allIdentifiers.extend(edition.identifiers)
