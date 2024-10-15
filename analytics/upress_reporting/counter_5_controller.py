@@ -7,7 +7,7 @@ from helpers import aggregate_logs
 from helpers.format_data import format_to_interaction_event
 from managers.db import DBManager
 from models.data.interaction_event import InteractionType
-from models.pollers.poller import InteractionEventPoller
+from models.pollers.interaction_event_poller import InteractionEventPoller
 from model.postgres.edition import Edition
 from model.postgres.item import Item
 from model.postgres.record import Record
