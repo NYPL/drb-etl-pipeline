@@ -6,7 +6,6 @@ class ViewsReport(Counter5Report):
         super().__init__(*args)
     
     def build_report(self, events, reporting_data):
-        # TODO: move to general counter 5 class?
         print("Building views report...")
 
         if len(events) > 0:

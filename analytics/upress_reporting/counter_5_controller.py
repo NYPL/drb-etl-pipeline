@@ -7,7 +7,7 @@ from helpers import aggregate_logs
 from helpers.format_data import format_to_interaction_event
 from managers.db import DBManager
 from models.data.interaction_event import InteractionType
-from models.pollers.poller import Poller
+from models.pollers.poller import InteractionEventPoller
 from model.postgres.edition import Edition
 from model.postgres.item import Item
 from model.postgres.record import Record
@@ -52,17 +52,12 @@ class Counter5Controller:
 
     def create_reports(self):
         print("Generating Counter 5 reports...", datetime.now())
-        # TODO: aggregate log files -> * one for views and one for downloads (this is agnostic of publisher)
-        self.pull_aggregated_logs()
 
-        # TODO: get all records and editions from publisher backlists stored in config
-        # TODO: map records/editions data to reporting model
+        self.pull_aggregated_logs()
         publisher_project_data = self.pull_publisher_project_data()
 
         for publisher in self.publishers:
             try:
-                # TODO: create a map of record_id to record -> * imo not necessary bc you can just match the GET URL
-                # TODO: create a map of each relevant part in record.has_part to record_id
                 filtered_publisher_data = self.filter_data_by_publisher(
                     publisher_project_data, publisher)
                 normalized_publisher_data = self.format_to_reporting_model(
@@ -71,13 +66,12 @@ class Counter5Controller:
                 df = pandas.DataFrame(normalized_publisher_data)
                 df.set_index("search_col", inplace=True)
 
-                # TODO: pass in prepped data
-                view_data_poller = Poller(date_range=self.reporting_period,
+                view_data_poller = InteractionEventPoller(date_range=self.reporting_period,
                                           reporting_data=df,
                                           file_id_regex=r"REST.GET.OBJECT manifests/(.*?json)\s",
                                           bucket_name=self.view_bucket,
                                           interaction_type=InteractionType.VIEW)
-                download_data_poller = Poller(date_range=self.reporting_period,
+                download_data_poller = InteractionEventPoller(date_range=self.reporting_period,
                                               reporting_data=df,
                                               file_id_regex=r"REST.GET.OBJECT (.+pdf\s)",
                                               bucket_name=self.download_bucket,
@@ -127,7 +121,6 @@ class Counter5Controller:
         )
 
     def pull_publisher_project_data(self) -> CTE:
-        # Purpose of method is to minimize db calls
         publisher_project_records = (
             self.db_manager.session.query(Record)
             .filter(Record.publisher_project_source.is_not(None))
@@ -162,6 +155,7 @@ class Counter5Controller:
                   publisher_project_records.c.uuid == publisher_project_editions.c.uuid)
             .cte("merged_publisher_project_data")
         )
+
         return merged_publisher_project_data
 
     def filter_data_by_publisher(self, cte: CTE, publisher: str):

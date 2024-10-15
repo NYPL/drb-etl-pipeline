@@ -10,7 +10,7 @@ REQUEST_REGEX = r"REST.GET.OBJECT "
 TIMESTAMP_REGEX = r"\[.+\]"
 
 
-class Poller():
+class InteractionEventPoller():
     def __init__(self, date_range, reporting_data: pandas.DataFrame,
                  file_id_regex, bucket_name, interaction_type):
         self.date_range = date_range
