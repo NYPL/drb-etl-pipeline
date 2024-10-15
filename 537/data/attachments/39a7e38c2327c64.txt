@@ -1,0 +1,5 @@
+ERROR    processes.nypl:nypl.py:57 Failed to ingest NYPL records
+Traceback (most recent call last):
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/processes/nypl.py", line 55, in runProcess
+    logger.info(f'Ingested {len(self.records)} NYPL records')
+AttributeError: 'TestNYPLProcess' object has no attribute 'records'
