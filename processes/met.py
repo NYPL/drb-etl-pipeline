@@ -51,6 +51,8 @@ class METProcess(CoreProcess):
         self.saveRecords()
         self.commitChanges()
 
+        logger.info(f'Ingested {len(self.records)} MET records')
+
     def setStartTime(self):
         if not self.fullImport:
             if not self.ingestPeriod:

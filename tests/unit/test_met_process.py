@@ -22,6 +22,7 @@ class TestMetProcess:
                 self.s3Bucket = 'test_aws_bucket'
                 self.fileQueue = 'test_file_queue'
                 self.fileRoute = 'test_file_key'
+                self.records = []
         
         return TestMET()
 
