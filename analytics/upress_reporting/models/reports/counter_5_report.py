@@ -38,6 +38,7 @@ class Counter5Report(ABC):
             "Timestamp"
         ]
 
+        interaction_type = events[0].interaction_type
         accessed_titles_df = self._create_events_df(events, columns)
         accessed_titles_df["Timestamp"] = accessed_titles_df["Timestamp"].apply(
             self._reformat_timestamp_data)
@@ -62,7 +63,8 @@ class Counter5Report(ABC):
                                monthly_columns] = accessed_titles_df[monthly_columns].fillna(0)
 
         zeroed_out_titles_df = self._format_zeroed_out_titles(
-            reporting_data, columns, monthly_columns)
+            df=reporting_data, columns=columns, 
+            monthly_columns=monthly_columns, interaction_type=interaction_type)
 
         merged_df = pandas.concat(
             [accessed_titles_df, zeroed_out_titles_df], ignore_index=True)
@@ -89,6 +91,7 @@ class Counter5Report(ABC):
             "Timestamp"
         ]
 
+        interaction_type = events[0].interaction_type
         accessed_titles_df = self._create_events_df(events=events,
                                                     columns=columns,
                                                     include_country=True)
@@ -113,7 +116,9 @@ class Counter5Report(ABC):
                 accessed_titles_df["Book ID"] == book_id), column_name] = group["Book ID"].count()
 
         zeroed_out_titles_df = self._format_zeroed_out_titles(
-            reporting_data, columns, monthly_columns, include_country=True)
+            df=reporting_data, columns=columns, 
+            monthly_columns=monthly_columns, interaction_type=interaction_type,
+            include_country=True)
 
         accessed_titles_df.loc[:,
                                monthly_columns] = accessed_titles_df[monthly_columns].fillna(0)
@@ -156,7 +161,7 @@ class Counter5Report(ABC):
                 writer.writerow(title.values())
 
     def _format_zeroed_out_titles(self, df, columns, monthly_columns, 
-                                  include_country=False):
+                                  interaction_type, include_country=False):
         unaccessed_titles = df.loc[df["accessed"] == False]
         recarray = unaccessed_titles.to_records()
 
@@ -170,7 +175,7 @@ class Counter5Report(ABC):
             publication_year=title.publication_year,
             disciplines=title.disciplines,
             usage_type=title.usage_type,
-            interaction_type=None,
+            interaction_type=interaction_type,
             timestamp=None) for title in recarray]
 
         zeroed_out_df = self._create_events_df(zeroed_out_events, columns, 
