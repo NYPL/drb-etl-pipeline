@@ -31,7 +31,7 @@ def aggregate_logs_in_day(s3_bucket: str, s3_path: str, folder_name: str,
 
                     aggregated_log.write(line)
 
-            os.remove(f'{download_folder}/{filename}')
+            os.remove(f"{download_folder}/{filename}")
 
 
 def aggregate_logs_in_period(date_range: pandas.DatetimeIndex, s3_bucket: str,
