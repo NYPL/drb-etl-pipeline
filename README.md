@@ -105,7 +105,7 @@ An example of running one of these processes is: `python main.py -p LOCProcess -
 The currently available processes (with the exception of the UofSC and ChicagoISAC processes) are:
 
 - `LocalDevelopmentSetupProcess` Initialize a testing/development database
-- `SeedLocalDataProcess` imports a sample set of HathiTrust records and FRBRizes/clusters
+- `SeedLocalDataProcess` imports a sample set of HathiTrust records and FRBRizes/clusters them
 - `APIProcess` run the DRB API
 - `HathiTrustProcess` Run an import job on HathiTrust records
 - `CatalogProcess` Retrieve all OCLC Catalog records for identifiers in the queue
