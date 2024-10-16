@@ -53,7 +53,7 @@ class Counter5Controller:
     def create_reports(self):
         print("Generating Counter 5 reports...", datetime.now())
 
-        # self.pull_aggregated_logs()
+        self.pull_aggregated_logs()
         publisher_project_data = self.pull_publisher_project_data()
 
         for publisher in self.publishers:

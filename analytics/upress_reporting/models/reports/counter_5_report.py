@@ -150,7 +150,7 @@ class Counter5Report(ABC):
         if "/" in file_name:
             file_name = file_name.replace("/ ", "(") + ")"
 
-        with open(file_name, 'w') as csv_file:
+        with open(file_name+".csv", 'w') as csv_file:
             writer = csv.writer(csv_file, delimiter="|",
                                 quoting=csv.QUOTE_NONE)
             for key, value in header.items():
