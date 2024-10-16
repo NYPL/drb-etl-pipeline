@@ -6,7 +6,7 @@ logger = createLog(__name__)
 
 
 class APIProcess():
-    def __init__(self):
+    def __init__(self, *args):
         self.db_manager = DBManager()
         self.elastic_search_manager = ElasticsearchManager()
         self.redis_manager = RedisManager()
@@ -14,7 +14,7 @@ class APIProcess():
     def runProcess(self):
         try:
             logger.info('Starting API...')
-            
+
             db_engine = self.db_manager.generateEngine()
             redis_client = self.redis_manager.createRedisClient()
             self.elastic_search_manager.createElasticConnection()
