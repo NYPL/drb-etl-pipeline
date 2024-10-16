@@ -25,5 +25,4 @@ class InteractionEvent():
     publication_year: Optional[str]
     disciplines: Optional[str]
     usage_type: str
-    interaction_type: Optional[str]
     timestamp: Optional[str]

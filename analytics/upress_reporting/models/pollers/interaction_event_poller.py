@@ -98,7 +98,6 @@ class InteractionEventPoller():
             publication_year=match_data["publication_year"],
             disciplines=match_data["disciplines"],
             usage_type=match_data["usage_type"],
-            interaction_type=self.interaction_type.value,
             timestamp=match_time[0]
         )
     

@@ -9,12 +9,12 @@ class ViewsReport(Counter5Report):
         print("Building views report...")
 
         if len(events) > 0:
-            file_name = f"{self.publisher}_views_report_{self.created}.csv"
             header = self.build_header(report_name="NYPL DRB Total Item Requests by Title / Views",
-                                       report_description="Views of your books from NYPL's Digital Research Books by title.")
+                                       report_description="Views of your books from NYPL's Digital Research Books by title.",
+                                       metric_type="Views (clicks on title)")
             columns, final_data = self.aggregate_interaction_events(events, reporting_data)
             
-            self.write_to_csv(file_name=file_name, 
+            self.write_to_csv(file_name=header["Report_Name"], 
                               header=header, 
                               column_names=columns, 
                               data=final_data)
