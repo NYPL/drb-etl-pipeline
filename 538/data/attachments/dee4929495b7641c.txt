@@ -1,0 +1,11 @@
+ERROR    api.blueprints.drbUtils:drbUtils.py:42 Unable to get language counts
+Traceback (most recent call last):
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/api/blueprints/drbUtils.py", line 34, in get_languages
+    language_query_results = es_client.languageQuery(work_counts)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1092, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1096, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1151, in _execute_mock_call
+    raise effect
+Exception: Elastic search error

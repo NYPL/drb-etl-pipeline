@@ -1,0 +1,11 @@
+ERROR    api.blueprints.drbLink:drbLink.py:36 Unable to get link with id 1
+Traceback (most recent call last):
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/api/blueprints/drbLink.py", line 21, in get_link
+    link = db_client.fetchSingleLink(link_id)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1092, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1096, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1151, in _execute_mock_call
+    raise effect
+Exception: Database error
