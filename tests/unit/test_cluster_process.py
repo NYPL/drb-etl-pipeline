@@ -1,13 +1,13 @@
 from sqlalchemy.exc import DataError
-from processes.sfrCluster import ClusterError
+from processes.cluster import ClusterError
 import pytest
 
 from tests.helper import TestHelpers
-from processes.sfrCluster import ClusterProcess, ClusterError
+from processes.cluster import ClusterProcess, ClusterError
 from model import Record
 
 
-class TestSFRClusterProcess:
+class TestClusterProcess:
     @classmethod
     def setup_class(cls):
         TestHelpers.setEnvVars()
@@ -113,7 +113,7 @@ class TestSFRClusterProcess:
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
         testInstance.process = 'custom'
-        mocker.patch('processes.sfrCluster.datetime')
+        mocker.patch('processes.cluster.datetime')
 
         mockSession.query().filter().filter.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
@@ -258,7 +258,7 @@ class TestSFRClusterProcess:
     def test_clusterMatchedRecords(self, testInstance, mocker):
         mockMLModel = mocker.MagicMock()
         mockMLModel.parseEditions.return_value = ['ed1', 'ed2']
-        mockKManager = mocker.patch('processes.sfrCluster.KMeansManager')
+        mockKManager = mocker.patch('processes.cluster.KMeansManager')
         mockKManager.return_value = mockMLModel
 
         mockSession = mocker.MagicMock()
@@ -289,7 +289,7 @@ class TestSFRClusterProcess:
         mockRecManager.buildWork.return_value = 'testWorkData'
         mockRecManager.work = 'testWork'
         mockRecManager.mergeRecords.return_value = ['uuid1', 'uuid2']
-        mockManagerInst = mocker.patch('processes.sfrCluster.SFRRecordManager')
+        mockManagerInst = mocker.patch('processes.cluster.SFRRecordManager')
         mockManagerInst.return_value = mockRecManager
 
         mockSession = mocker.MagicMock()
