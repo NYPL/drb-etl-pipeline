@@ -197,27 +197,26 @@ class ClusterProcess(CoreProcess):
 
         return list(matched_ids)
 
-    def get_record_batches(self, identifiers, matchedIDs):
-        step = 100
-        i = 0
-        totalMatches = []
+    def get_record_batches(self, identifiers, match_ids):
+        batch = 100
+        total_matches = []
 
-        while i < len(identifiers):
-            idArray = self.format_identifiers(identifiers[i:i+step])
+        for i in range(0, len(identifiers), batch):
+            id_batch = self.format_identifiers(identifiers[i:i+batch])
 
             try:
-                matches = self.session.query(Record.title, Record.id, Record.identifiers)\
-                    .filter(~Record.id.in_(list(matchedIDs)))\
-                    .filter(Record.identifiers.overlap(idArray))\
-                    .all()
+                matches = (
+                    self.session.query(Record.title, Record.id, Record.identifiers)
+                        .filter(~Record.id.in_(list(match_ids)))
+                        .filter(Record.identifiers.overlap(id_batch))
+                        .all()
+                )
 
-                totalMatches.extend(matches)
-            except DataError as e:
+                total_matches.extend(matches)
+            except DataError:
                 logger.warning('Unable to execute batch id query')
 
-            i += step
-
-        return totalMatches
+        return total_matches
 
     def index_works_in_elastic_search(self, dbWorks):
         esWorks = []
@@ -229,8 +228,8 @@ class ClusterProcess(CoreProcess):
 
         self.saveWorkRecords(esWorks)
 
-    def compare_title_tokens(self, recTitle):
-        recTitleTokens = self.tokenize_title(recTitle)
+    def compare_title_tokens(self, record_title: str):
+        recTitleTokens = self.tokenize_title(record_title)
 
         if len(self.matchTitleTokens) == 1 and (self.matchTitleTokens <= recTitleTokens) is not True:
             return True
