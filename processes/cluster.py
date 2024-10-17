@@ -80,25 +80,25 @@ class ClusterProcess(CoreProcess):
                 raise e
 
             if len(works_to_index) >= self.CLUSTER_BATCH_SIZE:
-                self.updateElasticSearch(works_to_index, works_to_delete)
+                self.update_elastic_search(works_to_index, works_to_delete)
                 works_to_index = []
 
-                self.deleteStaleWorks(works_to_delete)
+                self.delete_stale_works(works_to_delete)
                 works_to_delete = set()
 
                 self.session.commit()
 
-        self.updateElasticSearch(works_to_index, works_to_delete)
-        self.deleteStaleWorks(works_to_delete)
+        self.update_elastic_search(works_to_index, works_to_delete)
+        self.delete_stale_works(works_to_delete)
 
         self.session.commit()
 
     def cluster_record(self, record: Record):
         logger.info('Clustering {}'.format(record))
 
-        self.matchTitleTokens = self.tokenizeTitle(record.title)
+        self.matchTitleTokens = self.tokenize_title(record.title)
 
-        record_ids = self.findAllMatchingRecords(record.identifiers)
+        record_ids = self.find_all_matching_records(record.identifiers)
 
         record_ids.append(record.id)
 
@@ -129,11 +129,11 @@ class ClusterProcess(CoreProcess):
                 )
         )
 
-    def updateElasticSearch(self, indexingWorks, deletingWorks):
+    def update_elastic_search(self, indexingWorks, deletingWorks):
         self.deleteWorkRecords(deletingWorks)
-        self.indexWorksInElasticSearch(indexingWorks)
+        self.index_works_in_elastic_search(indexingWorks)
 
-    def deleteStaleWorks(self, deletingWorks):
+    def delete_stale_works(self, deletingWorks):
         editionIDTuples = self.session.query(Edition.id).join(Work).filter(Work.uuid.in_(list(deletingWorks))).all()
         editionIDs = [ed[0] for ed in editionIDTuples]
         self.deleteRecordsByQuery(self.session.query(Edition).filter(Edition.id.in_(editionIDs)))
@@ -150,10 +150,10 @@ class ClusterProcess(CoreProcess):
 
         return editions, records
 
-    def findAllMatchingRecords(self, identifiers):
+    def find_all_matching_records(self, identifiers):
         idens = list(filter(lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None, identifiers))
 
-        return self.queryIdens(idens)
+        return self.query_identifiers(idens)
 
     def create_work_from_editions(self, editions, instances):
         recordManager = SFRRecordManager(self.session, self.statics['iso639'])
@@ -166,7 +166,7 @@ class ClusterProcess(CoreProcess):
 
         return recordManager.work, deletedRecordUUIDs
 
-    def queryIdens(self, idens):
+    def query_identifiers(self, idens):
         matchedIDs = set()
         checkedIdens = set()
 
@@ -175,7 +175,7 @@ class ClusterProcess(CoreProcess):
         iterations = 0
 
         while iterations < 4:
-            matches = self.getRecordBatches(list(checkIdens), matchedIDs.copy())
+            matches = self.get_record_batches(list(checkIdens), matchedIDs.copy())
 
             if len(matches) == 0:
                 break
@@ -186,7 +186,7 @@ class ClusterProcess(CoreProcess):
             for match in matches:
                 recTitle, recID, recIdentifiers = match
 
-                if iterations > 0 and self.compareTitleTokens(recTitle):
+                if iterations > 0 and self.compare_title_tokens(recTitle):
                     continue
 
                 checkIdens.update(list(filter(
@@ -203,13 +203,13 @@ class ClusterProcess(CoreProcess):
 
         return list(matchedIDs)
 
-    def getRecordBatches(self, identifiers, matchedIDs):
+    def get_record_batches(self, identifiers, matchedIDs):
         step = 100
         i = 0
         totalMatches = []
 
         while i < len(identifiers):
-            idArray = self.formatIdenArray(identifiers[i:i+step])
+            idArray = self.format_identifiers(identifiers[i:i+step])
 
             try:
                 matches = self.session.query(Record.title, Record.id, Record.identifiers)\
@@ -225,7 +225,7 @@ class ClusterProcess(CoreProcess):
 
         return totalMatches
 
-    def indexWorksInElasticSearch(self, dbWorks):
+    def index_works_in_elastic_search(self, dbWorks):
         esWorks = []
 
         for dbWork in dbWorks:
@@ -236,8 +236,8 @@ class ClusterProcess(CoreProcess):
         # elasticManager.saveWork()
         self.saveWorkRecords(esWorks)
 
-    def compareTitleTokens(self, recTitle):
-        recTitleTokens = self.tokenizeTitle(recTitle)
+    def compare_title_tokens(self, recTitle):
+        recTitleTokens = self.tokenize_title(recTitle)
 
         if len(self.matchTitleTokens) == 1 and (self.matchTitleTokens <= recTitleTokens) is not True:
             return True
@@ -249,7 +249,7 @@ class ClusterProcess(CoreProcess):
         return False
 
     @staticmethod
-    def tokenizeTitle(title):
+    def tokenize_title(title: str):
         try:
             lowerTitle = title.lower()
         except AttributeError:
@@ -263,7 +263,7 @@ class ClusterProcess(CoreProcess):
         return titleTokenSet
 
     @staticmethod
-    def formatIdenArray(identifiers):
+    def format_identifiers(identifiers):
         idenStrings = []
 
         for iden in identifiers:
