@@ -109,8 +109,8 @@ class ClusterProcess(CoreProcess):
         except Exception:
             self.session.rollback()
             logger.exception(f'Unable to cluster record {record}')
-
-            raise ClusterError('Malformed DCDW Record Received')
+            
+            raise ClusterError(f'Unable to cluster record {record}')
 
         self.update_cluster_status(matched_record_ids)
 
