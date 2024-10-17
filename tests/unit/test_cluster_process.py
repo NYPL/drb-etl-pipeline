@@ -347,13 +347,13 @@ class TestClusterProcess:
 
         testInstance.session.query().filter().filter.call_args[0][0].compare(Record.identifiers.overlap('testIdentifierArray'))
 
-    def test_format_identifiers(self):
-        assert ClusterProcess.format_identifiers(['{test}|test', 'multi,test|test'])\
+    def test_format_identifiers(self, testInstance):
+        assert testInstance.format_identifiers(['{test}|test', 'multi,test|test'])\
             == '{"{test}|test","multi,test|test"}'
 
-    def test_tokenize_title_success(self):
-        assert ClusterProcess.tokenize_title('A Test Title') == set(['test', 'title'])
+    def test_tokenize_title_success(self, testInstance):
+        assert testInstance.tokenize_title('A Test Title') == set(['test', 'title'])
 
-    def test_tokenize_title_error(self):
+    def test_tokenize_title_error(self, testInstance):
         with pytest.raises(ClusterError):
-            ClusterProcess.tokenize_title(None)
+            testInstance.tokenize_title(None)

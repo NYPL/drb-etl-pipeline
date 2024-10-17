@@ -240,7 +240,7 @@ class ClusterProcess(CoreProcess):
 
         return False
 
-    def tokenize_title(title: Optional[str]):
+    def tokenize_title(self, title: Optional[str]):
         if not title: 
             raise ClusterError(f'Invalid title {title}')
 
@@ -248,7 +248,7 @@ class ClusterProcess(CoreProcess):
 
         return set(title_tokens) - set(['a', 'an', 'the', 'of'])
 
-    def format_identifiers(identifiers):
+    def format_identifiers(self, identifiers):
         formatted_ids = []
 
         for id in identifiers:
