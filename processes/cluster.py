@@ -14,6 +14,7 @@ logger = createLog(__name__)
 
 class ClusterProcess(CoreProcess):
     CLUSTER_BATCH_SIZE = 50
+    CLUSTER_SIZE_LIMIT = 10000
 
     def __init__(self, *args):
         super(ClusterProcess, self).__init__(*args[:4])
@@ -156,52 +157,48 @@ class ClusterProcess(CoreProcess):
         return self.query_identifiers(idens)
 
     def create_work_from_editions(self, editions, instances):
-        recordManager = SFRRecordManager(self.session, self.statics['iso639'])
+        record_manager = SFRRecordManager(self.session, self.statics['iso639'])
 
-        workData = recordManager.buildWork(instances, editions)
+        work_data = record_manager.buildWork(instances, editions)
 
-        recordManager.saveWork(workData)
+        record_manager.saveWork(work_data)
 
-        deletedRecordUUIDs = recordManager.mergeRecords()
+        record_ids_to_delete = record_manager.mergeRecords()
 
-        return recordManager.work, deletedRecordUUIDs
+        return record_manager.work, record_ids_to_delete
 
-    def query_identifiers(self, idens):
-        matchedIDs = set()
-        checkedIdens = set()
+    def query_identifiers(self, ids: list[str]):
+        matched_ids = set()
+        checked_ids = set()
 
-        checkIdens = idens
+        ids_to_check = ids
 
-        iterations = 0
+        for iteration in range(0, 4):
+            record_batches = self.get_record_batches(list(ids_to_check), matched_ids.copy())
 
-        while iterations < 4:
-            matches = self.get_record_batches(list(checkIdens), matchedIDs.copy())
-
-            if len(matches) == 0:
+            if len(record_batches) == 0:
                 break
 
-            checkedIdens.update(checkIdens)
+            checked_ids.update(ids_to_check)
 
-            checkIdens = set()
-            for match in matches:
-                recTitle, recID, recIdentifiers = match
+            ids_to_check = set()
 
-                if iterations > 0 and self.compare_title_tokens(recTitle):
+            for record_batch in record_batches:
+                record_title, record_id, record_ids = record_batch
+
+                if iteration > 0 and self.compare_title_tokens(record_title):
                     continue
 
-                checkIdens.update(list(filter(
-                    lambda x: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', x) != None and x not in checkedIdens,
-                    recIdentifiers)
+                ids_to_check.update(list(filter(
+                    lambda id: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', id) != None and id not in checked_ids,
+                    record_ids)
                 ))
-                matchedIDs.add(recID)
+                matched_ids.add(record_id)
 
-            iterations += 1
+        if len(matched_ids) > self.CLUSTER_SIZE_LIMIT:
+            raise ClusterError(f'Records matched is greater than {self.CLUSTER_SIZE_LIMIT}')
 
-        if len(matchedIDs) > 10000:
-            logger.info(matchedIDs)
-            raise ClusterError('Clustering Error encountered, unreasonable number of records matched')
-
-        return list(matchedIDs)
+        return list(matched_ids)
 
     def get_record_batches(self, identifiers, matchedIDs):
         step = 100
@@ -233,7 +230,6 @@ class ClusterProcess(CoreProcess):
             elasticManager.getCreateWork()
             esWorks.append(elasticManager.work)
 
-        # elasticManager.saveWork()
         self.saveWorkRecords(esWorks)
 
     def compare_title_tokens(self, recTitle):
