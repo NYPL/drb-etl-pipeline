@@ -13,6 +13,7 @@ logger = createLog(__name__)
 
 
 class ClusterProcess(CoreProcess):
+    MAX_RELATIONSHIP_DISTANCE = 4
     CLUSTER_BATCH_SIZE = 50
     CLUSTER_SIZE_LIMIT = 10000
     IDENTIFIERS_REGEX = r'\|(?:isbn|issn|oclc|lccn|owi)$'
@@ -154,7 +155,7 @@ class ClusterProcess(CoreProcess):
 
         ids_to_check = ids_to_match
 
-        for iteration in range(0, 4):
+        for match_distance in range(0, self.MAX_RELATIONSHIP_DISTANCE):
             matched_records = self.get_matched_records(list(ids_to_check), matched_record_ids.copy())
 
             if len(matched_records) == 0:
@@ -168,14 +169,14 @@ class ClusterProcess(CoreProcess):
                 matched_record_title, matched_record_id, matched_record_identifiers = matched_record
                 tokenized_matched_record_title = self.tokenize_title(matched_record_title)
 
-                if iteration > 0 and not self.titles_overlap(tokenized_record_title, tokenized_matched_record_title):
+                if match_distance > 0 and not self.titles_overlap(tokenized_record_title, tokenized_matched_record_title):
                     continue
 
                 ids_to_check.update(list(filter(
                     lambda id: re.search(self.IDENTIFIERS_REGEX, id) and id not in checked_ids,
                     matched_record_identifiers)
                 ))
-                
+
                 matched_record_ids.add(matched_record_id)
 
         if len(matched_record_ids) > self.CLUSTER_SIZE_LIMIT:
