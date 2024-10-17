@@ -145,7 +145,7 @@ class TestClusterProcess:
             updateElasticSearch=mocker.DEFAULT,
             deleteStaleWorks=mocker.DEFAULT,
             closeConnection=mocker.DEFAULT,
-            updateMatchedRecordsStatus=mocker.DEFAULT
+            update_cluster_status=mocker.DEFAULT
         )
 
         mockSession = mocker.MagicMock()
@@ -161,20 +161,20 @@ class TestClusterProcess:
         testInstance.cluster_records(full=True)
 
         assert mockQuery.first.call_count == 3
-        clusterMocks['updateMatchedRecordsStatus'].assert_called_once_with([2])
+        clusterMocks['update_cluster_status'].assert_called_once_with([2])
 
     def test_cluster_record_w_matching_records(self, testInstance, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
             tokenizeTitle=mocker.DEFAULT,
             findAllMatchingRecords=mocker.DEFAULT,
-            clusterMatchedRecords=mocker.DEFAULT,
-            createWorkFromEditions=mocker.DEFAULT,
-            updateMatchedRecordsStatus=mocker.DEFAULT
+            cluster_matched_records=mocker.DEFAULT,
+            create_work_from_editions=mocker.DEFAULT,
+            update_cluster_status=mocker.DEFAULT
         )
         clusterMocks['findAllMatchingRecords'].return_value = ['3|test']
-        clusterMocks['clusterMatchedRecords'].return_value = (['ed1', 'ed2'], ['inst1', 'inst2', 'inst3'])
-        clusterMocks['createWorkFromEditions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
+        clusterMocks['cluster_matched_records'].return_value = (['ed1', 'ed2'], ['inst1', 'inst2', 'inst3'])
+        clusterMocks['create_work_from_editions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
         clusterMocks['tokenizeTitle'].return_value = set(['test', 'title'])
 
         mockSession = mocker.MagicMock()
@@ -187,25 +187,25 @@ class TestClusterProcess:
         clusterMocks['tokenizeTitle'].assert_called_once_with('Test')
         assert testInstance.matchTitleTokens == set(['test', 'title'])
         clusterMocks['findAllMatchingRecords'].assert_called_once_with(['1|test'])
-        clusterMocks['clusterMatchedRecords'].assert_called_once_with(['3|test', 1])
-        clusterMocks['createWorkFromEditions'].assert_called_once_with(
+        clusterMocks['cluster_matched_records'].assert_called_once_with(['3|test', 1])
+        clusterMocks['create_work_from_editions'].assert_called_once_with(
             ['ed1', 'ed2'], ['inst1', 'inst2', 'inst3']
         )
         mockSession.flush.assert_called_once()
-        clusterMocks['updateMatchedRecordsStatus'].assert_called_once_with(['3|test', 1])
+        clusterMocks['update_cluster_status'].assert_called_once_with(['3|test', 1])
 
     def test_cluster_record_wo_matching_records(self, testInstance, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
             tokenizeTitle=mocker.DEFAULT,
             findAllMatchingRecords=mocker.DEFAULT,
-            clusterMatchedRecords=mocker.DEFAULT,
-            createWorkFromEditions=mocker.DEFAULT,
-            updateMatchedRecordsStatus=mocker.DEFAULT
+            cluster_matched_records=mocker.DEFAULT,
+            create_work_from_editions=mocker.DEFAULT,
+            update_cluster_status=mocker.DEFAULT
         )
         clusterMocks['findAllMatchingRecords'].return_value = []
-        clusterMocks['clusterMatchedRecords'].return_value = (['ed1'], ['inst1'])
-        clusterMocks['createWorkFromEditions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
+        clusterMocks['cluster_matched_records'].return_value = (['ed1'], ['inst1'])
+        clusterMocks['create_work_from_editions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
         clusterMocks['tokenizeTitle'].return_value = set(['test', 'title'])
 
         mockSession = mocker.MagicMock()
@@ -218,24 +218,24 @@ class TestClusterProcess:
         clusterMocks['tokenizeTitle'].assert_called_once_with('Test')
         assert testInstance.matchTitleTokens == set(['test', 'title'])
         clusterMocks['findAllMatchingRecords'].assert_called_once_with(['1|test'])
-        clusterMocks['clusterMatchedRecords'].assert_called_once_with([1])
-        clusterMocks['createWorkFromEditions'].assert_called_once_with(['ed1'], ['inst1'])
+        clusterMocks['cluster_matched_records'].assert_called_once_with([1])
+        clusterMocks['create_work_from_editions'].assert_called_once_with(['ed1'], ['inst1'])
         mockSession.flush.assert_called_once()
-        clusterMocks['updateMatchedRecordsStatus'].assert_called_once_with([1])
+        clusterMocks['update_cluster_status'].assert_called_once_with([1])
 
     def test_cluster_record_error(self, testInstance, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
             tokenizeTitle=mocker.DEFAULT,
             findAllMatchingRecords=mocker.DEFAULT,
-            clusterMatchedRecords=mocker.DEFAULT,
-            createWorkFromEditions=mocker.DEFAULT,
-            updateMatchedRecordsStatus=mocker.DEFAULT
+            cluster_matched_records=mocker.DEFAULT,
+            create_work_from_editions=mocker.DEFAULT,
+            update_cluster_status=mocker.DEFAULT
         )
 
         clusterMocks['findAllMatchingRecords'].return_value = []
-        clusterMocks['clusterMatchedRecords'].return_value = (['ed1'], ['inst1'])
-        clusterMocks['createWorkFromEditions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
+        clusterMocks['cluster_matched_records'].return_value = (['ed1'], ['inst1'])
+        clusterMocks['create_work_from_editions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
         clusterMocks['tokenizeTitle'].return_value = set(['test', 'title'])
 
         mockSession = mocker.MagicMock()
@@ -247,15 +247,15 @@ class TestClusterProcess:
         with pytest.raises(ClusterError):
             testInstance.cluster_record(testRecord)
 
-    def test_updateMatchedRecordsStatus(self, testInstance, mocker):
+    def test_update_cluster_status(self, testInstance, mocker):
         mockSession = mocker.MagicMock()
         testInstance.session = mockSession
 
-        testInstance.updateMatchedRecordsStatus([1])
+        testInstance.update_cluster_status([1])
 
         mockSession.query().filter().update.assert_called_once()
 
-    def test_clusterMatchedRecords(self, testInstance, mocker):
+    def test_cluster_matched_records(self, testInstance, mocker):
         mockMLModel = mocker.MagicMock()
         mockMLModel.parseEditions.return_value = ['ed1', 'ed2']
         mockKManager = mocker.patch('processes.cluster.KMeansManager')
@@ -264,7 +264,7 @@ class TestClusterProcess:
         mockSession = mocker.MagicMock()
         mockSession.query().filter().all.return_value = ['rec1', 'rec2', 'rec3']
         testInstance.session = mockSession
-        testEditions, testRecords = testInstance.clusterMatchedRecords([1, 2, 3]) 
+        testEditions, testRecords = testInstance.cluster_matched_records([1, 2, 3]) 
 
         assert testEditions == ['ed1', 'ed2']
         assert testRecords == ['rec1', 'rec2', 'rec3']
@@ -284,7 +284,7 @@ class TestClusterProcess:
         assert testRecords == ['rec1', 'rec2']
         mockIDQuery.assert_called_once_with(['2|oclc'])
 
-    def test_createWorkFromEditions(self, testInstance, mocker):
+    def test_create_work_from_editions(self, testInstance, mocker):
         mockRecManager = mocker.MagicMock()
         mockRecManager.buildWork.return_value = 'testWorkData'
         mockRecManager.work = 'testWork'
@@ -294,7 +294,7 @@ class TestClusterProcess:
 
         mockSession = mocker.MagicMock()
         testInstance.session = mockSession
-        testWork = testInstance.createWorkFromEditions('testEditions', 'testInstances')
+        testWork = testInstance.create_work_from_editions('testEditions', 'testInstances')
 
         assert testWork == ('testWork', ['uuid1', 'uuid2'])
         mockManagerInst.assert_called_once_with(mockSession, {})

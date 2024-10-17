@@ -73,7 +73,7 @@ class ClusterProcess(CoreProcess):
             except ClusterError:
                 logger.exception(f'Failed to cluster record {unclustered_record}')
                 
-                self.updateMatchedRecordsStatus([unclustered_record.id])
+                self.update_cluster_status([unclustered_record.id])
                 self.session.commit()
             except Exception as e:
                 logger.exception(f'Failed to cluster record {unclustered_record}')
@@ -98,12 +98,12 @@ class ClusterProcess(CoreProcess):
 
         self.matchTitleTokens = self.tokenizeTitle(record.title)
 
-        matchedIDs = self.findAllMatchingRecords(record.identifiers)
+        record_ids = self.findAllMatchingRecords(record.identifiers)
 
-        matchedIDs.append(record.id)
+        record_ids.append(record.id)
 
-        clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
-        dbWork, deletedUUIDs = self.createWorkFromEditions(clusteredEditions, instances)
+        clustered_editions, records = self.cluster_matched_records(record_ids)
+        work, deletedUUIDs = self.create_work_from_editions(clustered_editions, records)
 
         try:
             self.session.flush()
@@ -113,14 +113,21 @@ class ClusterProcess(CoreProcess):
 
             raise ClusterError('Malformed DCDW Record Received')
 
-        self.updateMatchedRecordsStatus(matchedIDs)
+        self.update_cluster_status(record_ids)
 
-        return dbWork, deletedUUIDs
+        return work, deletedUUIDs
 
-    def updateMatchedRecordsStatus(self, matchedIDs):
-        self.session.query(Record)\
-            .filter(Record.id.in_(list(set(matchedIDs))))\
-            .update({'cluster_status': True, 'frbr_status': 'complete'})
+    def update_cluster_status(self, record_ids: list[str], cluster_status: bool=True):
+        (
+            self.session.query(Record)
+                .filter(Record.id.in_(list(set(record_ids))))
+                .update(
+                    {
+                        'cluster_status': cluster_status, 
+                        'frbr_status': 'complete'
+                    }
+                )
+        )
 
     def updateElasticSearch(self, indexingWorks, deletingWorks):
         self.deleteWorkRecords(deletingWorks)
@@ -132,13 +139,14 @@ class ClusterProcess(CoreProcess):
         self.deleteRecordsByQuery(self.session.query(Edition).filter(Edition.id.in_(editionIDs)))
         self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid.in_(list(deletingWorks))))
 
-    def clusterMatchedRecords(self, recIDs):
-        records = self.session.query(Record).filter(Record.id.in_(recIDs)).all()
+    def cluster_matched_records(self, record_ids: list[str]):
+        records = self.session.query(Record).filter(Record.id.in_(record_ids)).all()
 
-        mlModel = KMeansManager(records)
-        mlModel.createDF()
-        mlModel.generateClusters()
-        editions = mlModel.parseEditions()
+        kmean_manager = KMeansManager(records)
+
+        kmean_manager.createDF()
+        kmean_manager.generateClusters()
+        editions = kmean_manager.parseEditions()
 
         return editions, records
 
@@ -147,7 +155,7 @@ class ClusterProcess(CoreProcess):
 
         return self.queryIdens(idens)
 
-    def createWorkFromEditions(self, editions, instances):
+    def create_work_from_editions(self, editions, instances):
         recordManager = SFRRecordManager(self.session, self.statics['iso639'])
 
         workData = recordManager.buildWork(instances, editions)
