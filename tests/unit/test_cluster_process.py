@@ -267,15 +267,6 @@ class TestClusterProcess:
         mockMLModel.generateClusters.assert_called_once
         mockMLModel.parseEditions.assert_called_once
 
-    def test_find_all_matching_records(self, testInstance, testRecord, mocker):
-        mockIDQuery = mocker.patch.object(ClusterProcess, 'query_identifiers')
-        mockIDQuery.return_value = ['rec1', 'rec2']
-
-        testRecords = testInstance.find_all_matching_records(testRecord)
-
-        assert testRecords == ['rec1', 'rec2']
-        mockIDQuery.assert_called_once_with(['2|oclc'])
-
     def test_create_work_from_editions(self, testInstance, mocker):
         mockRecManager = mocker.MagicMock()
         mockRecManager.buildWork.return_value = 'testWorkData'
@@ -294,7 +285,7 @@ class TestClusterProcess:
         mockRecManager.saveWork.assert_called_once_with('testWorkData')
         mockRecManager.mergeRecords.assert_called_once()
 
-    def test_query_identifiers_success(self, testInstance, mocker):
+    def test_find_all_matching_records_success(self, testInstance, testRecord, mocker):
         mockGetBatches = mocker.patch.object(ClusterProcess, 'get_record_batches')
         mockGetBatches.side_effect = [
             [('title1', 1, ['1|isbn']), ('title2', 2, ['2|oclc', '3|other'])],
@@ -306,7 +297,7 @@ class TestClusterProcess:
         mockCompareTitles = mocker.patch.object(ClusterProcess, 'compare_title_tokens')
         mockCompareTitles.return_value = True
 
-        testIDs = testInstance.query_identifiers(['1|test', '2|test', '3|test'])
+        testIDs = testInstance.find_all_matching_records(testRecord)
 
         assert testIDs == [1, 2]
         assert mockGetBatches.call_count == 4
@@ -314,7 +305,7 @@ class TestClusterProcess:
             mocker.call('title3'), mocker.call('title4')
         ])
 
-    def test_query_identifiers_exceed_cluster_threshold(self, testInstance, mocker):
+    def test_find_all_matching_records_exceed_cluster_threshold(self, testInstance, testRecord, mocker):
         mockGetBatch = mocker.patch.object(ClusterProcess, 'get_record_batches')
         mockGetBatch.side_effect = [
             [('title{}'.format(i), i, ['{}|test'.format(i)]) for i in range(10001)],
@@ -322,7 +313,7 @@ class TestClusterProcess:
         ]
 
         with pytest.raises(Exception):
-            testInstance.query_identifiers(['1|oclc', '2|oclc', '3|oclc'])
+            testInstance.find_all_matching_records(testRecord)
 
     def test_get_record_batches(self, testInstance, mocker):
         testInstance.session = mocker.MagicMock()

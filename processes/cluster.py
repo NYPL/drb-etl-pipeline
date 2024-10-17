@@ -15,6 +15,7 @@ logger = createLog(__name__)
 class ClusterProcess(CoreProcess):
     CLUSTER_BATCH_SIZE = 50
     CLUSTER_SIZE_LIMIT = 10000
+    IDENTIFIERS_REGEX = r'\|(?:isbn|issn|oclc|lccn|owi)$'
 
     def __init__(self, *args):
         super(ClusterProcess, self).__init__(*args[:4])
@@ -145,22 +146,8 @@ class ClusterProcess(CoreProcess):
         return editions, records
 
     def find_all_matching_records(self, record: Record):
-        ids = list(filter(lambda id: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', id) != None, record.identifiers))
+        ids = list(filter(lambda id: re.search(self.IDENTIFIERS_REGEX, id) != None, record.identifiers))
 
-        return self.query_identifiers(ids)
-
-    def create_work_from_editions(self, editions, instances):
-        record_manager = SFRRecordManager(self.session, self.statics['iso639'])
-
-        work_data = record_manager.buildWork(instances, editions)
-
-        record_manager.saveWork(work_data)
-
-        stale_work_ids = record_manager.mergeRecords()
-
-        return record_manager.work, stale_work_ids
-
-    def query_identifiers(self, ids: list[str]):
         matched_ids = set()
         checked_ids = set()
 
@@ -183,7 +170,7 @@ class ClusterProcess(CoreProcess):
                     continue
 
                 ids_to_check.update(list(filter(
-                    lambda id: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', id) != None and id not in checked_ids,
+                    lambda id: re.search(self.IDENTIFIERS_REGEX, id) != None and id not in checked_ids,
                     record_ids)
                 ))
                 matched_ids.add(record_id)
@@ -192,6 +179,17 @@ class ClusterProcess(CoreProcess):
             raise ClusterError(f'Records matched is greater than {self.CLUSTER_SIZE_LIMIT}')
 
         return list(matched_ids)
+
+    def create_work_from_editions(self, editions, instances):
+        record_manager = SFRRecordManager(self.session, self.statics['iso639'])
+
+        work_data = record_manager.buildWork(instances, editions)
+
+        record_manager.saveWork(work_data)
+
+        stale_work_ids = record_manager.mergeRecords()
+
+        return record_manager.work, stale_work_ids
 
     def get_record_batches(self, identifiers, match_ids):
         batch = 100
