@@ -7,7 +7,6 @@ logger = createLog(__name__)
 class MigrationProcess():
     def __init__(self, *args):
         self.options = args[6]
-        print(self.options)
 
     def runProcess(self):
         try:
