@@ -14,7 +14,7 @@ from .muse import MUSEProcess
 from .ingestReport import IngestReportProcess
 from .met import METProcess
 from .migration import MigrationProcess
-from .dbMaintenance import DatabaseMaintenanceProcess
+from .db_maintenance import DatabaseMaintenanceProcess
 from .chicagoISAC import ChicagoISACProcess
 from .UofSC import UofSCProcess
 from .loc import LOCProcess
