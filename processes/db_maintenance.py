@@ -1,3 +1,5 @@
+from sqlalchemy import text
+
 from logger import createLog
 from managers import DBManager
 
@@ -32,5 +34,5 @@ class DatabaseMaintenanceProcess():
             db_connnection.execution_options(isolation_level='AUTOCOMMIT')
         ):         
             for table_name in self.VACUUMING_TABLES:
-                logger.info(f'Vacuuming {table_name}')
-                db_connnection.execute(f'VACUUM ANALYZE {table_name};')
+                logger.info(f'Vacuuming {table_name} table')
+                db_connnection.execute(text(f'VACUUM ANALYZE {table_name};'))

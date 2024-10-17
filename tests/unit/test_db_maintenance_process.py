@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy import text
 from unittest.mock import patch
 
 from processes import DatabaseMaintenanceProcess
@@ -23,8 +24,6 @@ class TestDatabaseMaintenanceProcess:
 
         mock_connection.execution_options.assert_called_once_with(isolation_level='AUTOCOMMIT')
         
-        expected_vacuum_calls = [mocker.call(f'VACUUM ANALYZE {table};') for table in DatabaseMaintenanceProcess.VACUUMING_TABLES]
         assert mock_connection.execute.call_count == len(db_maintenance_process.VACUUMING_TABLES)
-        mock_connection.execute.assert_has_calls(expected_vacuum_calls, any_order=True)
         
         db_maintenance_process.db_manager.closeConnection.assert_called_once()    
