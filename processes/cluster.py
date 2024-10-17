@@ -13,10 +13,12 @@ logger = createLog(__name__)
 
 
 class ClusterProcess(CoreProcess):
+    CLUSTER_BATCH_SIZE = 50
+
     def __init__(self, *args):
         super(ClusterProcess, self).__init__(*args[:4])
 
-        self.ingestLimit = int(args[4]) if args[4] else None
+        self.ingest_limit = int(args[4]) if len(args) >= 5 and args[4] else None
 
         self.generateEngine()
         self.createSession()
@@ -28,82 +30,86 @@ class ClusterProcess(CoreProcess):
         self.createElasticSearchIndex()
 
     def runProcess(self):
-        if self.process == 'daily':
-            self.clusterRecords()
-        elif self.process == 'complete':
-            self.clusterRecords(full=True)
-        elif self.process == 'custom':
-            self.clusterRecords(startDateTime=self.ingestPeriod)
-
-    def clusterRecords(self, full=False, startDateTime=None):
-        baseQuery = self.session.query(Record)\
-            .filter(Record.frbr_status == 'complete')\
-            .filter(Record.cluster_status == False)\
-            .filter(Record.source != 'oclcClassify')\
-            .filter(Record.source != 'oclcCatalog')
-
-        if full is False:
-            if not startDateTime:
-                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+        try:
+            if self.process == 'daily':
+                self.cluster_records()
+            elif self.process == 'complete':
+                self.cluster_records(full=True)
             elif self.process == 'custom':
-                startDateTime = datetime.strptime(startDateTime, '%Y-%m-%dT%H:%M:%S')
+                self.cluster_records(start_datetime=self.ingestPeriod)
+            else: 
+                logger.warning(f'Unknown cluster process type {self.process}')
+        except Exception as e:
+            logger.exception('Failed to run cluster process')
+            raise e
+        finally:
+            self.closeConnection()
 
-            baseQuery = baseQuery.filter(Record.date_modified > startDateTime)
+    def cluster_records(self, full=False, start_datetime=None):
+        get_unclustered_records_query = (
+            self.session.query(Record)
+                .filter(Record.frbr_status == 'complete')
+                .filter(Record.cluster_status == False)
+                .filter(Record.source != 'oclcClassify')
+                .filter(Record.source != 'oclcCatalog')
+        )
 
-        indexingWorks = []
-        deletingWorks = set()
-        while True:
-            rec = baseQuery.first()
+        if not full:
+            if not start_datetime:
+                start_datetime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+            elif self.process == 'custom':
+                start_datetime = datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M:%S')
 
-            if rec is None:
-                break
+            get_unclustered_records_query = get_unclustered_records_query.filter(Record.date_modified > start_datetime)
 
+        works_to_index = []
+        works_to_delete = set()
+
+        while unclustered_record := get_unclustered_records_query.first():
             try:
-                dbWork, deletedUUIDs = self.clusterRecord(rec)
-                indexingWorks.append(dbWork)
-                deletingWorks.update(deletedUUIDs)
+                work, work_ids_to_delete = self.cluster_record(unclustered_record)
+                works_to_index.append(work)
+                works_to_delete.update(work_ids_to_delete)
             except ClusterError:
-                logger.warning('Skipping record {}'.format(rec))
-                self.updateMatchedRecordsStatus([rec.id])
+                logger.exception(f'Failed to cluster record {unclustered_record}')
+                
+                self.updateMatchedRecordsStatus([unclustered_record.id])
                 self.session.commit()
             except Exception as e:
-                logger.exception(f'Failed to cluster record {rec}')
+                logger.exception(f'Failed to cluster record {unclustered_record}')
                 raise e
 
-            if len(indexingWorks) >= 50:
-                self.updateElasticSearch(indexingWorks, deletingWorks)
-                indexingWorks = []
+            if len(works_to_index) >= self.CLUSTER_BATCH_SIZE:
+                self.updateElasticSearch(works_to_index, works_to_delete)
+                works_to_index = []
 
-                self.deleteStaleWorks(deletingWorks)
-                deletingWorks = set()
+                self.deleteStaleWorks(works_to_delete)
+                works_to_delete = set()
 
                 self.session.commit()
 
-        # Run index/delete methods again for final batch
-        self.updateElasticSearch(indexingWorks, deletingWorks)
-        self.deleteStaleWorks(deletingWorks)
+        self.updateElasticSearch(works_to_index, works_to_delete)
+        self.deleteStaleWorks(works_to_delete)
 
         self.session.commit()
-        self.closeConnection()
 
-    def clusterRecord(self, rec):
-        logger.info('Clustering {}'.format(rec))
+    def cluster_record(self, record: Record):
+        logger.info('Clustering {}'.format(record))
 
-        self.matchTitleTokens = self.tokenizeTitle(rec.title)
+        self.matchTitleTokens = self.tokenizeTitle(record.title)
 
-        matchedIDs = self.findAllMatchingRecords(rec.identifiers)
+        matchedIDs = self.findAllMatchingRecords(record.identifiers)
 
-        matchedIDs.append(rec.id)
+        matchedIDs.append(record.id)
 
         clusteredEditions, instances = self.clusterMatchedRecords(matchedIDs)
         dbWork, deletedUUIDs = self.createWorkFromEditions(clusteredEditions, instances)
 
         try:
             self.session.flush()
-        except Exception as e:
+        except Exception:
             self.session.rollback()
-            logger.error('Unable to cluster {}'.format(rec))
-            logger.debug(e)
+            logger.exception(f'Unable to cluster record {record}')
 
             raise ClusterError('Malformed DCDW Record Received')
 
@@ -143,13 +149,11 @@ class ClusterProcess(CoreProcess):
 
     def createWorkFromEditions(self, editions, instances):
         recordManager = SFRRecordManager(self.session, self.statics['iso639'])
-        logger.debug('BUILDING WORK')
+
         workData = recordManager.buildWork(instances, editions)
-        logger.debug('SAVING WORK')
 
         recordManager.saveWork(workData)
 
-        logger.debug('MERGING RECORDS')
         deletedRecordUUIDs = recordManager.mergeRecords()
 
         return recordManager.work, deletedRecordUUIDs
@@ -163,21 +167,18 @@ class ClusterProcess(CoreProcess):
         iterations = 0
 
         while iterations < 4:
-            logger.debug('Checking IDS: {}'.format(len(checkIdens)))
             matches = self.getRecordBatches(list(checkIdens), matchedIDs.copy())
-            logger.debug('Got Matches: {}'.format(len(matches)))
+
             if len(matches) == 0:
                 break
 
             checkedIdens.update(checkIdens)
-            logger.debug('Checked IDS: {}'.format(len(checkedIdens)))
 
             checkIdens = set()
             for match in matches:
                 recTitle, recID, recIdentifiers = match
 
                 if iterations > 0 and self.compareTitleTokens(recTitle):
-                    logger.debug('Matched Title Error: {}'.format(recTitle))
                     continue
 
                 checkIdens.update(list(filter(
@@ -200,8 +201,6 @@ class ClusterProcess(CoreProcess):
         totalMatches = []
 
         while i < len(identifiers):
-            logger.debug('Querying Batch {} of {}'.format(ceil(i/100)+1, ceil(len(identifiers)/100)))
-
             idArray = self.formatIdenArray(identifiers[i:i+step])
 
             try:
@@ -213,7 +212,6 @@ class ClusterProcess(CoreProcess):
                 totalMatches.extend(matches)
             except DataError as e:
                 logger.warning('Unable to execute batch id query')
-                logger.debug(e)
 
             i += step
 
@@ -223,7 +221,6 @@ class ClusterProcess(CoreProcess):
         esWorks = []
 
         for dbWork in dbWorks:
-            logger.debug('Generating ES for {}'.format(dbWork))
             elasticManager = SFRElasticRecordManager(dbWork)
             elasticManager.getCreateWork()
             esWorks.append(elasticManager.work)
