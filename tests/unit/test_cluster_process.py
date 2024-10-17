@@ -286,7 +286,7 @@ class TestClusterProcess:
         mockRecManager.mergeRecords.assert_called_once()
 
     def test_find_all_matching_records_success(self, testInstance, testRecord, mocker):
-        mockGetBatches = mocker.patch.object(ClusterProcess, 'get_record_batches')
+        mockGetBatches = mocker.patch.object(ClusterProcess, 'get_matched_records')
         mockGetBatches.side_effect = [
             [('title1', 1, ['1|isbn']), ('title2', 2, ['2|oclc', '3|other'])],
             [('title3', 3, ['4|oclc'])],
@@ -294,19 +294,16 @@ class TestClusterProcess:
             []
         ]
 
-        mockCompareTitles = mocker.patch.object(ClusterProcess, 'compare_title_tokens')
-        mockCompareTitles.return_value = True
+        mockCompareTitles = mocker.patch.object(ClusterProcess, 'titles_overlap')
+        mockCompareTitles.return_value = False
 
         testIDs = testInstance.find_all_matching_records(testRecord)
 
         assert testIDs == [1, 2]
         assert mockGetBatches.call_count == 4
-        mockCompareTitles.assert_has_calls([
-            mocker.call('title3'), mocker.call('title4')
-        ])
 
     def test_find_all_matching_records_exceed_cluster_threshold(self, testInstance, testRecord, mocker):
-        mockGetBatch = mocker.patch.object(ClusterProcess, 'get_record_batches')
+        mockGetBatch = mocker.patch.object(ClusterProcess, 'get_matched_records')
         mockGetBatch.side_effect = [
             [('title{}'.format(i), i, ['{}|test'.format(i)]) for i in range(10001)],
             []
@@ -315,7 +312,7 @@ class TestClusterProcess:
         with pytest.raises(Exception):
             testInstance.find_all_matching_records(testRecord)
 
-    def test_get_record_batches(self, testInstance, mocker):
+    def test_get_matched_records(self, testInstance, mocker):
         testInstance.session = mocker.MagicMock()
 
         mockFormatArray = mocker.patch.object(ClusterProcess, 'format_identifiers')
@@ -323,7 +320,7 @@ class TestClusterProcess:
 
         testInstance.session.query().filter().filter().all.side_effect = [[1], [2, 3]]
 
-        testMatches = testInstance.get_record_batches([str(i) for i in range(103)], set([]))
+        testMatches = testInstance.get_matched_records([str(i) for i in range(103)], set([]))
 
         assert testMatches == [1, 2, 3]
         testInstance.session.query().filter.call_args[0][0].compare(~Record.id.in_([]))

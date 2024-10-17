@@ -146,39 +146,63 @@ class ClusterProcess(CoreProcess):
         return editions, records
 
     def find_all_matching_records(self, record: Record):
-        ids = list(filter(lambda id: re.search(self.IDENTIFIERS_REGEX, id) != None, record.identifiers))
+        tokenized_record_title = self.tokenize_title(record.title)
+        ids_to_match = list(filter(lambda id: re.search(self.IDENTIFIERS_REGEX, id), record.identifiers))
 
-        matched_ids = set()
+        matched_record_ids = set()
         checked_ids = set()
 
-        ids_to_check = ids
+        ids_to_check = ids_to_match
 
         for iteration in range(0, 4):
-            record_batches = self.get_record_batches(list(ids_to_check), matched_ids.copy())
+            matched_records = self.get_matched_records(list(ids_to_check), matched_record_ids.copy())
 
-            if len(record_batches) == 0:
+            if len(matched_records) == 0:
                 break
 
             checked_ids.update(ids_to_check)
 
             ids_to_check = set()
 
-            for record_batch in record_batches:
-                record_title, record_id, record_ids = record_batch
+            for matched_record in matched_records:
+                matched_record_title, matched_record_id, matched_record_identifiers = matched_record
+                tokenized_matched_record_title = self.tokenize_title(matched_record_title)
 
-                if iteration > 0 and self.compare_title_tokens(record_title):
+                if iteration > 0 and not self.titles_overlap(tokenized_record_title, tokenized_matched_record_title):
                     continue
 
                 ids_to_check.update(list(filter(
-                    lambda id: re.search(self.IDENTIFIERS_REGEX, id) != None and id not in checked_ids,
-                    record_ids)
+                    lambda id: re.search(self.IDENTIFIERS_REGEX, id) and id not in checked_ids,
+                    matched_record_identifiers)
                 ))
-                matched_ids.add(record_id)
+                
+                matched_record_ids.add(matched_record_id)
 
-        if len(matched_ids) > self.CLUSTER_SIZE_LIMIT:
+        if len(matched_record_ids) > self.CLUSTER_SIZE_LIMIT:
             raise ClusterError(f'Records matched is greater than {self.CLUSTER_SIZE_LIMIT}')
 
-        return list(matched_ids)
+        return list(matched_record_ids)
+    
+    def get_matched_records(self, identifiers: list[str], matched_record_ids):
+        batch_size = 100
+        matched_records = []
+
+        for i in range(0, len(identifiers), batch_size):
+            id_batch = self.format_identifiers(identifiers[i:i+batch_size])
+
+            try:
+                records = (
+                    self.session.query(Record.title, Record.id, Record.identifiers)
+                        .filter(~Record.id.in_(list(matched_record_ids)))
+                        .filter(Record.identifiers.overlap(id_batch))
+                        .all()
+                )
+
+                matched_records.extend(records)
+            except DataError:
+                logger.exception('Unable to get matching records')
+
+        return matched_records
 
     def create_work_from_editions(self, editions, instances):
         record_manager = SFRRecordManager(self.session, self.statics['iso639'])
@@ -191,27 +215,6 @@ class ClusterProcess(CoreProcess):
 
         return record_manager.work, stale_work_ids
 
-    def get_record_batches(self, identifiers, match_ids):
-        batch = 100
-        total_matches = []
-
-        for i in range(0, len(identifiers), batch):
-            id_batch = self.format_identifiers(identifiers[i:i+batch])
-
-            try:
-                matches = (
-                    self.session.query(Record.title, Record.id, Record.identifiers)
-                        .filter(~Record.id.in_(list(match_ids)))
-                        .filter(Record.identifiers.overlap(id_batch))
-                        .all()
-                )
-
-                total_matches.extend(matches)
-            except DataError:
-                logger.warning('Unable to execute batch id query')
-
-        return total_matches
-
     def index_works_in_elastic_search(self, dbWorks):
         esWorks = []
 
@@ -222,17 +225,15 @@ class ClusterProcess(CoreProcess):
 
         self.saveWorkRecords(esWorks)
 
-    def compare_title_tokens(self, record_title: str):
-        recTitleTokens = self.tokenize_title(record_title)
+    def titles_overlap(self, tokenized_record_title: set, tokenized_matched_record_title: set):
+        if len(tokenized_record_title) == 1 and not tokenized_record_title <= tokenized_matched_record_title:
+            return False
+        elif len(tokenized_matched_record_title) == 1 and not tokenized_record_title >= tokenized_matched_record_title:
+            return False
+        elif (len(tokenized_record_title) > 1 and len(tokenized_matched_record_title) > 1) and len(tokenized_record_title & tokenized_matched_record_title) < 2:
+            return False
 
-        if len(self.matchTitleTokens) == 1 and (self.matchTitleTokens <= recTitleTokens) is not True:
-            return True
-        elif len(recTitleTokens) == 1 and (self.matchTitleTokens >= recTitleTokens) is not True:
-            return True
-        elif (len(self.matchTitleTokens) > 1 and len(recTitleTokens) > 1) and len(self.matchTitleTokens & recTitleTokens) < 2:
-            return True
-
-        return False
+        return True
 
     def tokenize_title(self, title: Optional[str]):
         if not title: 
