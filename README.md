@@ -65,7 +65,8 @@ The steps to install the application are:
 3. Clone this repository
 4. Run `pip install -r requirements.txt` from the root directory.  If you run into the error ```pip: command not found``` while installing the dependencies, you may need to alias python3 and pip3 to python and pip, respectively. 
 5. Configure environment variables per instructions below
-6. Run `DevelopmentSetupProcess` per instructions below
+6. Run `LocalDevelopmentSetupProcess` per instructions below
+7. Run `SeedLocalDataProcess` to seed data in your local database.
 
 #### Running services on host machine
 
@@ -82,7 +83,7 @@ All services share a single entry point in `main.py` file. This script dynamical
 - `--offset`/`-o` Skips the first `n` rows of an import process
 - `--singleRecord`/`-r` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
 
-To set up a local environment there is a special process to initialize a database and search cluster which is the `DevelopmentSetupProcess`. However, it's recommended to run the `DevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. Before running a command, it's required to set these config variables in the sample-compose.yaml file:
+To set up a local environment there is a special process to initialize a database and search cluster which is the `LocalDevelopmentSetupProcess`. However, it's recommended to run the `LocalDevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. Before running a command, it's required to set these config variables in the sample-compose.yaml file:
 
 `HATHI_API_KEY`:
 `HATHI_API_SECRET`:
@@ -103,7 +104,8 @@ An example of running one of these processes is: `python main.py -p LOCProcess -
 
 The currently available processes (with the exception of the UofSC and ChicagoISAC processes) are:
 
-- `DevelopmentSetupProcess` Initialize a testing/development database
+- `LocalDevelopmentSetupProcess` Initialize a testing/development database
+- `SeedLocalDataProcess` imports a sample set of HathiTrust records and FRBRizes/clusters them
 - `APIProcess` run the DRB API
 - `HathiTrustProcess` Run an import job on HathiTrust records
 - `CatalogProcess` Retrieve all OCLC Catalog records for identifiers in the queue

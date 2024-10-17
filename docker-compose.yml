@@ -75,6 +75,21 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack/init-localstack-resources.sh:/etc/localstack/init/ready.d/init-localstack-resources.sh
 
+  devsetup:
+    container_name: drb_local_devSetUp
+    depends_on:
+      - database
+      - elasticsearch
+      - s3
+    build:
+      context: .
+    command: -e local-compose -p LocalDevelopmentSetupProcess
+    volumes:
+      - type: bind
+        source: .
+        target: /src
+        read_only: true
+
 volumes:
   drb_local_dbdata:
   drb_local_esdata:

@@ -6,7 +6,8 @@ from .nypl import NYPLProcess
 from .oclcCatalog import CatalogProcess
 from .oclcClassify import ClassifyProcess
 from .sfrCluster import ClusterProcess
-from .developmentSetup import DevelopmentSetupProcess
+from .local_development_setup import LocalDevelopmentSetupProcess
+from .seed_local_data import SeedLocalDataProcess
 from .s3Files import S3Process
 from .api import APIProcess
 from .muse import MUSEProcess
