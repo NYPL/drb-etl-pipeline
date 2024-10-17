@@ -1,8 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from math import ceil
 import re
-from sqlalchemy.exc import DataError, IntegrityError
-from sqlalchemy.orm.exc import StaleDataError
+from sqlalchemy.exc import DataError
 
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
