@@ -29,7 +29,7 @@ class TestClusterProcess:
 
     @pytest.fixture
     def testRecord(self, mocker):
-        return mocker.MagicMock(id=1, title='Test', identifiers=['1|test'], uuid='testUUID')
+        return mocker.MagicMock(id=1, title='Test', identifiers=['2|oclc'], uuid='testUUID')
 
     def test_runProcess_daily(self, testInstance, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'cluster_records')
@@ -166,7 +166,6 @@ class TestClusterProcess:
     def test_cluster_record_w_matching_records(self, testInstance, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
-            tokenize_title=mocker.DEFAULT,
             find_all_matching_records=mocker.DEFAULT,
             cluster_matched_records=mocker.DEFAULT,
             create_work_from_editions=mocker.DEFAULT,
@@ -175,7 +174,6 @@ class TestClusterProcess:
         clusterMocks['find_all_matching_records'].return_value = ['3|test']
         clusterMocks['cluster_matched_records'].return_value = (['ed1', 'ed2'], ['inst1', 'inst2', 'inst3'])
         clusterMocks['create_work_from_editions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
-        clusterMocks['tokenize_title'].return_value = set(['test', 'title'])
 
         mockSession = mocker.MagicMock()
         testInstance.session = mockSession
@@ -184,9 +182,7 @@ class TestClusterProcess:
         assert testWork == 'testDBWork'
         assert testDeleted == ['uuid1', 'uuid2']
 
-        clusterMocks['tokenize_title'].assert_called_once_with('Test')
-        assert testInstance.matchTitleTokens == set(['test', 'title'])
-        clusterMocks['find_all_matching_records'].assert_called_once_with(['1|test'])
+        clusterMocks['find_all_matching_records'].assert_called_once_with(testRecord)
         clusterMocks['cluster_matched_records'].assert_called_once_with(['3|test', 1])
         clusterMocks['create_work_from_editions'].assert_called_once_with(
             ['ed1', 'ed2'], ['inst1', 'inst2', 'inst3']
@@ -197,7 +193,6 @@ class TestClusterProcess:
     def test_cluster_record_wo_matching_records(self, testInstance, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
-            tokenize_title=mocker.DEFAULT,
             find_all_matching_records=mocker.DEFAULT,
             cluster_matched_records=mocker.DEFAULT,
             create_work_from_editions=mocker.DEFAULT,
@@ -206,7 +201,6 @@ class TestClusterProcess:
         clusterMocks['find_all_matching_records'].return_value = []
         clusterMocks['cluster_matched_records'].return_value = (['ed1'], ['inst1'])
         clusterMocks['create_work_from_editions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
-        clusterMocks['tokenize_title'].return_value = set(['test', 'title'])
 
         mockSession = mocker.MagicMock()
         testInstance.session = mockSession
@@ -215,9 +209,7 @@ class TestClusterProcess:
         assert testWork == 'testDBWork'
         assert testDeleted == ['uuid1', 'uuid2']
 
-        clusterMocks['tokenize_title'].assert_called_once_with('Test')
-        assert testInstance.matchTitleTokens == set(['test', 'title'])
-        clusterMocks['find_all_matching_records'].assert_called_once_with(['1|test'])
+        clusterMocks['find_all_matching_records'].assert_called_once_with(testRecord)
         clusterMocks['cluster_matched_records'].assert_called_once_with([1])
         clusterMocks['create_work_from_editions'].assert_called_once_with(['ed1'], ['inst1'])
         mockSession.flush.assert_called_once()
@@ -275,11 +267,11 @@ class TestClusterProcess:
         mockMLModel.generateClusters.assert_called_once
         mockMLModel.parseEditions.assert_called_once
 
-    def test_find_all_matching_records(self, testInstance, mocker):
+    def test_find_all_matching_records(self, testInstance, testRecord, mocker):
         mockIDQuery = mocker.patch.object(ClusterProcess, 'query_identifiers')
         mockIDQuery.return_value = ['rec1', 'rec2']
 
-        testRecords = testInstance.find_all_matching_records(['1|lcc', '2|oclc'])
+        testRecords = testInstance.find_all_matching_records(testRecord)
 
         assert testRecords == ['rec1', 'rec2']
         mockIDQuery.assert_called_once_with(['2|oclc'])

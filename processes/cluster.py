@@ -97,13 +97,9 @@ class ClusterProcess(CoreProcess):
     def cluster_record(self, record: Record):
         logger.info('Clustering {}'.format(record))
 
-        self.matchTitleTokens = self.tokenize_title(record.title)
+        matched_record_ids = self.find_all_matching_records(record) + [record.id]
 
-        record_ids = self.find_all_matching_records(record.identifiers)
-
-        record_ids.append(record.id)
-
-        clustered_editions, records = self.cluster_matched_records(record_ids)
+        clustered_editions, records = self.cluster_matched_records(matched_record_ids)
         work, stale_work_ids = self.create_work_from_editions(clustered_editions, records)
 
         try:
@@ -114,7 +110,7 @@ class ClusterProcess(CoreProcess):
 
             raise ClusterError('Malformed DCDW Record Received')
 
-        self.update_cluster_status(record_ids)
+        self.update_cluster_status(matched_record_ids)
 
         return work, stale_work_ids
 
@@ -148,8 +144,8 @@ class ClusterProcess(CoreProcess):
 
         return editions, records
 
-    def find_all_matching_records(self, identifiers):
-        ids = list(filter(lambda id: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', id) != None, identifiers))
+    def find_all_matching_records(self, record: Record):
+        ids = list(filter(lambda id: re.search(r'\|(?:isbn|issn|oclc|lccn|owi)$', id) != None, record.identifiers))
 
         return self.query_identifiers(ids)
 
