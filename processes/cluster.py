@@ -13,10 +13,10 @@ logger = createLog(__name__)
 
 
 class ClusterProcess(CoreProcess):
-    MAX_RELATIONSHIP_DISTANCE = 4
+    MAX_MATCH_DISTANCE = 4
     CLUSTER_BATCH_SIZE = 50
     CLUSTER_SIZE_LIMIT = 10000
-    IDENTIFIERS_REGEX = r'\|(?:isbn|issn|oclc|lccn|owi)$'
+    IDENTIFIERS_TO_MATCH = r'\|(?:isbn|issn|oclc|lccn|owi)$'
 
     def __init__(self, *args):
         super(ClusterProcess, self).__init__(*args[:4])
@@ -148,14 +148,14 @@ class ClusterProcess(CoreProcess):
 
     def find_all_matching_records(self, record: Record):
         tokenized_record_title = self.tokenize_title(record.title)
-        ids_to_match = list(filter(lambda id: re.search(self.IDENTIFIERS_REGEX, id), record.identifiers))
+        ids_to_match = list(filter(lambda id: re.search(self.IDENTIFIERS_TO_MATCH, id), record.identifiers))
 
         matched_record_ids = set()
         checked_ids = set()
 
         ids_to_check = ids_to_match
 
-        for match_distance in range(0, self.MAX_RELATIONSHIP_DISTANCE):
+        for match_distance in range(0, self.MAX_MATCH_DISTANCE):
             matched_records = self.get_matched_records(list(ids_to_check), matched_record_ids.copy())
 
             if len(matched_records) == 0:
@@ -172,9 +172,11 @@ class ClusterProcess(CoreProcess):
                 if match_distance > 0 and not self.titles_overlap(tokenized_record_title, tokenized_matched_record_title):
                     continue
 
-                ids_to_check.update(list(filter(
-                    lambda id: re.search(self.IDENTIFIERS_REGEX, id) and id not in checked_ids,
-                    matched_record_identifiers)
+                ids_to_check.update(list(
+                    filter(
+                        lambda id: re.search(self.IDENTIFIERS_TO_MATCH, id) and id not in checked_ids,
+                        matched_record_identifiers
+                    )
                 ))
 
                 matched_record_ids.add(matched_record_id)
@@ -205,10 +207,10 @@ class ClusterProcess(CoreProcess):
 
         return matched_records
 
-    def create_work_from_editions(self, editions, instances):
+    def create_work_from_editions(self, editions, records):
         record_manager = SFRRecordManager(self.session, self.statics['iso639'])
 
-        work_data = record_manager.buildWork(instances, editions)
+        work_data = record_manager.buildWork(records, editions)
 
         record_manager.saveWork(work_data)
 
@@ -216,15 +218,15 @@ class ClusterProcess(CoreProcess):
 
         return record_manager.work, stale_work_ids
 
-    def index_works_in_elastic_search(self, dbWorks):
-        esWorks = []
+    def index_works_in_elastic_search(self, works: Work):
+        work_documents = []
 
-        for dbWork in dbWorks:
-            elasticManager = SFRElasticRecordManager(dbWork)
-            elasticManager.getCreateWork()
-            esWorks.append(elasticManager.work)
+        for work in works:
+            elastic_manager = SFRElasticRecordManager(work)
+            elastic_manager.getCreateWork()
+            work_documents.append(elastic_manager.work)
 
-        self.saveWorkRecords(esWorks)
+        self.saveWorkRecords(work_documents)
 
     def titles_overlap(self, tokenized_record_title: set, tokenized_matched_record_title: set):
         if len(tokenized_record_title) == 1 and not tokenized_record_title <= tokenized_matched_record_title:
