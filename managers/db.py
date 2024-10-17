@@ -32,6 +32,8 @@ class DBManager:
                     self.db
                 )
             )
+
+            return self.engine
         except Exception as e:
             raise e
 

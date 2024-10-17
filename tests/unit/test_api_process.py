@@ -1,8 +1,9 @@
-import os
 import pytest
+
 
 from tests.helper import TestHelpers
 from processes import APIProcess
+from unittest.mock import patch
 
 
 class TestAPIProcess:
@@ -15,24 +16,28 @@ class TestAPIProcess:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def apiInstance(self, mocker):
-        mocker.patch.object(APIProcess, 'createElasticConnection')
-        mocker.patch.object(APIProcess, 'generateEngine')
+    def api_process(self):
+        with (
+            patch('processes.api.DBManager'),
+            patch('processes.api.ElasticsearchManager'),
+            patch('processes.api.RedisManager')
+        ):  
+            return APIProcess()
+    
+    def test_run_process_success(self, api_process: APIProcess):
+        with patch('processes.api.FlaskAPI') as MockFlaskAPI:
+            mock_flask_api = MockFlaskAPI.return_value
+            
+            api_process.runProcess()
 
-        mockRedis = mocker.patch.object(APIProcess, 'createRedisClient', autospec=True)
+            api_process.db_manager.generateEngine.assert_called_once()
+            api_process.redis_manager.createRedisClient.assert_called_once()
+            api_process.elastic_search_manager.createElasticConnection.assert_called_once()
+            mock_flask_api.createErrorResponses.assert_called_once()
+            mock_flask_api.run.assert_called_once()
 
-        def mockCreate(self):
-            self.redisClient = 'testRedis'
-
-        mockRedis.side_effect = mockCreate
-
-        mockAPI = mocker.MagicMock()
-        mockFlask = mocker.patch('processes.api.FlaskAPI')
-        mockFlask.return_value = mockAPI
-
-        return APIProcess('TestProcess', 'testFile', 'testDate', 'testRecord')
-
-    def test_api_runProcess(self, apiInstance):
-        apiInstance.runProcess()
-        apiInstance.api.run.assert_called_once()
-        apiInstance.api.createErrorResponses.assert_called_once()
+    def test_run_process_failure(self, api_process: APIProcess):
+        api_process.elastic_search_manager.createElasticConnection.side_effect = Exception('Connection error')
+        
+        with pytest.raises(Exception):
+            api_process.runProcess()
