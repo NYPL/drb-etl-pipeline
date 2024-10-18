@@ -128,9 +128,9 @@ class ClusterProcess(CoreProcess):
                 )
         )
 
-    def update_elastic_search(self, indexingWorks, deletingWorks):
-        self.deleteWorkRecords(deletingWorks)
-        self.index_works_in_elastic_search(indexingWorks)
+    def update_elastic_search(self, works_to_index: list, word_ids_to_delete: set):
+        self.deleteWorkRecords(word_ids_to_delete)
+        self.index_works_in_elastic_search(works_to_index)
 
     def delete_stale_works(self, work_ids: set[str]):
         self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid.in_(list(work_ids))))
@@ -186,7 +186,7 @@ class ClusterProcess(CoreProcess):
 
         return list(matched_record_ids)
     
-    def get_matched_records(self, identifiers: list[str], matched_record_ids):
+    def get_matched_records(self, identifiers: list[str], already_matched_record_ids: list[str]):
         batch_size = 100
         matched_records = []
 
@@ -196,7 +196,7 @@ class ClusterProcess(CoreProcess):
             try:
                 records = (
                     self.session.query(Record.title, Record.id, Record.identifiers)
-                        .filter(~Record.id.in_(list(matched_record_ids)))
+                        .filter(~Record.id.in_(list(already_matched_record_ids)))
                         .filter(Record.identifiers.overlap(id_batch))
                         .all()
                 )
