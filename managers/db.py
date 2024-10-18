@@ -68,6 +68,10 @@ class DBManager:
         self.commitChanges()
         self.session.close()
         self.engine.dispose()
+
+    def close_connection(self):
+        self.session.close()
+        self.engine.dispose()
     
     def bulkSaveObjects(self, objects, onlyChanged=True, retry=False):
         try:
