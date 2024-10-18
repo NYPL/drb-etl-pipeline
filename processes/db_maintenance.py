@@ -21,7 +21,7 @@ class DatabaseMaintenanceProcess():
 
             logger.info('Database maintenance complete')
         except Exception as e:
-            logger.error('Failed to run database maintenance')
+            logger.exception('Failed to run database maintenance')
             raise e
         finally:
             self.db_manager.closeConnection()
