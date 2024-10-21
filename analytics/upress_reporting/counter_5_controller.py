@@ -68,12 +68,12 @@ class Counter5Controller:
 
                 view_data_poller = InteractionEventPoller(date_range=self.reporting_period,
                                           reporting_data=df,
-                                          file_id_regex=r"REST.GET.OBJECT manifests/(.*?json)\s",
+                                          file_id_regex=VIEW_FILE_ID_REGEX,
                                           bucket_name=self.view_bucket,
                                           interaction_type=InteractionType.VIEW)
                 download_data_poller = InteractionEventPoller(date_range=self.reporting_period,
                                               reporting_data=df,
-                                              file_id_regex=r"REST.GET.OBJECT (.+pdf\s)",
+                                              file_id_regex=DOWNLOAD_FILE_ID_REGEX,
                                               bucket_name=self.download_bucket,
                                               interaction_type=InteractionType.DOWNLOAD)
 

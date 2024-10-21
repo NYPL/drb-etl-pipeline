@@ -9,13 +9,13 @@ class CountryLevelReport(Counter5Report):
         print("Building country-level report...")
         
         if len(events) > 0:
-            file_name = f"{self.publisher}_country_level_report_{self.created}.csv"
             header = self.build_header(report_name="NYPL DRB Total Item Requests by Title by Country",
-                                       report_description="Usage of your books on NYPL's Digital Research Books by country.")
+                                       report_description="Usage of your books on NYPL's Digital Research Books by country.",
+                                       metric_type="Views + Downloads")
             columns, final_data = self.aggregate_interaction_events_by_country(events, 
                                                                                reporting_data)
             
-            self.write_to_csv(file_name=file_name,
+            self.write_to_csv(file_name=header["Report_Name"],
                               header=header,
                               column_names=columns,
                               data=final_data)
