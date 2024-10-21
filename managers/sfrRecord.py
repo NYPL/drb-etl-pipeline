@@ -35,9 +35,9 @@ class SFRRecordManager:
             .join(Edition)\
             .filter(Work.uuid != self.work.uuid)\
             .filter(Edition.dcdw_uuids.overlap(list(dcdwUUIDs))).all():
-            matchedWorks.append((matchedWork.uuid, matchedWork.date_created))
+            matchedWorks.append((matchedWork.id, matchedWork.uuid, matchedWork.date_created))
 
-        matchedWorks.sort(key=lambda x: x[1])
+        matchedWorks.sort(key=lambda x: x[2])
 
         allIdentifiers = self.work.identifiers.copy()
 
@@ -62,12 +62,14 @@ class SFRRecordManager:
                 self.assignIdentifierIDs(cleanIdentifiers, item.identifiers)
 
         if len(matchedWorks) > 0:
-            self.work.date_created = matchedWorks[0][1]
-            self.work.uuid = matchedWorks[0][0]
+            work_id, work_uuid, work_date_created = matchedWorks[0]
+            self.work.id = work_id
+            self.work.uuid = work_uuid
+            self.work.date_created = work_date_created
 
         self.work = self.session.merge(self.work)
 
-        return [w[0] for w in matchedWorks[1:]]
+        return [w[1] for w in matchedWorks[1:]]
 
     def dedupeIdentifiers(self, identifiers):
         queryGroups = defaultdict(set)

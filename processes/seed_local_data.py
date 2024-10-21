@@ -36,8 +36,9 @@ class SeedLocalDataProcess(CoreProcess):
             
             cluster_process = ClusterProcess(*process_args)
             cluster_process.runProcess()
-        except Exception:
+        except Exception as e:
             logger.exception(f'Failed to seed local data')
+            raise e
 
     def fetch_hathi_sample_data(self):
         self.import_from_hathi_trust_data_file()
