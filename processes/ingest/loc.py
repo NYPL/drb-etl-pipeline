@@ -2,7 +2,7 @@ import time
 import os, requests
 from requests.exceptions import HTTPError, ConnectionError
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from mappings.core import MappingError
 from mappings.loc import LOCMapping
 from managers import WebpubManifest

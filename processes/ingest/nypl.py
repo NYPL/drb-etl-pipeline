@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import os
 import requests
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from logger import createLog
 from managers.db import DBManager
 from managers.nyplApi import NyplApiManager

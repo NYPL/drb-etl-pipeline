@@ -4,7 +4,7 @@ import pytest
 import requests
 from requests.exceptions import HTTPError
 
-from processes.muse import MUSEProcess, MUSEError
+from processes.ingest.muse import MUSEProcess, MUSEError
 from tests.helper import TestHelpers
 
 
@@ -96,10 +96,10 @@ class TestMUSEProcess:
         processMocks['downloadMARCRecords'].return_value = 'mockFile'
         processMocks['parseMuseRecord'].side_effect = [None, MUSEError('test'), None]
 
-        mockDatetime = mocker.patch('processes.muse.datetime')
+        mockDatetime = mocker.patch('processes.ingest.muse.datetime')
         mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
-        mockReader = mocker.patch('processes.muse.MARCReader')
+        mockReader = mocker.patch('processes.ingest.muse.MARCReader')
         mockReader.return_value = ['rec1', 'rec2', 'rec3', 'rec4']
 
         testProcess.importMARCRecords()
@@ -130,7 +130,7 @@ class TestMUSEProcess:
         processMocks['downloadMARCRecords'].return_value = 'mockFile'
         processMocks['parseMuseRecord'].side_effect = [None, MUSEError('test'), None]
 
-        mockReader = mocker.patch('processes.muse.MARCReader')
+        mockReader = mocker.patch('processes.ingest.muse.MARCReader')
         mockReader.return_value = ['rec1', 'rec2', 'rec3', 'rec4']
 
         testProcess.importMARCRecords(startTimestamp='2020-01-01')
@@ -160,7 +160,7 @@ class TestMUSEProcess:
         processMocks['downloadMARCRecords'].return_value = 'mockFile'
         processMocks['parseMuseRecord'].side_effect = [None, MUSEError('test'), None, None]
 
-        mockReader = mocker.patch('processes.muse.MARCReader')
+        mockReader = mocker.patch('processes.ingest.muse.MARCReader')
         mockReader.return_value = ['rec1', 'rec2', 'rec3', 'rec4']
 
         testProcess.importMARCRecords(full=True)
@@ -240,7 +240,7 @@ class TestMUSEProcess:
 
         mockMapping = mocker.MagicMock()
         mockMapping.record = mockRecord
-        mockMapper = mocker.patch('processes.muse.MUSEMapping')
+        mockMapper = mocker.patch('processes.ingest.muse.MUSEMapping')
         mockMapper.return_value = mockMapping
 
         mockToJson = mocker.MagicMock(return_value='testManifest')
@@ -251,7 +251,7 @@ class TestMUSEProcess:
             s3Bucket='testBucket',
             pdfWebpubManifest=mocker.MagicMock(toJson=mockToJson)
         )
-        mockManagerInit = mocker.patch('processes.muse.MUSEManager')
+        mockManagerInit = mocker.patch('processes.ingest.muse.MUSEManager')
         mockManagerInit.return_value = mockManager
 
         processMocks = mocker.patch.multiple(
