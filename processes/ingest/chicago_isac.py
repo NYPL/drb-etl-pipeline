@@ -1,11 +1,9 @@
 import json
 import os
-from requests.exceptions import HTTPError, ConnectionError
 
 from ..core import CoreProcess
-from mappings.core import MappingError
 from mappings.chicagoISAC import ChicagoISACMapping
-from managers import WebpubManifest
+from managers import DBManager, ElasticsearchManager, RedisManager, S3Manager, WebpubManifest
 from logger import createLog
 
 logger = createLog(__name__)
@@ -13,21 +11,30 @@ logger = createLog(__name__)
 class ChicagoISACProcess(CoreProcess):
 
     def __init__(self, *args):
-        super(ChicagoISACProcess, self).__init__(*args[:4])
 
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
         self.fullImport = self.process == 'complete' 
 
-        # Connect to database
+        self.db_manager = DBManager()
+        self.elastic_search_manager = ElasticsearchManager()
+        self.redis_manager = RedisManager()
+
         self.generateEngine()
         self.createSession()
 
-        # S3 Configuration
         self.s3Bucket = os.environ['FILE_BUCKET']
-        self.createS3Client()
+        self.s3_manager = S3Manager()
 
     def runProcess(self):
+        
+        logger.info('Starting ISAC process...')
+
+        self.db_manager.generateEngine()
+        self.redis_manager.createRedisClient()
+        self.elastic_search_manager.createElasticConnection()
+        self.s3_manager.createS3Client()
+        
         with open('ingestJSONFiles/chicagoISAC_metadata.json') as f:
                 chicagoISACData = json.load(f)
 
@@ -44,9 +51,9 @@ class ChicagoISACProcess(CoreProcess):
             self.storePDFManifest(chicagoISACRec.record)
             self.addDCDWToUpdateList(chicagoISACRec)
             
-        except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
+        except Exception as e:
             logger.exception(e)
-            logger.warn(ChicagoISACError('Unable to process ISAC record'))
+            logger.warning(ChicagoISACError('Unable to process ISAC record'))
             
 
     def storePDFManifest(self, record):
@@ -72,18 +79,22 @@ class ChicagoISACProcess(CoreProcess):
                     'application/webpub+json',
                     flags
                 ])
+
                 record.has_part.insert(0, linkString)
-                #The second element of the has_part array will always be an array of pdfURLS from the json file
-                #Those elements of the array are popped out and appended back into the has_part array as strings instead of an array
-                for i in range(1, len(record.has_part)):
-                    if len(record.has_part[i]) > 1:
-                        urlArray = record.has_part[i]
-                        record.has_part.pop(i)
-                        for elem in urlArray:
-                            record.has_part.append(elem)
-                    else:
-                        record.has_part[i] = ''.join(record.has_part[i])
+                self.hasPartArrayElemToStringElem(record)
+
                 break
+    
+    @staticmethod
+    def hasPartArrayElemToStringElem(record):
+        for i in range(1, len(record.has_part)):
+            if len(record.has_part[i]) > 1:
+                urlArray = record.has_part[i]
+                record.has_part.pop(i)
+                for elem in urlArray:
+                    record.has_part.append(elem)
+            else:
+                record.has_part[i] = ''.join(record.has_part[i])
 
     def createManifestInS3(self, manifestPath, manifestJSON):
         self.putObjectInBucket(
