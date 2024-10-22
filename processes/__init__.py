@@ -11,7 +11,6 @@ from .seed_local_data import SeedLocalDataProcess
 from .s3Files import S3Process
 from .api import APIProcess
 from .muse import MUSEProcess
-from .ingestReport import IngestReportProcess
 from .met import METProcess
 from .db_maintenance import DatabaseMaintenanceProcess
 from .db_migration import MigrationProcess
