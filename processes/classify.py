@@ -85,6 +85,7 @@ class ClassifyProcess(CoreProcess):
                 self.classifiedRecords = {}
 
     def updateClassifiedRecordsStatus(self):
+        logger.info(f'Storing {len(self.classifiedRecords)} classified records')
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
     def frbrizeRecord(self, record):
