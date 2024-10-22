@@ -5,7 +5,7 @@ from .ingest.hathi_trust import HathiTrustProcess
 from .ingest.nypl import NYPLProcess
 from .catalog import CatalogProcess
 from .classify import ClassifyProcess
-from .sfrCluster import ClusterProcess
+from .cluster import ClusterProcess
 from .local_development_setup import LocalDevelopmentSetupProcess
 from .seed_local_data import SeedLocalDataProcess
 from .s3_files import S3Process
