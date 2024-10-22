@@ -2,18 +2,18 @@ import json
 import os
 from requests.exceptions import HTTPError, ConnectionError
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from mappings.core import MappingError
-from mappings.chicagoISAC import ChicagoISACMapping
+from mappings.UofSC import UofSCMapping
 from managers import WebpubManifest
 from logger import createLog
 
 logger = createLog(__name__)
 
-class ChicagoISACProcess(CoreProcess):
+class UofSCProcess(CoreProcess):
 
     def __init__(self, *args):
-        super(ChicagoISACProcess, self).__init__(*args[:4])
+        super(UofSCProcess, self).__init__(*args[:4])
 
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
@@ -28,30 +28,30 @@ class ChicagoISACProcess(CoreProcess):
         self.createS3Client()
 
     def runProcess(self):
-        with open('ingestJSONFiles/chicagoISAC_metadata.json') as f:
-                chicagoISACData = json.load(f)
+        with open('UofSC_metadata.json') as f:
+                UofSCData = json.load(f)
 
-        for metaDict in chicagoISACData:
-            self.processChicagoISACRecord(metaDict)
+        for metaDict in UofSCData:
+            self.processUofSCRecord(metaDict)
 
         self.saveRecords()
         self.commitChanges()
 
-    def processChicagoISACRecord(self, record):
+    def processUofSCRecord(self, record):
         try:
-            chicagoISACRec = ChicagoISACMapping(record)
-            chicagoISACRec.applyMapping()
-            self.storePDFManifest(chicagoISACRec.record)
-            self.addDCDWToUpdateList(chicagoISACRec)
+            UofSCRec = UofSCMapping(record)
+            UofSCRec.applyMapping()
+            self.storePDFManifest(UofSCRec.record)
+            self.addDCDWToUpdateList(UofSCRec)
             
         except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
             logger.exception(e)
-            logger.warn(ChicagoISACError('Unable to process ISAC record'))
+            logger.warn(UofSCError('Unable to process UofSC record'))
             
 
     def storePDFManifest(self, record):
         for link in record.has_part:
-            itemNo, uri, source, mediaType, flags = link[0].split('|')
+            itemNo, uri, source, mediaType, flags = link.split('|')
 
             if mediaType == 'application/pdf':
                 recordID = record.identifiers[0].split('|')[0]
@@ -72,17 +72,8 @@ class ChicagoISACProcess(CoreProcess):
                     'application/webpub+json',
                     flags
                 ])
+
                 record.has_part.insert(0, linkString)
-                #The second element of the has_part array will always be an array of pdfURLS from the json file
-                #Those elements of the array are popped out and appended back into the has_part array as strings instead of an array
-                for i in range(1, len(record.has_part)):
-                    if len(record.has_part[i]) > 1:
-                        urlArray = record.has_part[i]
-                        record.has_part.pop(i)
-                        for elem in urlArray:
-                            record.has_part.append(elem)
-                    else:
-                        record.has_part[i] = ''.join(record.has_part[i])
                 break
 
     def createManifestInS3(self, manifestPath, manifestJSON):
@@ -110,5 +101,5 @@ class ChicagoISACProcess(CoreProcess):
         return manifest.toJson()
 
 
-class ChicagoISACError(Exception):
+class UofSCError(Exception):
     pass

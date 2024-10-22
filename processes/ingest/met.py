@@ -4,7 +4,7 @@ import os
 import requests
 from requests.exceptions import HTTPError, ConnectionError
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from mappings.core import MappingError
 from mappings.met import METMapping
 from managers import WebpubManifest

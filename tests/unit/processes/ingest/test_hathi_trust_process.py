@@ -98,7 +98,7 @@ class TestHathiTrustProcess:
         mockImport.assert_called_once_with(fullDump=True)
 
     def test_importFromSpecificFile_success(self, testInstance, mocker):
-        mockOpen = mocker.patch('processes.hathiTrust.open')
+        mockOpen = mocker.patch('processes.ingest.hathi_trust.open')
         mockOpen.return_value = 'csvFile'
 
         mockCSVReader = mocker.patch.object(csv, 'reader')
@@ -113,14 +113,14 @@ class TestHathiTrustProcess:
         mockReader.assert_called_once_with('testCSV')
 
     def test_importFromSpecificFile_error(self, testInstance, mocker):
-        mockOpen = mocker.patch('processes.hathiTrust.open')
+        mockOpen = mocker.patch('processes.ingest.hathi_trust.open')
         mockOpen.side_effect = FileNotFoundError
 
         with pytest.raises(IOError):
             testInstance.importFromSpecificFile('testFile')
 
     def test_parseHathiDataRow(self, testInstance, mocker):
-        mockHathiMapping = mocker.patch('processes.hathiTrust.HathiMapping')
+        mockHathiMapping = mocker.patch('processes.ingest.hathi_trust.HathiMapping')
         mockAddDCDW = mocker.patch.object(HathiTrustProcess, 'addDCDWToUpdateList')
 
         testInstance.parseHathiDataRow('testRow')

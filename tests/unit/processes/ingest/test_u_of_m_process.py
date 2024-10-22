@@ -1,7 +1,7 @@
 import pytest
 
 from mappings.core import MappingError
-from processes.UofM import UofMProcess
+from processes import UofMProcess
 from tests.helper import TestHelpers
 
 class TestUofMProcess:
@@ -47,7 +47,7 @@ class TestUofMProcess:
         )
 
         mockMapping = mocker.MagicMock(record='testRecord')
-        mockMapper = mocker.patch('processes.UofM.UofMMapping')
+        mockMapper = mocker.patch('processes.ingest.u_of_m.UofMMapping')
         mockMapper.return_value = mockMapping
         
         testProcess.processUofMRecord(mockMapping)
@@ -60,7 +60,7 @@ class TestUofMProcess:
 
     def test_processUofMRecord_error(self, mocker):
 
-        mockMapper = mocker.patch('processes.UofM.UofMMapping')
+        mockMapper = mocker.patch('processes.ingest.u_of_m.UofMMapping')
         mockMapper.side_effect = MappingError('testError')
 
         assert pytest.raises(MappingError)
@@ -93,7 +93,7 @@ class TestUofMProcess:
     def test_generateManifest(self, mocker):
         mockManifest = mocker.MagicMock(links=[])
         mockManifest.toJson.return_value = 'testJSON'
-        mockManifestConstructor = mocker.patch('processes.UofM.WebpubManifest')
+        mockManifestConstructor = mocker.patch('processes.ingest.u_of_m.WebpubManifest')
         mockManifestConstructor.return_value = mockManifest
 
         mockRecord = mocker.MagicMock(title='testTitle')
