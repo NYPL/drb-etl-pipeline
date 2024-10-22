@@ -23,6 +23,7 @@ class TestOCLCClassifyProcess:
                 self.ingestLimit = None
                 self.rabbitQueue = os.environ['OCLC_QUEUE']
                 self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']
+                self.classified_count = 0
                 self.oclc_catalog_manager = mocker.MagicMock()
 
         return TestClassifyProcess('TestProcess', 'testFile', 'testDate')
