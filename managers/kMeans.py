@@ -40,7 +40,6 @@ class KMeansManager:
                 ('selector', FeatureSelector(key='place')),
                 ('tfidf', TfidfVectorizer(
                     preprocessor=KMeansManager.pubProcessor,
-                    stop_words='english',
                     strip_accents='unicode',
                     analyzer='char_wb',
                     ngram_range=(2,4))
@@ -50,7 +49,6 @@ class KMeansManager:
                 ('selector', FeatureSelector(key='publisher')),
                 ('tfidf', TfidfVectorizer(
                     preprocessor=KMeansManager.pubProcessor,
-                    stop_words='english',
                     strip_accents='unicode',
                     analyzer='char_wb',
                     ngram_range=(2,4))
@@ -60,7 +58,6 @@ class KMeansManager:
                 ('selector', FeatureSelector(key='edition')),
                 ('tfidf', TfidfVectorizer(
                     preprocessor=KMeansManager.pubProcessor,
-                    stop_words='english',
                     strip_accents='unicode',
                     analyzer='char_wb',
                     ngram_range=(1,3))
