@@ -132,14 +132,14 @@ class ClassifyProcess(CoreProcess):
             if not oclc_number or not owi_number:
                 logger.warning(f'Unable to get identifiers for bib: {related_oclc_bib}')
                 continue
-            
+
             if self.check_if_classify_work_fetched(owi_number=owi_number):
                 continue
 
             related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(oclc_number=oclc_number)
 
             oclc_record = OCLCBibMapping(
-                oclc_bib=related_oclc_bib, 
+                oclc_bib=related_oclc_bib,
                 related_oclc_numbers=related_oclc_numbers
             )
 
