@@ -4,7 +4,7 @@ from lxml import etree
 import os
 import requests
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from logger import createLog
 from mappings.doab import DOABMapping
 from mappings.core import MappingError

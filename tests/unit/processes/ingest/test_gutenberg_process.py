@@ -82,10 +82,10 @@ class TestGutenbergProcess:
         mockManager = mocker.MagicMock()
         mockManager.fetchGithubRepoBatch.side_effect = [True, False]
         mockManager.dataFiles = 'testDataFiles'
-        mockManagerInit = mocker.patch('processes.gutenberg.GutenbergManager')
+        mockManagerInit = mocker.patch('processes.ingest.gutenberg.GutenbergManager')
         mockManagerInit.return_value = mockManager
 
-        mockDateTime = mocker.patch('processes.gutenberg.datetime')
+        mockDateTime = mocker.patch('processes.ingest.gutenberg.datetime')
         mockDateTime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
         
         testInstance.importRDFRecords()
@@ -101,7 +101,7 @@ class TestGutenbergProcess:
         mockManager = mocker.MagicMock()
         mockManager.fetchGithubRepoBatch.side_effect = [True, False]
         mockManager.dataFiles = 'testDataFiles'
-        mockManagerInit = mocker.patch('processes.gutenberg.GutenbergManager')
+        mockManagerInit = mocker.patch('processes.ingest.gutenberg.GutenbergManager')
         mockManagerInit.return_value = mockManager
 
         testInstance.importRDFRecords(startTimestamp='1900-01-01T12:00:00')
@@ -117,7 +117,7 @@ class TestGutenbergProcess:
         mockManager = mocker.MagicMock()
         mockManager.fetchGithubRepoBatch.side_effect = [True, False]
         mockManager.dataFiles = 'testDataFiles'
-        mockManagerInit = mocker.patch('processes.gutenberg.GutenbergManager')
+        mockManagerInit = mocker.patch('processes.ingest.gutenberg.GutenbergManager')
         mockManagerInit.return_value = mockManager
 
         testInstance.importRDFRecords(fullImport=True)
@@ -130,7 +130,7 @@ class TestGutenbergProcess:
 
     def test_processGutenbergBatch(self, testInstance, mocker):
         mockGutenbergRec = mocker.MagicMock(name='MockRecord', record=mocker.MagicMock(source_id=1))
-        mockGutenbergInit = mocker.patch('processes.gutenberg.GutenbergMapping')
+        mockGutenbergInit = mocker.patch('processes.ingest.gutenberg.GutenbergMapping')
         mockGutenbergInit.return_value = mockGutenbergRec
 
         processMocks = mocker.patch.multiple(

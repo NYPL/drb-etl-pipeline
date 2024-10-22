@@ -2,7 +2,7 @@ from datetime import datetime
 import pytest
 
 from mappings.core import MappingError
-from processes.met import METProcess, METError
+from processes.ingest.met import METProcess, METError
 from tests.helper import TestHelpers
 
 
@@ -63,7 +63,7 @@ class TestMetProcess:
         testProcess.startTimestamp = None
         testProcess.ingestPeriod = None
 
-        mockDatetime = mocker.patch('processes.met.datetime')
+        mockDatetime = mocker.patch('processes.ingest.met.datetime')
         mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
         testProcess.setStartTime()
@@ -118,7 +118,7 @@ class TestMetProcess:
         processMocks['queryMetAPI'].return_value = 'testDetail'
 
         mockMapping = mocker.MagicMock(record='testRecord')
-        mockMapper = mocker.patch('processes.met.METMapping')
+        mockMapper = mocker.patch('processes.ingest.met.METMapping')
         mockMapper.return_value = mockMapping
 
         testProcess.processMetRecord({'pointer': 1, 'filetype': 'tst'})
@@ -138,7 +138,7 @@ class TestMetProcess:
         mockQuery = mocker.patch.object(METProcess, 'queryMetAPI')
         mockQuery.return_value = 'testDetail'
 
-        mockMapper = mocker.patch('processes.met.METMapping')
+        mockMapper = mocker.patch('processes.ingest.met.METMapping')
         mockMapper.side_effect = MappingError('testError')
 
         with pytest.raises(METError):
@@ -209,7 +209,7 @@ class TestMetProcess:
     def test_generateManifest(self, mocker):
         mockManifest = mocker.MagicMock(links=[])
         mockManifest.toJson.return_value = 'testJSON'
-        mockManifestConstructor = mocker.patch('processes.met.WebpubManifest')
+        mockManifestConstructor = mocker.patch('processes.ingest.met.WebpubManifest')
         mockManifestConstructor.return_value = mockManifest
 
         mockRecord = mocker.MagicMock(title='Test')
@@ -223,7 +223,7 @@ class TestMetProcess:
 
     def test_queryMetAPI_success_non_head(self, mocker):
         mockResponse = mocker.MagicMock()
-        mockRequests = mocker.patch('processes.met.requests')
+        mockRequests = mocker.patch('processes.ingest.met.requests')
         mockRequests.request.return_value = mockResponse
 
         mockResponse.json.return_value = 'testResponse'
@@ -234,7 +234,7 @@ class TestMetProcess:
 
     def test_queryMetAPI_success_head(self, mocker):
         mockResponse = mocker.MagicMock(status_code=200)
-        mockRequests = mocker.patch('processes.met.requests')
+        mockRequests = mocker.patch('processes.ingest.met.requests')
         mockRequests.request.return_value = mockResponse
 
         assert METProcess.queryMetAPI('testQuery', method='head') == 200
@@ -243,7 +243,7 @@ class TestMetProcess:
 
     def test_queryMetAPI_error(self, mocker):
         mockResponse = mocker.MagicMock()
-        mockRequests = mocker.patch('processes.met.requests')
+        mockRequests = mocker.patch('processes.ingest.met.requests')
         mockRequests.request.return_value = mockResponse
 
         mockResponse.raise_for_status.side_effect = Exception

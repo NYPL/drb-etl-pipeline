@@ -4,7 +4,7 @@ import mimetypes
 import os
 import re
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from managers import GutenbergManager
 from mappings.gutenberg import GutenbergMapping
 from logger import createLog

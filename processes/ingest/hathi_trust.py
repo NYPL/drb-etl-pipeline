@@ -6,7 +6,7 @@ import os
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from mappings.hathitrust import HathiMapping
 from logger import createLog
 

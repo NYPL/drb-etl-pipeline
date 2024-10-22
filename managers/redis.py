@@ -26,6 +26,8 @@ class RedisManager:
             socket_timeout=5
         )
 
+        return self.redisClient
+
     def clear_cache(self):
         self.redisClient.flushall()
     

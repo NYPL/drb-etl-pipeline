@@ -75,9 +75,9 @@ class TestSFRRecordManager:
         testInstance.work.uuid = 1
 
         matchingWorks = [
-            mocker.MagicMock(uuid=2, date_created='2020-01-01'),
-            mocker.MagicMock(uuid=3, date_created='2019-01-01'),
-            mocker.MagicMock(uuid=4, date_created='2018-01-01'),
+            mocker.MagicMock(id=2, uuid=2, date_created='2020-01-01'),
+            mocker.MagicMock(id=3, uuid=3, date_created='2019-01-01'),
+            mocker.MagicMock(id=4, uuid=4, date_created='2018-01-01'),
         ]
         testInstance.session.query().join().filter().filter().all.return_value\
             = matchingWorks
@@ -87,6 +87,7 @@ class TestSFRRecordManager:
 
         assert testUUIDsToDelete == [3, 2]
         assert testInstance.work.uuid == 4
+        assert testInstance.work.id == 4
         assert testInstance.work.date_created == '2018-01-01'
 
         testInstance.session.query().join().filter().filter().all.assert_called_once()
