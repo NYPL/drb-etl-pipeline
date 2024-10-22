@@ -1,7 +1,7 @@
 import pytest
 
 from mappings.core import MappingError
-from processes.ingest.chicago_isac import ChicagoISACProcess
+from processes import ChicagoISACProcess
 from tests.helper import TestHelpers
 
 class TestChicagoISACProcess:

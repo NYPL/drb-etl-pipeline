@@ -2,7 +2,7 @@ import pytest
 
 from mappings.core import MappingError
 from model import Record
-from processes.ingest.loc import LOCProcess
+from processes import LOCProcess
 from tests.helper import TestHelpers
 
 class TestLOCProcess:
