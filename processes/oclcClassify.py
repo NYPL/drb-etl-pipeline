@@ -33,6 +33,7 @@ class ClassifyProcess(CoreProcess):
         self.createOrConnectQueue(self.rabbitQueue, self.rabbitRoute)
 
         self.classifiedRecords = {}
+        self.classified_count = 0
 
         self.oclc_catalog_manager = OCLCCatalogManager()
 
@@ -47,6 +48,7 @@ class ClassifyProcess(CoreProcess):
         self.saveRecords()
         self.updateClassifiedRecordsStatus()
         self.commitChanges()
+        logger.info(f'Classify process report: {self.classified_count} record updates')
 
     def classifyRecords(self, full=False, startDateTime=None):
         baseQuery = self.session.query(Record)\
@@ -80,12 +82,12 @@ class ClassifyProcess(CoreProcess):
                 break
 
             if len(self.classifiedRecords) >= windowSize:
-                logger.debug('Storing classified records')
                 self.updateClassifiedRecordsStatus()
                 self.classifiedRecords = {}
 
     def updateClassifiedRecordsStatus(self):
-        logger.info(f'Storing {len(self.classifiedRecords)} classified records')
+        logger.debug(f'Storing {len(self.classifiedRecords)} classified records')
+        self.classified_count += len(self.classifiedRecords)
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
     def frbrizeRecord(self, record):
