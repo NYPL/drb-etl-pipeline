@@ -195,7 +195,7 @@ class TestNYPLProcess:
             fetch_bib_items=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
-        mockMapping = mocker.patch('processes.nypl.NYPLMapping')
+        mockMapping = mocker.patch('processes.ingest.nypl.NYPLMapping')
 
         processorMocks['is_pd_research_bib'].return_value = True
         processorMocks['fetch_bib_items'].return_value = 'testBibItems'
@@ -221,7 +221,7 @@ class TestNYPLProcess:
             fetch_bib_items=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
-        mockMapping = mocker.patch('processes.nypl.NYPLMapping')
+        mockMapping = mocker.patch('processes.ingest.nypl.NYPLMapping')
 
         processorMocks['is_pd_research_bib'].return_value = False
 
@@ -233,7 +233,7 @@ class TestNYPLProcess:
         mockMapping.assert_not_called
 
     def test_import_bib_records_not_full_no_timestamp(self, testInstance, mocker):
-        mockDatetime = mocker.patch('processes.nypl.datetime')
+        mockDatetime = mocker.patch('processes.ingest.nypl.datetime')
         mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
         mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_bib')
@@ -254,7 +254,7 @@ class TestNYPLProcess:
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_import_bib_records_not_full_custom_timestamp(self, testInstance, mocker):
-        mockDatetime = mocker.patch('processes.nypl.datetime')
+        mockDatetime = mocker.patch('processes.ingest.nypl.datetime')
         mockDatetime.now.return_value.replace.return_value = datetime(1900, 1, 2, 12, 0, 0)
 
         mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_bib')
@@ -275,7 +275,7 @@ class TestNYPLProcess:
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_import_bib_records_full(self, testInstance, mocker):
-        mockDatetime = mocker.patch('processes.nypl.datetime')
+        mockDatetime = mocker.patch('processes.ingest.nypl.datetime')
 
         mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_bib')
 
@@ -295,7 +295,7 @@ class TestNYPLProcess:
         mockParse.assert_has_calls([mocker.call({'var_fields': 'bib1'}), mocker.call({'var_fields': 'bib3'})])
 
     def test_import_bib_records_full_batch(self, testInstance, mocker):
-        mockDatetime = mocker.patch('processes.nypl.datetime')
+        mockDatetime = mocker.patch('processes.ingest.nypl.datetime')
 
         mockParse = mocker.patch.object(NYPLProcess, 'parse_nypl_bib')
 

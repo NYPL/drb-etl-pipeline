@@ -5,7 +5,7 @@ import requests
 from unittest import mock
 
 
-from processes.doab import DOABProcess, DOABError
+from processes.ingest.doab import DOABProcess, DOABError
 from mappings.core import MappingError
 from tests.helper import TestHelpers
 
@@ -115,7 +115,7 @@ class TestDOABProcess:
 
         mockXML = mocker.MagicMock()
         mockXML.xpath.return_value = ['mockOAIRecord']
-        mockEtree = mocker.patch('processes.doab.etree')
+        mockEtree = mocker.patch('processes.ingest.doab.etree')
         mockEtree.parse.return_value = mockXML
 
         mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
@@ -137,7 +137,7 @@ class TestDOABProcess:
 
         mockXML = mocker.MagicMock()
         mockXML.xpath.return_value = ['mockOAIRecord']
-        mockEtree = mocker.patch('processes.doab.etree')
+        mockEtree = mocker.patch('processes.ingest.doab.etree')
         mockEtree.parse.return_value = mockXML
 
         mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
@@ -158,7 +158,7 @@ class TestDOABProcess:
         mockGet = mocker.patch.object(requests, 'get')
         mockGet.return_value = mockResponse
 
-        mockEtree = mocker.patch('processes.doab.etree')
+        mockEtree = mocker.patch('processes.ingest.doab.etree')
         mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
 
         testProcess.importSingleOAIRecord(1)
@@ -183,7 +183,7 @@ class TestDOABProcess:
 
         mockElement = mocker.MagicMock(name='etreeElement')
         mockElement.xpath.side_effect = [['rec1', 'rec2', 'rec3'], ['rec4']]
-        mockEtree = mocker.patch('processes.doab.etree')
+        mockEtree = mocker.patch('processes.ingest.doab.etree')
         mockEtree.parse.return_value = mockElement
 
         processMocks['parseDOABRecord'].side_effect = [None, DOABError('test'), None, None]
@@ -220,7 +220,7 @@ class TestDOABProcess:
         )
 
     def test_downloadOAIRecords_daily(self, testProcess, mockOAIQuery, mocker):
-        mockDatetime = mocker.patch('processes.doab.datetime')
+        mockDatetime = mocker.patch('processes.ingest.doab.datetime')
         mockDatetime.now.return_value.replace.return_value = datetime.datetime(1900, 1, 2)
 
         testRecords = testProcess.downloadOAIRecords(False, None)
@@ -269,14 +269,14 @@ class TestDOABProcess:
 
         mockMapping = mocker.MagicMock()
         mockMapping.record = mockRecord
-        mockMapper = mocker.patch('processes.doab.DOABMapping')
+        mockMapper = mocker.patch('processes.ingest.doab.DOABMapping')
         mockMapper.return_value = mockMapping
 
         mockManager = mocker.MagicMock()
         mockManager.manifests = [('pdfPath', 'pdfJSON')]
         mockManager.ePubLinks = [(['epubPath', 'epubURI'])]
         
-        mockLinkManager = mocker.patch('processes.doab.DOABLinkManager')
+        mockLinkManager = mocker.patch('processes.ingest.doab.DOABLinkManager')
         mockLinkManager.return_value = mockManager
 
         processMocks = mocker.patch.multiple(DOABProcess,
@@ -297,7 +297,7 @@ class TestDOABProcess:
     def test_parseDOABRecord_error(self, testProcess, mocker):
         mockMapping = mocker.MagicMock()
         mockMapping.applyMapping.side_effect = MappingError('testError')
-        mockMapper = mocker.patch('processes.doab.DOABMapping')
+        mockMapper = mocker.patch('processes.ingest.doab.DOABMapping')
         mockMapper.return_value = mockMapping
 
         with pytest.raises(DOABError):

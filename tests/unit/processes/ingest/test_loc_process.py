@@ -2,7 +2,7 @@ import pytest
 
 from mappings.core import MappingError
 from model import Record
-from processes.loc import LOCProcess
+from processes.ingest.loc import LOCProcess
 from tests.helper import TestHelpers
 
 class TestLOCProcess:
@@ -54,7 +54,7 @@ class TestLOCProcess:
 
         mockMapping = mocker.MagicMock()
         mockMapping.record = test_record
-        mockMapper = mocker.patch('processes.loc.LOCMapping')
+        mockMapper = mocker.patch('processes.ingest.loc.LOCMapping')
         mockMapper.return_value = mockMapping
         
         testProcess.processLOCRecord(mockMapping)
@@ -67,7 +67,7 @@ class TestLOCProcess:
 
     def test_processlocRecord_error(self, mocker):
 
-        mockMapper = mocker.patch('processes.loc.LOCMapping')
+        mockMapper = mocker.patch('processes.ingest.loc.LOCMapping')
         mockMapper.side_effect = MappingError('testError')
 
         assert pytest.raises(MappingError)
@@ -135,7 +135,7 @@ class TestLOCProcess:
     def test_generateManifest(self, mocker):
         mockManifest = mocker.MagicMock(links=[])
         mockManifest.toJson.return_value = 'testJSON'
-        mockManifestConstructor = mocker.patch('processes.loc.WebpubManifest')
+        mockManifestConstructor = mocker.patch('processes.ingest.loc.WebpubManifest')
         mockManifestConstructor.return_value = mockManifest
 
         mockRecord = mocker.MagicMock(title='testTitle')

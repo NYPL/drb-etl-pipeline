@@ -3,7 +3,7 @@ import os
 from requests.exceptions import HTTPError, ConnectionError
 from botocore.exceptions import ClientError
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from urllib.error import HTTPError
 from mappings.core import MappingError
 from mappings.UofM import UofMMapping

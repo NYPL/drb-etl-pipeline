@@ -1,7 +1,7 @@
 import pytest
 
 from mappings.core import MappingError
-from processes.chicagoISAC import ChicagoISACProcess
+from processes.ingest.chicago_isac import ChicagoISACProcess
 from tests.helper import TestHelpers
 
 class TestChicagoISACProcess:
@@ -45,7 +45,7 @@ class TestChicagoISACProcess:
         )
 
         mockMapping = mocker.MagicMock(record='testRecord')
-        mockMapper = mocker.patch('processes.chicagoISAC.ChicagoISACMapping')
+        mockMapper = mocker.patch('processes.ingest.chicago_isac.ChicagoISACMapping')
         mockMapper.return_value = mockMapping
         
         testProcess.processChicagoISACRecord(mockMapping)
@@ -57,7 +57,7 @@ class TestChicagoISACProcess:
 
     def test_processChicagoISACRecord_error(self, mocker):
 
-        mockMapper = mocker.patch('processes.chicagoISAC.ChicagoISACMapping')
+        mockMapper = mocker.patch('processes.ingest.chicago_isac.ChicagoISACMapping')
         mockMapper.side_effect = MappingError('testError')
 
         assert pytest.raises(MappingError)
@@ -91,7 +91,7 @@ class TestChicagoISACProcess:
     def test_generateManifest(self, mocker):
         mockManifest = mocker.MagicMock(links=[])
         mockManifest.toJson.return_value = 'testJSON'
-        mockManifestConstructor = mocker.patch('processes.chicagoISAC.WebpubManifest')
+        mockManifestConstructor = mocker.patch('processes.ingest.chicago_isac.WebpubManifest')
         mockManifestConstructor.return_value = mockManifest
 
         mockRecord = mocker.MagicMock(title='testTitle')
