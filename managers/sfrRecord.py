@@ -48,7 +48,6 @@ class SFRRecordManager:
                 allIdentifiers.extend(item.identifiers)
                 item.links = self.dedupeLinks(item.links)
 
-        logger.info('Deduping Indentifiers')
         cleanIdentifiers = self.dedupeIdentifiers(allIdentifiers)
 
         self.seenIdentifiers = {}
