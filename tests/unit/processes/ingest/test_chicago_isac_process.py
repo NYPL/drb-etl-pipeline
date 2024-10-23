@@ -32,7 +32,7 @@ class TestChicagoISACProcess:
             commitChanges=mocker.DEFAULT
         )
 
-        testProcess.runProcess()
+        testProcess.run_process()
 
         runMocks['saveRecords'].assert_called_once()
         runMocks['commitChanges'].assert_called_once()
@@ -40,7 +40,7 @@ class TestChicagoISACProcess:
 
     def test_processChicagoISACRecord_success(self, testProcess, mocker):
         processMocks = mocker.patch.multiple(ChicagoISACProcess,
-            storePDFManifest=mocker.DEFAULT,
+            store_pdf_manifest=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
 
@@ -48,11 +48,11 @@ class TestChicagoISACProcess:
         mockMapper = mocker.patch('processes.ingest.chicago_isac.ChicagoISACMapping')
         mockMapper.return_value = mockMapping
         
-        testProcess.processChicagoISACRecord(mockMapping)
+        testProcess.process_chicago_isac_record(mockMapping)
 
         mockMapping.applyMapping.assert_called_once()
 
-        processMocks['storePDFManifest'].assert_called_once_with('testRecord')
+        processMocks['store_pdf_manifest'].assert_called_once_with('testRecord')
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
 
     def test_processChicagoISACRecord_error(self, mocker):
@@ -62,18 +62,18 @@ class TestChicagoISACProcess:
 
         assert pytest.raises(MappingError)
 
-    def test_storePDFManifest(self, testProcess, mocker):
+    def test_store_pdf_manifest(self, testProcess, mocker):
         mockRecord = mocker.MagicMock(identifiers=['1|isac'])
         mockRecord.has_part = [
             ['1|testURI|isac|application/pdf|{}',
             '2|testURIOther|isac|application/pdf|{}'],
         ]
 
-        mockGenerateMan = mocker.patch.object(ChicagoISACProcess, 'generateManifest')
+        mockGenerateMan = mocker.patch.object(ChicagoISACProcess, 'generate_manifest')
         mockGenerateMan.return_value = 'testJSON'
         mockCreateMan = mocker.patch.object(ChicagoISACProcess, 'createManifestInS3')
 
-        testProcess.storePDFManifest(mockRecord)
+        testProcess.store_pdf_manifest(mockRecord)
 
         testManifestURI = 'https://test_aws_bucket.s3.amazonaws.com/manifests/isac/1.json'
         assert mockRecord.has_part[0] == '1|{}|isac|application/webpub+json|{{}}'.format(testManifestURI)
@@ -95,7 +95,7 @@ class TestChicagoISACProcess:
         mockManifestConstructor.return_value = mockManifest
 
         mockRecord = mocker.MagicMock(title='testTitle')
-        testManifest = ChicagoISACProcess.generateManifest(mockRecord, 'sourceURI', 'manifestURI')
+        testManifest = ChicagoISACProcess.generate_manifest(mockRecord, 'sourceURI', 'manifestURI')
 
         assert testManifest == 'testJSON'
         assert mockManifest.links[0] == {'rel': 'self', 'href': 'manifestURI', 'type': 'application/webpub+json'}

@@ -158,9 +158,6 @@ class DOABProcess(CoreProcess):
 
         raise DOABError(f'Received {doabResponse.status_code} status code from {doabURL}')
 
-    def createManifestInS3(self, manifestPath, manifestJSON):
-        self.putObjectInBucket(manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket)
-
     def sendFileToProcessingQueue(self, fileURL, s3Location):
         s3Message = {
             'fileData': {
