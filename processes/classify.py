@@ -33,6 +33,7 @@ class ClassifyProcess(CoreProcess):
         self.createOrConnectQueue(self.rabbitQueue, self.rabbitRoute)
 
         self.classifiedRecords = {}
+        self.classified_count = 0
 
         self.oclc_catalog_manager = OCLCCatalogManager()
 
@@ -47,6 +48,7 @@ class ClassifyProcess(CoreProcess):
         self.saveRecords()
         self.updateClassifiedRecordsStatus()
         self.commitChanges()
+        logger.info(f'Classify process report: {self.classified_count} record updates')
 
     def classifyRecords(self, full=False, startDateTime=None):
         baseQuery = self.session.query(Record)\
@@ -80,11 +82,12 @@ class ClassifyProcess(CoreProcess):
                 break
 
             if len(self.classifiedRecords) >= windowSize:
-                logger.debug('Storing classified records')
                 self.updateClassifiedRecordsStatus()
                 self.classifiedRecords = {}
 
     def updateClassifiedRecordsStatus(self):
+        logger.debug(f'Storing {len(self.classifiedRecords)} classified records')
+        self.classified_count += len(self.classifiedRecords)
         self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
 
     def frbrizeRecord(self, record):
@@ -129,14 +132,14 @@ class ClassifyProcess(CoreProcess):
             if not oclc_number or not owi_number:
                 logger.warning(f'Unable to get identifiers for bib: {related_oclc_bib}')
                 continue
-            
+
             if self.check_if_classify_work_fetched(owi_number=owi_number):
                 continue
 
             related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(oclc_number=oclc_number)
 
             oclc_record = OCLCBibMapping(
-                oclc_bib=related_oclc_bib, 
+                oclc_bib=related_oclc_bib,
                 related_oclc_numbers=related_oclc_numbers
             )
 
