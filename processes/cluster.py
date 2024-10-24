@@ -84,6 +84,7 @@ class ClusterProcess(CoreProcess):
 
             if len(works_to_index) >= self.CLUSTER_BATCH_SIZE:
                 self.update_elastic_search(works_to_index, work_ids_to_delete)
+                logger.info(f'Clustered {len(works_to_index)} works')
                 works_to_index = []
 
                 self.delete_stale_works(work_ids_to_delete)
@@ -91,14 +92,13 @@ class ClusterProcess(CoreProcess):
 
                 self.session.commit()
 
+        logger.info(f'Clustered {len(works_to_index)} works')
         self.update_elastic_search(works_to_index, work_ids_to_delete)
         self.delete_stale_works(work_ids_to_delete)
 
         self.session.commit()
 
     def cluster_record(self, record: Record):
-        logger.info('Clustering {}'.format(record))
-
         matched_record_ids = self.find_all_matching_records(record) + [record.id]
 
         clustered_editions, records = self.cluster_matched_records(matched_record_ids)

@@ -264,8 +264,6 @@ class ElasticsearchManager:
         )
 
     def saveWorkRecords(self, works, attempt=1):
-        logger.info('Saving {} ES Work Records'.format(len(works)))
-
         try:
             saveRes = bulk(
                 self.es, self._upsertGenerator(works), raise_on_error=False
@@ -307,8 +305,6 @@ class ElasticsearchManager:
             }
 
     def deleteWorkRecords(self, uuids):
-        logger.info('Deleting {} ES Work Records'.format(len(uuids)))
-
         deleteRes = bulk(self.es, self._deleteGenerator(uuids), raise_on_error=False)
         logger.debug(deleteRes)
 

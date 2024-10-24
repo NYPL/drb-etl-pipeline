@@ -40,7 +40,6 @@ class KMeansManager:
                 ('selector', FeatureSelector(key='place')),
                 ('tfidf', TfidfVectorizer(
                     preprocessor=KMeansManager.pubProcessor,
-                    stop_words='english',
                     strip_accents='unicode',
                     analyzer='char_wb',
                     ngram_range=(2,4))
@@ -50,7 +49,6 @@ class KMeansManager:
                 ('selector', FeatureSelector(key='publisher')),
                 ('tfidf', TfidfVectorizer(
                     preprocessor=KMeansManager.pubProcessor,
-                    stop_words='english',
                     strip_accents='unicode',
                     analyzer='char_wb',
                     ngram_range=(2,4))
@@ -60,7 +58,6 @@ class KMeansManager:
                 ('selector', FeatureSelector(key='edition')),
                 ('tfidf', TfidfVectorizer(
                     preprocessor=KMeansManager.pubProcessor,
-                    stop_words='english',
                     strip_accents='unicode',
                     analyzer='char_wb',
                     ngram_range=(1,3))
@@ -106,8 +103,6 @@ class KMeansManager:
         return ''
 
     def createDF(self):
-        logger.info('Generating DataFrame from instance data')
-
         frameRows = []
 
         for i in self.instances:
@@ -214,15 +209,10 @@ class KMeansManager:
         return ''
     
     def generateClusters(self):
-        logger.info('Generating Clusters from instances')
         try:
-            logger.info('Calculating number of clusters, max {}'.format(
-                self.maxK
-            ))
             self.getK(2, self.maxK)
-            logger.info('Setting K to {}'.format(self.k))
         except ZeroDivisionError:
-            logger.info('Single instance found setting K to 1')
+            logger.warning('Single instance found - setting K to 1')
             self.k = 1
         
         try:
@@ -247,8 +237,6 @@ class KMeansManager:
 
         while True:
             middle = int((stop + start)/2)
-
-            logger.info('Getting Scores for Start: {}, Stop: {}, Middle: {}'.format(start, stop, middle))
 
             try:
                 if start != prevStart: startScore = self.cluster(start, score=True) 
@@ -306,7 +294,6 @@ class KMeansManager:
     
     def parseEditions(self):
         eds = []
-        logger.info('Generating editions from clusters')
         for clust in dict(self.clusters):
             yearEds = defaultdict(list)
             logger.debug('Parsing cluster {}'.format(clust))

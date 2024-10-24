@@ -89,9 +89,8 @@ class HathiTrustProcess(CoreProcess):
         try:
             hathiResp = requests.get(hathiURL, stream=True, timeout=30)
             hathiResp.raise_for_status()
-        except (ReadTimeout, HTTPError) as e:
-            logger.error('Unable to read hathifile url {}'.format(hathiURL))
-            logger.debug(e)
+        except Exception:
+            logger.exception(f'Unable to read Hathi Trust file url {hathiURL}')
             return None
 
         with gzip.open(BytesIO(hathiResp.content), mode='rt') as hathiGzip:
@@ -107,13 +106,10 @@ class HathiTrustProcess(CoreProcess):
 
             try:
                 row = next(hathiTSV)
-                logger.info('Reading row')
-            except csv.Error as e:
-                logger.warning('Unable to read TSV row')
-                logger.debug(e)
+            except csv.Error:
+                logger.exception('Unable to read Hathi Trust file row')
                 continue
             except StopIteration:
-                logger.info('Reached end of TSV file')
                 break
 
             if row is not None and row[2] not in self.HATHI_RIGHTS_SKIPS:
