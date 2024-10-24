@@ -66,23 +66,26 @@ class SFRRecordManager:
             self.work.uuid = work_uuid
             self.work.date_created = work_date_created
 
-            for matched_edition in matched_editions:
-                for edition in self.work.editions:
-                    if matched_edition.publication_date == edition.publication_date:
-                        edition.id = matched_edition.id
-                        edition.date_created = matched_edition.date_created
-
-                        with self.session.begin_nested():
-                            if matched_edition.items:
-                                for item in matched_edition.items:
-                                    self.session.delete(item)
-                            self.session.flush() 
-
-                        break
+            self.dedupe_editions(matched_editions)
 
         self.work = self.session.merge(self.work)
 
         return [w[1] for w in matchedWorks[1:]]
+    
+    def dedupe_editions(self, matched_editions: list[Edition]):
+        for matched_edition in matched_editions:
+            for edition in self.work.editions:
+                if matched_edition.publication_date == edition.publication_date:
+                    edition.id = matched_edition.id
+                    edition.date_created = matched_edition.date_created
+
+                    with self.session.begin_nested():
+                        if matched_edition.items:
+                            for item in matched_edition.items:
+                                self.session.delete(item)
+                        self.session.flush() 
+
+                    break
 
     def dedupeIdentifiers(self, identifiers):
         queryGroups = defaultdict(set)
