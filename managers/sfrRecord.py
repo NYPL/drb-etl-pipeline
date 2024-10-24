@@ -481,10 +481,10 @@ class SFRRecordManager:
     def publicationDateCheck(edition):
         publicationDate = None
 
-        if isinstance(edition['publication_date'], datetime):
+        if isinstance(edition['publication_date'], date):
             publicationDate = edition['publication_date']
         elif re.match(r'([0-9]{4})-([0-9]{2})-([0-9]{2})', edition['publication_date']):
-            publicationDate = datetime.strptime(edition['publication_date'], '%Y-%m-%d')
+            publicationDate = datetime.strptime(edition['publication_date'], '%Y-%m-%d').date()
         else:
             pubYearGroup = re.search(r'([0-9]{4})', str(edition['publication_date']))
 
