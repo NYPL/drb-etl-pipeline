@@ -14,91 +14,91 @@ class TestChicagoISACProcess:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testProcess(self, mocker):
+    def test_process(self, mocker):
         class TestISAC(ChicagoISACProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
-                self.s3Client = mocker.MagicMock(s3Client='testS3Client')
-                self.session = mocker.MagicMock(session='testSession')
-                self.records = mocker.MagicMock(record='testRecord')
-                self.batchSize = mocker.MagicMock(batchSize='testBatchSize')
+                self.s3_client = mocker.MagicMock(s3_client='test_s3_client')
+                self.session = mocker.MagicMock(session='test_session')
+                self.records = mocker.MagicMock(record='test_record')
+                self.batch_size = mocker.MagicMock(batch_size='test_batch_size')
         
         return TestISAC()
 
-    def test_runProcess(self, testProcess, mocker):
-        runMocks = mocker.patch.multiple(
+    def test_run_process(self, test_process, mocker):
+        run_mocks = mocker.patch.multiple(
             ChicagoISACProcess,
             saveRecords=mocker.DEFAULT,
             commitChanges=mocker.DEFAULT
         )
 
-        testProcess.run_process()
+        test_process.runProcess()
 
-        runMocks['saveRecords'].assert_called_once()
-        runMocks['commitChanges'].assert_called_once()
+        run_mocks['saveRecords'].assert_called_once()
+        run_mocks['commitChanges'].assert_called_once()
 
 
-    def test_processChicagoISACRecord_success(self, testProcess, mocker):
+    def test_process_chicago_isac_record_success(self, test_process, mocker):
         processMocks = mocker.patch.multiple(ChicagoISACProcess,
             store_pdf_manifest=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
 
-        mockMapping = mocker.MagicMock(record='testRecord')
-        mockMapper = mocker.patch('processes.ingest.chicago_isac.ChicagoISACMapping')
-        mockMapper.return_value = mockMapping
+        mock_mapping = mocker.MagicMock(record='test_record')
+        mock_mapper = mocker.patch('processes.ingest.chicago_isac.ChicagoISACMapping')
+        mock_mapper.return_value = mock_mapping
         
-        testProcess.process_chicago_isac_record(mockMapping)
+        test_process.process_chicago_isac_record(mock_mapping)
 
-        mockMapping.applyMapping.assert_called_once()
+        mock_mapping.applyMapping.assert_called_once()
 
-        processMocks['store_pdf_manifest'].assert_called_once_with('testRecord')
-        processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
+        processMocks['store_pdf_manifest'].assert_called_once_with('test_record')
+        processMocks['addDCDWToUpdateList'].assert_called_once_with(mock_mapping)
 
-    def test_processChicagoISACRecord_error(self, mocker):
+    def test_process_chicago_isac_record_error(self, mocker):
 
-        mockMapper = mocker.patch('processes.ingest.chicago_isac.ChicagoISACMapping')
-        mockMapper.side_effect = MappingError('testError')
+        mock_mapper = mocker.patch('processes.ingest.chicago_isac.ChicagoISACMapping')
+        mock_mapper.side_effect = MappingError('testError')
 
         assert pytest.raises(MappingError)
 
-    def test_store_pdf_manifest(self, testProcess, mocker):
-        mockRecord = mocker.MagicMock(identifiers=['1|isac'])
-        mockRecord.has_part = [
-            ['1|testURI|isac|application/pdf|{}',
-            '2|testURIOther|isac|application/pdf|{}'],
+    def test_store_pdf_manifest(self, test_process, mocker):
+        mock_record = mocker.MagicMock(identifiers=['1|isac'])
+        mock_record.has_part = [
+            ['1|test_url|isac|application/pdf|{}',
+            '2|test_url_other|isac|application/pdf|{}'],
         ]
 
-        mockGenerateMan = mocker.patch.object(ChicagoISACProcess, 'generate_manifest')
-        mockGenerateMan.return_value = 'testJSON'
-        mockCreateMan = mocker.patch.object(ChicagoISACProcess, 'createManifestInS3')
+        mock_generate_man = mocker.patch.object(ChicagoISACProcess, 'generate_manifest')
+        mock_generate_man.return_value = 'test_json'
+        mock_create_man = mocker.patch.object(ChicagoISACProcess, 'createManifestInS3')
 
-        testProcess.store_pdf_manifest(mockRecord)
+        test_process.store_pdf_manifest(mock_record)
 
-        testManifestURI = 'https://test_aws_bucket.s3.amazonaws.com/manifests/isac/1.json'
-        assert mockRecord.has_part[0] == '1|{}|isac|application/webpub+json|{{}}'.format(testManifestURI)
+        test_manifest_url = 'https://test_aws_bucket.s3.amazonaws.com/manifests/isac/1.json'
+        assert mock_record.has_part[0] == '1|{}|isac|application/webpub+json|{{}}'.format(test_manifest_url)
 
-        mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
-        mockCreateMan.assert_called_once_with('manifests/isac/1.json', 'testJSON')
+        mock_generate_man.assert_called_once_with(mock_record, 'test_url', test_manifest_url)
+        mock_create_man.assert_called_once_with('manifests/isac/1.json', 'test_json')
 
-    def test_createManifestInS3(self, testProcess, mocker):
-        mockPut = mocker.patch.object(ChicagoISACProcess, 'putObjectInBucket')
+    def test_create_manifest_in_S3(self, test_process, mocker):
+        mock_put = mocker.patch.object(ChicagoISACProcess, 'putObjectInBucket')
         
-        testProcess.createManifestInS3('testPath', '{"data": "testJSON"}')
+        test_process.createManifestInS3('test_path', '{"data": "test_json"}')
 
-        mockPut.assert_called_once_with(b'{"data": "testJSON"}', 'testPath', 'test_aws_bucket')
+        mock_put.assert_called_once_with(b'{"data": "test_json"}', 'test_path', 'test_aws_bucket')
 
-    def test_generateManifest(self, mocker):
-        mockManifest = mocker.MagicMock(links=[])
-        mockManifest.toJson.return_value = 'testJSON'
-        mockManifestConstructor = mocker.patch('processes.ingest.chicago_isac.WebpubManifest')
-        mockManifestConstructor.return_value = mockManifest
+    def test_generate_manifest(self, mocker):
+        mock_manifest = mocker.MagicMock(links=[])
+        mock_manifest.toJson.return_value = 'test_json'
+        mock_manifest_constructor = mocker.patch('processes.ingest.chicago_isac.WebpubManifest')
+        mock_manifest_constructor.return_value = mock_manifest
 
-        mockRecord = mocker.MagicMock(title='testTitle')
-        testManifest = ChicagoISACProcess.generate_manifest(mockRecord, 'sourceURI', 'manifestURI')
+        mock_record = mocker.MagicMock(title='test_title')
+        test_manifest = ChicagoISACProcess.generate_manifest(mock_record, 'source_url', 'manifest_url')
 
-        assert testManifest == 'testJSON'
-        assert mockManifest.links[0] == {'rel': 'self', 'href': 'manifestURI', 'type': 'application/webpub+json'}
+        assert test_manifest == 'test_json'
+        assert mock_manifest.links[0] == {'rel': 'self', 'href': 'manifest_url', 'type': 'application/webpub+json'}
 
-        mockManifest.addMetadata.assert_called_once_with(mockRecord, conformsTo='test_profile_uri')
-        mockManifest.addChapter.assert_called_once_with('sourceURI', 'testTitle')
+        mock_manifest.addMetadata.assert_called_once_with(mock_record, conformsTo='test_profile_uri')
+        mock_manifest.addChapter.assert_called_once_with('source_url', 'test_title')
