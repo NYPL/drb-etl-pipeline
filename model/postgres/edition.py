@@ -55,8 +55,8 @@ class Edition(Base, Core):
     )
 
     def __repr__(self):
-        return '<Edition(place={}, date={}, publisher={})>'.format(
-            self.publication_place, self.publication_date, self.publishers
+        return '<Edition(id={}, place={}, date={}, publisher={})>'.format(
+            self.id, self.publication_place, self.publication_date, self.publishers
         )
     
     def __dir__(self):

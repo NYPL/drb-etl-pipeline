@@ -35,7 +35,7 @@ class SFRRecordManager:
             .join(Edition)\
             .filter(Work.uuid != self.work.uuid)\
             .filter(Edition.dcdw_uuids.overlap(list(dcdwUUIDs))).all():
-            matchedWorks.append((matchedWork.id, matchedWork.uuid, matchedWork.date_created))
+            matchedWorks.append((matchedWork.id, matchedWork.uuid, matchedWork.date_created, matchedWork.editions))
 
         matchedWorks.sort(key=lambda x: x[2])
 
@@ -61,10 +61,24 @@ class SFRRecordManager:
                 self.assignIdentifierIDs(cleanIdentifiers, item.identifiers)
 
         if len(matchedWorks) > 0:
-            work_id, work_uuid, work_date_created = matchedWorks[0]
+            work_id, work_uuid, work_date_created, matched_editions = matchedWorks[0]
             self.work.id = work_id
             self.work.uuid = work_uuid
             self.work.date_created = work_date_created
+
+            for matched_edition in matched_editions:
+                for edition in self.work.editions:
+                    if matched_edition.publication_date == edition.publication_date:
+                        edition.id = matched_edition.id
+                        edition.date_created = matched_edition.date_created
+
+                        with self.session.begin_nested():
+                            if matched_edition.items:
+                                for item in matched_edition.items:
+                                    self.session.delete(item)
+                            self.session.flush() 
+
+                        break
 
         self.work = self.session.merge(self.work)
 
@@ -475,10 +489,10 @@ class SFRRecordManager:
             pubYearGroup = re.search(r'([0-9]{4})', str(edition['publication_date']))
 
             if pubYearGroup:
-                publicationDate = datetime(year=int(pubYearGroup.group(1)), month=1, day=1)
+                publicationDate = date(year=int(pubYearGroup.group(1)), month=1, day=1)
 
         if publicationDate\
-                and publicationDate <= datetime.now(timezone.utc).replace(tzinfo=None)\
+                and publicationDate <= date.today() \
                 and publicationDate.year >= 1488:
             return publicationDate
 

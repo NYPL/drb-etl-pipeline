@@ -28,9 +28,9 @@ class ClusterProcess(CoreProcess):
 
         self.createRedisClient()
         
-        self.createElasticConnection()
-        self.createElasticSearchIngestPipeline()
-        self.createElasticSearchIndex()
+        # self.createElasticConnection()
+        # self.createElasticSearchIngestPipeline()
+        # self.createElasticSearchIndex()
 
     def runProcess(self):
         try:
@@ -55,6 +55,7 @@ class ClusterProcess(CoreProcess):
                 .filter(Record.cluster_status == False)
                 .filter(Record.source != 'oclcClassify')
                 .filter(Record.source != 'oclcCatalog')
+                .filter(Record.uuid == 'a78e5901-9b4e-48d8-a0ae-ad52115cc1d6')
         )
 
         if not full:
@@ -83,7 +84,7 @@ class ClusterProcess(CoreProcess):
                 raise e
 
             if len(works_to_index) >= self.CLUSTER_BATCH_SIZE:
-                self.update_elastic_search(works_to_index, work_ids_to_delete)
+                # self.update_elastic_search(works_to_index, work_ids_to_delete)
                 logger.info(f'Clustered {len(works_to_index)} works')
                 works_to_index = []
 
@@ -93,7 +94,7 @@ class ClusterProcess(CoreProcess):
                 self.session.commit()
 
         logger.info(f'Clustered {len(works_to_index)} works')
-        self.update_elastic_search(works_to_index, work_ids_to_delete)
+        # self.update_elastic_search(works_to_index, work_ids_to_delete)
         self.delete_stale_works(work_ids_to_delete)
 
         self.session.commit()
