@@ -39,8 +39,8 @@ class Item(Base, Core):
     rights = relationship('Rights', secondary=ITEM_RIGHTS, backref='items', cascade='all, delete')
 
     def __repr__(self):
-        return '<Item(source={}, content_type={})>'.format(
-            self.source, self.content_type
+        return '<Item(id={}, source={}, content_type={}, contributors={})>'.format(
+            self.id, self.source, self.content_type, self.contributors
         )
 
     def __dir__(self):

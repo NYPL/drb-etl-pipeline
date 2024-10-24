@@ -12,8 +12,8 @@ class Identifier(Base, Core):
     __table_args__ = (UniqueConstraint('identifier', 'authority', name='uc_identifier_authority'),)
 
     def __repr__(self):
-        return '<Identifier(value={}, authority={})>'.format(
-            self.identifier, self.authority
+        return '<Identifier(id={}, value={}, authority={})>'.format(
+            self.id, self.identifier, self.authority
         )
 
     def __dir__(self):
