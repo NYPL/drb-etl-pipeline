@@ -254,11 +254,6 @@ class LOCProcess(CoreProcess):
                 self.sendFileToProcessingQueue(uri, bucketLocation)
                 break
 
-    def createManifestInS3(self, manifestPath, manifestJSON):
-        self.putObjectInBucket(
-            manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket
-        )
-
     def addEPUBManifest(self, record, itemNo, source, flagStr, mediaType, location):
             s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, location)
 

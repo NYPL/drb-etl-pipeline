@@ -23,7 +23,6 @@ class ChicagoISACMapping(JSONMapping):
     def applyFormatting(self):
         self.record.source = 'isac'
 
-        #Formatting for multiple isbns
         if ',' in self.record.identifiers[0]:
             identifierArray = self.record.identifiers[0].split(', ')
             updatedIdentifierArray = []

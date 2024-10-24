@@ -36,6 +36,12 @@ class S3Manager:
 
         raise S3Error('Unable to create bucket in s3')
 
+
+    def createManifestInS3(self, manifestPath, manifestJSON):
+        self.putObjectInBucket(
+            manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket
+        )
+
     def putObjectInBucket(
         self, obj, objKey, bucket, bucketPermissions='public-read'
     ):
