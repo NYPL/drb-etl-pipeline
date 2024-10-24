@@ -16,7 +16,7 @@ class HathiTrustProcess(CoreProcess):
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
 
     def __init__(self, *args):
-        super(HathiTrustProcess, self).__init__(*args[:4], batchSize=1000)
+        super(HathiTrustProcess, self).__init__(*args[:4], batchSize=200)
 
         self.ingest_limit = int(args[4]) if args[4] else None
 
@@ -99,23 +99,12 @@ class HathiTrustProcess(CoreProcess):
             self.readHathiFile(hathiTSV)
 
     def readHathiFile(self, hathiTSV):
-        processed_record_count = 0
 
-        while True:
-            if self.ingest_limit and processed_record_count >= self.ingest_limit:
+        for number_of_books_ingested, book in enumerate(hathiTSV):
+            if self.ingest_limit and number_of_books_ingested > self.ingest_limit:
                 break
 
-            try:
-                row = next(hathiTSV)
-                logger.info('Reading row')
-            except csv.Error as e:
-                logger.warning('Unable to read TSV row')
-                logger.debug(e)
-                continue
-            except StopIteration:
-                logger.info('Reached end of TSV file')
-                break
+            book_right = book[2]
 
-            if row is not None and row[2] not in self.HATHI_RIGHTS_SKIPS:
-                self.parseHathiDataRow(row)
-                processed_record_count += 1
+            if book_right is not None and book_right not in self.HATHI_RIGHTS_SKIPS:
+                self.parseHathiDataRow(book)

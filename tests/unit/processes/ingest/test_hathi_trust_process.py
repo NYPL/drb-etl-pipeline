@@ -38,11 +38,9 @@ class TestHathiTrustProcess:
     @pytest.fixture
     def hathiTSV(self):
         def tsvIter():
-            for i in range(1000):
+            for i in range(200):
                 rightsStmt = 'ic' if i % 3 == 0 else 'pd'
                 yield [i, 'hathi', rightsStmt]
-            
-            raise csv.Error
         
         return tsvIter()
 
@@ -185,4 +183,4 @@ class TestHathiTrustProcess:
 
         testInstance.readHathiFile(hathiTSV)
 
-        assert mockParseRow.call_count == 666
+        assert mockParseRow.call_count == 133
