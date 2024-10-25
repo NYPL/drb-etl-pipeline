@@ -3,7 +3,7 @@ import os
 from lxml import etree
 from time import sleep
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from managers import OCLCCatalogManager
 from mappings.oclcCatalog import CatalogMapping
 from logger import createLog

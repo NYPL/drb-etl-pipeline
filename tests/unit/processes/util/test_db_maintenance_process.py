@@ -8,7 +8,7 @@ from processes import DatabaseMaintenanceProcess
 class TestDatabaseMaintenanceProcess:
     @pytest.fixture
     def db_maintenance_process(self) -> DatabaseMaintenanceProcess:
-        with patch('processes.db_maintenance.DBManager'):  
+        with patch('processes.util.db_maintenance.DBManager'):  
             return DatabaseMaintenanceProcess()
 
     def test_run_process(self, db_maintenance_process: DatabaseMaintenanceProcess, mocker):
