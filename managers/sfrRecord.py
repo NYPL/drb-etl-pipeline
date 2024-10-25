@@ -1,9 +1,10 @@
 from collections import Counter, defaultdict
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 import json
 from Levenshtein import jaro_winkler
 import pycountry
 import re
+from sqlalchemy import delete
 from uuid import uuid4
 
 from model import Work, Edition, Item, Identifier, Link, Rights
@@ -66,26 +67,38 @@ class SFRRecordManager:
             self.work.uuid = work_uuid
             self.work.date_created = work_date_created
 
-            self.dedupe_editions(matched_editions)
+            self.merge_editions(matched_editions)
 
         self.work = self.session.merge(self.work)
 
         return [w[1] for w in matchedWorks[1:]]
     
-    def dedupe_editions(self, matched_editions: list[Edition]):
+    def merge_editions(self, matched_editions: list[Edition]):
+        item_ids_to_delete = []
+
         for matched_edition in matched_editions:
             for edition in self.work.editions:
                 if matched_edition.publication_date == edition.publication_date:
                     edition.id = matched_edition.id
                     edition.date_created = matched_edition.date_created
 
-                    with self.session.begin_nested():
-                        if matched_edition.items:
-                            for item in matched_edition.items:
-                                self.session.delete(item)
-                        self.session.flush() 
+                    item_ids_to_delete.extend([item.id for item in matched_edition.items])
 
                     break
+
+        self.delete_merged_edition_items(item_ids_to_delete)
+        
+    def delete_merged_edition_items(self, item_ids: list[int]): 
+        with self.session.begin_nested():
+            try:
+                self.session.execute(delete(Item).where(Item.id.in_(item_ids)))
+                self.session.flush()
+            except Exception as e: 
+                self.session.rollback()
+                logger.exception(f'Failed to delete merged edition items: {item_ids}')
+                
+                raise e
+
 
     def dedupeIdentifiers(self, identifiers):
         queryGroups = defaultdict(set)
