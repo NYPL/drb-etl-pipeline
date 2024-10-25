@@ -292,7 +292,7 @@ class TestSFRRecordManager:
         #Tests for incorrect date ranges
         testEdition4 = SFRRecordManager.createEmptyEditionRecord()
 
-        testEdition4['publication_date'] = date(1300, 1, 1).strftime('%Y-%m-%d')
+        testEdition4['publication_date'] = date(1300, 1, 1)
         testPubDateCheck4 = SFRRecordManager.publicationDateCheck(testEdition4)
         assert testPubDateCheck4 == None
 
