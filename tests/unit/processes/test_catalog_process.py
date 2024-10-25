@@ -15,119 +15,119 @@ class TestOCLCCatalogProcess:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testInstance(self, mocker):
+    def test_instance(self, mocker):
         class TestCatalogProcess(CatalogProcess):
-            def __init__(self, process, customFile, ingestPeriod):
+            def __init__(self):
                 self.statics = {}
                 self.oclcCatalogManager = mocker.MagicMock()
+                self.records = []
         
-        return TestCatalogProcess('TestProcess', 'testFile', 'testDate')
+        return TestCatalogProcess()
     
-    def test_runProcess(self, testInstance, mocker):
-        mockReceive = mocker.patch.object(CatalogProcess, 'receiveAndProcessMessages')
-        mockSave = mocker.patch.object(CatalogProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(CatalogProcess, 'commitChanges')
+    def test_run_process(self, test_instance, mocker):
+        mock_process_catalog_messages = mocker.patch.object(CatalogProcess, 'process_catalog_messages')
+        mock_save = mocker.patch.object(CatalogProcess, 'saveRecords')
+        mock_commit = mocker.patch.object(CatalogProcess, 'commitChanges')
 
-        testInstance.runProcess()
+        test_instance.runProcess()
 
-        mockReceive.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        mock_process_catalog_messages.assert_called_once
+        mock_save.assert_called_once
+        mock_commit.assert_called_once
 
-    def test_receiveAndProcessMessages(self, testInstance, mocker):
-        mockSleep = mocker.patch('processes.catalog.sleep')
-        mockQueueGet = mocker.patch.object(CatalogProcess, 'getMessageFromQueue')
-        mockProps = mocker.MagicMock()
-        mockProps.delivery_tag = 'rabbitMQTag'
-        mockQueueGet.side_effect = [
-            (mockProps, {}, 'oclc_record'),
-            (None, None, None),
-            (None, None, None),
-            (None, None, None),
-            (None, None, None)
+    def test_process_catalog_messages(self, test_instance, mocker):
+        mock_sleep = mocker.patch('processes.catalog.sleep')
+        mock_get_message = mocker.patch.object(CatalogProcess, 'getMessageFromQueue')
+        mock_message_props = mocker.MagicMock()
+        mock_message_props.delivery_tag = 'rabbitMQTag'
+        mock_get_message.side_effect = [
+            (mock_message_props, {}, 'oclc_record'),
+            None,
+            None,
+            None
         ]
-        mockProcess = mocker.patch.object(CatalogProcess, 'processCatalogQuery')
-        mockAcknowledge = mocker.patch.object(CatalogProcess, 'acknowledgeMessageProcessed')
+        mock_process_catalog_message = mocker.patch.object(CatalogProcess, 'process_catalog_message')
+        mock_acknowledge_message = mocker.patch.object(CatalogProcess, 'acknowledgeMessageProcessed')
 
-        testInstance.receiveAndProcessMessages()
+        test_instance.process_catalog_messages()
 
-        assert mockQueueGet.call_count == 5
-        mockQueueGet.assert_called_with('test_oclc_queue')
+        assert mock_get_message.call_count == 4
+        mock_get_message.assert_called_with('test_oclc_queue')
 
-        mockSleep.assert_has_calls([
+        mock_sleep.assert_has_calls([
             mocker.call(60), mocker.call(120), mocker.call(180)
         ])
 
-        mockProcess.assert_called_once_with('oclc_record')
-        mockAcknowledge.assert_called_once_with('rabbitMQTag')
+        mock_process_catalog_message.assert_called_once_with('oclc_record')
+        mock_acknowledge_message.assert_called_once_with('rabbitMQTag')
 
-    def test_processCatalogQuery_success(self, testInstance, mocker):
-        testInstance.oclcCatalogManager.query_catalog.return_value = 'testXML'
-        mockParser = mocker.patch.object(CatalogProcess, 'parseCatalogRecord')
+    def test_process_catalog_message_success(self, test_instance, mocker):
+        test_instance.oclcCatalogManager.query_catalog.return_value = 'testXML'
+        mock_parse_catalog_record = mocker.patch.object(CatalogProcess, 'parse_catalog_record')
 
-        testInstance.processCatalogQuery('{"oclcNo": 1, "owiNo": 1}')
+        test_instance.process_catalog_message('{"oclcNo": 1, "owiNo": 1}')
 
-        testInstance.oclcCatalogManager.query_catalog.assert_called_once_with(1)
-        mockParser.assert_called_once_with('testXML', 1, 1)
+        test_instance.oclcCatalogManager.query_catalog.assert_called_once_with(1)
+        mock_parse_catalog_record.assert_called_once_with('testXML', 1, 1)
 
-    def test_processCatalogQuery_no_record_found(self, testInstance, mocker):
-        testInstance.oclcCatalogManager.query_catalog.return_value = None
-        mockParser = mocker.patch.object(CatalogProcess, 'parseCatalogRecord')
+    def test_process_catalog_message_no_record_found(self, test_instance, mocker):
+        test_instance.oclcCatalogManager.query_catalog.return_value = None
+        mock_parse_catalog_message = mocker.patch.object(CatalogProcess, 'parse_catalog_record')
 
-        testInstance.processCatalogQuery('{"oclcNo": "badID"}')
+        test_instance.process_catalog_message('{"oclcNo": "badID"}')
 
-        testInstance.oclcCatalogManager.query_catalog.assert_called_once_with('badID')
-        mockParser.assert_not_called()
+        test_instance.oclcCatalogManager.query_catalog.assert_called_once_with('badID')
+        mock_parse_catalog_message.assert_not_called()
 
-    def test_parseCatalogRecord_success(self, testInstance, mocker):
-        mockXMLParser = mocker.patch.object(etree, 'fromstring')
-        mockXMLParser.return_value = 'testMARC'
+    def test_parse_catalog_record_success(self, test_instance, mocker):
+        mock_etree_from_string = mocker.patch.object(etree, 'fromstring')
+        mock_etree_from_string.return_value = 'testMARC'
 
-        mockCatalogRec = mocker.MagicMock(record=mocker.MagicMock(identifiers=[]))
-        mockMapping = mocker.patch('processes.catalog.CatalogMapping')
-        mockMapping.return_value = mockCatalogRec
+        mock_catalog_record = mocker.MagicMock(record=mocker.MagicMock(identifiers=[]))
+        mock_catalog_mapping = mocker.patch('processes.catalog.CatalogMapping')
+        mock_catalog_mapping.return_value = mock_catalog_record
 
-        mockAdd = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
+        mock_add_to_update_list = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
-        testInstance.parseCatalogRecord('rawXML', 1, 1)
+        test_instance.parse_catalog_record('rawXML', 1, 1)
 
-        mockXMLParser.assert_called_once_with(b'rawXML')
-        mockMapping.assert_called_once_with(
+        mock_etree_from_string.assert_called_once_with(b'rawXML')
+        mock_catalog_mapping.assert_called_once_with(
             'testMARC', {'oclc': 'http://www.loc.gov/MARC21/slim'}, {}
         )
-        mockCatalogRec.applyMapping.assert_called_once()
-        assert mockCatalogRec.record.identifiers[0] == '1|owi'
-        mockAdd.assert_called_once_with(mockCatalogRec)
+        mock_catalog_record.applyMapping.assert_called_once()
+        assert mock_catalog_record.record.identifiers[0] == '1|owi'
+        mock_add_to_update_list.assert_called_once_with(mock_catalog_record)
 
-    def test_parseCatalogRecord_mapping_failure(self, testInstance, mocker):
-        mockXMLParser = mocker.patch.object(etree, 'fromstring')
-        mockXMLParser.return_value = 'testMARC'
+    def test_parse_catalog_record_mapping_failure(self, test_instance, mocker):
+        mock_etree_from_string = mocker.patch.object(etree, 'fromstring')
+        mock_etree_from_string.return_value = 'testMARC'
 
-        mockCatalogRec = mocker.MagicMock()
-        mockCatalogRec.applyMapping.side_effect = Exception
-        mockMapping = mocker.patch('processes.catalog.CatalogMapping')
-        mockMapping.return_value = mockCatalogRec
+        mock_catalog_record = mocker.MagicMock()
+        mock_catalog_record.applyMapping.side_effect = Exception
+        mock_catalog_mapping = mocker.patch('processes.catalog.CatalogMapping')
+        mock_catalog_mapping.return_value = mock_catalog_record
 
-        mockAdd = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
+        mock_add_to_update_list = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
-        testInstance.parseCatalogRecord('rawXML', 1, 1)
+        test_instance.parse_catalog_record('rawXML', 1, 1)
 
-        mockXMLParser.assert_called_once_with(b'rawXML')
-        mockMapping.assert_called_once_with(
+        mock_etree_from_string.assert_called_once_with(b'rawXML')
+        mock_catalog_mapping.assert_called_once_with(
             'testMARC', {'oclc': 'http://www.loc.gov/MARC21/slim'}, {}
         )
-        mockCatalogRec.applyMapping.assert_called_once()
-        mockAdd.assert_not_called()
+        mock_catalog_record.applyMapping.assert_called_once()
+        mock_add_to_update_list.assert_not_called()
 
-    def test_parseCatalogRecord_parsing_failure(self, testInstance, mocker):
-        mockCatalogRec = mocker.MagicMock()
-        mockMapping = mocker.patch('processes.catalog.CatalogMapping')
-        mockMapping.return_value = mockCatalogRec
+    def test_parse_catalog_record_parsing_failure(self, test_instance, mocker):
+        mock_catalog_record = mocker.MagicMock()
+        mock_catalog_mapping = mocker.patch('processes.catalog.CatalogMapping')
+        mock_catalog_mapping.return_value = mock_catalog_record
 
-        mockAdd = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
+        mock_add_to_update_list = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
-        testInstance.parseCatalogRecord('rawXML', 1, 1)
+        test_instance.parse_catalog_record('rawXML', 1, 1)
 
-        mockMapping.assert_not_called()
-        mockCatalogRec.applyMapping.assert_not_called()
-        mockAdd.assert_not_called()
+        mock_catalog_mapping.assert_not_called()
+        mock_catalog_record.applyMapping.assert_not_called()
+        mock_add_to_update_list.assert_not_called()
