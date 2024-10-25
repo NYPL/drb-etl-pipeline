@@ -61,14 +61,13 @@ class SFRRecordManager:
                 self.assignIdentifierIDs(cleanIdentifiers, item.identifiers)
 
         if len(matchedWorks) > 0:
-            work_id, work_uuid, work_date_created = matchedWorks[0]
-            self.work.id = work_id
+            _, work_uuid, work_date_created = matchedWorks[0]
             self.work.uuid = work_uuid
             self.work.date_created = work_date_created
 
         self.work = self.session.merge(self.work)
 
-        return [w[1] for w in matchedWorks[1:]]
+        return [w[0] for w in matchedWorks]
 
     def dedupeIdentifiers(self, identifiers):
         queryGroups = defaultdict(set)

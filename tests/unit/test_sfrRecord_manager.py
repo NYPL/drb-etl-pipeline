@@ -85,9 +85,8 @@ class TestSFRRecordManager:
 
         testUUIDsToDelete = testInstance.mergeRecords()
 
-        assert testUUIDsToDelete == [3, 2]
+        assert testUUIDsToDelete == [4, 3, 2]
         assert testInstance.work.uuid == 4
-        assert testInstance.work.id == 4
         assert testInstance.work.date_created == '2018-01-01'
 
         testInstance.session.query().join().filter().filter().all.assert_called_once()

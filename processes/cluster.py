@@ -133,7 +133,7 @@ class ClusterProcess(CoreProcess):
         self.index_works_in_elastic_search(works_to_index)
 
     def delete_stale_works(self, work_ids: set[str]):
-        self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid.in_(list(work_ids))))
+        self.deleteRecordsByQuery(self.session.query(Work).filter(Work.id.in_(list(work_ids))))
 
     def cluster_matched_records(self, record_ids: list[str]):
         records = self.session.query(Record).filter(Record.id.in_(record_ids)).all()
