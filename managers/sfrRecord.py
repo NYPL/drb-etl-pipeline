@@ -258,10 +258,13 @@ class SFRRecordManager:
         editionData['dcdw_uuids'].append(rec.uuid.hex)
 
     def buildItems(self, editionData, rec, itemContributors):
-        max_part_number = max(int(item.split('|')[0]) for item in rec.has_part)
+        number_of_parts = max(
+            max((int(part.split('|')[0]) for part in rec.has_part if part.split('|')[0].isdigit()), default=0),
+            len(rec.has_part)
+        )
 
         startPos = len(editionData['items']) - 1
-        editionData['items'].extend([None] * max_part_number)
+        editionData['items'].extend([None] * number_of_parts)
 
         for item in rec.has_part:
             no, uri, source, linkType, flags = tuple(item.split('|'))
