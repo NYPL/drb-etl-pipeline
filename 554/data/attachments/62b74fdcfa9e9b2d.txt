@@ -1,0 +1,7 @@
+ERROR    processes.ingest.hathi_trust:hathi_trust.py:110 Unable to read Hathi Trust file row
+Traceback (most recent call last):
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/processes/ingest/hathi_trust.py", line 108, in readHathiFile
+    row = next(hathiTSV)
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/tests/unit/processes/ingest/test_hathi_trust_process.py", line 45, in tsvIter
+    raise csv.Error
+_csv.Error
