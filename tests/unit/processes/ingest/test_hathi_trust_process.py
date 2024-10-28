@@ -30,7 +30,7 @@ class TestHathiTrustProcess:
     @pytest.fixture
     def hathiFilesData(self):
         return [
-            {'created': '2020-01-01T00:00:00-0000', 'url': 'hathiUrl1', 'full': False},
+            {'created': '2020-01-01T00:00:00-0000', 'url': 'hathiUrl1', 'full': False, 'modified': '2024-10-28 11:00:00 Z'},
             {'created': '2019-01-01T00:00:00-0000', 'url': 'hathiUrl2', 'full': True},
             {'created': '2018-01-01T00:00:00-0000', 'url': 'hathiUrl3', 'full': False}
         ]
@@ -41,6 +41,15 @@ class TestHathiTrustProcess:
             for i in range(200):
                 rightsStmt = 'ic' if i % 3 == 0 else 'pd'
                 yield [i, 'hathi', rightsStmt]
+        
+        return tsvIter()
+    
+    @pytest.fixture
+    def hathiTSV2(self):
+        def tsvIter():
+            for i in range(200):
+                rightsStmt = 'ic' if i % 3 == 0 else 'pd'
+                yield [i, 'hathi', rightsStmt, '', '', '', '', '', '', '', '', '', '', '', '2024-10-28 12:00:00']
         
         return tsvIter()
 
@@ -178,9 +187,9 @@ class TestHathiTrustProcess:
 
         assert testInstance.importFromHathiFile('badURL') == None
 
-    def test_readHathiFile(self, testInstance, hathiTSV, mocker):
+    def test_readHathiFile(self, testInstance, hathiTSV2, mocker):
         mockParseRow = mocker.patch.object(HathiTrustProcess, 'parseHathiDataRow')
 
-        testInstance.readHathiFile(hathiTSV)
+        testInstance.readHathiFile(hathiTSV2)
 
         assert mockParseRow.call_count == 133

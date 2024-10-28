@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 import gzip
 import os
@@ -16,7 +16,7 @@ class HathiTrustProcess(CoreProcess):
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
 
     def __init__(self, *args):
-        super(HathiTrustProcess, self).__init__(*args[:4], batchSize=200)
+        super(HathiTrustProcess, self).__init__(*args[:4], batchSize=1000)
 
         self.ingest_limit = int(args[4]) if args[4] else None
 
@@ -72,7 +72,15 @@ class HathiTrustProcess(CoreProcess):
         )
 
         for hathiFile in fileJSON:
+            print(hathiFile)
             if hathiFile['full'] == fullDump:
+                if hathiFile['full'] == False:
+                    start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+                    hathi_date_modified = datetime.strptime(hathiFile['modified'],self.returnHathiDateFormat(hathiFile['modified'])).replace(tzinfo=None)
+                    if hathi_date_modified > start_date_time:
+                        self.importFromHathiFile(hathiFile['url'])
+                        break       
+
                 self.importFromHathiFile(hathiFile['url'])
                 break
 
@@ -99,12 +107,14 @@ class HathiTrustProcess(CoreProcess):
             self.readHathiFile(hathiTSV)
 
     def readHathiFile(self, hathiTSV):
-
         for number_of_books_ingested, book in enumerate(hathiTSV):
             if self.ingest_limit and number_of_books_ingested > self.ingest_limit:
                 break
 
             book_right = book[2]
+            book_date_updated = book[14]
+            start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1) 
+            hathi_date_modified = datetime.strptime(book[14],'%Y-%m-%d %H:%M:%S')
 
-            if book_right is not None and book_right not in self.HATHI_RIGHTS_SKIPS:
+            if book_right is not None and book_right not in self.HATHI_RIGHTS_SKIPS and hathi_date_modified > start_date_time:
                 self.parseHathiDataRow(book)
