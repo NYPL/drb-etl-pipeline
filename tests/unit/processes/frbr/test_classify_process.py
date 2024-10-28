@@ -19,8 +19,8 @@ class TestOCLCClassifyProcess:
         class TestClassifyProcess(ClassifyProcess):
             def __init__(self, *args):
                 self.records = set()
-                self.classifiedRecords = {}
                 self.ingest_limit = None
+                self.records = []
                 self.catalog_queue = os.environ['OCLC_QUEUE']
                 self.catalog_route = os.environ['OCLC_ROUTING_KEY']
                 self.classified_count = 0
@@ -66,12 +66,13 @@ class TestOCLCClassifyProcess:
         testInstance.ingestPeriod = 'testDate'
         testInstance.runProcess()
 
-        runProcessMocks['classify_records'].assert_called_once_with(startDateTime='testDate')
+        runProcessMocks['classify_records'].assert_called_once_with(start_date_time='testDate')
+        
         for _, mockedMethod in runProcessMocks.items():
             mockedMethod.assert_called_once()
 
     def test_classify_records_not_full(self, testInstance, mocker):
-        mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
+        mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrize_record')
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
@@ -85,13 +86,16 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 100
 
+        mock_bulk_save_objects = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
+
         testInstance.classify_records()
 
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
+        mock_bulk_save_objects.assert_called_once()
 
     def test_classify_records_custom_range(self, testInstance, mocker):
-        mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
+        mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrize_record')
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
@@ -106,16 +110,18 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 100
 
+        mock_bulk_save_objects = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
 
-        testInstance.classify_records(startDateTime='testDate')
+        testInstance.classify_records(start_date_time='testDate')
 
         mockDatetime.now.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
+        mock_bulk_save_objects.assert_called_once()
 
     def test_classify_records_full(self, testInstance, mocker):
-        mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
+        mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrize_record')
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
@@ -129,7 +135,7 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 50 + [True]
 
-        mockUpdateClassified = mocker.patch.object(ClassifyProcess, 'updateClassifiedRecordsStatus')
+        mock_bulk_save_objects = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
 
         testInstance.classify_records(full=True)
 
@@ -137,9 +143,10 @@ class TestOCLCClassifyProcess:
         mockDatetime.timedelta.assert_not_called()
         mockWindowed.assert_called_once()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords[:50]])
+        mock_bulk_save_objects.assert_not_called()
 
     def test_classify_records_full_batch(self, testInstance, mocker):
-        mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrizeRecord')
+        mockFrbrize = mocker.patch.object(ClassifyProcess, 'frbrize_record')
         mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
@@ -153,7 +160,7 @@ class TestOCLCClassifyProcess:
         mockOCLCCheck = mocker.patch.object(ClassifyProcess, 'checkIncrementerRedis')
         mockOCLCCheck.side_effect = [False] * 100
 
-        mockUpdateClassified = mocker.patch.object(ClassifyProcess, 'updateClassifiedRecordsStatus')
+        mock_bulk_save_objects = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
 
         testInstance.ingestLimit = 100
         testInstance.classify_records(full=True)
@@ -161,109 +168,90 @@ class TestOCLCClassifyProcess:
         mockDatetime.now.assert_not_called()
         mockDatetime.timedelta.assert_not_called()
         mockFrbrize.assert_has_calls([mocker.call(rec) for rec in mockRecords])
-        mockUpdateClassified.assert_called_once()
+        mock_bulk_save_objects.assert_called_once()
 
-    def test_updateClassifiedRecordsStatus(self, testInstance, mocker):
-        mockBulkSave = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
-
-        testInstance.classifiedRecords = {1: 'rec1', 2: 'rec2', 3: 'rec3'}
-        testInstance.updateClassifiedRecordsStatus()
-
-        mockBulkSave.assert_called_once_with(['rec1', 'rec2', 'rec3'])
-
-    def test_frbrizeRecord_success_valid_author(self, testInstance, testRecord, mocker):
+    def test_frbrize_record_success_valid_author(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyProcess, '_get_queryable_identifiers')
         mockIdentifiers.return_value = ['1|test']
 
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
         mockRedisCheck.return_value = False
 
-        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata_v2')
+        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata')
 
-        testInstance.frbrizeRecord(testRecord)
+        testInstance.frbrize_record(testRecord)
 
         mockIdentifiers.assert_called_once_with(testRecord.identifiers)
         mockRedisCheck.assert_called_once_with('classify', '1', 'test')
         mockClassifyRec.assert_called_once_with('1', 'test', 'Author, Test', 'Test Record')
 
-    def test_frbrizeRecord_success_author_missing(self, testInstance, testRecord, mocker):
+    def test_frbrize_record_success_author_missing(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyProcess, '_get_queryable_identifiers')
         mockIdentifiers.return_value = ['1|test']
 
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
         mockRedisCheck.return_value = False
 
-        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata_v2')
+        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata')
 
         testRecord.authors = []
-        testInstance.frbrizeRecord(testRecord)
+        testInstance.frbrize_record(testRecord)
 
         mockIdentifiers.assert_called_once_with(testRecord.identifiers)
         mockRedisCheck.assert_called_once_with('classify', '1', 'test')
         mockClassifyRec.assert_called_once_with('1', 'test', None, 'Test Record')
 
-    def test_frbrizeRecord_identifier_in_redis(self, testInstance, testRecord, mocker):
+    def test_frbrize_record_identifier_in_redis(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyProcess, '_get_queryable_identifiers')
         mockIdentifiers.return_value = ['1|test']
 
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
         mockRedisCheck.return_value = True
 
-        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata_v2')
+        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata')
 
         testRecord.authors = []
-        testInstance.frbrizeRecord(testRecord)
+        testInstance.frbrize_record(testRecord)
 
         mockIdentifiers.assert_called_once_with(testRecord.identifiers)
         mockRedisCheck.assert_called_once_with('classify', '1', 'test')
         mockClassifyRec.assert_not_called
 
-    def test_frbrizeRecord_identifier_missing(self, testInstance, testRecord, mocker):
+    def test_frbrize_record_identifier_missing(self, testInstance, testRecord, mocker):
         mockIdentifiers = mocker.patch.object(ClassifyProcess, '_get_queryable_identifiers')
         mockIdentifiers.return_value = []
-
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'checkSetRedis')
+        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata')
 
-        mockClassifyRec = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata_v2')
-
-        testInstance.frbrizeRecord(testRecord)
+        testInstance.frbrize_record(testRecord)
 
         mockIdentifiers.assert_called_once_with(testRecord.identifiers)
         mockRedisCheck.assert_not_called()
         mockClassifyRec.assert_called_once_with(None, None, 'Author, Test', 'Test Record')
 
-    def test_fetchOCLCCatalogRecords_no_redis_match(self, testInstance, mocker):
+    def test_get_oclc_catalog_records_no_redis_match(self, testInstance, mocker):
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'multiCheckSetRedis')
         mockRedisCheck.return_value = [('2', True)]
-        mockSendLookup = mocker.patch.object(ClassifyProcess, 'sendCatalogLookupMessage')
+        mock_send_message_to_queue = mocker.patch.object(ClassifyProcess, 'sendMessageToQueue')
         mockSetRedis = mocker.patch.object(ClassifyProcess, 'setIncrementerRedis')
 
-        testInstance.fetchOCLCCatalogRecords(['1|owi', '2|oclc'])
+        testInstance.get_oclc_catalog_records(['1|owi', '2|oclc'])
 
         mockRedisCheck.assert_called_once_with('catalog', ['2'], 'oclc')
-        mockSendLookup.assert_called_once_with('2', '1')
+        mock_send_message_to_queue.assert_called_once_with('test_oclc_queue', 'test_oclc_key', {'oclcNo': '2', 'owiNo': '1'})
         mockSetRedis.assert_called_once_with('oclcCatalog', 'API', amount=1)
 
-    def test_fetchOCLCCatalogRecords_redis_match(self, testInstance, mocker):
+    def test_get_oclc_catalog_records_redis_match(self, testInstance, mocker):
         mockRedisCheck = mocker.patch.object(ClassifyProcess, 'multiCheckSetRedis')
         mockRedisCheck.return_value = [(2, False)]
-        mockSendLookup = mocker.patch.object(ClassifyProcess, 'sendCatalogLookupMessage')
+        mock_send_message_to_queue = mocker.patch.object(ClassifyProcess, 'sendMessageToQueue')
         mockSetRedis = mocker.patch.object(ClassifyProcess, 'setIncrementerRedis')
 
-        testInstance.fetchOCLCCatalogRecords(['1|test', '2|oclc'])
+        testInstance.get_oclc_catalog_records(['1|test', '2|oclc'])
 
         mockRedisCheck.assert_called_once_with('catalog', ['2'], 'oclc')
-        mockSendLookup.assert_not_called()
+        mock_send_message_to_queue.assert_not_called()
         mockSetRedis.assert_not_called()
     
-    def test_sendCatalogLookupMessage(self, testInstance, mocker):
-        mockSendMessage = mocker.patch.object(ClassifyProcess, 'sendMessageToQueue')
-
-        testInstance.sendCatalogLookupMessage('1', '1')
-
-        mockSendMessage.assert_called_once_with(
-            'test_oclc_queue', 'test_oclc_key', {'oclcNo': '1', 'owiNo': '1'}
-        )
-
     def test_get_queryable_identifiers(self, testInstance):
         assert testInstance._get_queryable_identifiers(['1|isbn', '2|test']) == ['1|isbn']

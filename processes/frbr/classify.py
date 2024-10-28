@@ -92,7 +92,7 @@ class ClassifyProcess(CoreProcess):
         queryable_ids = self._get_queryable_identifiers(record.identifiers)
 
         if len(queryable_ids) < 1:
-            return
+            queryable_ids = [None]
 
         for id in queryable_ids:
             try:
@@ -102,18 +102,18 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 author, *_ = tuple(record.authors[0].split('|'))
-            except (IndexError, TypeError):
+            except Exception:
                 author = None
 
             if identifier and self.checkSetRedis('classify', identifier, identifier_type):
                 continue
 
             try:
-                self.classify_record_by_metadata_v2(identifier, identifier_type, author, record.title)
+                self.classify_record_by_metadata(identifier, identifier_type, author, record.title)
             except Exception as e:
                 logger.warning(f'Unable to classify {record} due to {e}')
 
-    def classify_record_by_metadata_v2(self, identifier, identifier_type, author, title):
+    def classify_record_by_metadata(self, identifier, identifier_type, author, title):
         search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
 
         related_oclc_bibs = self.oclc_catalog_manager.query_bibs(search_query)
