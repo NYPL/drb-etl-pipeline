@@ -42,10 +42,10 @@ class TestOCLCCatalogProcess:
         mock_message_props.delivery_tag = 'rabbitMQTag'
         mock_get_message.side_effect = [
             (mock_message_props, {}, 'oclc_record'),
-            None,
-            None,
-            None,
-            None
+            (None, None, None),
+            (None, None, None),
+            (None, None, None),
+            (None, None, None)
         ]
         mock_process_catalog_message = mocker.patch.object(CatalogProcess, 'process_catalog_message')
         mock_acknowledge_message = mocker.patch.object(CatalogProcess, 'acknowledgeMessageProcessed')
