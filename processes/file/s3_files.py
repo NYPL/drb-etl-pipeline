@@ -5,7 +5,7 @@ import requests
 from time import sleep
 from urllib.parse import quote_plus
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from managers import S3Manager, RabbitMQManager
 from logger import createLog
 

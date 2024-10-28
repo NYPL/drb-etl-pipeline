@@ -6,7 +6,7 @@ from sqlalchemy.exc import ProgrammingError
 from time import sleep
 
 from managers.db import DBManager
-from .core import CoreProcess
+from ..core import CoreProcess
 from logger import createLog
 
 logger = createLog(__name__)

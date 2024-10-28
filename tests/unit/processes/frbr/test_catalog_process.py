@@ -36,7 +36,7 @@ class TestOCLCCatalogProcess:
         mock_commit.assert_called_once
 
     def test_process_catalog_messages(self, test_instance, mocker):
-        mock_sleep = mocker.patch('processes.catalog.sleep')
+        mock_sleep = mocker.patch('processes.frbr.catalog.sleep')
         mock_get_message = mocker.patch.object(CatalogProcess, 'getMessageFromQueue')
         mock_message_props = mocker.MagicMock()
         mock_message_props.delivery_tag = 'rabbitMQTag'
@@ -84,7 +84,7 @@ class TestOCLCCatalogProcess:
         mock_etree_from_string.return_value = 'testMARC'
 
         mock_catalog_record = mocker.MagicMock(record=mocker.MagicMock(identifiers=[]))
-        mock_catalog_mapping = mocker.patch('processes.catalog.CatalogMapping')
+        mock_catalog_mapping = mocker.patch('processes.frbr.catalog.CatalogMapping')
         mock_catalog_mapping.return_value = mock_catalog_record
 
         mock_add_to_update_list = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
@@ -105,7 +105,7 @@ class TestOCLCCatalogProcess:
 
         mock_catalog_record = mocker.MagicMock()
         mock_catalog_record.applyMapping.side_effect = Exception
-        mock_catalog_mapping = mocker.patch('processes.catalog.CatalogMapping')
+        mock_catalog_mapping = mocker.patch('processes.frbr.catalog.CatalogMapping')
         mock_catalog_mapping.return_value = mock_catalog_record
 
         mock_add_to_update_list = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
@@ -121,7 +121,7 @@ class TestOCLCCatalogProcess:
 
     def test_parse_catalog_record_parsing_failure(self, test_instance, mocker):
         mock_catalog_record = mocker.MagicMock()
-        mock_catalog_mapping = mocker.patch('processes.catalog.CatalogMapping')
+        mock_catalog_mapping = mocker.patch('processes.frbr.catalog.CatalogMapping')
         mock_catalog_mapping.return_value = mock_catalog_record
 
         mock_add_to_update_list = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')

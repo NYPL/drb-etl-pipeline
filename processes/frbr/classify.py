@@ -3,7 +3,7 @@ import os
 import newrelic.agent
 import re
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from managers import OCLCCatalogManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record

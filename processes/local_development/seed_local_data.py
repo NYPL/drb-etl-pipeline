@@ -4,7 +4,7 @@ import gzip
 import os
 import requests
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from logger import createLog
 from mappings.hathitrust import HathiMapping
 from processes import CatalogProcess, ClassifyProcess, ClusterProcess

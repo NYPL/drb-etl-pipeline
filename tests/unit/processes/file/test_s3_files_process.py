@@ -38,7 +38,7 @@ class TestS3Process:
         mock_save_records = mocker.patch.object(S3Process, 'saveRecords')
         mock_commit_changes = mocker.patch.object(S3Process, 'commitChanges')
         mock_file_process = mocker.MagicMock()
-        mock_process = mocker.patch('processes.s3_files.Process')
+        mock_process = mocker.patch('processes.file.s3_files.Process')
         mock_process.return_value = mock_file_process
 
         test_instance.runProcess()
@@ -51,14 +51,14 @@ class TestS3Process:
         assert mock_file_process.join.call_count == 4
 
     def test_process_files(self, test_file_message, mocker):
-        mock_sleep = mocker.patch('processes.s3_files.sleep')
+        mock_sleep = mocker.patch('processes.file.s3_files.sleep')
 
         mock_s3 = mocker.MagicMock()
-        mock_s3_manager = mocker.patch('processes.s3_files.S3Manager')
+        mock_s3_manager = mocker.patch('processes.file.s3_files.S3Manager')
         mock_s3_manager.return_value = mock_s3
 
         mock_rabbit_mq = mocker.MagicMock()
-        mock_rabbit_mq_manager = mocker.patch('processes.s3_files.RabbitMQManager')
+        mock_rabbit_mq_manager = mocker.patch('processes.file.s3_files.RabbitMQManager')
         mock_rabbit_mq_manager.return_value = mock_rabbit_mq
         mock_message_propse = mocker.MagicMock()
         mock_message_propse.delivery_tag = 'rabbitMQTag'

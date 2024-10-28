@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import os
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from managers import CoverManager
 from model import Edition, Link
 from model.postgres.edition import EDITION_LINKS
