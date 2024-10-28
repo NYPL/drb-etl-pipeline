@@ -24,7 +24,7 @@ class CatalogProcess(CoreProcess):
 
         self.oclcCatalogManager = OCLCCatalogManager()
 
-    def runProcess(self, max_attempts: int=3):
+    def runProcess(self, max_attempts: int=4):
         self.process_catalog_messages(max_attempts=max_attempts)
 
         self.saveRecords()
@@ -32,17 +32,22 @@ class CatalogProcess(CoreProcess):
 
         logger.info(f'Saved {len(self.records)} catalog records')
 
-    def process_catalog_messages(self, max_attempts: int=3):
+    def process_catalog_messages(self, max_attempts: int=4):
         for attempt in range(0, max_attempts):
+            wait_time = 60 * attempt
+
+            if wait_time:
+                logger.info(f'Waiting {wait_time}s for OCLC catalog messages')
+                sleep(wait_time)
+
             while message := self.getMessageFromQueue(os.environ['OCLC_QUEUE']):
                 message_props, _, message_body = message
 
+                if not message_props or not message_body:
+                    break
+
                 self.process_catalog_message(message_body)
                 self.acknowledgeMessageProcessed(message_props.delivery_tag)
-
-            wait_time = 60 * (attempt + 1)
-            logger.info(f'Waiting {wait_time}s for OCLC catalog messages')
-            sleep(wait_time)
 
     def process_catalog_message(self, message_body):
         message = json.loads(message_body)
@@ -56,7 +61,6 @@ class CatalogProcess(CoreProcess):
             return
         
         self.parse_catalog_record(catalog_record, oclc_number, owi_number)
-        logger.info(f'Processed OCLC catalog query for OCLC number {oclc_number}')
 
     def parse_catalog_record(self, catalog_record, oclc_number, owi_number):
         try:

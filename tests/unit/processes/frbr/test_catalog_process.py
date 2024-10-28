@@ -44,6 +44,7 @@ class TestOCLCCatalogProcess:
             (mock_message_props, {}, 'oclc_record'),
             None,
             None,
+            None,
             None
         ]
         mock_process_catalog_message = mocker.patch.object(CatalogProcess, 'process_catalog_message')
@@ -51,7 +52,7 @@ class TestOCLCCatalogProcess:
 
         test_instance.process_catalog_messages()
 
-        assert mock_get_message.call_count == 4
+        assert mock_get_message.call_count == 5
         mock_get_message.assert_called_with('test_oclc_queue')
 
         mock_sleep.assert_has_calls([

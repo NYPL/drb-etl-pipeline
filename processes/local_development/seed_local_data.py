@@ -32,7 +32,7 @@ class SeedLocalDataProcess(CoreProcess):
             classify_process.runProcess()
 
             catalog_process = CatalogProcess(*process_args)
-            catalog_process.runProcess(max_attempts=0)
+            catalog_process.runProcess(max_attempts=1)
             
             cluster_process = ClusterProcess(*process_args)
             cluster_process.runProcess()
