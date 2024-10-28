@@ -19,14 +19,11 @@ class ClassifyProcess(CoreProcess):
 
         self.ingestLimit = int(args[4]) if args[4] else None
 
-        # PostgreSQL Connection
         self.generateEngine()
         self.createSession()
 
-        # Redis Connection
         self.createRedisClient()
 
-        # RabbitMQ Connection
         self.rabbitQueue = os.environ['OCLC_QUEUE']
         self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']
         self.createRabbitConnection()
@@ -72,7 +69,6 @@ class ClassifyProcess(CoreProcess):
         ):
             self.frbrizeRecord(rec)
 
-            # Update Record with status
             rec.cluster_status = False
             rec.frbr_status = 'complete'
             self.classifiedRecords[rec.id] = rec
@@ -107,8 +103,6 @@ class ClassifyProcess(CoreProcess):
             except (IndexError, TypeError):
                 author = None
 
-            # Check if this identifier has been queried in the past 24 hours
-            # Skip if it has already been looked up
             if identifier and self.checkSetRedis('classify', identifier, idenType):
                 continue
 
