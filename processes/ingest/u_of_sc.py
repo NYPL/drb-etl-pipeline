@@ -76,11 +76,6 @@ class UofSCProcess(CoreProcess):
                 record.has_part.insert(0, linkString)
                 break
 
-    def createManifestInS3(self, manifestPath, manifestJSON):
-        self.putObjectInBucket(
-            manifestJSON.encode('utf-8'), manifestPath, self.s3Bucket
-        )
-
     @staticmethod
     def generateManifest(record, sourceURI, manifestURI):
         manifest = WebpubManifest(sourceURI, 'application/pdf')
