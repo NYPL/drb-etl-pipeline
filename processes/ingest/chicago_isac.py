@@ -13,8 +13,6 @@ class ChicagoISACProcess(CoreProcess):
     def __init__(self, *args):
         super(ChicagoISACProcess, self).__init__(*args[:4])
 
-        self.full_import = self.process == 'complete' 
-
         self.generateEngine()
         self.createSession()
 

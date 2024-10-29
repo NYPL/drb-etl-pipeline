@@ -81,13 +81,6 @@ class TestChicagoISACProcess:
         mock_generate_man.assert_called_once_with(mock_record, 'test_url', test_manifest_url)
         mock_create_man.assert_called_once_with('manifests/isac/1.json', 'test_json')
 
-    def test_create_manifest_in_S3(self, test_process, mocker):
-        mock_put = mocker.patch.object(ChicagoISACProcess, 'putObjectInBucket')
-        
-        test_process.createManifestInS3('test_path', '{"data": "test_json"}')
-
-        mock_put.assert_called_once_with(b'{"data": "test_json"}', 'test_path', 'test_aws_bucket')
-
     def test_generate_manifest(self, mocker):
         mock_manifest = mocker.MagicMock(links=[])
         mock_manifest.toJson.return_value = 'test_json'
