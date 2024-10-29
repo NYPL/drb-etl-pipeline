@@ -84,10 +84,13 @@ class ClassifyProcess(CoreProcess):
 
             if len(frbrized_records) >= window_size:
                 self.classified_count += len(frbrized_records)
-                
                 self.bulkSaveObjects(frbrized_records)
                 
                 frbrized_records = []
+
+        if len(frbrized_records):
+            self.classified_count += len(frbrized_records)
+            self.bulkSaveObjects(frbrized_records)
 
     def frbrize_record(self, record: Record):
         queryable_ids = self._get_queryable_identifiers(record.identifiers)

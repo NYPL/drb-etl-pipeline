@@ -143,7 +143,7 @@ class TestOCLCClassifyProcess:
         mock_start_time.timedelta.assert_not_called()
         mock_window_query.assert_called_once()
         mock_frbrize_record.assert_has_calls([mocker.call(record) for record in mock_records[:50]])
-        mock_bulk_save_objects.assert_not_called()
+        mock_bulk_save_objects.assert_called_once()
 
     def test_classify_records_full_batch(self, test_instance, mocker):
         mock_frbrize_record = mocker.patch.object(ClassifyProcess, 'frbrize_record')
