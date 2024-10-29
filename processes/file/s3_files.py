@@ -124,5 +124,6 @@ class S3Process(CoreProcess):
             webpub_response.raise_for_status()
 
             return webpub_response.content
-        except Exception:
+        except Exception as e:
             logger.exception(f'Failed to generate webpub for {file_root}')
+            raise e
