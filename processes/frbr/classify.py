@@ -14,6 +14,8 @@ logger = createLog(__name__)
 
 
 class ClassifyProcess(CoreProcess):
+    WINDOW_SIZE = 100
+
     def __init__(self, *args):
         super(ClassifyProcess, self).__init__(*args[:4], batchSize=50)
 
@@ -52,22 +54,17 @@ class ClassifyProcess(CoreProcess):
         except Exception:
             logger.exception(f'Failed to run classify process')
 
-    def classify_records(self, full=False, start_date_time=None):
+    def classify_records(self, full=False, start_date_time=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)):
         get_unfrbrized_records_query = (
             self.session.query(Record)
                 .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')
                 .filter(Record.frbr_status == 'to_do')
         )
 
-        if full is False:
-            if not start_date_time:
-                start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+        if not full:        
             get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.date_modified > start_date_time)
 
-        window_size = self.ingest_limit
-        if (self.ingest_limit is None or self.ingest_limit > 100):
-            window_size = 100
-
+        window_size = min(self.ingest_limit or self.WINDOW_SIZE, self.WINDOW_SIZE)
         frbrized_records = []
 
         for record in self.windowedQuery(Record, get_unfrbrized_records_query, windowSize=window_size):
@@ -110,8 +107,8 @@ class ClassifyProcess(CoreProcess):
 
             try:
                 self.classify_record_by_metadata(identifier, identifier_type, author, record.title)
-            except Exception as e:
-                logger.warning(f'Unable to classify {record} due to {e}')
+            except Exception:
+                logger.exception(f'Failed to classify record: {record}')
 
     def classify_record_by_metadata(self, identifier, identifier_type, author, title):
         search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
