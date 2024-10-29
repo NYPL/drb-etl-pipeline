@@ -89,8 +89,6 @@ class ClassifyProcess(CoreProcess):
                 
                 frbrized_records = []
 
-        self.bulkSaveObjects(frbrized_records)
-
     def frbrize_record(self, record: Record):
         queryable_ids = self._get_queryable_identifiers(record.identifiers)
 
