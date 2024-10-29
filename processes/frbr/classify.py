@@ -19,7 +19,7 @@ class ClassifyProcess(CoreProcess):
     def __init__(self, *args):
         super(ClassifyProcess, self).__init__(*args[:4], batchSize=50)
 
-        self.ingest_limit = int(args[4]) if len(args) >= 5 and args[4] else None
+        self.ingestLimit = int(args[4]) if len(args) >= 5 and args[4] else None
 
         self.generateEngine()
         self.createSession()
@@ -51,20 +51,24 @@ class ClassifyProcess(CoreProcess):
             self.commitChanges()
             
             logger.info(f'Classified {self.classified_count} records and saved {len(self.records)} classify records')
-        except Exception:
+        except Exception as e:
             logger.exception(f'Failed to run classify process')
+            raise e
 
-    def classify_records(self, full=False, start_date_time=datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)):
+    def classify_records(self, full=False, start_date_time=None):
         get_unfrbrized_records_query = (
             self.session.query(Record)
                 .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')
                 .filter(Record.frbr_status == 'to_do')
         )
 
-        if not full:        
+        if not full:
+            if not start_date_time:
+                start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+            
             get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.date_modified > start_date_time)
 
-        window_size = min(self.ingest_limit or self.WINDOW_SIZE, self.WINDOW_SIZE)
+        window_size = min(self.ingestLimit or self.WINDOW_SIZE, self.WINDOW_SIZE)
         frbrized_records = []
 
         for record in self.windowedQuery(Record, get_unfrbrized_records_query, windowSize=window_size):
@@ -84,6 +88,8 @@ class ClassifyProcess(CoreProcess):
                 self.bulkSaveObjects(frbrized_records)
                 
                 frbrized_records = []
+
+        self.bulkSaveObjects(frbrized_records)
 
     def frbrize_record(self, record: Record):
         queryable_ids = self._get_queryable_identifiers(record.identifiers)
