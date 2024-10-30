@@ -25,8 +25,8 @@ class HathiTrustProcess(CoreProcess):
 
     def runProcess(self):
         if self.process == 'daily':
-            start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-            self.importFromHathiTrustDataFile(start_date_time)
+            date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+            self.importFromHathiTrustDataFile(start_date_time=date_time)
         elif self.process == 'complete':
             self.importFromHathiTrustDataFile(full_dump=True)
         elif self.process == 'custom':
@@ -52,7 +52,7 @@ class HathiTrustProcess(CoreProcess):
         self.addDCDWToUpdateList(hathiRec)
 
 
-    def importFromHathiTrustDataFile(self, start_date_time=None, full_dump=False):
+    def importFromHathiTrustDataFile(self, full_dump=False, start_date_time=None):
         try:
             file_list = requests.get(os.environ['HATHI_DATAFILES'], timeout=15)
             file_list.raise_for_status()
@@ -73,7 +73,7 @@ class HathiTrustProcess(CoreProcess):
             if not hathi_file.get('full') and not full_dump:
                 hathi_date_format = self.returnHathiDateFormat(hathi_file.get('modified'))
                 hathi_date_modified = datetime.strptime(hathi_file.get('modified'), hathi_date_format).replace(tzinfo=None)
-                if hathi_date_modified > start_date_time:
+                if start_date_time and hathi_date_modified > start_date_time:
                     self.importFromHathiFile(hathi_file.get('url'), start_date_time)
                     break       
             elif hathi_file.get('full') and full_dump:
@@ -93,8 +93,8 @@ class HathiTrustProcess(CoreProcess):
 
     def importFromHathiFile(self, hathi_url, start_date_time=None):
         try:
-            hathiResp = requests.get(hathi_url, stream=True, timeout=30)
-            hathiResp.raise_for_status()
+            hathi_resp = requests.get(hathi_url, stream=True, timeout=30)
+            hathi_resp.raise_for_status()
         except Exception:
             logger.exception(f'Unable to read Hathi Trust file url {hathi_url}')
             return None
