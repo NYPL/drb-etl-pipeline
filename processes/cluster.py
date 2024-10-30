@@ -55,6 +55,7 @@ class ClusterProcess(CoreProcess):
                 .filter(Record.cluster_status == False)
                 .filter(Record.source != 'oclcClassify')
                 .filter(Record.source != 'oclcCatalog')
+                .filter(Record.title.isnot(None))
         )
 
         if not full:
