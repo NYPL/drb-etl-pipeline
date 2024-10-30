@@ -76,7 +76,7 @@ def createArgParser():
     parser.add_argument('-o', '--offset',
                         help='Set start offset for current processed (for batched import process)')
     parser.add_argument('-r', '--singleRecord',
-                        help='Single record ID for ingesting an individual record (only applicable for DOAB)')
+                        help='Single record ID for ingesting an individual record')
     parser.add_argument('options', nargs='*', help='Additional arguments')
 
     return parser

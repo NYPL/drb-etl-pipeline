@@ -113,7 +113,7 @@ class TestS3Process:
     def test_get_file_contents_error(self, test_instance, mocker):
         mock_get_request = mocker.patch.object(requests, 'get')
         mock_response = mocker.MagicMock()
-        mock_response.status_code = 500
+        mock_response.raise_for_status.side_effect = Exception
         mock_get_request.return_value = mock_response
 
         with pytest.raises(Exception):
@@ -139,9 +139,8 @@ class TestS3Process:
         mock_response.raise_for_status.side_effect = Exception
         mock_get_request.return_value = mock_response
 
-        test_webpub = S3Process.generate_webpub('testRoot', 'testBucket')
-
-        assert test_webpub == None
+        with pytest.raises(Exception):
+            S3Process.generate_webpub('testRoot', 'testBucket')
 
         mock_get_request.assert_called_once_with(
             'test_conversion_url/api/https%3A%2F%2FtestBucket.s3.amazonaws.com%2FtestRoot%2FMETA-INF%2Fcontainer.xml',

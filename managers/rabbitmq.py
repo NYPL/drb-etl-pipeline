@@ -93,3 +93,11 @@ class RabbitMQManager:
             self.createRabbitConnection()
             self.createChannel()
             self.acknowledgeMessageProcessed(deliveryTag)
+
+    def reject_message(self, delivery_tag: str, requeue=False):
+        try:
+            self.channel.basic_reject(delivery_tag=delivery_tag, requeue=requeue)
+        except (ConnectionWrongStateError, StreamLostError):
+            self.createRabbitConnection()
+            self.createChannel()
+            self.reject_message(delivery_tag, requeue)      
