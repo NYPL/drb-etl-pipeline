@@ -92,6 +92,7 @@ class S3Process(CoreProcess):
                 logger.info(f'Stored file in S3 for {file_url}')
             except Exception:
                 logger.exception(f'Failed to store file for file url: {file_url}')
+                rabbit_mq_manager.reject_message(delivery_tag=message_props.delivery_tag)
 
     @staticmethod
     def get_file_contents(file_url: str):
@@ -117,13 +118,21 @@ class S3Process(CoreProcess):
         webpub_conversion_url = os.environ['WEBPUB_CONVERSION_URL']
         s3_file_path = f'https://{bucket}.s3.amazonaws.com/{file_root}/META-INF/container.xml'
         webpub_conversion_url = f'{webpub_conversion_url}/api/{quote_plus(s3_file_path)}'
+        retry_limit = 3
 
-        try:
-            webpub_response = requests.get(webpub_conversion_url, timeout=15)
+        for attempt in range(retry_limit):
+            try:
+                webpub_response = requests.get(webpub_conversion_url, timeout=15)
 
-            webpub_response.raise_for_status()
+                webpub_response.raise_for_status()
 
-            return webpub_response.content
-        except Exception as e:
-            logger.exception(f'Failed to generate webpub for {file_root}')
-            raise e
+                return webpub_response.content
+            except (requests.ConnectionError, requests.Timeout) as e:
+                if attempt < retry_limit - 1:
+                    sleep(60 * (attempt + 1))
+                else:
+                    logger.exception(f'Failed to generate webpub for {file_root}')
+                    raise e
+            except Exception as e:
+                logger.exception(f'Failed to generate webpub for {file_root}')
+                raise e
