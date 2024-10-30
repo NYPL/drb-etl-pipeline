@@ -199,6 +199,7 @@ class ClusterProcess(CoreProcess):
                     self.session.query(Record.title, Record.id, Record.identifiers)
                         .filter(~Record.id.in_(list(already_matched_record_ids)))
                         .filter(Record.identifiers.overlap(id_batch))
+                        .filter(Record.title.isnot(None))
                         .all()
                 )
 
