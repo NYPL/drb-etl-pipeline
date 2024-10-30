@@ -14,110 +14,110 @@ logger = createLog(__name__)
 
 
 class ClassifyProcess(CoreProcess):
+    WINDOW_SIZE = 100
+
     def __init__(self, *args):
         super(ClassifyProcess, self).__init__(*args[:4], batchSize=50)
 
-        self.ingestLimit = int(args[4]) if args[4] else None
+        self.ingestLimit = int(args[4]) if len(args) >= 5 and args[4] else None
 
-        # PostgreSQL Connection
         self.generateEngine()
         self.createSession()
 
-        # Redis Connection
         self.createRedisClient()
 
-        # RabbitMQ Connection
-        self.rabbitQueue = os.environ['OCLC_QUEUE']
-        self.rabbitRoute = os.environ['OCLC_ROUTING_KEY']
+        self.catalog_queue = os.environ['OCLC_QUEUE']
+        self.catalog_route = os.environ['OCLC_ROUTING_KEY']
         self.createRabbitConnection()
-        self.createOrConnectQueue(self.rabbitQueue, self.rabbitRoute)
+        self.createOrConnectQueue(self.catalog_queue, self.catalog_route)
 
-        self.classifiedRecords = {}
         self.classified_count = 0
 
         self.oclc_catalog_manager = OCLCCatalogManager()
 
     def runProcess(self):
-        if self.process == 'daily':
-            self.classifyRecords()
-        elif self.process == 'complete':
-            self.classifyRecords(full=True)
-        elif self.process == 'custom':
-            self.classifyRecords(startDateTime=self.ingestPeriod)
+        try:
+            if self.process == 'daily':
+                self.classify_records()
+            elif self.process == 'complete':
+                self.classify_records(full=True)
+            elif self.process == 'custom':
+                self.classify_records(start_date_time=self.ingestPeriod)
+            else:
+                logger.warning(f'Unknown classify process type: {self.process}')
+                return
 
-        self.saveRecords()
-        self.updateClassifiedRecordsStatus()
-        self.commitChanges()
-        logger.info(f'Classify process report: {self.classified_count} record updates')
+            self.saveRecords()
+            self.commitChanges()
+            
+            logger.info(f'Classified {self.classified_count} records and saved {len(self.records)} classify records')
+        except Exception as e:
+            logger.exception(f'Failed to run classify process')
+            raise e
 
-    def classifyRecords(self, full=False, startDateTime=None):
-        baseQuery = self.session.query(Record)\
-            .filter(
-                Record.source != 'oclcClassify'
-                and Record.source != 'oclcCatalog'
-            )\
-            .filter(Record.frbr_status == 'to_do')
+    def classify_records(self, full=False, start_date_time=None):
+        get_unfrbrized_records_query = (
+            self.session.query(Record)
+                .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')
+                .filter(Record.frbr_status == 'to_do')
+        )
 
-        if full is False:
-            if not startDateTime:
-                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-            baseQuery = baseQuery.filter(Record.date_modified > startDateTime)
+        if not full:
+            if not start_date_time:
+                start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+            
+            get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.date_modified > start_date_time)
 
-        windowSize = self.ingestLimit
-        if (self.ingestLimit is None or self.ingestLimit > 100):
-            windowSize = 100
+        window_size = min(self.ingestLimit or self.WINDOW_SIZE, self.WINDOW_SIZE)
+        frbrized_records = []
 
-        for rec in self.windowedQuery(
-            Record, baseQuery, windowSize=windowSize
-        ):
-            self.frbrizeRecord(rec)
+        for record in self.windowedQuery(Record, get_unfrbrized_records_query, windowSize=window_size):
+            self.frbrize_record(record)
 
-            # Update Record with status
-            rec.cluster_status = False
-            rec.frbr_status = 'complete'
-            self.classifiedRecords[rec.id] = rec
+            record.cluster_status = False
+            record.frbr_status = 'complete'
+            frbrized_records.append(record)
 
             if self.checkIncrementerRedis('oclcCatalog', 'API'):
                 logger.warning('Exceeded max requests to OCLC catalog')
                 break
 
-            if len(self.classifiedRecords) >= windowSize:
-                self.updateClassifiedRecordsStatus()
-                self.classifiedRecords = {}
+            if len(frbrized_records) >= window_size:
+                self.classified_count += len(frbrized_records)
+                self.bulkSaveObjects(frbrized_records)
+                
+                frbrized_records = []
 
-    def updateClassifiedRecordsStatus(self):
-        logger.debug(f'Storing {len(self.classifiedRecords)} classified records')
-        self.classified_count += len(self.classifiedRecords)
-        self.bulkSaveObjects([r for _, r in self.classifiedRecords.items()])
+        if len(frbrized_records):
+            self.classified_count += len(frbrized_records)
+            self.bulkSaveObjects(frbrized_records)
 
-    def frbrizeRecord(self, record):
-        queryableIDs = self._get_queryable_identifiers(record.identifiers)
+    def frbrize_record(self, record: Record):
+        queryable_ids = self._get_queryable_identifiers(record.identifiers)
 
-        if len(queryableIDs) < 1:
-            queryableIDs = [None]
+        if len(queryable_ids) < 1:
+            queryable_ids = [None]
 
-        for iden in queryableIDs:
+        for id in queryable_ids:
             try:
-                identifier, idenType = tuple(iden.split('|'))
-            except AttributeError:
-                identifier, idenType = (None, None)
+                identifier, identifier_type = tuple(id.split('|'))
+            except Exception:
+                identifier, identifier_type = (None, None)
 
             try:
                 author, *_ = tuple(record.authors[0].split('|'))
-            except (IndexError, TypeError):
+            except Exception:
                 author = None
 
-            # Check if this identifier has been queried in the past 24 hours
-            # Skip if it has already been looked up
-            if identifier and self.checkSetRedis('classify', identifier, idenType):
+            if identifier and self.checkSetRedis('classify', identifier, identifier_type):
                 continue
 
             try:
-                self.classify_record_by_metadata_v2(identifier, idenType, author, record.title)
-            except Exception as e:
-                logger.warning(f'Unable to classify {record} due to {e}')
+                self.classify_record_by_metadata(identifier, identifier_type, author, record.title)
+            except Exception:
+                logger.exception(f'Failed to classify record: {record}')
 
-    def classify_record_by_metadata_v2(self, identifier, identifier_type, author, title):
+    def classify_record_by_metadata(self, identifier, identifier_type, author, title):
         search_query = self.oclc_catalog_manager.generate_search_query(identifier, identifier_type, title, author)
 
         related_oclc_bibs = self.oclc_catalog_manager.query_bibs(search_query)
@@ -144,37 +144,31 @@ class ClassifyProcess(CoreProcess):
             )
 
             self.addDCDWToUpdateList(oclc_record)
-            self.fetchOCLCCatalogRecords(oclc_record.record.identifiers)
+            self.get_oclc_catalog_records(oclc_record.record.identifiers)
 
-    def fetchOCLCCatalogRecords(self, identifiers):
-        owiNo, _ = tuple(identifiers[0].split('|'))
+    def get_oclc_catalog_records(self, identifiers):
+        owi_number, _ = tuple(identifiers[0].split('|'))
+        catalogued_record_count = 0
+        oclc_numbers = set()
+        
+        for oclc_number in list(filter(lambda x: 'oclc' in x, identifiers)):
+            oclc_number, _ = tuple(oclc_number.split('|'))
+            oclc_numbers.add(oclc_number)
 
-        counter = 0
-        oclcIDs = set()
-        for oclcID in list(filter(lambda x: 'oclc' in x, identifiers)):
-            oclcNo, _ = tuple(oclcID.split('|'))
-            oclcIDs.add(oclcNo)
+        oclc_numbers = list(oclc_numbers)
 
-        oclcIDs = list(oclcIDs)
+        cached_oclc_numbers = self.multiCheckSetRedis('catalog', oclc_numbers, 'oclc')
 
-        checkedIDs = self.multiCheckSetRedis('catalog', oclcIDs, 'oclc')
-
-        for oclcNo, updateReq in checkedIDs:
-            if updateReq is False:
-                logger.debug(f'Skipping catalog lookup process for OCLC number {oclcNo}')
+        for oclc_number, uncached in cached_oclc_numbers:
+            if not uncached:
+                logger.debug(f'Skipping catalog lookup process for OCLC number {oclc_number}')
                 continue
 
-            self.sendCatalogLookupMessage(oclcNo, owiNo)
-            counter += 1
+            self.sendMessageToQueue(self.catalog_queue, self.catalog_route, { 'oclcNo': oclc_number, 'owiNo': owi_number })
+            catalogued_record_count += 1
 
-        if counter > 0:
-            self.setIncrementerRedis('oclcCatalog', 'API', amount=counter)
-
-    def sendCatalogLookupMessage(self, oclc_number, owiNo):
-        catalog_lookup_message = { 'oclcNo': oclc_number, 'owiNo': owiNo }
-        logger.debug(f'Sending catalog lookup message {catalog_lookup_message} to queue')
-
-        self.sendMessageToQueue(self.rabbitQueue, self.rabbitRoute, catalog_lookup_message)
+        if catalogued_record_count > 0:
+            self.setIncrementerRedis('oclcCatalog', 'API', amount=catalogued_record_count)
 
     def check_if_classify_work_fetched(self, owi_number: int) -> bool:
         return self.checkSetRedis('classifyWork', owi_number, 'owi')
