@@ -26,9 +26,9 @@ class HathiTrustProcess(CoreProcess):
     def runProcess(self):
         if self.process == 'daily':
             start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-            self.importRemoteRecords(start_date_time)
+            self.importFromHathiTrustDataFile(start_date_time)
         elif self.process == 'complete':
-            self.importRemoteRecords(full_or_partial=True)
+            self.importFromHathiTrustDataFile(full_dump=True)
         elif self.process == 'custom':
             self.importFromSpecificFile(self.customFile)
 
@@ -36,9 +36,6 @@ class HathiTrustProcess(CoreProcess):
         self.commitChanges()
 
         logger.info(f'Ingested {len(self.records)} Hathi Trust records')
-
-    def importRemoteRecords(self, start_date_time=None, full_or_partial=False):
-        self.importFromHathiTrustDataFile(start_date_time, full_dump=full_or_partial)
 
     def importFromSpecificFile(self, file_path):
         try:
@@ -73,15 +70,17 @@ class HathiTrustProcess(CoreProcess):
         )
 
         for hathi_file in file_json:
-            if hathi_file.get('full') == full_dump and hathi_file.get('full') == False:
+            if not hathi_file.get('full') and not full_dump:
                 hathi_date_format = self.returnHathiDateFormat(hathi_file.get('modified'))
                 hathi_date_modified = datetime.strptime(hathi_file.get('modified'), hathi_date_format).replace(tzinfo=None)
                 if hathi_date_modified > start_date_time:
                     self.importFromHathiFile(hathi_file.get('url'), start_date_time)
                     break       
-            if hathi_file.get('full') == full_dump and hathi_file.get('full') == False:
-                self.importFromHathiFile(hathi_file.get('url'), start_date_time)
+            elif hathi_file.get('full') and full_dump:
+                self.importFromHathiFile(hathi_file.get('url'))
                 break
+            else:
+                continue
 
     @staticmethod
     def returnHathiDateFormat(strDate):
@@ -110,20 +109,12 @@ class HathiTrustProcess(CoreProcess):
             if self.ingest_limit and number_of_books_ingested > self.ingest_limit:
                 break
             
-            if len(book) >= 2:
-                book_right = book[2]
-                if len(book) >= 15:
-                    book_date_updated = book[14]
-                else:
-                    continue
-            else:
-                continue
+            book_right = (len(book) >= 3 and book[2]) or None
+            book_date_updated = (len(book) > 14 and book[14]) or None
 
-            hathi_date_modified = datetime.strptime(book_date_updated, '%Y-%m-%d %H:%M:%S').replace(tzinfo=None)
+            if book_date_updated:
+                hathi_date_modified = datetime.strptime(book_date_updated, '%Y-%m-%d %H:%M:%S').replace(tzinfo=None)
 
-            if start_date_time:
-                if book_right and book_right not in self.HATHI_RIGHTS_SKIPS and hathi_date_modified > start_date_time:
-                    self.parseHathiDataRow(book)
-            else:
-                if book_right and book_right not in self.HATHI_RIGHTS_SKIPS:
+            if book_right and book_right not in self.HATHI_RIGHTS_SKIPS:
+                if not start_date_time or hathi_date_modified > start_date_time:
                     self.parseHathiDataRow(book)

@@ -59,26 +59,22 @@ class TestHathiTrustProcess:
         return datetime.strptime('2024-10-27 19:37:21.385454', '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=None)
 
     def test_runProcess_daily(self, testInstance, mocker):
-        mockImport = mocker.patch.object(HathiTrustProcess, 'importRemoteRecords')
         mockSave = mocker.patch.object(HathiTrustProcess, 'saveRecords')
         mockCommit = mocker.patch.object(HathiTrustProcess, 'commitChanges')
 
         testInstance.process = 'daily'
         testInstance.runProcess()
 
-        mockImport.assert_called_once
         mockSave.assert_called_once
         mockCommit.assert_called_once
 
     def test_runProcess_complete(self, testInstance, mocker):
-        mockImport = mocker.patch.object(HathiTrustProcess, 'importRemoteRecords')
         mockSave = mocker.patch.object(HathiTrustProcess, 'saveRecords')
         mockCommit = mocker.patch.object(HathiTrustProcess, 'commitChanges')
 
         testInstance.process = 'complete'
         testInstance.runProcess()
 
-        mockImport.assert_called_once_with(full_or_partial=True)
         mockSave.assert_called_once
         mockCommit.assert_called_once
 
@@ -94,20 +90,6 @@ class TestHathiTrustProcess:
         mockImport.assert_called_once_with('testFile')
         mockSave.assert_called_once
         mockCommit.assert_called_once
-
-    def test_importRemoteRecords_partial(self, testInstance, mocker):
-        mockImport = mocker.patch.object(HathiTrustProcess, 'importFromHathiTrustDataFile')
-        
-        testInstance.importRemoteRecords()
-        
-        mockImport.assert_called_once_with(None, full_dump=False)
-
-    def test_importRemoteRecords_full(self, start_date_time, testInstance, mocker):
-        mockImport = mocker.patch.object(HathiTrustProcess, 'importFromHathiTrustDataFile')
-        
-        testInstance.importRemoteRecords(start_date_time, full_or_partial=True)
-        
-        mockImport.assert_called_once_with(start_date_time, full_dump=True)
 
     def test_importFromSpecificFile_success(self, testInstance, mocker):
         mockOpen = mocker.patch('processes.ingest.hathi_trust.open')
