@@ -113,7 +113,7 @@ class TestS3Process:
     def test_get_file_contents_error(self, test_instance, mocker):
         mock_get_request = mocker.patch.object(requests, 'get')
         mock_response = mocker.MagicMock()
-        mock_response.status_code = 500
+        mock_response.raise_for_status.side_effect = Exception
         mock_get_request.return_value = mock_response
 
         with pytest.raises(Exception):
