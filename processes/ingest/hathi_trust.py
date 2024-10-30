@@ -93,11 +93,10 @@ class HathiTrustProcess(CoreProcess):
 
     def importFromHathiFile(self, hathi_url, start_date_time=None):
         try:
-            hathi_resp = requests.get(hathi_url, stream=True, timeout=30)
-            hathi_resp.raise_for_status()
-        except (ReadTimeout, HTTPError) as e:
-            logger.error('Unable to read hathifile url {}'.format(hathi_url))
-            logger.debug(e)
+            hathiResp = requests.get(hathi_url, stream=True, timeout=30)
+            hathiResp.raise_for_status()
+        except Exception:
+            logger.exception(f'Unable to read Hathi Trust file url {hathi_url}')
             return None
 
         with gzip.open(BytesIO(hathi_resp.content), mode='rt') as hathiGzip:

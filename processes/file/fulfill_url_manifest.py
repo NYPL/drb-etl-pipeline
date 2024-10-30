@@ -3,7 +3,7 @@ import os
 import copy
 from botocore.exceptions import ClientError
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from datetime import datetime, timedelta, timezone
 from model import Link
 from logger import createLog

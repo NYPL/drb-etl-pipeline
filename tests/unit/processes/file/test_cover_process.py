@@ -81,7 +81,7 @@ class TestCoverProcess:
         testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
 
         testQueryDate = testProcess.runTime - timedelta(hours=24)
-        mockDatetime = mocker.patch('processes.covers.datetime')
+        mockDatetime = mocker.patch('processes.file.covers.datetime')
         mockDatetime.now.return_value.replace.return_value = testProcess.runTime
 
         testProcess.process = 'daily'
@@ -133,7 +133,7 @@ class TestCoverProcess:
         mockManager = mocker.MagicMock()
         mockManager.fetchCover.return_value = True
 
-        mockGenerator = mocker.patch('processes.covers.CoverManager')
+        mockGenerator = mocker.patch('processes.file.covers.CoverManager')
         mockGenerator.return_value = mockManager
 
         testProcess.session = 'testSession'
@@ -153,7 +153,7 @@ class TestCoverProcess:
         mockManager = mocker.MagicMock()
         mockManager.fetchCover.return_value = False
 
-        mockGenerator = mocker.patch('processes.covers.CoverManager')
+        mockGenerator = mocker.patch('processes.file.covers.CoverManager')
         mockGenerator.return_value = mockManager
 
         testProcess.session = 'testSession'

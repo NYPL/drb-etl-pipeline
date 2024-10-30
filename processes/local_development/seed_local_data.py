@@ -4,7 +4,7 @@ import gzip
 import os
 import requests
 
-from .core import CoreProcess
+from ..core import CoreProcess
 from logger import createLog
 from mappings.hathitrust import HathiMapping
 from processes import CatalogProcess, ClassifyProcess, ClusterProcess
@@ -32,7 +32,7 @@ class SeedLocalDataProcess(CoreProcess):
             classify_process.runProcess()
 
             catalog_process = CatalogProcess(*process_args)
-            catalog_process.runProcess(max_attempts=0)
+            catalog_process.runProcess(max_attempts=1)
             
             cluster_process = ClusterProcess(*process_args)
             cluster_process.runProcess()

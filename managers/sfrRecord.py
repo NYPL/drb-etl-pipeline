@@ -61,14 +61,13 @@ class SFRRecordManager:
                 self.assignIdentifierIDs(cleanIdentifiers, item.identifiers)
 
         if len(matchedWorks) > 0:
-            work_id, work_uuid, work_date_created = matchedWorks[0]
-            self.work.id = work_id
+            _, work_uuid, work_date_created = matchedWorks[0]
             self.work.uuid = work_uuid
             self.work.date_created = work_date_created
 
         self.work = self.session.merge(self.work)
 
-        return [w[1] for w in matchedWorks[1:]]
+        return [w[0] for w in matchedWorks]
 
     def dedupeIdentifiers(self, identifiers):
         queryGroups = defaultdict(set)
@@ -259,8 +258,13 @@ class SFRRecordManager:
         editionData['dcdw_uuids'].append(rec.uuid.hex)
 
     def buildItems(self, editionData, rec, itemContributors):
+        number_of_parts = max(
+            max((int(part.split('|')[0]) for part in rec.has_part if part.split('|')[0].isdigit()), default=0),
+            len(rec.has_part)
+        )
+
         startPos = len(editionData['items']) - 1
-        editionData['items'].extend([None] * len(rec.has_part))
+        editionData['items'].extend([None] * number_of_parts)
 
         for item in rec.has_part:
             no, uri, source, linkType, flags = tuple(item.split('|'))

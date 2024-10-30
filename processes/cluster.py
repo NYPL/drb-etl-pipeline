@@ -40,6 +40,8 @@ class ClusterProcess(CoreProcess):
                 self.cluster_records(full=True)
             elif self.process == 'custom':
                 self.cluster_records(start_datetime=self.ingestPeriod)
+            elif self.process == 'single':
+                self.cluster_records(record_uuid=self.singleRecord)
             else: 
                 logger.warning(f'Unknown cluster process type {self.process}')
         except Exception as e:
@@ -48,7 +50,7 @@ class ClusterProcess(CoreProcess):
         finally:
             self.close_connection()
 
-    def cluster_records(self, full=False, start_datetime=None):
+    def cluster_records(self, full=False, start_datetime=None, record_uuid=None):
         get_unclustered_records_query = (
             self.session.query(Record)
                 .filter(Record.frbr_status == 'complete')
@@ -64,6 +66,9 @@ class ClusterProcess(CoreProcess):
                 start_datetime = datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M:%S')
 
             get_unclustered_records_query = get_unclustered_records_query.filter(Record.date_modified > start_datetime)
+
+        if record_uuid:
+            get_unclustered_records_query = get_unclustered_records_query.filter(Record.uuid == record_uuid)
 
         works_to_index = []
         work_ids_to_delete = set()
@@ -133,7 +138,7 @@ class ClusterProcess(CoreProcess):
         self.index_works_in_elastic_search(works_to_index)
 
     def delete_stale_works(self, work_ids: set[str]):
-        self.deleteRecordsByQuery(self.session.query(Work).filter(Work.uuid.in_(list(work_ids))))
+        self.deleteRecordsByQuery(self.session.query(Work).filter(Work.id.in_(list(work_ids))))
 
     def cluster_matched_records(self, record_ids: list[str]):
         records = self.session.query(Record).filter(Record.id.in_(record_ids)).all()
@@ -167,6 +172,11 @@ class ClusterProcess(CoreProcess):
 
             for matched_record in matched_records:
                 matched_record_title, matched_record_id, matched_record_identifiers = matched_record
+                
+                if not matched_record_title:
+                    logger.warning(f'Matched record with id {matched_record_id} has no title')
+                    continue
+
                 tokenized_matched_record_title = self.tokenize_title(matched_record_title)
 
                 if match_distance > 0 and not self.titles_overlap(tokenized_record_title, tokenized_matched_record_title):
