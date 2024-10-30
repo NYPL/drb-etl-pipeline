@@ -152,7 +152,7 @@ class TestClusterProcess:
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
 
-        mockSession.query().filter().filter().filter().filter.return_value = mockQuery
+        mockSession.query().filter().filter().filter().filter().filter.return_value = mockQuery
         mockQueryResponses = [mocker.MagicMock(id=1), mocker.MagicMock(id=2), None]
         mockQuery.first.side_effect = mockQueryResponses
 
@@ -318,7 +318,7 @@ class TestClusterProcess:
         mockFormatArray = mocker.patch.object(ClusterProcess, 'format_identifiers')
         mockFormatArray.return_value = 'testIdentifierArray'
 
-        testInstance.session.query().filter().filter().all.side_effect = [[1], [2, 3]]
+        testInstance.session.query().filter().filter().filter().all.side_effect = [[1], [2, 3]]
 
         testMatches = testInstance.get_matched_records([str(i) for i in range(103)], set([]))
 
