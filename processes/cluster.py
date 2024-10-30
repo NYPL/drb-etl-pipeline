@@ -57,6 +57,7 @@ class ClusterProcess(CoreProcess):
                 .filter(Record.cluster_status == False)
                 .filter(Record.source != 'oclcClassify')
                 .filter(Record.source != 'oclcCatalog')
+                .filter(Record.title.isnot(None))
         )
 
         if not full:
@@ -172,10 +173,6 @@ class ClusterProcess(CoreProcess):
 
             for matched_record in matched_records:
                 matched_record_title, matched_record_id, matched_record_identifiers = matched_record
-                
-                if not matched_record_title:
-                    logger.warning(f'Matched record with id {matched_record_id} has no title')
-                    continue
 
                 tokenized_matched_record_title = self.tokenize_title(matched_record_title)
 
@@ -208,6 +205,7 @@ class ClusterProcess(CoreProcess):
                     self.session.query(Record.title, Record.id, Record.identifiers)
                         .filter(~Record.id.in_(list(already_matched_record_ids)))
                         .filter(Record.identifiers.overlap(id_batch))
+                        .filter(Record.title.isnot(None))
                         .all()
                 )
 
