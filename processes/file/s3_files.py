@@ -8,6 +8,7 @@ from urllib.parse import quote_plus
 from ..core import CoreProcess
 from managers import S3Manager, RabbitMQManager
 from logger import createLog
+from utils import retry_request
 
 
 logger = createLog(__name__)
@@ -92,27 +93,33 @@ class S3Process(CoreProcess):
                 logger.info(f'Stored file in S3 for {file_url}')
             except Exception:
                 logger.exception(f'Failed to store file for file url: {file_url}')
+                rabbit_mq_manager.reject_message(delivery_tag=message_props.delivery_tag)
 
     @staticmethod
+    @retry_request()
     def get_file_contents(file_url: str):
-        file_url_response = requests.get(
-            file_url,
-            stream=True,
-            timeout=15,
-            headers={ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)' }
-        )
+        try:
+            file_url_response = requests.get(
+                file_url,
+                stream=True,
+                timeout=15,
+                headers={ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)' }
+            )
 
-        if file_url_response.status_code == 200:
+            file_url_response.raise_for_status()
+
             file_contents = bytes()
 
             for byte_chunk in file_url_response.iter_content(1024 * 250):
                 file_contents += byte_chunk
 
             return file_contents
-
-        raise Exception(f'Unable to fetch file from url: {file_url}')
+        except Exception as e:
+            logger.exception(f'Failed to get file contents from {file_url}')
+            raise e
 
     @staticmethod
+    @retry_request()
     def generate_webpub(file_root, bucket):
         webpub_conversion_url = os.environ['WEBPUB_CONVERSION_URL']
         s3_file_path = f'https://{bucket}.s3.amazonaws.com/{file_root}/META-INF/container.xml'
@@ -124,5 +131,6 @@ class S3Process(CoreProcess):
             webpub_response.raise_for_status()
 
             return webpub_response.content
-        except Exception:
+        except Exception as e:
             logger.exception(f'Failed to generate webpub for {file_root}')
+            raise e
