@@ -1,0 +1,11 @@
+ERROR    processes.frbr.catalog:catalog.py:80 Unable to map OCLC catalog record for OCLC number: 1
+Traceback (most recent call last):
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/processes/frbr/catalog.py", line 75, in parse_catalog_record
+    catalog_record_mapping.applyMapping()
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1092, in __call__
+    return self._mock_call(*args, **kwargs)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1096, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+  File "/opt/hostedtoolcache/Python/3.9.20/x64/lib/python3.9/unittest/mock.py", line 1151, in _execute_mock_call
+    raise effect
+Exception
