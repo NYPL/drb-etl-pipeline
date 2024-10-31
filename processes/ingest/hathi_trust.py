@@ -1,5 +1,5 @@
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 import gzip
 import os
@@ -25,9 +25,10 @@ class HathiTrustProcess(CoreProcess):
 
     def runProcess(self):
         if self.process == 'daily':
-            self.importRemoteRecords()
+            date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+            self.importFromHathiTrustDataFile(start_date_time=date_time)
         elif self.process == 'complete':
-            self.importRemoteRecords(fullOrPartial=True)
+            self.importFromHathiTrustDataFile(full_dump=True)
         elif self.process == 'custom':
             self.importFromSpecificFile(self.customFile)
 
@@ -36,34 +37,31 @@ class HathiTrustProcess(CoreProcess):
 
         logger.info(f'Ingested {len(self.records)} Hathi Trust records')
 
-    def importRemoteRecords(self, fullOrPartial=False):
-        self.importFromHathiTrustDataFile(fullDump=fullOrPartial)
-
-    def importFromSpecificFile(self, filePath):
+    def importFromSpecificFile(self, file_path):
         try:
-            hathiFile = open(filePath, newline='')
+            hathi_file = open(file_path, new_line='')
         except FileNotFoundError:
             raise IOError('Unable to open local CSV file')
 
-        hathiReader = csv.reader(hathiFile, delimiter='\t')
+        hathiReader = csv.reader(hathi_file, delimiter='\t')
         self.readHathiFile(hathiReader)
 
-    def parseHathiDataRow(self, dataRow):
-        hathiRec = HathiMapping(dataRow, self.statics)
+    def parseHathiDataRow(self, data_row):
+        hathiRec = HathiMapping(data_row, self.statics)
         hathiRec.applyMapping()
         self.addDCDWToUpdateList(hathiRec)
 
 
-    def importFromHathiTrustDataFile(self, fullDump=False):
+    def importFromHathiTrustDataFile(self, full_dump=False, start_date_time=None):
         try:
-            fileList = requests.get(os.environ['HATHI_DATAFILES'], timeout=15)
-            fileList.raise_for_status()
+            file_list = requests.get(os.environ['HATHI_DATAFILES'], timeout=15)
+            file_list.raise_for_status()
         except (ReadTimeout, HTTPError):
             raise IOError('Unable to load data files')
 
-        fileJSON = fileList.json()
+        file_json = file_list.json()
 
-        fileJSON.sort(
+        file_json.sort(
             key=lambda x: datetime.strptime(
                 x['created'],
                 self.returnHathiDateFormat(x['created'])
@@ -71,10 +69,17 @@ class HathiTrustProcess(CoreProcess):
             reverse=True
         )
 
-        for hathiFile in fileJSON:
-            if hathiFile['full'] == fullDump:
-                self.importFromHathiFile(hathiFile['url'])
+        for hathi_file in file_json:
+            if not hathi_file.get('full') and not full_dump:
+                hathi_date_format = self.returnHathiDateFormat(hathi_file.get('modified'))
+                hathi_date_modified = datetime.strptime(hathi_file.get('modified'), hathi_date_format).replace(tzinfo=None)
+                if start_date_time and hathi_date_modified >= start_date_time:
+                    self.importFromHathiFile(hathi_file.get('url'), start_date_time)      
+            elif hathi_file.get('full') and full_dump:
+                self.importFromHathiFile(hathi_file.get('url'))
                 break
+            else:
+                continue
 
     @staticmethod
     def returnHathiDateFormat(strDate):
@@ -85,33 +90,29 @@ class HathiTrustProcess(CoreProcess):
         else:
             return '%Y-%m-%d %H:%M:%S %z'
 
-    def importFromHathiFile(self, hathiURL):
+    def importFromHathiFile(self, hathi_url, start_date_time=None):
         try:
-            hathiResp = requests.get(hathiURL, stream=True, timeout=30)
-            hathiResp.raise_for_status()
+            hathi_resp = requests.get(hathi_url, stream=True, timeout=30)
+            hathi_resp.raise_for_status()
         except Exception:
-            logger.exception(f'Unable to read Hathi Trust file url {hathiURL}')
+            logger.exception(f'Unable to read Hathi Trust file url {hathi_url}')
             return None
 
-        with gzip.open(BytesIO(hathiResp.content), mode='rt') as hathiGzip:
-            hathiTSV = csv.reader(hathiGzip, delimiter='\t')
-            self.readHathiFile(hathiTSV)
+        with gzip.open(BytesIO(hathi_resp.content), mode='rt') as hathiGzip:
+            hathi_tsv = csv.reader(hathiGzip, delimiter='\t')
+            self.readHathiFile(hathi_tsv, start_date_time)
 
-    def readHathiFile(self, hathiTSV):
-        processed_record_count = 0
-
-        while True:
-            if self.ingest_limit and processed_record_count >= self.ingest_limit:
+    def readHathiFile(self, hathi_tsv, start_date_time=None):
+        for number_of_books_ingested, book in enumerate(hathi_tsv):
+            if self.ingest_limit and number_of_books_ingested > self.ingest_limit:
                 break
+            
+            book_right = (len(book) >= 3 and book[2]) or None
+            book_date_updated = (len(book) > 14 and book[14]) or None
 
-            try:
-                row = next(hathiTSV)
-            except csv.Error:
-                logger.exception('Unable to read Hathi Trust file row')
-                continue
-            except StopIteration:
-                break
+            if book_date_updated:
+                hathi_date_modified = datetime.strptime(book_date_updated, '%Y-%m-%d %H:%M:%S').replace(tzinfo=None)
 
-            if row is not None and row[2] not in self.HATHI_RIGHTS_SKIPS:
-                self.parseHathiDataRow(row)
-                processed_record_count += 1
+            if book_right and book_right not in self.HATHI_RIGHTS_SKIPS:
+                if not start_date_time or hathi_date_modified >= start_date_time:
+                    self.parseHathiDataRow(book)

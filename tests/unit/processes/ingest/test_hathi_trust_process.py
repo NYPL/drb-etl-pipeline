@@ -3,6 +3,7 @@ import gzip
 import pytest
 import requests
 from requests.exceptions import HTTPError
+from datetime import datetime, timedelta, timezone
 
 from tests.helper import TestHelpers
 from processes import HathiTrustProcess
@@ -30,24 +31,35 @@ class TestHathiTrustProcess:
     @pytest.fixture
     def hathiFilesData(self):
         return [
-            {'created': '2020-01-01T00:00:00-0000', 'url': 'hathiUrl1', 'full': False},
-            {'created': '2019-01-01T00:00:00-0000', 'url': 'hathiUrl2', 'full': True},
-            {'created': '2018-01-01T00:00:00-0000', 'url': 'hathiUrl3', 'full': False}
+            {'created': '2020-01-01T00:00:00-0000', 'url': 'hathiUrl1', 'full': False, 'modified': '2024-10-28 11:00:00 Z'},
+            {'created': '2019-01-01T00:00:00-0000', 'url': 'hathiUrl2', 'full': True, 'modified': '2024-10-28 11:00:00 Z'},
+            {'created': '2018-01-01T00:00:00-0000', 'url': 'hathiUrl3', 'full': False, 'modified': '2024-10-28 12:00:00 Z'}
         ]
 
     @pytest.fixture
     def hathiTSV(self):
         def tsvIter():
-            for i in range(1000):
+            for i in range(200):
                 rightsStmt = 'ic' if i % 3 == 0 else 'pd'
                 yield [i, 'hathi', rightsStmt]
-            
-            raise csv.Error
         
         return tsvIter()
+    
+    @pytest.fixture
+    def hathiTSV2(self):
+        def tsvIter():
+            for i in range(200):
+                rightsStmt = 'ic' if i % 3 == 0 else 'pd'
+                yield [i, 'hathi', rightsStmt, '', '', '', '', '', '', '', '', '', '', '', '2024-10-28 12:00:00']
+        
+        return tsvIter()
+    
+    @pytest.fixture
+    def start_date_time(self):
+        return datetime.strptime('2024-10-27 19:37:21.385454', '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=None)
 
     def test_runProcess_daily(self, testInstance, mocker):
-        mockImport = mocker.patch.object(HathiTrustProcess, 'importRemoteRecords')
+        mockImport = mocker.patch.object(HathiTrustProcess, 'importFromHathiTrustDataFile')
         mockSave = mocker.patch.object(HathiTrustProcess, 'saveRecords')
         mockCommit = mocker.patch.object(HathiTrustProcess, 'commitChanges')
 
@@ -59,14 +71,14 @@ class TestHathiTrustProcess:
         mockCommit.assert_called_once
 
     def test_runProcess_complete(self, testInstance, mocker):
-        mockImport = mocker.patch.object(HathiTrustProcess, 'importRemoteRecords')
+        mockImport = mocker.patch.object(HathiTrustProcess, 'importFromHathiTrustDataFile')
         mockSave = mocker.patch.object(HathiTrustProcess, 'saveRecords')
         mockCommit = mocker.patch.object(HathiTrustProcess, 'commitChanges')
 
         testInstance.process = 'complete'
         testInstance.runProcess()
 
-        mockImport.assert_called_once_with(fullOrPartial=True)
+        mockImport.assert_called_once
         mockSave.assert_called_once
         mockCommit.assert_called_once
 
@@ -83,20 +95,6 @@ class TestHathiTrustProcess:
         mockSave.assert_called_once
         mockCommit.assert_called_once
 
-    def test_importRemoteRecords_partial(self, testInstance, mocker):
-        mockImport = mocker.patch.object(HathiTrustProcess, 'importFromHathiTrustDataFile')
-        
-        testInstance.importRemoteRecords()
-        
-        mockImport.assert_called_once_with(fullDump=False)
-
-    def test_importRemoteRecords_full(self, testInstance, mocker):
-        mockImport = mocker.patch.object(HathiTrustProcess, 'importFromHathiTrustDataFile')
-        
-        testInstance.importRemoteRecords(fullOrPartial=True)
-        
-        mockImport.assert_called_once_with(fullDump=True)
-
     def test_importFromSpecificFile_success(self, testInstance, mocker):
         mockOpen = mocker.patch('processes.ingest.hathi_trust.open')
         mockOpen.return_value = 'csvFile'
@@ -108,7 +106,7 @@ class TestHathiTrustProcess:
 
         testInstance.importFromSpecificFile('testFile')
 
-        mockOpen.assert_called_once_with('testFile', newline='')
+        mockOpen.assert_called_once_with('testFile', new_line='')
         mockCSVReader.assert_called_once_with('csvFile', delimiter='\t')
         mockReader.assert_called_once_with('testCSV')
 
@@ -129,7 +127,7 @@ class TestHathiTrustProcess:
         mockHathiMapping.applyMapping.assert_called_once
         mockAddDCDW.assert_called_once
 
-    def test_importFromHathiTrustDataFile_standard(self, testInstance, hathiFilesData, mocker):
+    def test_importFromHathiTrustDataFile_standard(self, testInstance, hathiFilesData, start_date_time, mocker):
         mockRequest = mocker.patch.object(requests, 'get')
         mockListResponse = mocker.MagicMock()
         mockRequest.return_value = mockListResponse
@@ -137,11 +135,11 @@ class TestHathiTrustProcess:
 
         mockImport = mocker.patch.object(HathiTrustProcess, 'importFromHathiFile')
 
-        testInstance.importFromHathiTrustDataFile()
+        testInstance.importFromHathiTrustDataFile(start_date_time=start_date_time)
 
         mockRequest.assert_called_once_with('test_hathi_url', timeout=15)
-        mockImport.assert_called_once_with('hathiUrl1')
-
+        mockImport.assert_called_with('hathiUrl3', start_date_time)
+        
     def test_importFromHathiTrustDataFile_error(self, testInstance, mocker):
         mockRequest = mocker.patch.object(requests, 'get')
         mockResponse = mocker.MagicMock()
@@ -152,7 +150,7 @@ class TestHathiTrustProcess:
             testInstance.importFromHathiTrustDataFile()
             mockRequest.assert_called_once
 
-    def test_importFromHathiFile_success(self, testInstance, mocker):
+    def test_importFromHathiFile_success(self, testInstance, start_date_time, mocker):
         mockGet = mocker.patch.object(requests, 'get')
         mockResp = mocker.MagicMock(content=b'testContent')
         mockGet.return_value = mockResp
@@ -165,12 +163,12 @@ class TestHathiTrustProcess:
 
         mockReadFile = mocker.patch.object(HathiTrustProcess, 'readHathiFile')
 
-        testInstance.importFromHathiFile('testURL')
+        testInstance.importFromHathiFile('testURL', start_date_time)
 
         mockGet.assert_called_once_with('testURL', stream=True, timeout=30)
         mockOpen.assert_called_once() # Cannot compare BytesIO objects
         mockCSVReader.assert_called_once_with('testGzip', delimiter='\t')
-        mockReadFile.assert_called_once_with('testCSV')
+        mockReadFile.assert_called_once_with('testCSV', start_date_time)
 
     def test_importFromHathiFile_error(self, testInstance, mocker):
         mockRequest = mocker.patch.object(requests, 'get')
@@ -180,9 +178,9 @@ class TestHathiTrustProcess:
 
         assert testInstance.importFromHathiFile('badURL') == None
 
-    def test_readHathiFile(self, testInstance, hathiTSV, mocker):
+    def test_readHathiFile(self, testInstance, hathiTSV2, start_date_time, mocker):
         mockParseRow = mocker.patch.object(HathiTrustProcess, 'parseHathiDataRow')
 
-        testInstance.readHathiFile(hathiTSV)
+        testInstance.readHathiFile(hathiTSV2, start_date_time)
 
-        assert mockParseRow.call_count == 666
+        assert mockParseRow.call_count == 133
