@@ -1,0 +1,13 @@
+ERROR    processes.frbr.catalog:catalog.py:69 Unable to parse OCLC catalog MARC XML for OCLC number: 1
+Traceback (most recent call last):
+  File "/home/runner/work/drb-etl-pipeline/drb-etl-pipeline/processes/frbr/catalog.py", line 67, in parse_catalog_record
+    parsed_marc_xml = etree.fromstring(catalog_record.encode('utf-8'))
+  File "src/lxml/etree.pyx", line 3257, in lxml.etree.fromstring
+  File "src/lxml/parser.pxi", line 1916, in lxml.etree._parseMemoryDocument
+  File "src/lxml/parser.pxi", line 1803, in lxml.etree._parseDoc
+  File "src/lxml/parser.pxi", line 1144, in lxml.etree._BaseParser._parseDoc
+  File "src/lxml/parser.pxi", line 618, in lxml.etree._ParserContext._handleParseResultDoc
+  File "src/lxml/parser.pxi", line 728, in lxml.etree._handleParseResult
+  File "src/lxml/parser.pxi", line 657, in lxml.etree._raiseParseError
+  File "<string>", line 1
+lxml.etree.XMLSyntaxError: Start tag expected, '<' not found, line 1, column 1
