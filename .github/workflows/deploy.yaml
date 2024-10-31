@@ -12,14 +12,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set stage based on trigger
-        id: set-stage
-        run: |
-          if [[ "${{ github.event_name }}" == "release" ]]; then
-            echo "STAGE=prod" >> $GITHUB_ENV
-          else
-            echo "STAGE=qa" >> $GITHUB_ENV
-          
       - name: Checkout repository
         uses: actions/checkout@v2
 
