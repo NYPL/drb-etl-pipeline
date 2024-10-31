@@ -2,7 +2,19 @@ name: ETL Pipeline Tests (Pull Request)
 
 on:
   pull_request:
-    actions: [ opened ]
+    types: [opened]
+    paths:
+      - 'api/*'
+      - 'managers/*'
+      - 'mappings/*'
+      - 'model/*'
+      - 'processes/*'
+      - 'tests/*'
+      - 'utils/*'
+      - 'dev-requirements.txt'
+      - 'requirements.txt'
+      - 'main.py'
+      - 'Makefile' 
 
 jobs:
   test:
