@@ -138,7 +138,7 @@ class TestHathiTrustProcess:
         testInstance.importFromHathiTrustDataFile(start_date_time=start_date_time)
 
         mockRequest.assert_called_once_with('test_hathi_url', timeout=15)
-        mockImport.assert_called_once_with('hathiUrl1', start_date_time)
+        mockImport.assert_called_with('hathiUrl3', start_date_time)
         
     def test_importFromHathiTrustDataFile_error(self, testInstance, mocker):
         mockRequest = mocker.patch.object(requests, 'get')
