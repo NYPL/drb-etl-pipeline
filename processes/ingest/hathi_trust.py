@@ -73,9 +73,8 @@ class HathiTrustProcess(CoreProcess):
             if not hathi_file.get('full') and not full_dump:
                 hathi_date_format = self.returnHathiDateFormat(hathi_file.get('modified'))
                 hathi_date_modified = datetime.strptime(hathi_file.get('modified'), hathi_date_format).replace(tzinfo=None)
-                if start_date_time and hathi_date_modified > start_date_time:
-                    self.importFromHathiFile(hathi_file.get('url'), start_date_time)
-                    break       
+                if start_date_time and hathi_date_modified >= start_date_time:
+                    self.importFromHathiFile(hathi_file.get('url'), start_date_time)      
             elif hathi_file.get('full') and full_dump:
                 self.importFromHathiFile(hathi_file.get('url'))
                 break
@@ -115,5 +114,5 @@ class HathiTrustProcess(CoreProcess):
                 hathi_date_modified = datetime.strptime(book_date_updated, '%Y-%m-%d %H:%M:%S').replace(tzinfo=None)
 
             if book_right and book_right not in self.HATHI_RIGHTS_SKIPS:
-                if not start_date_time or hathi_date_modified > start_date_time:
+                if not start_date_time or hathi_date_modified >= start_date_time:
                     self.parseHathiDataRow(book)
