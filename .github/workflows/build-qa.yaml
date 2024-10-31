@@ -1,21 +1,18 @@
-name: Deploy to Stage
-
+name: Publish qa
 on:
   push:
-    branches: [main]
-  release:
-    types: [published]
+    branches: [ main ]
 
 jobs:
-  deploy:
-    name: Deploy DRB ETL Pipeline
+  publish_qa:
+    name: Publish image to ECR
+    if: github.event.pull_request.merged
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: checkout
         uses: actions/checkout@v2
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials from QA account
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -31,7 +28,6 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: sfr_ingest_pipeline
           IMAGE_TAG: ${{ github.sha }}
-          STAGE: ${{ github.event_name == 'release' && 'prod' || 'qa' }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
@@ -40,4 +36,4 @@ jobs:
 
       - name: Force ECS Update
         run: |
-          aws ecs update-service --cluster sfr-pipeline-${{ env.STAGE }} --service sfr-pipeline-${{ env.STAGE }} --force-new-deployment
+          aws ecs update-service --cluster sfr-pipeline-qa --service sfr-pipeline-qa --force-new-deployment
