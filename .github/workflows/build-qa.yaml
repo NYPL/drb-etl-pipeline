@@ -1,10 +1,7 @@
-# On merge to development,
-# build a container and deploy to ECR
 name: Publish qa
 on:
-  pull_request:
+  push:
     branches: [main]
-    types: [closed]
 
 jobs:
   publish_qa:
