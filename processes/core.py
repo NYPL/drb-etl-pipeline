@@ -1,6 +1,7 @@
 from managers import DBManager, RabbitMQManager, RedisManager, ElasticsearchManager, S3Manager
 from model import Record
 from static.manager import StaticManager
+import os
 
 from logger import createLog
 
@@ -19,6 +20,11 @@ class CoreProcess(DBManager, RabbitMQManager, RedisManager, StaticManager,
 
         self.batchSize = batchSize
         self.records = set()
+
+        self.record_queue = os.environ['RECORD_QUEUE']
+        self.record_route = os.environ['RECORD_ROUTING_KEY']
+        self.createRabbitConnection()
+        self.createOrConnectQueue(self.record_queue, self.record_route)
 
     def addDCDWToUpdateList(self, rec):
         existing = self.session.query(Record)\
@@ -77,3 +83,29 @@ class CoreProcess(DBManager, RabbitMQManager, RedisManager, StaticManager,
             }
         }
         self.sendMessageToQueue(self.fileQueue, self.fileRoute, s3Message)
+
+    def ingest_records(self, records: list[Record]):
+        existing_records_map = { 
+            existing_record.source_id: existing_record
+            for existing_record in
+            (
+                self.session.query(Record)
+                    .filter(Record.source_id.in_([record.source_id for record in records]))
+                    .all()
+            )
+        }
+
+        for i, record in enumerate(records):
+            existing_record = existing_records_map.get(record.source_id)
+
+            if existing_record:
+                for attribute, value in record:
+                    if attribute == 'uuid' or attribute == 'id': continue
+                    setattr(existing_record, attribute, value)
+                
+                records[i] = existing_record
+
+        updated_records = self.bulkSaveObjects(records)
+
+        for updated_record in updated_records:
+            self.sendMessageToQueue(self.record_queue, self.record_route, { 'recordId': updated_record.id })

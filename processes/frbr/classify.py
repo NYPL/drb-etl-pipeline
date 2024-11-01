@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import json
 import os
 import newrelic.agent
 import re
@@ -8,6 +9,7 @@ from managers import OCLCCatalogManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
 from logger import createLog
+from processes import CatalogProcess
 
 
 logger = createLog(__name__)
@@ -34,6 +36,7 @@ class ClassifyProcess(CoreProcess):
         self.classified_count = 0
 
         self.oclc_catalog_manager = OCLCCatalogManager()
+        self.catalog_process = CatalogProcess(*args)
 
     def runProcess(self):
         try:
@@ -164,7 +167,7 @@ class ClassifyProcess(CoreProcess):
                 logger.debug(f'Skipping catalog lookup process for OCLC number {oclc_number}')
                 continue
 
-            self.sendMessageToQueue(self.catalog_queue, self.catalog_route, { 'oclcNo': oclc_number, 'owiNo': owi_number })
+            self.catalog_process.process_catalog_message(json.dumps({ 'oclcNo': oclc_number, 'owiNo': owi_number }))
             catalogued_record_count += 1
 
         if catalogued_record_count > 0:

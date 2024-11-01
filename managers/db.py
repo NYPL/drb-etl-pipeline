@@ -80,6 +80,8 @@ class DBManager:
             self.session.bulk_save_objects(objects, update_changed_only=onlyChanged)
             self.session.commit()
             self.session.flush()
+
+            return objects
         except OperationalError as oprErr:
             logger.error('Deadlock in database layer, retry batch')
             logger.debug(oprErr)

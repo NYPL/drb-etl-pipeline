@@ -7,6 +7,7 @@ from logger import createLog
 from managers.db import DBManager
 from managers.nyplApi import NyplApiManager
 from mappings.nypl import NYPLMapping
+from model.postgres.record import Record
 from sqlalchemy import text
 
 logger = createLog(__name__)
@@ -41,6 +42,12 @@ class NYPLProcess(CoreProcess):
         try:
             if self.process == 'daily':
                 self.import_bib_records()
+            if self.process == 'daily-queue':
+                records = self.import_bib_records()
+                self.ingest_records(records)
+
+                logger.info(f'Ingested {len(self.records)} NYPL records')
+                return
             elif self.process == 'complete':
                 self.import_bib_records(full_or_partial=True)
             elif self.process == 'custom':
@@ -53,10 +60,12 @@ class NYPLProcess(CoreProcess):
             self.commitChanges()
 
             logger.info(f'Ingested {len(self.records)} NYPL records')
-        except Exception:
+        except Exception as e:
             logger.exception(f'Failed to ingest NYPL records')
+            raise e
 
-    def import_bib_records(self, full_or_partial=False, start_timestamp=None):
+    def import_bib_records(self, full_or_partial=False, start_timestamp=None) -> list[Record]:
+        records = []
         nypl_bib_query = 'SELECT id, nypl_source, publish_year, var_fields FROM bib'
 
         if full_or_partial is False:
@@ -82,19 +91,29 @@ class NYPLProcess(CoreProcess):
                 if bib['var_fields'] is None:
                     continue
 
-                self.parse_nypl_bib(bib)
+                record = self.parse_nypl_bib(bib)
+
+                if record:
+                    records.append(record)
+
+        return records
 
     def parse_nypl_bib(self, bib):
         try:
             if self.is_pd_research_bib(dict(bib)):
                 bib_items = self.fetch_bib_items(dict(bib))
+
+                logger.info(bib_items)
                 
                 nypl_record = NYPLMapping(bib, bib_items, self.statics, self.location_codes)
                 nypl_record.applyMapping()
                 
                 self.addDCDWToUpdateList(nypl_record)
+
+                return nypl_record.record
         except Exception:
             logger.exception('Failed to parse NYPL bib {}'.format(bib.get('id')))
+            return None
 
     def fetch_bib_items(self, bib):
         bib_endpoint = 'bibs/{}/{}/items'.format(bib['nypl_source'], bib['id'])
