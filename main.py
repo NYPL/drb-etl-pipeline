@@ -14,7 +14,7 @@ if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
     newrelic.agent.initialize(
         config_file='newrelic.ini',
         environment=os.environ.get('ENVIRONMENT', 'local')
-        )
+    )
 
 def main(args):
     logger = create_logger(__name__)
@@ -28,11 +28,6 @@ def main(args):
     limit = args.limit
     offset = args.offset
     options = args.options
-
-    logger.info('Starting process {} in {}'.format(process, environment))
-    logger.debug('Process Args Type: {}, Limit: {}, Offset: {}, Date: {}, File: {}, Record: {}'.format(
-        procType, limit, offset, startDate, customFile, singleRecord
-    ))
 
     availableProcesses = registerProcesses()
 
@@ -50,6 +45,7 @@ def main(args):
     else:
         app = newrelic.agent.register_application(timeout=10.0)
         with newrelic.agent.BackgroundTask(app, name=process):
+            logger.info(f'Starting process {process} in {environment}')
             processInstance.runProcess()
 
 
