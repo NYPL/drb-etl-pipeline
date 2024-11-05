@@ -4,9 +4,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
 
 from model import Base
-from logger import createLog
+from logger import create_logger
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 
 class DBManager:

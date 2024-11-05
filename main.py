@@ -5,7 +5,7 @@ import argparse
 import inspect
 
 from load_env import load_env_file
-from logger import createLog
+from logger import create_logger
 
 #NEW_RELIC_LICENSE_KEY = Put license key here
 #ENVIRONMENT = Put environment here
@@ -17,7 +17,7 @@ if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
         )
 
 def main(args):
-    logger = createLog(__name__)
+    logger = create_logger(__name__)
 
     environment = args.environment
     process = args.process

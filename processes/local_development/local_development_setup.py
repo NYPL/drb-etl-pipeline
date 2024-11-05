@@ -7,9 +7,9 @@ from time import sleep
 
 from managers.db import DBManager
 from ..core import CoreProcess
-from logger import createLog
+from logger import create_logger
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 
 class LocalDevelopmentSetupProcess(CoreProcess):

@@ -1,8 +1,8 @@
 from flask import Blueprint, url_for, redirect
 
-from logger import createLog
+from logger import create_logger
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 info = Blueprint('info', __name__, url_prefix='/')
 

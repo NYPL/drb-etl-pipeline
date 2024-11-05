@@ -2,10 +2,10 @@ import os
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
-from logger import createLog
+from logger import create_logger
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 
 class GoogleBooksFetcher(AbstractFetcher):

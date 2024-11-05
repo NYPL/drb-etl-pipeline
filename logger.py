@@ -13,18 +13,20 @@ levels = {
 }
 
 
-def createLog(module):
+def create_logger(module: str) -> logging.Logger:
     logger = logging.getLogger(module)
-    consoleLog = logging.StreamHandler(stream=sys.stdout)
+    console_log = logging.StreamHandler(stream=sys.stdout)
 
-    logLevel = os.environ.get('LOG_LEVEL', 'warning').lower()
+    log_level = os.environ.get('LOG_LEVEL', 'warning').lower()
+    stage = os.environ.get('STAGE', 'qa')
 
-    logger.setLevel(levels[logLevel])
-    consoleLog.setLevel(levels[logLevel])
+    logger.setLevel(levels.get(log_level, logging.WARNING))
+    console_log.setLevel(levels.get(log_level, logging.WARNING))
 
     formatter = NewRelicContextFormatter('%(asctime)s | %(name)s | %(levelname)s: %(message)s')  # noqa: E501
-    consoleLog.setFormatter(formatter)
+    console_log.setFormatter(formatter)
 
-    logger.addHandler(consoleLog)
+    if stage == 'local':
+        logger.addHandler(console_log)
 
     return logger

@@ -5,11 +5,11 @@ import os
 import requests
 
 from ..core import CoreProcess
-from logger import createLog
+from logger import create_logger
 from mappings.hathitrust import HathiMapping
 from processes import CatalogProcess, ClassifyProcess, ClusterProcess
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 
 class SeedLocalDataProcess(CoreProcess):

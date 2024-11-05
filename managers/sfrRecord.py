@@ -7,9 +7,9 @@ import re
 from uuid import uuid4
 
 from model import Work, Edition, Item, Identifier, Link, Rights
-from logger import createLog
+from logger import create_logger
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 
 class SFRRecordManager:

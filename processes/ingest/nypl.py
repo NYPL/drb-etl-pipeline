@@ -3,13 +3,13 @@ import os
 import requests
 
 from ..core import CoreProcess
-from logger import createLog
+from logger import create_logger
 from managers.db import DBManager
 from managers.nyplApi import NyplApiManager
 from mappings.nypl import NYPLMapping
 from sqlalchemy import text
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 
 class NYPLProcess(CoreProcess):

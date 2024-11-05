@@ -1,9 +1,9 @@
 from sqlalchemy import text
 
-from logger import createLog
+from logger import create_logger
 from managers import DBManager
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 
 class DatabaseMaintenanceProcess():

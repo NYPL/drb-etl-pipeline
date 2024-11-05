@@ -2,9 +2,9 @@ from flask import Blueprint, request, current_app
 from ..db import DBClient
 from ..utils import APIUtils
 from ..validation_utils import is_valid_uuid
-from logger import createLog
+from logger import create_logger
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 work = Blueprint('work', __name__, url_prefix='/work')
 

@@ -2,10 +2,10 @@ from managers import DBManager, RabbitMQManager, RedisManager, ElasticsearchMana
 from model import Record
 from static.manager import StaticManager
 
-from logger import createLog
+from logger import create_logger
 
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 
 class CoreProcess(DBManager, RabbitMQManager, RedisManager, StaticManager,

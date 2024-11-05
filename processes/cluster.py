@@ -6,10 +6,10 @@ from typing import Optional
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
 from model import Record, Work
-from logger import createLog
+from logger import create_logger
 
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 
 class ClusterProcess(CoreProcess):

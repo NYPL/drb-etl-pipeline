@@ -8,9 +8,9 @@ from requests.exceptions import ReadTimeout, HTTPError
 
 from ..core import CoreProcess
 from mappings.hathitrust import HathiMapping
-from logger import createLog
+from logger import create_logger
 
-logger = createLog(__name__)
+logger = create_logger(__name__)
 
 class HathiTrustProcess(CoreProcess):
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
