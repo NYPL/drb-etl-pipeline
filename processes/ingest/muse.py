@@ -113,7 +113,7 @@ class MUSEProcess(CoreProcess):
                 logger.debug(e)
 
     def downloadMARCRecords(self):
-        marcURL = os.environ['MUSE_MARC_URL']
+        marcURL = 'https://about.muse.jhu.edu/lib/metadata?format=marc&content=book&include=oa&filename=open_access_books&no_auth=1'
 
         try:
             museResponse = requests.get(marcURL, stream=True, timeout=30)
@@ -130,7 +130,7 @@ class MUSEProcess(CoreProcess):
         return BytesIO(content)
 
     def downloadRecordUpdates(self):
-        marcCSVURL = os.environ['MUSE_CSV_URL']
+        marcCSVURL = 'https://about.muse.jhu.edu/static/org/local/holdings/muse_book_metadata.csv'
 
         try:
             csvResponse = requests.get(marcCSVURL, stream=True, timeout=30)

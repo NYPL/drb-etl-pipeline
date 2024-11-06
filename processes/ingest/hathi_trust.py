@@ -54,7 +54,7 @@ class HathiTrustProcess(CoreProcess):
 
     def importFromHathiTrustDataFile(self, full_dump=False, start_date_time=None):
         try:
-            file_list = requests.get(os.environ['HATHI_DATAFILES'], timeout=15)
+            file_list = requests.get(https://www.hathitrust.org/files/hathifiles/hathi_file_list.json, timeout=15)
             file_list.raise_for_status()
         except (ReadTimeout, HTTPError):
             raise IOError('Unable to load data files')

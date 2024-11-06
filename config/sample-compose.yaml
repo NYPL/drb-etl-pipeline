@@ -35,36 +35,14 @@ OCLC_ROUTING_KEY: oclc_catalog
 FILE_QUEUE: drb_files
 FILE_ROUTING_KEY: drb_files
 
-# HATHITRUST CONFIGURATION
-HATHI_DATAFILES: https://www.hathitrust.org/files/hathifiles/hathi_file_list.json
-HATHI_API_ROOT: https://babel.hathitrust.org/cgi/htd
-#HATHI_API_KEY: 
-#HATHI_API_SECRET: 
-
 # AWS CONFIGURATION
 AWS_ACCESS: test
 AWS_SECRET: test
-AWS_REGION: us-east-1
 FILE_BUCKET: drb-files-local
 S3_ENDPOINT_URL: http://drb-local-s3:4566
 
 # OCLC CONFIGURATION
 OCLC_QUERY_LIMIT: '390000'
-#OCLC_API_KEY: 
-
-# NYPL AUTH CONFIGURATION
-NYPL_API_CLIENT_PUBLIC_KEY: |
-  -----BEGIN PUBLIC KEY-----
-  MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA44ilHg/PxcJYsISHMRyo
-  xsmez178qZpkJVXg7rOMVTLZuf05an7Pl+lX4nw/rqcvGQDXyrimciLgLkWu00xh
-  m6h6klTeJSNq2DgseF8OMw2olfuBKq1NBQ/vC8U0l5NJu34oSN4/iipgpovqAHHB
-  GV4zDt0EWSXE5xpnBWi+w1NMAX/muB2QRfRxkkhueDkAmwKvz5MXJPay7FB/WRjf
-  +7r2EN78x5iQKyCw0tpEZ5hpBX831SEnVULCnpFOcJWMPLdg0Ff6tBmgDxKQBVFI
-  Q9RrzMLTqxKnVVn2+hVpk4F/8tMsGCdd4s/AJqEQBy5lsq7ji1B63XYqi5fc1SnJ
-  EQIDAQAB
-  -----END PUBLIC KEY-----
-
-  # DRB API Credentials
   
 DRB_API_HOST: drb_local_api
 DRB_API_PORT: '5050'
@@ -72,24 +50,9 @@ DRB_API_PORT: '5050'
 # Bardo CCE API URL
 BARDO_CCE_API: http://sfr-bardo-copyright-development.us-east-1.elasticbeanstalk.com/search
 
-# Webpub PDF Profile
-WEBPUB_PDF_PROFILE: http://librarysimplified.org/terms/profiles/pdf
-
 # Allowed sources of CORS requests to proxy endpoint
 API_PROXY_CORS_ALLOWED: '*'
 
 READER_VERSION: v2
 
 DEFAULT_COVER_URL: https://drb-files-qa.s3.amazonaws.com/covers/default/defaultCover.png
-
-# ANALYTICS CONFIGURATION
-PUBLISHERS: "UofMichigan Press"    # publishers need to be a comma separated string
-REFERRER_URL: "https://drb-qa.nypl.org/"
-
-# Downloads Reports
-DOWNLOAD_BUCKET: "ump-pdf-repository-logs"
-DOWNLOAD_LOG_PATH: "logs/946183545209/us-east-1/ump-pdf-repository/"
-
-# Views Reports
-VIEW_BUCKET: "drb-files-qa-logs"
-VIEW_LOG_PATH: "logs/946183545209/us-east-1/drb-files-qa"

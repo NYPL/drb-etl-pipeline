@@ -30,7 +30,7 @@ class NYPLBibService(SourceService):
         self.nypl_api_manager.generateAccessToken()
 
         self.location_codes = self.load_location_codes()
-        self.cce_api = os.environ['BARDO_CCE_API']
+        self.cce_api = 'http://sfr-bardo-copyright-development.us-east-1.elasticbeanstalk.com/search'
 
         self.static_manager = StaticManager()
 

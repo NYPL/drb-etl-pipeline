@@ -16,7 +16,7 @@ class HathiFetcher(AbstractFetcher):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.apiRoot = os.environ['HATHI_API_ROOT']
+        self.apiRoot = 'https://babel.hathitrust.org/cgi/htd'
         self.apiKey = os.environ['HATHI_API_KEY']
         self.apiSecret = os.environ['HATHI_API_SECRET']
 

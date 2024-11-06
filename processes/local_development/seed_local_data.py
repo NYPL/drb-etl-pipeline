@@ -49,7 +49,7 @@ class SeedLocalDataProcess(CoreProcess):
         logger.info(f'Ingested {len(self.records)} Hathi Trust sample records')
 
     def import_from_hathi_trust_data_file(self):
-        hathi_files_response = requests.get(os.environ['HATHI_DATAFILES'])
+        hathi_files_response = requests.get(https://www.hathitrust.org/files/hathifiles/hathi_file_list.json)
 
         if hathi_files_response.status_code != 200:
             raise Exception('Unable to load Hathi Trust data files')

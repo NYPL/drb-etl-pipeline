@@ -88,7 +88,7 @@ class ChicagoISACProcess(CoreProcess):
 
         manifest.addMetadata(
             record,
-            conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+            conformsTo=http://librarysimplified.org/terms/profiles/pdf
         )
         
         manifest.addChapter(source_url, record.title)

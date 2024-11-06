@@ -38,7 +38,7 @@ class AbstractParser(ABC):
         manifest = WebpubManifest(sourceURI, 'application/pdf')
 
         manifest.addMetadata(
-            self.record, conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+            self.record, conformsTo=http://librarysimplified.org/terms/profiles/pdf
         )
 
         manifest.addChapter(sourceURI, self.record.title)
