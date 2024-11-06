@@ -5,6 +5,7 @@ from typing import Optional
 
 from logger import createLog
 from managers.db import DBManager
+from static.manager import StaticManager
 from managers.nyplApi import NyplApiManager
 from mappings.nypl import NYPLMapping
 from .source_service import SourceService
@@ -31,6 +32,8 @@ class NYPLBibService(SourceService):
         self.location_codes = self.load_location_codes()
         self.cce_api = os.environ['BARDO_CCE_API']
 
+        self.static_manager = StaticManager()
+
     def get_records(
         self,
         full_import: bool=False,
@@ -47,8 +50,8 @@ class NYPLBibService(SourceService):
             if start_timestamp:
                 nypl_bib_query += "'{}'".format(start_timestamp)
             else:
-                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-                nypl_bib_query += "'{}'".format(startDateTime.strftime('%Y-%m-%dT%H:%M:%S%z'))
+                start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+                nypl_bib_query += "'{}'".format(start_date_time.strftime('%Y-%m-%dT%H:%M:%S%z'))
 
         if offset:
             nypl_bib_query += ' OFFSET {}'.format(offset)
@@ -66,21 +69,26 @@ class NYPLBibService(SourceService):
                     continue
 
                 nypl_bib_record = self.parse_nypl_bib(bib)
-                records.append(nypl_bib_record)
+
+                if nypl_bib_record:
+                    records.append(nypl_bib_record)
 
         return records
 
-    def parse_nypl_bib(self, bib) -> NYPLMapping:
+    def parse_nypl_bib(self, bib) -> Optional[NYPLMapping]:
         try:
             if self.is_pd_research_bib(dict(bib)):
                 bib_items = self.fetch_bib_items(dict(bib))
                 
-                nypl_record = NYPLMapping(bib, bib_items, self.statics, self.location_codes)
+                nypl_record = NYPLMapping(bib, bib_items, self.static_manager.statics, self.location_codes)
                 nypl_record.applyMapping()
                 
                 return nypl_record
+            
+            return None
         except Exception:
             logger.exception('Failed to parse NYPL bib {}'.format(bib.get('id')))
+            return None
 
     def fetch_bib_items(self, bib):
         bib_endpoint = 'bibs/{}/{}/items'.format(bib['nypl_source'], bib['id'])
