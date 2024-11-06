@@ -4,14 +4,14 @@ on:
   pull_request:
     types: [opened]
     paths:
-      - 'api/*'
-      - 'managers/*'
-      - 'mappings/*'
-      - 'model/*'
-      - 'processes/*'
-      - 'services/*'
-      - 'tests/*'
-      - 'utils/*'
+      - 'api/**'
+      - 'managers/**'
+      - 'mappings/**'
+      - 'model/**'
+      - 'processes/**'
+      - 'services/**'
+      - 'tests/**'
+      - 'utils/**'
       - 'dev-requirements.txt'
       - 'requirements.txt'
       - 'main.py'
