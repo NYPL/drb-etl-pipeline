@@ -177,7 +177,7 @@ We use git tags to tag releases and github's release feature to deploy.  The ste
   7. In github, navigate to the 'Releases' tab and click on 'Draft a new release'
   8. Choose to create a new tag (e.g. v0.12.0), set `main` as the target, and name your release after the new version number
      ('v0.12.0')
-  9.  Summarize the changes in the release notes since the last deployment.
+  9.  Use the following command to print out the release notes: `cat <(git log <first-commit>..HEAD --pretty=format:"%h - %s (%an, %ad)" --date=short)`. Replace `<first-commit>` with the SHA of the first commit.
   10. Give the team a heads up in  `#researchnow_aka_sfr` in Slack, make sure the release is 'Set as the latest release', and hit 'Publish release'
   11. Check the repo's `Actions` tab to observe the progress of the deployment to production
     - Note that the deployment job merely kicks off an ECS service update. To fully verify success, you'll need to check the
