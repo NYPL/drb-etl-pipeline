@@ -32,20 +32,17 @@ DRB_API_PORT: '80'
 
 DEFAULT_COVER_URL: https://drb-files-qa.s3.amazonaws.com/covers/default/defaultCover.png
 
-WEBPUB_CONVERSION_URL: https://epub-to-webpub.vercel.app
 
 API_PROXY_CORS_ALLOWED: http[s]?://.*nypl.org
 
 READER_VERSION: v2
 
 
-PUBLISHERS: "UofMichigan Press"    # publishers need to be a comma separated string
+PUBLISHERS: "UofMichigan Press"
 REFERRER_URL: "https://digital-research-books-beta.nypl.org/"
 
-# Downloads Reports
 DOWNLOAD_BUCKET: "ump-pdf-repository-logs"
 DOWNLOAD_LOG_PATH: "logs/946183545209/us-east-1/ump-pdf-repository/"
 
-# Views Reports
 VIEW_BUCKET: "drb-files-production-logs"
 VIEW_LOG_PATH: "logs/946183545209/us-east-1/drb-files-production"

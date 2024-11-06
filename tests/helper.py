@@ -40,7 +40,6 @@ class TestHelpers:
         'NYPL_API_CLIENT_ID': 'test_api_client',
         'NYPL_API_CLIENT_SECRET': 'test_api_secret',
         'GITHUB_API_KEY': 'test_github_key',
-        'WEBPUB_CONVERSION_URL': 'test_conversion_url',
     }
 
     @classmethod
