@@ -34,10 +34,6 @@ class TestCoreProcess:
         assert coreInstance.port == 'test_psql_port'
         assert coreInstance.db == 'test_psql_name'
 
-        # Properties set by the ElasticSearchManager
-        assert coreInstance.index == 'test_es_index'
-        assert coreInstance.client is None
-
         # Properties set by the RabbitMQManager
         assert coreInstance.rabbitHost == 'test_rbmq_host'
         assert coreInstance.rabbitPort == 'test_rbmq_port'
