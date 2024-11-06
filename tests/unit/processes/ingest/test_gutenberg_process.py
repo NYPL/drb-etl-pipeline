@@ -22,7 +22,7 @@ class TestGutenbergProcess:
                 self.statics = {}
                 self.ingestOffset = 0
                 self.ingestLimit = 5000
-                self.s3Bucket = os.environ['FILE_BUCKET']
+                self.s3Bucket = f"drb-files-{os.environ['STAGE']}"
                 self.fileQueue = os.environ['FILE_QUEUE']
                 self.fileRoute = os.environ['FILE_ROUTING_KEY']
                 self.records = []

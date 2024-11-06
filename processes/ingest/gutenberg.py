@@ -39,7 +39,7 @@ class GutenbergProcess(CoreProcess):
         self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
         # S3 Configuration
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3Bucket = f"drb-files-{os.environ['STAGE']}"
 
     def runProcess(self):
         if self.process == 'daily':

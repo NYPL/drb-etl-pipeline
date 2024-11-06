@@ -26,7 +26,7 @@ class UofMProcess(CoreProcess):
         self.createSession()
 
         # S3 Configuration
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3Bucket = f"drb-files-{os.environ['STAGE']}"
         self.createS3Client()
 
     def runProcess(self):

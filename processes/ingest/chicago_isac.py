@@ -16,7 +16,7 @@ class ChicagoISACProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3Bucket = f"drb-files-{os.environ['STAGE']}"
         self.createS3Client()
 
     def runProcess(self):    

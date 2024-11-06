@@ -33,7 +33,7 @@ class DOABProcess(CoreProcess):
         self.createSession()
 
         self.createS3Client()
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3Bucket = f"drb-files-{os.environ['STAGE']}"
 
         # Connect to epub processing queue
         self.fileQueue = os.environ['FILE_QUEUE']

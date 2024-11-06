@@ -46,7 +46,7 @@ class S3Process(CoreProcess):
         rabbit_mq_manager.createRabbitConnection()
         rabbit_mq_manager.createOrConnectQueue(file_queue, file_route)
 
-        s3_file_bucket = os.environ['FILE_BUCKET']
+        s3_file_bucket = f"drb-files-{os.environ['STAGE']}"
 
         attempts_to_poll = 1
         max_poll_attempts = 3

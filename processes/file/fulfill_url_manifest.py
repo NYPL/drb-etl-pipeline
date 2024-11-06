@@ -21,7 +21,7 @@ class FulfillURLManifestProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3Bucket = f"drb-files-{os.environ['STAGE']}"
         self.host = os.environ['DRB_API_HOST']
         self.prefix = 'manifests/UofM/'
         self.createS3Client()

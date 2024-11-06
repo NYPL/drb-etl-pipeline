@@ -20,7 +20,7 @@ class MUSEManager:
         self.mediaType = mediaType
         self.museSoup = None
 
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3Bucket = f"drb-files-{os.environ['STAGE']}"
 
         self.pdfDownloadURL = None
         self.epubURL = None

@@ -53,7 +53,7 @@ class AbstractParser(ABC):
 
     @abstractmethod
     def generateS3Root(self):
-        s3_bucket = os.environ['FILE_BUCKET']
+        s3_bucket = f"drb-files-{os.environ['STAGE']}"
         s3_endpoint = os.environ.get('S3_ENDPOINT_URL', None)
 
         if s3_endpoint:

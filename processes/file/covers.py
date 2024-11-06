@@ -21,7 +21,7 @@ class CoverProcess(CoreProcess):
         self.createRedisClient()
 
         self.createS3Client()
-        self.fileBucket = os.environ['FILE_BUCKET']
+        self.fileBucket = f"drb-files-{os.environ['STAGE']}"
 
         self.ingestLimit = None
         self.runTime = datetime.now(timezone.utc).replace(tzinfo=None)

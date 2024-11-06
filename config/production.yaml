@@ -1,3 +1,5 @@
+STAGE: production
+
 LOG_LEVEL: info
  
 POSTGRES_HOST: sfr-new-metadata-production-cluster.cluster-cvy7z512hcjg.us-east-1.rds.amazonaws.com
@@ -18,8 +20,6 @@ FILE_QUEUE: sfrS3Files
 FILE_ROUTING_KEY: sfrS3Files
 
 OCLC_QUERY_LIMIT: '390000'
-
-FILE_BUCKET: drb-files-production
 
 NYPL_BIB_HOST: bib-service-production-rep.cvy7z512hcjg.us-east-1.rds.amazonaws.com
 NYPL_BIB_NAME: bib_service_production

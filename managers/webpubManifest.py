@@ -74,7 +74,7 @@ class WebpubManifest:
 
     def toDict(self) -> dict:
         return {
-            'context': 'https://{}-s3.amazonaws.com/manifests/context.jsonld'.format(os.environ['FILE_BUCKET']),
+            'context': 'https://{}-s3.amazonaws.com/manifests/context.jsonld'.format(f"drb-files-{os.environ['STAGE']}"),
             'metadata': self.metadata,
             'links': self.links,
             'readingOrder': self.readingOrder,
