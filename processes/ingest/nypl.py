@@ -22,7 +22,7 @@ class NYPLProcess(CoreProcess):
             if self.process == 'daily':
                 records = self.nypl_bib_service.get_records(offset=self.offset, limit=self.limit)
             elif self.process == 'complete':
-                records = self.nypl_bib_service.get_records(full_import=True, offset=self.offset, limit=self.limit)
+                records = self.nypl_bib_service.get_records(full_import=True)
             elif self.process == 'custom':
                 records = self.nypl_bib_service.get_records(start_timestamp=self.ingestPeriod, offset=self.offset, limit=self.limit)
             else: 

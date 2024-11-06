@@ -42,10 +42,10 @@ class NYPLBibService(SourceService):
         limit: Optional[int]=None
     ) -> list[NYPLMapping]:
         records = []
-        nypl_bib_query = 'SELECT id, nypl_source, publish_year, var_fields FROM bib'
+        nypl_bib_query = 'SELECT * FROM bib WHERE publish_year <= 1965'
 
         if not full_import:
-            nypl_bib_query += ' WHERE updated_date > '
+            nypl_bib_query += ' and updated_date > '
             
             if start_timestamp:
                 nypl_bib_query += "'{}'".format(start_timestamp)
@@ -61,14 +61,13 @@ class NYPLBibService(SourceService):
 
         with self.bib_db_connection.engine.connect() as db_connection:
             bib_results = db_connection.execution_options(stream_results=True).execute(text(nypl_bib_query))
+            bib_result_mappings = [bib_result_mapping for bib_result_mapping in bib_results.mappings()]
             
-            for bib in bib_results:
-                bib = self._map_bib(bib)
-                
-                if bib['var_fields'] is None:
+            for bib_result_mapping in bib_result_mappings:
+                if bib_result_mapping['var_fields'] is None:
                     continue
 
-                nypl_bib_record = self.parse_nypl_bib(bib)
+                nypl_bib_record = self.parse_nypl_bib(bib_result_mapping)
 
                 if nypl_bib_record:
                     records.append(nypl_bib_record)
@@ -94,19 +93,6 @@ class NYPLBibService(SourceService):
         bib_endpoint = 'bibs/{}/{}/items'.format(bib['nypl_source'], bib['id'])
 
         return self.nypl_api_manager.queryApi(bib_endpoint).get('data', [])
-
-    def _map_bib(self, bib): 
-        try:
-            id, nypl_source, publish_year, var_fields = bib
-            
-            return {
-                'id': id,
-                'nypl_source': nypl_source,
-                'publish_year': publish_year,
-                'var_fields': var_fields
-            }
-        except:
-            return bib
 
     def load_location_codes(self):
         return requests.get(os.environ['NYPL_LOCATIONS_BY_CODE']).json()

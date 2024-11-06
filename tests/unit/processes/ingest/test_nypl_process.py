@@ -63,7 +63,7 @@ class TestNYPLProcess:
         test_instance.process = 'complete'
         test_instance.runProcess()
 
-        test_instance.nypl_bib_service.get_records.assert_called_once_with(full_import=True, offset=None, limit=None)
+        test_instance.nypl_bib_service.get_records.assert_called_once_with(full_import=True)
         self.assert_common_expectations(mocks)
         assert mocks['add_record'].call_count == len(record_mappings)
 
