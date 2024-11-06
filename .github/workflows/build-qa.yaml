@@ -6,7 +6,6 @@ on:
 jobs:
   publish_qa:
     name: Publish image to ECR
-    if: github.event.pull_request.merged
     runs-on: ubuntu-latest
     steps:
       - name: checkout
