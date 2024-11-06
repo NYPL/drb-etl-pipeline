@@ -82,7 +82,7 @@ class UofSCProcess(CoreProcess):
 
         manifest.addMetadata(
             record,
-            conformsTo=http://librarysimplified.org/terms/profiles/pdf
+            conformsTo='http://librarysimplified.org/terms/profiles/pdf'
         )
         
         manifest.addChapter(sourceURI, record.title)
