@@ -28,11 +28,11 @@ class ClusterProcess(CoreProcess):
 
         self.createRedisClient()
 
-        self.elasic_search_manager = ElasticsearchManager()
+        self.elastic_search_manager = ElasticsearchManager()
         
-        self.elasic_search_manager.createElasticConnection()
-        self.elasic_search_manager.createElasticSearchIngestPipeline()
-        self.elasic_search_manager.createElasticSearchIndex()
+        self.elastic_search_manager.createElasticConnection()
+        self.elastic_search_manager.createElasticSearchIngestPipeline()
+        self.elastic_search_manager.createElasticSearchIndex()
 
     def runProcess(self):
         try:
@@ -137,7 +137,7 @@ class ClusterProcess(CoreProcess):
         )
 
     def update_elastic_search(self, works_to_index: list, word_ids_to_delete: set):
-        self.elasic_search_manager.deleteWorkRecords(word_ids_to_delete)
+        self.elastic_search_manager.deleteWorkRecords(word_ids_to_delete)
         self.index_works_in_elastic_search(works_to_index)
 
     def delete_stale_works(self, work_ids: set[str]):
@@ -236,7 +236,7 @@ class ClusterProcess(CoreProcess):
             elastic_manager.getCreateWork()
             work_documents.append(elastic_manager.work)
 
-        self.elasic_search_manager.saveWorkRecords(work_documents)
+        self.elastic_search_manager.saveWorkRecords(work_documents)
 
     def titles_overlap(self, tokenized_record_title: set, tokenized_matched_record_title: set):
         if len(tokenized_record_title) == 1 and not tokenized_record_title <= tokenized_matched_record_title:
