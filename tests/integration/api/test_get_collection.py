@@ -13,3 +13,24 @@ def test_get_collection():
     response_json = response.json()
     
     assert response_json is not None
+
+def test_get_collection_non_existent_id():
+    url = API_URL + '/collection/00000000-0000-0000-0000-000000000000'
+    response = requests.get(url)
+    assert_response_status(url, response, 404)
+
+def test_get_collection_malformed_id():
+    url = API_URL + '/collection/invalid_id_format'
+    response = requests.get(url)
+    assert_response_status(url, response, 400)
+
+def test_get_collection_empty_id():
+    url = API_URL + '/collection/'
+    response = requests.get(url)
+    assert_response_status(url, response, 404)
+
+def test_get_collection_special_characters():
+    url = API_URL + '/collection/%$@!*'
+    response = requests.get(url)
+    assert_response_status(url, response, 400)
+    
