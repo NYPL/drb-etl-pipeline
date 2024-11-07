@@ -27,7 +27,7 @@ def test_get_collection_malformed_id():
 def test_get_collection_empty_id():
     url = API_URL + '/collection/'
     response = requests.get(url)
-    assert_response_status(url, response, 404)  # or 400 depending on the implementation
+    assert_response_status(url, response, 404)
 
 def test_get_collection_special_characters():
     url = API_URL + '/collection/%$@!*'
