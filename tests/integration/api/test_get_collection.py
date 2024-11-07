@@ -33,3 +33,4 @@ def test_get_collection_special_characters():
     url = API_URL + '/collection/%$@!*'
     response = requests.get(url)
     assert_response_status(url, response, 400)
+    
