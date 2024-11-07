@@ -4,7 +4,7 @@ from sqlalchemy.exc import DataError
 from typing import Optional
 
 from .core import CoreProcess
-from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager
+from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager, ElasticsearchManager
 from model import Record, Work
 from logger import createLog
 
@@ -27,10 +27,12 @@ class ClusterProcess(CoreProcess):
         self.createSession()
 
         self.createRedisClient()
+
+        self.elastic_search_manager = ElasticsearchManager()
         
-        self.createElasticConnection()
-        self.createElasticSearchIngestPipeline()
-        self.createElasticSearchIndex()
+        self.elastic_search_manager.createElasticConnection()
+        self.elastic_search_manager.createElasticSearchIngestPipeline()
+        self.elastic_search_manager.createElasticSearchIndex()
 
     def runProcess(self):
         try:
@@ -135,7 +137,7 @@ class ClusterProcess(CoreProcess):
         )
 
     def update_elastic_search(self, works_to_index: list, word_ids_to_delete: set):
-        self.deleteWorkRecords(word_ids_to_delete)
+        self.elastic_search_manager.deleteWorkRecords(word_ids_to_delete)
         self.index_works_in_elastic_search(works_to_index)
 
     def delete_stale_works(self, work_ids: set[str]):
@@ -234,7 +236,7 @@ class ClusterProcess(CoreProcess):
             elastic_manager.getCreateWork()
             work_documents.append(elastic_manager.work)
 
-        self.saveWorkRecords(work_documents)
+        self.elastic_search_manager.saveWorkRecords(work_documents)
 
     def titles_overlap(self, tokenized_record_title: set, tokenized_matched_record_title: set):
         if len(tokenized_record_title) == 1 and not tokenized_record_title <= tokenized_matched_record_title:
