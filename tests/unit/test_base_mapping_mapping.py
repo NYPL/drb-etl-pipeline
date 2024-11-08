@@ -1,19 +1,19 @@
 import pytest
 
-from mappings.core import Core
+from mappings.base_mapping import BaseMapping
 
 
 class TestCoreMapping:
     @pytest.fixture
     def testMapping(self, mocker):
-        class TestCore(Core):
+        class TestCore(BaseMapping):
             def ___init__(self, source, statics):
                 super(self, TestCore).__init__(source, statics)
 
             def createMapping(self):
                 pass
 
-        mockFormatter = mocker.patch('mappings.core.CustomFormatter')
+        mockFormatter = mocker.patch('mappings.base_mapping.CustomFormatter')
         mockFormatter.return_value = 'mockFormatter'
         return TestCore('test', {'static': 'values'})
 
@@ -25,11 +25,11 @@ class TestCoreMapping:
         assert testMapping.formatter == 'mockFormatter'
 
     def test_initEmptyRecord(self, testMapping, mocker):
-        mockUUID = mocker.patch('mappings.core.uuid4')
+        mockUUID = mocker.patch('mappings.base_mapping.uuid4')
         mockUUID.return_value = 'testUUID'
-        mockDate = mocker.patch('mappings.core.datetime')
+        mockDate = mocker.patch('mappings.base_mapping.datetime')
         mockDate.now.return_value.replace.side_effect = ['testCreated', 'testModified']
-        mockRecord = mocker.patch('mappings.core.Record')
+        mockRecord = mocker.patch('mappings.base_mapping.Record')
         mockRecord.return_value = 'testRecord'
 
         testRecord = testMapping.initEmptyRecord()
@@ -41,7 +41,7 @@ class TestCoreMapping:
         )
 
     def test_applyMapping(self, testMapping, mocker):
-        mockInitEmpty = mocker.patch.object(Core, 'initEmptyRecord')
+        mockInitEmpty = mocker.patch.object(BaseMapping, 'initEmptyRecord')
 
         testMapping.applyMapping()
 

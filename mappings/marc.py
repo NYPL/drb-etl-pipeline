@@ -1,12 +1,12 @@
 import re
 
-from .core import Core
+from .base_mapping import BaseMapping
 from logger import createLog
 
 logger = createLog(__name__)
 
 
-class MARCMapping(Core):
+class MARCMapping(BaseMapping):
     def __init__(self, source, statics):
         super().__init__(source, statics)
 

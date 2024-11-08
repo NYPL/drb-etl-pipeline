@@ -2,11 +2,11 @@ from datetime import datetime, timezone
 from string import Formatter
 from uuid import uuid4
 
-from .abstractMapping import AbstractMapping
+from .record_mapping import RecordMapping
 from model import Record
 
 
-class Core(AbstractMapping):
+class BaseMapping(RecordMapping):
     def __init__(self, source, statics):
         self.mapping = {}
         self.source = source
