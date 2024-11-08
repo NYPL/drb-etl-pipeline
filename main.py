@@ -36,10 +36,14 @@ def main(args):
 
     availableProcesses = registerProcesses()
 
-    procClass = availableProcesses[process]
-    processInstance = procClass(
-        procType, customFile, startDate, singleRecord, limit, offset, options
-    )
+    try:
+        procClass = availableProcesses[process]
+        processInstance = procClass(
+            procType, customFile, startDate, singleRecord, limit, offset, options
+        )
+    except:
+        logger.exception(f'Failed to initialize process {process} in {environment}')
+        return
 
     if process in (
         "APIProcess", # Covered by newrelic's automatic Flask integration
