@@ -54,6 +54,7 @@ def main(args):
     else:
         app = newrelic.agent.register_application(timeout=10.0)
         with newrelic.agent.BackgroundTask(app, name=process):
+            logger.info(f'Running process {process} in {environment}')
             processInstance.runProcess()
 
 
