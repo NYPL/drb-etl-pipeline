@@ -24,15 +24,12 @@ class LOCProcess(CoreProcess):
         self.process == 'complete'
         self.startTimestamp = None 
 
-        # Connect to database
         self.generateEngine()
         self.createSession()
 
-        # S3 Configuration
         self.createS3Client()
         self.s3Bucket = os.environ['FILE_BUCKET']
 
-        # Connect to epub processing queue
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
         self.createRabbitConnection()
