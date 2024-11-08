@@ -5,7 +5,7 @@ import sqlalchemy as sa
 from sqlalchemy.exc import ProgrammingError
 from time import sleep
 
-from managers.db import DBManager
+from managers import DBManager, ElasticsearchManager
 from ..core import CoreProcess
 from logger import createLog
 
@@ -16,6 +16,8 @@ class LocalDevelopmentSetupProcess(CoreProcess):
     def __init__(self, *args):
         super(LocalDevelopmentSetupProcess, self).__init__(*args[:4])
 
+        self.elastic_search_manager = ElasticsearchManager()
+
     def runProcess(self):
         try:
             self.initialize_db()
@@ -25,9 +27,9 @@ class LocalDevelopmentSetupProcess(CoreProcess):
 
             self.initializeDatabase()
 
-            self.createElasticConnection()
+            self.elastic_search_manager.createElasticConnection()
             self.wait_for_elastic_search()
-            self.createElasticSearchIndex()
+            self.elastic_search_manager.createElasticSearchIndex()
             
             logger.info('Completed local development setup')
         except Exception:
@@ -89,7 +91,7 @@ class LocalDevelopmentSetupProcess(CoreProcess):
 
         for _ in range(0, max_time, increment):
             try:
-                self.es.info()
+                self.elastic_search_manager.es.info()
                 break
             except ConnectionError:
                 pass
