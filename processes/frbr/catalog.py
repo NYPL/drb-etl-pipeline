@@ -22,7 +22,7 @@ class CatalogProcess(CoreProcess):
         self.createRabbitConnection()
         self.createChannel()
 
-        self.oclcCatalogManager = OCLCCatalogManager()
+        self.oclc_catalog_manager = OCLCCatalogManager()
 
     def runProcess(self, max_attempts: int=4):
         self.process_catalog_messages(max_attempts=max_attempts)
@@ -54,7 +54,7 @@ class CatalogProcess(CoreProcess):
         oclc_number = message.get('oclcNo')
         owi_number = message.get('owiNo')
         
-        catalog_record = self.oclcCatalogManager.query_catalog(oclc_number)
+        catalog_record = self.oclc_catalog_manager.query_catalog(oclc_number)
 
         if not catalog_record:
             logger.warning(f'Unable to get catalog record for OCLC number {oclc_number}')

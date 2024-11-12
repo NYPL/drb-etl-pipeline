@@ -19,7 +19,7 @@ class TestOCLCCatalogProcess:
         class TestCatalogProcess(CatalogProcess):
             def __init__(self):
                 self.statics = {}
-                self.oclcCatalogManager = mocker.MagicMock()
+                self.oclc_catalog_manager = mocker.MagicMock()
                 self.records = []
         
         return TestCatalogProcess()
@@ -63,21 +63,21 @@ class TestOCLCCatalogProcess:
         mock_acknowledge_message.assert_called_once_with('rabbitMQTag')
 
     def test_process_catalog_message_success(self, test_instance, mocker):
-        test_instance.oclcCatalogManager.query_catalog.return_value = 'testXML'
+        test_instance.oclc_catalog_manager.query_catalog.return_value = 'testXML'
         mock_parse_catalog_record = mocker.patch.object(CatalogProcess, 'parse_catalog_record')
 
         test_instance.process_catalog_message('{"oclcNo": 1, "owiNo": 1}')
 
-        test_instance.oclcCatalogManager.query_catalog.assert_called_once_with(1)
+        test_instance.oclc_catalog_manager.query_catalog.assert_called_once_with(1)
         mock_parse_catalog_record.assert_called_once_with('testXML', 1, 1)
 
     def test_process_catalog_message_no_record_found(self, test_instance, mocker):
-        test_instance.oclcCatalogManager.query_catalog.return_value = None
+        test_instance.oclc_catalog_manager.query_catalog.return_value = None
         mock_parse_catalog_message = mocker.patch.object(CatalogProcess, 'parse_catalog_record')
 
         test_instance.process_catalog_message('{"oclcNo": "badID"}')
 
-        test_instance.oclcCatalogManager.query_catalog.assert_called_once_with('badID')
+        test_instance.oclc_catalog_manager.query_catalog.assert_called_once_with('badID')
         mock_parse_catalog_message.assert_not_called()
 
     def test_parse_catalog_record_success(self, test_instance, mocker):
