@@ -21,11 +21,9 @@ class UofMProcess(CoreProcess):
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
         self.fullImport = self.process == 'complete' 
 
-        # Connect to database
         self.generateEngine()
         self.createSession()
 
-        # S3 Configuration
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.createS3Client()
 

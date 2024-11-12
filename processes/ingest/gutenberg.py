@@ -28,17 +28,14 @@ class GutenbergProcess(CoreProcess):
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
 
-        # Connect to database
         self.generateEngine()
         self.createSession()
 
-        # Connect to epub processing queue
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
         self.createRabbitConnection()
         self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
-        # S3 Configuration
         self.s3Bucket = os.environ['FILE_BUCKET']
 
     def runProcess(self):

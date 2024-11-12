@@ -30,17 +30,14 @@ class METProcess(CoreProcess):
         self.fullImport = self.process == 'complete'
         self.startTimestamp = None
 
-        # Connect to database
         self.generateEngine()
         self.createSession()
 
-        # Connect to file processing queue
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
         self.createRabbitConnection()
         self.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
-        # S3 Configuration
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.createS3Client()
 

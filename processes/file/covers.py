@@ -17,7 +17,6 @@ class CoverProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        # Redis Connection
         self.createRedisClient()
 
         self.createS3Client()
