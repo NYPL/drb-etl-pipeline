@@ -1,7 +1,7 @@
 from datetime import datetime
 import pytest
 
-from mappings.core import MappingError
+from mappings.base_mapping import MappingError
 from processes.ingest.met import METProcess, METError
 from tests.helper import TestHelpers
 

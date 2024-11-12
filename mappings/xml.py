@@ -1,13 +1,13 @@
 from itertools import zip_longest
 from lxml import etree
 
-from .core import Core
+from .base_mapping import BaseMapping
 from logger import createLog
 
 logger = createLog(__name__)
 
 
-class XMLMapping(Core):
+class XMLMapping(BaseMapping):
     def __init__(self, source, namespace, statics):
         super().__init__(source, statics)
         self.namespace = namespace

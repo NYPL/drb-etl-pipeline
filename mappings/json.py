@@ -1,7 +1,7 @@
-from .core import Core
+from .base_mapping import BaseMapping
 
 
-class JSONMapping(Core):
+class JSONMapping(BaseMapping):
     def __init__(self, source, statics):
         super().__init__(source, statics)
 

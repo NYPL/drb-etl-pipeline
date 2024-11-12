@@ -3,10 +3,10 @@ from typing import Optional
 from uuid import uuid4
 
 from model import Record
-from .core import Core
+from .base_mapping import BaseMapping
 
 
-class OCLCBibMapping(Core):
+class OCLCBibMapping(BaseMapping):
     def __init__(self, oclc_bib, related_oclc_numbers=[]):
         self.record = self._map_to_record(oclc_bib, related_oclc_numbers)
 

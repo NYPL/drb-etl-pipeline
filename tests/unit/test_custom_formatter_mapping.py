@@ -1,6 +1,6 @@
 import pytest
 
-from mappings.core import CustomFormatter
+from mappings.base_mapping import CustomFormatter
 
 
 class TestCustomFormatter:
