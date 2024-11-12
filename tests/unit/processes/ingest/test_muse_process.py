@@ -5,6 +5,7 @@ import requests
 from requests.exceptions import HTTPError
 
 from processes.ingest.muse import MUSEProcess, MUSEError
+from model import get_file_message
 from tests.helper import TestHelpers
 
 
@@ -18,12 +19,15 @@ class TestMUSEProcess:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testProcess(self):
+    def testProcess(self, mocker):
         class TestMUSE(MUSEProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
                 self.records = []
                 self.ingest_limit = None
+                self.fileQueue = 'fileQueue'
+                self.fileRoute = 'fileRoute'
+                self.rabbitmq_manager = mocker.MagicMock()
 
         return TestMUSE()
 
@@ -257,7 +261,6 @@ class TestMUSEProcess:
         processMocks = mocker.patch.multiple(
             MUSEProcess,
             putObjectInBucket=mocker.DEFAULT,
-            sendFileToProcessingQueue=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
 
@@ -273,7 +276,9 @@ class TestMUSEProcess:
         processMocks['putObjectInBucket'].assert_called_once_with(
             b'testManifest', 'testPDFPath', 'testBucket'
         )
-        processMocks['sendFileToProcessingQueue'].assert_called_once_with(
-            'testURL', 'testPath'
+        testProcess.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
+            testProcess.fileQueue, 
+            testProcess.fileRoute, 
+            get_file_message('testURL', 'testPath')
         )
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)

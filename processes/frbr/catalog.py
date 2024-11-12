@@ -4,7 +4,7 @@ from lxml import etree
 from time import sleep
 
 from ..core import CoreProcess
-from managers import OCLCCatalogManager
+from managers import OCLCCatalogManager, RabbitMQManager
 from mappings.oclcCatalog import CatalogMapping
 from logger import createLog
 
@@ -19,8 +19,9 @@ class CatalogProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        self.createRabbitConnection()
-        self.createChannel()
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createChannel()
 
         self.oclc_catalog_manager = OCLCCatalogManager()
 
@@ -40,14 +41,14 @@ class CatalogProcess(CoreProcess):
                 logger.info(f'Waiting {wait_time}s for OCLC catalog messages')
                 sleep(wait_time)
 
-            while message := self.getMessageFromQueue(os.environ['OCLC_QUEUE']):
+            while message := self.rabbitmq_manager.getMessageFromQueue(os.environ['OCLC_QUEUE']):
                 message_props, _, message_body = message
 
                 if not message_props or not message_body:
                     break
 
                 self.process_catalog_message(message_body)
-                self.acknowledgeMessageProcessed(message_props.delivery_tag)
+                self.rabbitmq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
 
     def process_catalog_message(self, message_body):
         message = json.loads(message_body)

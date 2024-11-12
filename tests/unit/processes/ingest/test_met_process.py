@@ -2,6 +2,7 @@ from datetime import datetime
 import pytest
 
 from mappings.base_mapping import MappingError
+from model import get_file_message
 from processes.ingest.met import METProcess, METError
 from tests.helper import TestHelpers
 
@@ -16,13 +17,14 @@ class TestMetProcess:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testProcess(self):
+    def testProcess(self, mocker):
         class TestMET(METProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
                 self.fileQueue = 'test_file_queue'
                 self.fileRoute = 'test_file_key'
                 self.records = []
+                self.rabbitmq_manager = mocker.MagicMock()
         
         return TestMET()
 
@@ -147,14 +149,17 @@ class TestMetProcess:
     def test_addCoverAndStoreInS3(self, testProcess, mocker):
         mockSetPath = mocker.patch.object(METProcess, 'setCoverPath')
         mockSetPath.return_value = 'testPath.jpg'
-        mockSendFile = mocker.patch.object(METProcess, 'sendFileToProcessingQueue')
 
         testRecord = mocker.MagicMock(has_part=[], identifiers=['1|met'])
         testProcess.addCoverAndStoreInS3(testRecord, 'testType')
 
         assert testRecord.has_part[0] == '|https://test_aws_bucket.s3.amazonaws.com/covers/met/1.jpg|met|image/jpeg|{"cover": true}'
         mockSetPath.assert_called_once_with('testType', '1')
-        mockSendFile.assert_called_once_with('https://libmma.contentdm.oclc.org/digital/testPath.jpg', 'covers/met/1.jpg')
+        testProcess.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
+            testProcess.fileQueue,
+            testProcess.fileRoute,
+            get_file_message('https://libmma.contentdm.oclc.org/digital/testPath.jpg', 'covers/met/1.jpg')
+        )
 
     def test_setCoverPath_compound(self, testProcess, mocker):
         mockQuery = mocker.patch.object(METProcess, 'queryMetAPI')
@@ -168,16 +173,6 @@ class TestMetProcess:
 
     def test_setCoverPath(self, testProcess):
         assert testProcess.setCoverPath('pdf', 1) == 'api/singleitem/image/pdf/p15324coll10/1/default.png'
-
-    def test_sendFileToProcessingQueue(self, testProcess, mocker):
-        mockSendMessage = mocker.patch.object(METProcess, 'sendMessageToQueue')
-
-        testProcess.sendFileToProcessingQueue('testURL', 'testLocation')
-
-        mockSendMessage.assert_called_once_with(
-            'test_file_queue', 'test_file_key',
-            {'fileData': {'fileURL': 'testURL', 'bucketPath': 'testLocation'}}
-        )
 
     def test_storePDFManifest(self, testProcess, mocker):
         mockRecord = mocker.MagicMock(identifiers=['1|met'])

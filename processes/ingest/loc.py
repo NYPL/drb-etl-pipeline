@@ -5,7 +5,8 @@ from requests.exceptions import HTTPError, ConnectionError
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.loc import LOCMapping
-from managers import WebpubManifest
+from managers import RabbitMQManager, WebpubManifest
+from model import get_file_message
 from logger import createLog
 from datetime import datetime, timedelta, timezone
 
@@ -32,8 +33,10 @@ class LOCProcess(CoreProcess):
 
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
-        self.createRabbitConnection()
-        self.createOrConnectQueue(self.fileQueue, self.fileRoute)
+
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
     def runProcess(self):
         if self.process == 'weekly':
@@ -248,7 +251,7 @@ class LOCProcess(CoreProcess):
                     record, itemNo, source, flagStr, mediaType, bucketLocation
                 )
 
-                self.sendFileToProcessingQueue(uri, bucketLocation)
+                self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(uri, bucketLocation))
                 break
 
     def addEPUBManifest(self, record, itemNo, source, flagStr, mediaType, location):

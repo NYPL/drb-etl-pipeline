@@ -5,8 +5,9 @@ import os
 import re
 
 from ..core import CoreProcess
-from managers import GutenbergManager
+from managers import GutenbergManager, RabbitMQManager
 from mappings.gutenberg import GutenbergMapping
+from model import get_file_message
 from logger import createLog
 
 logger = createLog(__name__)
@@ -33,8 +34,10 @@ class GutenbergProcess(CoreProcess):
 
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
-        self.createRabbitConnection()
-        self.createOrConnectQueue(self.fileQueue, self.fileRoute)
+
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
         self.s3Bucket = os.environ['FILE_BUCKET']
 
@@ -117,7 +120,7 @@ class GutenbergProcess(CoreProcess):
                     newParts, pos, source, flagStr, mediaType, bucketLocation
                 )
 
-                self.sendFileToProcessingQueue(gutenbergURL, bucketLocation)
+                self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(gutenbergURL, bucketLocation))
             else:
                 # Add link to ePub container.xml
                 self.addNewPart(
@@ -159,4 +162,4 @@ class GutenbergProcess(CoreProcess):
             sourceRoot = yamlData['url'].replace('ebooks', 'files')
             sourceURL = '{}/{}'.format(sourceRoot, coverData['image_path'])
 
-            self.sendFileToProcessingQueue(sourceURL, bucketLocation)
+            self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(sourceURL, bucketLocation))

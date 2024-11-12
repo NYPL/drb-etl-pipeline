@@ -4,7 +4,7 @@ import newrelic.agent
 import re
 
 from ..core import CoreProcess
-from managers import OCLCCatalogManager
+from managers import OCLCCatalogManager, RabbitMQManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
 from logger import createLog
@@ -28,8 +28,10 @@ class ClassifyProcess(CoreProcess):
 
         self.catalog_queue = os.environ['OCLC_QUEUE']
         self.catalog_route = os.environ['OCLC_ROUTING_KEY']
-        self.createRabbitConnection()
-        self.createOrConnectQueue(self.catalog_queue, self.catalog_route)
+
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(self.catalog_queue, self.catalog_route)
 
         self.classified_count = 0
 
@@ -164,7 +166,7 @@ class ClassifyProcess(CoreProcess):
                 logger.debug(f'Skipping catalog lookup process for OCLC number {oclc_number}')
                 continue
 
-            self.sendMessageToQueue(self.catalog_queue, self.catalog_route, { 'oclcNo': oclc_number, 'owiNo': owi_number })
+            self.rabbitmq_manager.sendMessageToQueue(self.catalog_queue, self.catalog_route, { 'oclcNo': oclc_number, 'owiNo': owi_number })
             catalogued_record_count += 1
 
         if catalogued_record_count > 0:
