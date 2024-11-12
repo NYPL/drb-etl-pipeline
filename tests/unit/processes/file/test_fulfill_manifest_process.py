@@ -24,7 +24,7 @@ class TestUofMProcess:
                 self.batchSize = mocker.MagicMock(batchSize='testBatchSize')
                 self.host = mocker.MagicMock(host='testHost')
                 self.port = mocker.MagicMock(port='testPort')
-                self.prefix = 'testPrefix'
+                self.prefix = 'test_prefix'
                 self.objKey = mocker.MagicMock(objKey='testKey')
                 self.process = 'complete'
         
@@ -48,10 +48,9 @@ class TestUofMProcess:
             update_metadata_object=mocker.DEFAULT
         )
 
-        mockPrefix = mocker.MagicMock(prefix='testPrefix')
-        mockTimeStamp = mocker.MagicMock(timeStamp='testTimeStamp')
+        mockTimeStamp = mocker.MagicMock(timeStamp='test_timestamp')
         
         testProcess.fetch_and_update_manifests(mockTimeStamp)
 
-        processMocks['load_batches'].assert_called_once_with('testPrefix','test_aws_bucket')
+        processMocks['load_batches'].assert_called_once_with('test_prefix','test_aws_bucket')
         
