@@ -3,7 +3,7 @@ import os
 from requests.exceptions import HTTPError, ConnectionError
 
 from ..core import CoreProcess
-from mappings.core import MappingError
+from mappings.base_mapping import MappingError
 from mappings.UofSC import UofSCMapping
 from managers import WebpubManifest
 from logger import createLog

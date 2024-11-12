@@ -1,6 +1,5 @@
 import pytest
 
-
 from processes.file.fulfill_url_manifest import FulfillURLManifestProcess
 from tests.helper import TestHelpers
 

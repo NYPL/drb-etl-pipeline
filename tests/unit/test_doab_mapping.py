@@ -1,7 +1,7 @@
 import pytest
 
 from mappings.doab import DOABMapping
-from mappings.core import MappingError
+from mappings.base_mapping import MappingError
 
 
 class TestDOABMapping:

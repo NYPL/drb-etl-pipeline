@@ -6,7 +6,7 @@ from unittest import mock
 
 
 from processes.ingest.doab import DOABProcess, DOABError
-from mappings.core import MappingError
+from mappings.base_mapping import MappingError
 from tests.helper import TestHelpers
 
 

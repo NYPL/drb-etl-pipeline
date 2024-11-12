@@ -5,7 +5,7 @@ import requests
 from requests.exceptions import HTTPError, ConnectionError
 
 from ..core import CoreProcess
-from mappings.core import MappingError
+from mappings.base_mapping import MappingError
 from mappings.met import METMapping
 from managers import WebpubManifest
 from logger import createLog

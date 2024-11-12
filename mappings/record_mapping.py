@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-class AbstractMapping(ABC):
+class RecordMapping(ABC):
     @abstractmethod
     def __init__(self):
         pass

@@ -1,6 +1,6 @@
 import pytest
 
-from mappings.core import MappingError
+from mappings.base_mapping import MappingError
 from processes import UofMProcess
 from tests.helper import TestHelpers
 
