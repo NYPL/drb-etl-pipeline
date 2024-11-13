@@ -8,7 +8,9 @@ from ..core import CoreProcess
 from logger import createLog
 from mappings.doab import DOABMapping
 from mappings.base_mapping import MappingError
-from managers import DOABLinkManager
+from managers import DOABLinkManager, RabbitMQManager
+from model import get_file_message
+
 
 logger = createLog(__name__)
 
@@ -37,8 +39,10 @@ class DOABProcess(CoreProcess):
 
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
-        self.createRabbitConnection()
-        self.createOrConnectQueue(self.fileQueue, self.fileRoute)
+
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
     def runProcess(self):
         if self.process == 'daily':
@@ -72,7 +76,7 @@ class DOABProcess(CoreProcess):
 
         for epubLink in linkManager.ePubLinks:
             ePubPath, ePubURI = epubLink
-            self.sendFileToProcessingQueue(ePubURI, ePubPath)
+            self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(ePubURI, ePubPath))
 
         self.addDCDWToUpdateList(doabRec)
 
@@ -155,16 +159,7 @@ class DOABProcess(CoreProcess):
 
             return BytesIO(content)
 
-        raise DOABError(f'Received {doabResponse.status_code} status code from {doabURL}')
-
-    def sendFileToProcessingQueue(self, fileURL, s3Location):
-        s3Message = {
-            'fileData': {
-                'fileURL': fileURL,
-                'bucketPath': s3Location
-            }
-        }
-        self.sendMessageToQueue(self.fileQueue, self.fileRoute, s3Message)
+        raise DOABError(f'Received {doabResponse.status_code} status code from {doabURL}')        
 
 
 class DOABError(Exception):

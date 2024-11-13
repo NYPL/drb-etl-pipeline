@@ -7,7 +7,8 @@ from requests.exceptions import HTTPError, ConnectionError
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.met import METMapping
-from managers import WebpubManifest
+from managers import RabbitMQManager, WebpubManifest
+from model import get_file_message
 from logger import createLog
 
 logger = createLog(__name__)
@@ -35,8 +36,10 @@ class METProcess(CoreProcess):
 
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
-        self.createRabbitConnection()
-        self.createOrConnectQueue(self.fileQueue, self.fileRoute)
+
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.createS3Client()
@@ -132,7 +135,7 @@ class METProcess(CoreProcess):
             '|'.join(['', s3URL, 'met', fileType, json.dumps({'cover': True})])
         )
 
-        self.sendFileToProcessingQueue(sourceURL, bucketLocation)
+        self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(sourceURL, bucketLocation))
 
     def setCoverPath(self, filetype, recordID):
         if filetype == 'cpd':
@@ -155,15 +158,6 @@ class METProcess(CoreProcess):
             return imageObject['imageUri']
         else:
             return 'api/singleitem/image/pdf/p15324coll10/{}/default.png'.format(recordID)
-
-    def sendFileToProcessingQueue(self, fileURL, s3Location):
-        s3Message = {
-            'fileData': {
-                'fileURL': fileURL,
-                'bucketPath': s3Location
-            }
-        }
-        self.sendMessageToQueue(self.fileQueue, self.fileRoute, s3Message)
 
     def storePDFManifest(self, record):
         for link in record.has_part:

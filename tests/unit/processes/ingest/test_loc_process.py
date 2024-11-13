@@ -1,7 +1,7 @@
 import pytest
 
 from mappings.base_mapping import MappingError
-from model import Record
+from model import Record, get_file_message
 from processes import LOCProcess
 from tests.helper import TestHelpers
 
@@ -24,6 +24,9 @@ class TestLOCProcess:
                 self.records = mocker.MagicMock(record='testRecord')
                 self.batchSize = mocker.MagicMock(batchSize='testBatchSize')
                 self.process = 'complete'
+                self.fileQueue = 'fileQueue'
+                self.fileRoute = 'fileRoute'
+                self.rabbitmq_manager = mocker.MagicMock()
         
         return TestLOC()
 
@@ -105,14 +108,15 @@ class TestLOCProcess:
             '1|testURI|loc|application/epub+zip|{"reader": false, "catalog": false, "download": true}',
         ]
 
-        mockSendToQueue = mocker.patch.object(LOCProcess, 'sendFileToProcessingQueue')
         mockAddEPUBManifest = mocker.patch.object(LOCProcess, 'addEPUBManifest')
 
         testProcess.storeEpubsInS3(mockRecord)
 
-        mockSendToQueue.assert_has_calls([
-            mocker.call('testURI', 'epubs/loc/1.epub'),
-        ])
+        testProcess.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
+            testProcess.fileQueue,
+            testProcess.fileRoute,
+            get_file_message('testURI', 'epubs/loc/1.epub')
+        )
 
         mockAddEPUBManifest.assert_has_calls([
             mocker.call(mockRecord, '1', 'loc', '{"reader": false, "catalog": false, "download": true}', 'application/epub+zip', 'epubs/loc/1.epub'),

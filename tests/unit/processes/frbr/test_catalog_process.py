@@ -21,6 +21,7 @@ class TestOCLCCatalogProcess:
                 self.statics = {}
                 self.oclc_catalog_manager = mocker.MagicMock()
                 self.records = []
+                self.rabbitmq_manager = mocker.MagicMock()
         
         return TestCatalogProcess()
     
@@ -37,10 +38,9 @@ class TestOCLCCatalogProcess:
 
     def test_process_catalog_messages(self, test_instance, mocker):
         mock_sleep = mocker.patch('processes.frbr.catalog.sleep')
-        mock_get_message = mocker.patch.object(CatalogProcess, 'getMessageFromQueue')
         mock_message_props = mocker.MagicMock()
         mock_message_props.delivery_tag = 'rabbitMQTag'
-        mock_get_message.side_effect = [
+        test_instance.rabbitmq_manager.getMessageFromQueue.side_effect = [
             (mock_message_props, {}, 'oclc_record'),
             (None, None, None),
             (None, None, None),
@@ -48,19 +48,18 @@ class TestOCLCCatalogProcess:
             (None, None, None)
         ]
         mock_process_catalog_message = mocker.patch.object(CatalogProcess, 'process_catalog_message')
-        mock_acknowledge_message = mocker.patch.object(CatalogProcess, 'acknowledgeMessageProcessed')
 
         test_instance.process_catalog_messages()
 
-        assert mock_get_message.call_count == 5
-        mock_get_message.assert_called_with('test_oclc_queue')
+        assert test_instance.rabbitmq_manager.getMessageFromQueue.call_count == 5
+        test_instance.rabbitmq_manager.getMessageFromQueue.assert_called_with('test_oclc_queue')
 
         mock_sleep.assert_has_calls([
             mocker.call(60), mocker.call(120), mocker.call(180)
         ])
 
         mock_process_catalog_message.assert_called_once_with('oclc_record')
-        mock_acknowledge_message.assert_called_once_with('rabbitMQTag')
+        test_instance.rabbitmq_manager.acknowledgeMessageProcessed.assert_called_once_with('rabbitMQTag')
 
     def test_process_catalog_message_success(self, test_instance, mocker):
         test_instance.oclc_catalog_manager.query_catalog.return_value = 'testXML'

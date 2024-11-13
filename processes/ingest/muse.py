@@ -8,7 +8,8 @@ from requests.exceptions import ReadTimeout, HTTPError
 
 from ..core import CoreProcess
 from mappings.muse import MUSEMapping
-from managers import MUSEError, MUSEManager
+from managers import MUSEError, MUSEManager, RabbitMQManager
+from model import get_file_message
 from logger import createLog
 
 
@@ -30,8 +31,10 @@ class MUSEProcess(CoreProcess):
 
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
-        self.createRabbitConnection()
-        self.createOrConnectQueue(self.fileQueue, self.fileRoute)
+
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
     def runProcess(self):
         if self.process == 'daily':
@@ -74,9 +77,7 @@ class MUSEProcess(CoreProcess):
             )
 
         if museManager.epubURL:
-            self.sendFileToProcessingQueue(
-                museManager.epubURL, museManager.s3EpubPath
-            )
+            self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(museManager.epubURL, museManager.s3EpubPath))
 
         self.addDCDWToUpdateList(museRec)
 

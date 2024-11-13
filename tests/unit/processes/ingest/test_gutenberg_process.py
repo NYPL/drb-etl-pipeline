@@ -3,6 +3,7 @@ import os
 import pytest
 
 from tests.helper import TestHelpers
+from model import get_file_message
 from processes import GutenbergProcess
 
 
@@ -26,6 +27,7 @@ class TestGutenbergProcess:
                 self.fileQueue = os.environ['FILE_QUEUE']
                 self.fileRoute = os.environ['FILE_ROUTING_KEY']
                 self.records = []
+                self.rabbitmq_manager = mocker.MagicMock()
         
         return TestGutenbergProcess('TestProcess', 'testFile', 'testDate')
 
@@ -167,14 +169,21 @@ class TestGutenbergProcess:
             '2|gutenberg.org/ebook/2.epub.noimages|gutenberg|application/epub+zip|{"download": true}',
         ]
 
-        mockSendToQueue = mocker.patch.object(GutenbergProcess, 'sendFileToProcessingQueue')
         mockAddPart = mocker.patch.object(GutenbergProcess, 'addNewPart')
 
         testInstance.storeEpubsInS3(mockRecord)
 
-        mockSendToQueue.assert_has_calls([
-            mocker.call('gutenberg.org/ebook/1.epub.images', 'epubs/gutenberg/1_images.epub'),
-            mocker.call('gutenberg.org/ebook/2.epub.noimages', 'epubs/gutenberg/2_noimages.epub')
+        testInstance.rabbitmq_manager.sendMessageToQueue.assert_has_calls([
+            mocker.call(
+                testInstance.fileQueue,
+                testInstance.fileRoute,
+                get_file_message('gutenberg.org/ebook/1.epub.images', 'epubs/gutenberg/1_images.epub')
+            ),
+            mocker.call(
+                testInstance.fileQueue,
+                testInstance.fileRoute,
+                get_file_message('gutenberg.org/ebook/2.epub.noimages', 'epubs/gutenberg/2_noimages.epub')
+            ),
         ])
 
         mockAddPart.assert_has_calls([
@@ -195,25 +204,14 @@ class TestGutenbergProcess:
         mockRecord = mocker.MagicMock()
         mockRecord.record.has_part = []
 
-        mockSendToQueue = mocker.patch.object(GutenbergProcess, 'sendFileToProcessingQueue')
-
         testInstance.addCoverAndStoreInS3(mockRecord, testMetadataYAML)
 
-        mockSendToQueue.assert_called_once_with(
-            'gutenberg.org/files/1/images/cover.jpg', 'covers/gutenberg/1.jpg'
+        testInstance.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
+            testInstance.fileQueue,
+            testInstance.fileRoute,
+            get_file_message('gutenberg.org/files/1/images/cover.jpg', 'covers/gutenberg/1.jpg')
         )
         assert mockRecord.record.has_part == [
             '|https://test_aws_bucket.s3.amazonaws.com/covers/gutenberg/1.jpg|gutenberg|image/jpeg|{"cover": true}'
         ]
-    
-    def test_sendFileToProcessingQueue(self, testInstance, mocker):
-        mockMessageSend = mocker.patch.object(GutenbergProcess, 'sendMessageToQueue')
-
-        testInstance.sendFileToProcessingQueue('testURL', 'testLocation')
-
-        mockMessageSend.assert_called_once_with(
-            'test_file_queue', 
-            'test_file_key',
-            {'fileData': {'fileURL': 'testURL', 'bucketPath': 'testLocation'}}
-        )
         

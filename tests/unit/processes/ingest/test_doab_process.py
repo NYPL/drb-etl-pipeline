@@ -7,6 +7,7 @@ from unittest import mock
 
 from processes.ingest.doab import DOABProcess, DOABError
 from mappings.base_mapping import MappingError
+from model import get_file_message
 from tests.helper import TestHelpers
 
 
@@ -20,7 +21,7 @@ class TestDOABProcess:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testProcess(self):
+    def testProcess(self, mocker):
         class TestDOAB(DOABProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
@@ -31,6 +32,7 @@ class TestDOABProcess:
                 self.ingestOffset = 0
                 self.ingestLimit = 10000
                 self.records = []
+                self.rabbitmq_manager = mocker.MagicMock()
 
         return TestDOAB()
 
@@ -281,7 +283,6 @@ class TestDOABProcess:
 
         processMocks = mocker.patch.multiple(DOABProcess,
             createManifestInS3=mocker.DEFAULT,
-            sendFileToProcessingQueue=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
 
@@ -291,7 +292,11 @@ class TestDOABProcess:
         mockMapping.applyMapping.assert_called_once()
         mockManager.parseLinks.assert_called_once()
         processMocks['createManifestInS3'].assert_called_once_with('pdfPath', 'pdfJSON')
-        processMocks['sendFileToProcessingQueue'].assert_called_once_with('epubURI', 'epubPath')
+        testProcess.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
+            testProcess.fileQueue, 
+            testProcess.fileRoute, 
+            get_file_message('epubURI', 'epubPath')
+        )
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
 
     def test_parseDOABRecord_error(self, testProcess, mocker):
@@ -309,14 +314,3 @@ class TestDOABProcess:
         testProcess.createManifestInS3('testPath', 'testManifest')
 
         mockPut.assert_called_once_with(b'testManifest', 'testPath', 'test_aws_bucket')
-
-    def test_sendFileToProcessingQueue(self, testProcess, mocker):
-        mockSend = mocker.patch.object(DOABProcess, 'sendMessageToQueue')
-
-        testProcess.sendFileToProcessingQueue('testURI', 'testLocation')
-
-        mockSend.assert_called_once_with(
-            'test_file_queue',
-            'test_file_key',
-            {'fileData': {'fileURL': 'testURI', 'bucketPath': 'testLocation'}}
-        )
