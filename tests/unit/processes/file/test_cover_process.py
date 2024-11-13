@@ -8,12 +8,13 @@ from processes import CoverProcess
 
 class TestCoverProcess:
     @pytest.fixture
-    def testProcess(self):
+    def testProcess(self, mocker):
         class TestCoverProcess(CoverProcess):
             def __init__(self, *args):
                 self.fileBucket = 'test_aws_bucket'
                 self.batchSize = 3
                 self.runTime = datetime(1900, 1, 1)
+                self.redis_manager = mocker.MagicMock()
 
         return TestCoverProcess()
 
@@ -167,8 +168,7 @@ class TestCoverProcess:
         mockManager.resizeCoverFile.assert_not_called()
 
     def test_getEditionIdentifiers(self, testProcess, mocker):
-        mockCheckRedis = mocker.patch.object(CoverProcess, 'checkSetRedis')
-        mockCheckRedis.side_effect = [True, False]
+        testProcess.redis_manager.checkSetRedis.side_effect = [True, False]
 
         mockIdentifiers = [mocker.MagicMock(identifier=1, authority='test'), mocker.MagicMock(identifier=2, authority='test')]
         mockEdition = mocker.MagicMock(identifiers=mockIdentifiers)
@@ -176,7 +176,7 @@ class TestCoverProcess:
         testIdentifiers = list(testProcess.getEditionIdentifiers(mockEdition))
         
         assert testIdentifiers == [(2, 'test')]
-        mockCheckRedis.assert_has_calls([
+        testProcess.redis_manager.checkSetRedis.assert_has_calls([
             mocker.call('sfrCovers', 1, 'test', expirationTime=2592000),
             mocker.call('sfrCovers', 2, 'test', expirationTime=2592000)
         ])

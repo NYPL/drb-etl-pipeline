@@ -4,7 +4,7 @@ import newrelic.agent
 import re
 
 from ..core import CoreProcess
-from managers import OCLCCatalogManager, RabbitMQManager
+from managers import OCLCCatalogManager, RabbitMQManager, RedisManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
 from logger import createLog
@@ -24,7 +24,8 @@ class ClassifyProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        self.createRedisClient()
+        self.redis_manager = RedisManager()
+        self.redis_manager.createRedisClient()
 
         self.catalog_queue = os.environ['OCLC_QUEUE']
         self.catalog_route = os.environ['OCLC_ROUTING_KEY']
@@ -80,7 +81,7 @@ class ClassifyProcess(CoreProcess):
             record.frbr_status = 'complete'
             frbrized_records.append(record)
 
-            if self.checkIncrementerRedis('oclcCatalog', 'API'):
+            if self.redis_manager.checkIncrementerRedis('oclcCatalog', 'API'):
                 logger.warning('Exceeded max requests to OCLC catalog')
                 break
 
@@ -111,7 +112,7 @@ class ClassifyProcess(CoreProcess):
             except Exception:
                 author = None
 
-            if identifier and self.checkSetRedis('classify', identifier, identifier_type):
+            if identifier and self.redis_manager.checkSetRedis('classify', identifier, identifier_type):
                 continue
 
             try:
@@ -159,7 +160,7 @@ class ClassifyProcess(CoreProcess):
 
         oclc_numbers = list(oclc_numbers)
 
-        cached_oclc_numbers = self.multiCheckSetRedis('catalog', oclc_numbers, 'oclc')
+        cached_oclc_numbers = self.redis_manager.multiCheckSetRedis('catalog', oclc_numbers, 'oclc')
 
         for oclc_number, uncached in cached_oclc_numbers:
             if not uncached:
@@ -170,10 +171,10 @@ class ClassifyProcess(CoreProcess):
             catalogued_record_count += 1
 
         if catalogued_record_count > 0:
-            self.setIncrementerRedis('oclcCatalog', 'API', amount=catalogued_record_count)
+            self.redis_manager.setIncrementerRedis('oclcCatalog', 'API', amount=catalogued_record_count)
 
     def check_if_classify_work_fetched(self, owi_number: int) -> bool:
-        return self.checkSetRedis('classifyWork', owi_number, 'owi')
+        return self.redis_manager.checkSetRedis('classifyWork', owi_number, 'owi')
 
     def _get_queryable_identifiers(self, identifiers):
         return list(filter(

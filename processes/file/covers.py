@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import os
 
 from ..core import CoreProcess
-from managers import CoverManager
+from managers import CoverManager, RedisManager
 from model import Edition, Link
 from model.postgres.edition import EDITION_LINKS
 from logger import createLog
@@ -17,7 +17,8 @@ class CoverProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        self.createRedisClient()
+        self.redis_manager = RedisManager()
+        self.redis_manager.createRedisClient()
 
         self.createS3Client()
         self.fileBucket = os.environ['FILE_BUCKET']
@@ -73,7 +74,7 @@ class CoverProcess(CoreProcess):
 
     def getEditionIdentifiers(self, edition):
         for iden in edition.identifiers:
-            if self.checkSetRedis('sfrCovers', iden.identifier, iden.authority, expirationTime=60*60*24*30):
+            if self.redis_manager.checkSetRedis('sfrCovers', iden.identifier, iden.authority, expirationTime=60*60*24*30):
                 logger.debug('{} recently queried. Skipping'.format(iden))
                 continue
 

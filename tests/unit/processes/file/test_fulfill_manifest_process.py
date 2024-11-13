@@ -1,6 +1,5 @@
 import pytest
 
-from mappings.base_mapping import MappingError
 from processes.file.fulfill_url_manifest import FulfillURLManifestProcess
 from tests.helper import TestHelpers
 
@@ -14,7 +13,7 @@ class TestUofMProcess:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testProcess(self, mocker):
+    def test_process(self, mocker):
         class TestFulfill(FulfillURLManifestProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
@@ -30,28 +29,26 @@ class TestUofMProcess:
         
         return TestFulfill()
 
-    def test_runProcess(self, testProcess, mocker):
-        runMocks = mocker.patch.multiple(
+    def test_runProcess(self, test_process, mocker):
+        run_mocks = mocker.patch.multiple(
             FulfillURLManifestProcess,
             fetch_and_update_manifests=mocker.DEFAULT,
         )
 
-        testProcess.runProcess()
+        test_process.runProcess()
 
-        runMocks['fetch_and_update_manifests'].assert_called_once()
+        run_mocks['fetch_and_update_manifests'].assert_called_once()
 
 
-    def test_fetch_and_update_manifests(self, testProcess, mocker):
-        processMocks = mocker.patch.multiple(FulfillURLManifestProcess,
+    def test_fetch_and_update_manifests(self, test_process, mocker):
+        process_mocks = mocker.patch.multiple(FulfillURLManifestProcess,
             load_batches=mocker.DEFAULT,
-            getObjectFromBucket=mocker.DEFAULT,
             update_metadata_object=mocker.DEFAULT
         )
 
-        mockPrefix = mocker.MagicMock(prefix='testPrefix')
-        mockTimeStamp = mocker.MagicMock(timeStamp='testTimeStamp')
+        mock_timestamp = mocker.MagicMock(time_stamp='test_timestamp')
         
-        testProcess.fetch_and_update_manifests(mockTimeStamp)
+        test_process.fetch_and_update_manifests(mock_timestamp)
 
-        processMocks['load_batches'].assert_called_once_with('testPrefix','test_aws_bucket')
+        process_mocks['load_batches'].assert_called_once_with('testPrefix','test_aws_bucket')
         

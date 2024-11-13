@@ -34,10 +34,6 @@ class TestCoreProcess:
         assert coreInstance.port == 'test_psql_port'
         assert coreInstance.db == 'test_psql_name'
 
-        # Properties set by the RedisManager
-        assert coreInstance.redisHost == 'test_redis_host'
-        assert coreInstance.redisPort == 'test_redis_port'
-
     def test_addDCDWToUpdateList_existing(self, coreInstance, mocker):
         mockSession = mocker.MagicMock()
         mockSession.query().filter().first.return_value = 'existing_record'
