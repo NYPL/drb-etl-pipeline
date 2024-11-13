@@ -13,18 +13,18 @@ levels = {
 }
 
 
-def createLog(module):
+def create_log(module):
     logger = logging.getLogger(module)
-    consoleLog = logging.StreamHandler(stream=sys.stdout)
+    console_log_handler = logging.StreamHandler(stream=sys.stdout)
 
     logLevel = os.environ.get('LOG_LEVEL', 'warning').lower()
 
     logger.setLevel(levels[logLevel])
-    consoleLog.setLevel(levels[logLevel])
+    console_log_handler.setLevel(levels[logLevel])
 
     formatter = NewRelicContextFormatter('%(asctime)s | %(name)s | %(levelname)s: %(message)s')  # noqa: E501
-    consoleLog.setFormatter(formatter)
+    console_log_handler.setFormatter(formatter)
 
-    logger.addHandler(consoleLog)
+    logger.addHandler(console_log_handler)
 
     return logger

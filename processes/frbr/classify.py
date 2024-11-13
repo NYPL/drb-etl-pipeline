@@ -7,10 +7,10 @@ from ..core import CoreProcess
 from managers import OCLCCatalogManager, RabbitMQManager, RedisManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
-from logger import createLog
+from logger import create_log
 
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class ClassifyProcess(CoreProcess):

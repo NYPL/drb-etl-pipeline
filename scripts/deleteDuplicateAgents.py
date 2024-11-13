@@ -5,12 +5,12 @@ import logging
 from model import Work, Edition
 from managers import DBManager, SFRRecordManager
 from Levenshtein import jaro_winkler
-from logger import createLog
+from logger import create_log
 from sqlalchemy import or_, func
 
 def main(dryRun=False):
 
-    logger = createLog(__name__)
+    logger = create_log(__name__)
 
     logging.basicConfig(filename='duplicateAgents.log', encoding='utf-8', level=logging.INFO)
 

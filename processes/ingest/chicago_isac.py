@@ -4,9 +4,9 @@ import os
 from ..core import CoreProcess
 from mappings.chicagoISAC import ChicagoISACMapping
 from managers import WebpubManifest
-from logger import createLog
+from logger import create_log
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 class ChicagoISACProcess(CoreProcess):
 

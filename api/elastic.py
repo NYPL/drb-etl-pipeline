@@ -5,9 +5,9 @@ import os
 import re
 
 from .utils import APIUtils
-from logger import createLog
+from logger import create_log
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class ElasticClient():

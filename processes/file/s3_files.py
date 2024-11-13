@@ -7,11 +7,11 @@ from urllib.parse import quote_plus
 
 from ..core import CoreProcess
 from managers import S3Manager, RabbitMQManager
-from logger import createLog
+from logger import create_log
 from utils import retry_request
 
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class S3Process(CoreProcess):

@@ -8,9 +8,9 @@ from urllib.error import HTTPError
 from mappings.base_mapping import MappingError
 from mappings.UofM import UofMMapping
 from managers import WebpubManifest
-from logger import createLog
+from logger import create_log
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 class UofMProcess(CoreProcess):
 

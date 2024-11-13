@@ -7,10 +7,10 @@ from mappings.base_mapping import MappingError
 from mappings.loc import LOCMapping
 from managers import RabbitMQManager, WebpubManifest
 from model import get_file_message
-from logger import createLog
+from logger import create_log
 from datetime import datetime, timedelta, timezone
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=50&at=results&sb=timestamp_desc'
 LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=50&at=results&sb=timestamp_desc' 
