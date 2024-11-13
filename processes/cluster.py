@@ -4,7 +4,7 @@ from sqlalchemy.exc import DataError
 from typing import Optional
 
 from .core import CoreProcess
-from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager, ElasticsearchManager
+from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager, ElasticsearchManager, RedisManager
 from model import Record, Work
 from logger import createLog
 
@@ -26,7 +26,8 @@ class ClusterProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        self.createRedisClient()
+        self.redis_manager = RedisManager()
+        self.redis_manager.createRedisClient()
 
         self.elastic_search_manager = ElasticsearchManager()
         

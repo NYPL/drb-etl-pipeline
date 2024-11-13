@@ -6,6 +6,7 @@ import requests
 
 from ..core import CoreProcess
 from logger import createLog
+from managers import RedisManager
 from mappings.hathitrust import HathiMapping
 from processes import CatalogProcess, ClassifyProcess, ClusterProcess
 
@@ -16,6 +17,8 @@ class SeedLocalDataProcess(CoreProcess):
     def __init__(self, *args):
         super(SeedLocalDataProcess, self).__init__(*args[:4])
 
+        self.redis_manager = RedisManager()
+
     def runProcess(self):
         try:
             self.generateEngine()
@@ -25,8 +28,9 @@ class SeedLocalDataProcess(CoreProcess):
 
             process_args = ['complete'] + ([None] * 4)
 
-            self.createRedisClient()
-            self.clear_cache()
+
+            self.redis_manager.createRedisClient()
+            self.redis_manager.clear_cache()
 
             classify_process = ClassifyProcess(*process_args)
             classify_process.runProcess()

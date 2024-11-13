@@ -38,10 +38,6 @@ class TestCoreProcess:
         assert coreInstance.rabbitHost == 'test_rbmq_host'
         assert coreInstance.rabbitPort == 'test_rbmq_port'
 
-        # Properties set by the RedisManager
-        assert coreInstance.redisHost == 'test_redis_host'
-        assert coreInstance.redisPort == 'test_redis_port'
-
     def test_addDCDWToUpdateList_existing(self, coreInstance, mocker):
         mockSession = mocker.MagicMock()
         mockSession.query().filter().first.return_value = 'existing_record'
