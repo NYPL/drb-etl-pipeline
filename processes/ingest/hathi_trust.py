@@ -6,6 +6,7 @@ import os
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
+from constants import get_constants
 from ..core import CoreProcess
 from mappings.hathitrust import HathiMapping
 from logger import createLog
@@ -22,6 +23,8 @@ class HathiTrustProcess(CoreProcess):
 
         self.generateEngine()
         self.createSession()
+
+        self.constants = get_constants()
 
     def runProcess(self):
         if self.process == 'daily':
@@ -47,7 +50,7 @@ class HathiTrustProcess(CoreProcess):
         self.readHathiFile(hathiReader)
 
     def parseHathiDataRow(self, data_row):
-        hathiRec = HathiMapping(data_row, self.statics)
+        hathiRec = HathiMapping(data_row, self.constants)
         hathiRec.applyMapping()
         self.addDCDWToUpdateList(hathiRec)
 

@@ -2,8 +2,8 @@ from .base_mapping import BaseMapping
 
 
 class JSONMapping(BaseMapping):
-    def __init__(self, source, statics):
-        super().__init__(source, statics)
+    def __init__(self, source, constants):
+        super().__init__(source, constants)
 
     def applyMapping(self):
         self.record = self.initEmptyRecord()

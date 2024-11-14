@@ -21,7 +21,7 @@ class TestClusterProcess:
         class TestClusterProcess(ClusterProcess):
             def __init__(self):
                 self.records = []
-                self.statics = { 'iso639': {} }
+                self.constants = { 'iso639': {} }
                 self.session = mocker.Mock()
                 self.engine = mocker.Mock()
         

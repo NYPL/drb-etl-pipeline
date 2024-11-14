@@ -4,6 +4,7 @@ import mimetypes
 import os
 import re
 
+from constants.get_constants import get_constants
 from ..core import CoreProcess
 from managers import GutenbergManager, RabbitMQManager
 from mappings.gutenberg import GutenbergMapping
@@ -40,6 +41,8 @@ class GutenbergProcess(CoreProcess):
         self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
         self.s3Bucket = os.environ['FILE_BUCKET']
+
+        self.constants = get_constants()
 
     def runProcess(self):
         if self.process == 'daily':
@@ -89,7 +92,7 @@ class GutenbergProcess(CoreProcess):
             gutenbergRec = GutenbergMapping(
                 gutenbergRDF,
                 self.GUTENBERG_NAMESPACES,
-                self.statics
+                self.constants
             )
 
             gutenbergRec.applyMapping()

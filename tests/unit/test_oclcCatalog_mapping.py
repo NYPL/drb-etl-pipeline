@@ -12,7 +12,7 @@ class TestCatalogMapping:
             def __init__(self):
                 self.source = None
                 self.mapping = None
-                self.staticValues = None
+                self.constants = None
                 self.namespace = None
 
             def applyMapping(self):

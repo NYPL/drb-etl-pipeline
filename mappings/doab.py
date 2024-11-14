@@ -4,8 +4,8 @@ from mappings.xml import XMLMapping
 
 class DOABMapping(XMLMapping):
     DOI_REGEX = r'doabooks.org\/handle\/([0-9]+\.[0-9]+\.[0-9]+\/[0-9]+)'
-    def __init__(self, source, namespace, statics):
-        super(DOABMapping, self).__init__(source, namespace, statics)
+    def __init__(self, source, namespace, constants):
+        super(DOABMapping, self).__init__(source, namespace, constants)
         self.mapping = self.createMapping()
     
     def createMapping(self):

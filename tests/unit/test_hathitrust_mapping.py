@@ -5,12 +5,12 @@ from mappings.hathitrust import HathiMapping
 
 class TestHathingMapping:
     @pytest.fixture
-    def testMapping(self, testStatics):
+    def testMapping(self, test_constants):
         class TestHathi(HathiMapping):
             def __init__(self):
                 self.source = None
                 self.mapping = None
-                self.staticValues = testStatics
+                self.constants = test_constants
 
             def applyMapping(self):
                 pass
@@ -28,7 +28,7 @@ class TestHathingMapping:
         )
 
     @pytest.fixture
-    def testStatics(self):
+    def test_constants(self):
         return {
             'hathitrust': {
                 'sourceCodes': {'contr': 'Contributor'},

@@ -16,8 +16,8 @@ class CatalogMapping(XMLMapping):
         'hathitrust': r'catalog.hathitrust.org\/api\/volumes\/([a-z]{3,6}\/[a-zA-Z0-9]+)\.html'
     }
 
-    def __init__(self, source, namespace, statics):
-        super(CatalogMapping, self).__init__(source, namespace, statics)
+    def __init__(self, source, namespace, constants):
+        super(CatalogMapping, self).__init__(source, namespace, constants)
         self.mapping = self.createMapping()
 
     def createMapping(self):

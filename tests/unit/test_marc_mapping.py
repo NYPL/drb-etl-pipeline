@@ -26,11 +26,11 @@ class TestMARCMapping:
     @pytest.fixture
     def testMapper(self, testFields, testRecord):
         class TestMARC(MARCMapping):
-            def __init__(self, source, mapping, statics):
-                super().__init__(source, statics)
+            def __init__(self, source, mapping, constants):
+                super().__init__(source, constants)
                 self.source = source
                 self.mapping = mapping
-                self.statics = statics
+                self.constants = constants
 
             def createMapping(self):
                 pass

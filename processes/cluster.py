@@ -3,11 +3,11 @@ import re
 from sqlalchemy.exc import DataError
 from typing import Optional
 
+from constants.get_constants import get_constants
 from .core import CoreProcess
 from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager, ElasticsearchManager, RedisManager
 from model import Record, Work
 from logger import createLog
-
 
 logger = createLog(__name__)
 
@@ -34,6 +34,8 @@ class ClusterProcess(CoreProcess):
         self.elastic_search_manager.createElasticConnection()
         self.elastic_search_manager.createElasticSearchIngestPipeline()
         self.elastic_search_manager.createElasticSearchIndex()
+
+        self.constants = get_constants()
 
     def runProcess(self):
         try:
@@ -219,7 +221,7 @@ class ClusterProcess(CoreProcess):
         return matched_records
 
     def create_work_from_editions(self, editions, records):
-        record_manager = SFRRecordManager(self.session, self.statics['iso639'])
+        record_manager = SFRRecordManager(self.session, self.constants['iso639'])
 
         work_data = record_manager.buildWork(records, editions)
 

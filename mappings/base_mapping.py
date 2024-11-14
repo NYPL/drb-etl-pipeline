@@ -7,11 +7,11 @@ from model import Record
 
 
 class BaseMapping(RecordMapping):
-    def __init__(self, source, statics):
+    def __init__(self, source, constants):
         self.mapping = {}
         self.source = source
         self.record = None
-        self.staticValues = statics
+        self.constants = constants
 
         self.formatter = CustomFormatter()
 

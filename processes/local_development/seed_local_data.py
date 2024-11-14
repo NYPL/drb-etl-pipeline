@@ -4,6 +4,7 @@ import gzip
 import os
 import requests
 
+from constants.get_constants import get_constants
 from ..core import CoreProcess
 from logger import createLog
 from managers import RedisManager
@@ -18,6 +19,7 @@ class SeedLocalDataProcess(CoreProcess):
         super(SeedLocalDataProcess, self).__init__(*args[:4])
 
         self.redis_manager = RedisManager()
+        self.constants = get_constants()
 
     def runProcess(self):
         try:
@@ -86,7 +88,7 @@ class SeedLocalDataProcess(CoreProcess):
                 book_right = book[2]
 
                 if book_right not in in_copyright_statuses:
-                    hathi_record = HathiMapping(book, self.statics)
+                    hathi_record = HathiMapping(book, self.constants)
                     hathi_record.applyMapping()
 
                     self.addDCDWToUpdateList(hathi_record)
