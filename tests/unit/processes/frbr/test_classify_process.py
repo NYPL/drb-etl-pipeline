@@ -19,7 +19,7 @@ class TestOCLCClassifyProcess:
         class TestClassifyProcess(ClassifyProcess):
             def __init__(self, *args):
                 self.records = set()
-                self.ingestLimit = None
+                self.ingest_limit = None
                 self.records = []
                 self.catalog_queue = os.environ['OCLC_QUEUE']
                 self.catalog_route = os.environ['OCLC_ROUTING_KEY']
@@ -81,19 +81,15 @@ class TestOCLCClassifyProcess:
 
         mock_session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
+        mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
-        mock_window_query = mocker.patch.object(ClassifyProcess, 'windowedQuery')
-        mock_window_query.return_value = mock_records
+        mock_query.first.side_effect = mock_records + [None]
 
         test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 100
 
-        mock_bulk_save_objects = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
-
         test_instance.classify_records()
 
-        mock_window_query.assert_called_once()
         mock_frbrize_record.assert_has_calls([mocker.call(record) for record in mock_records])
-        mock_bulk_save_objects.assert_called_once()
 
     def test_classify_records_custom_range(self, test_instance, mocker):
         mock_frbrize = mocker.patch.object(ClassifyProcess, 'frbrize_record')
@@ -104,45 +100,37 @@ class TestOCLCClassifyProcess:
 
         mock_session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
+        mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
-        mock_window_query = mocker.patch.object(ClassifyProcess, 'windowedQuery')
-        mock_window_query.return_value = mock_records
+        mock_query.first.side_effect = mock_records + [None]
 
         test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 100
-
-        mock_bulk_save_objects = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
 
         test_instance.classify_records(start_date_time='testDate')
 
         mock_start_time.now.assert_not_called()
         mock_start_time.timedelta.assert_not_called()
-        mock_window_query.assert_called_once()
         mock_frbrize.assert_has_calls([mocker.call(record) for record in mock_records])
-        mock_bulk_save_objects.assert_called_once()
 
     def test_classify_records_full(self, test_instance, mocker):
         mock_frbrize_record = mocker.patch.object(ClassifyProcess, 'frbrize_record')
         mock_session = mocker.MagicMock()
-        mockQuery = mocker.MagicMock()
+        mock_query = mocker.MagicMock()
         test_instance.session = mock_session
         mock_start_time = mocker.spy(datetime, 'datetime')
 
-        mock_session.query().filter.return_value = mockQuery
+        mock_session.query().filter.return_value = mock_query
+        mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
-        mock_window_query = mocker.patch.object(ClassifyProcess, 'windowedQuery')
-        mock_window_query.return_value = mock_records
+        mock_query.first.side_effect = mock_records + [None]
 
         test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 50 + [True]
-
-        mock_bulk_save_objects = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
 
         test_instance.classify_records(full=True)
 
         mock_start_time.now.assert_not_called()
         mock_start_time.timedelta.assert_not_called()
-        mock_window_query.assert_called_once()
         mock_frbrize_record.assert_has_calls([mocker.call(record) for record in mock_records[:50]])
-        mock_bulk_save_objects.assert_called_once()
 
     def test_classify_records_full_batch(self, test_instance, mocker):
         mock_frbrize_record = mocker.patch.object(ClassifyProcess, 'frbrize_record')
@@ -152,21 +140,18 @@ class TestOCLCClassifyProcess:
         mock_start_time = mocker.spy(datetime, 'datetime')
 
         mock_session.query().filter.return_value = mock_query
+        mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
-        mock_window_query = mocker.patch.object(ClassifyProcess, 'windowedQuery')
-        mock_window_query.return_value = mock_records
+        mock_query.first.side_effect = mock_records + [None]
 
         test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 100
 
-        mock_bulk_save_objects = mocker.patch.object(ClassifyProcess, 'bulkSaveObjects')
-
-        test_instance.ingestLimit = 100
+        test_instance.ingest_limit = 100
         test_instance.classify_records(full=True)
 
         mock_start_time.now.assert_not_called()
         mock_start_time.timedelta.assert_not_called()
         mock_frbrize_record.assert_has_calls([mocker.call(record) for record in mock_records])
-        mock_bulk_save_objects.assert_called_once()
 
     def test_frbrize_record_success_valid_author(self, test_instance, test_record, mocker):
         mock_identifiers = mocker.patch.object(ClassifyProcess, '_get_queryable_identifiers')
