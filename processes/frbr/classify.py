@@ -75,7 +75,8 @@ class ClassifyProcess(CoreProcess):
             unfrbrized_record.cluster_status = False
             unfrbrized_record.frbr_status = 'complete'
 
-            self.commitChanges()
+            self.session.add(unfrbrized_record)
+            self.session.commit()
             self.classified_count += 1
 
             if self.ingest_limit and self.classified_count >= self.ingest_limit:
