@@ -19,4 +19,4 @@ from .ingest.u_of_sc import UofSCProcess
 from .ingest.loc import LOCProcess
 from .ingest.u_of_m import UofMProcess
 from .file.fulfill_url_manifest import FulfillURLManifestProcess
-from .ingest.pub_backlist import PubBacklistProcess
+from .ingest.publisher_backlist import PublisherBacklistProcess
