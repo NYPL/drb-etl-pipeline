@@ -15,7 +15,7 @@ logger = createLog(__name__)
 
 class ClassifyProcess(CoreProcess):
     def __init__(self, *args):
-        super(ClassifyProcess, self).__init__(*args[:4], batchSize=1)
+        super(ClassifyProcess, self).__init__(*args[:4], batchSize=50)
 
         self.ingest_limit = int(args[4]) if len(args) >= 5 and args[4] else None
 
