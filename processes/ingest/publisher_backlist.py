@@ -30,4 +30,4 @@ class PublisherBacklistProcess(CoreProcess):
         except Exception as e:
             logger.exception('Failed to run Pub Backlist process')
             raise e
-        
+    
