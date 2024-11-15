@@ -46,7 +46,7 @@ class FlaskAPI:
             self.app.config['DEBUG'] = True
             self.app.run(host='0.0.0.0', port=5050)
 
-        elif 'local' in os.environ['ENVIRONMENT']:
+        elif 'local' in os.environ['ENVIRONMENT'] or os.environ['ENVIRONMENT'] == 'frontend-ci':
             logger.debug('Starting dev server on port 5050')
 
             self.app.config['ENV'] = 'development'

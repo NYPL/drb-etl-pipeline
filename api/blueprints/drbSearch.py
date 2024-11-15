@@ -3,6 +3,7 @@ from ..elastic import ElasticClient, ElasticClientError
 from ..db import DBClient
 from ..utils import APIUtils
 from logger import create_log
+import traceback
 
 logger = create_log(__name__)
 
@@ -57,16 +58,19 @@ def query():
         filtered_formats = APIUtils.formatFilters(terms)
 
         works = db_client.fetchSearchedWorks(results)
+
+        # Depending on the version of elastic search, hits will either be an integer or a dictionary
+        total_hits = search_result.hits.total  if isinstance(search_result.hits.total, int) else search_result.hits.total.value
         
         facets = APIUtils.formatAggregationResult(search_result.aggregations.to_dict())
         paging = APIUtils.formatPagingOptions(
             search_page + 1, 
             search_size, 
-            search_result.hits.total.value
+            total_hits
         )
 
         data_block = {
-            'totalWorks': search_result.hits.total.value,
+            'totalWorks': total_hits,
             'works': APIUtils.formatWorkOutput(
                 works, 
                 results, 

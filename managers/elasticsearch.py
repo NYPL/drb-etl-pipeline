@@ -1,10 +1,12 @@
 import os
 
+import boto3
 from elasticsearch.client import IngestClient
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, RequestsHttpConnection
 from elasticsearch.helpers import bulk
 from elasticsearch_dsl import connections, Index
 from elastic_transport import ConnectionTimeout
+from requests_aws4auth import AWS4Auth
 
 from model import ESWork
 from logger import create_log
@@ -26,12 +28,17 @@ class ElasticsearchManager:
         user = user or os.environ.get('ELASTICSEARCH_USER', None)
         pswd = pswd or os.environ.get('ELASTICSEARCH_PSWD', None)
         timeout = int(os.environ.get('ELASTICSEARCH_TIMEOUT', 5))
+        environment = os.environ.get('ENVIRONMENT', None)
 
         creds = '{}:{}@'.format(user, pswd) if user and pswd else ''
 
         #Allowing multple hosts for a ES connection
         multHosts = []
 
+        if environment == 'frontend-ci':
+            self._create_ci_connection(scheme=scheme, host=host, timeout=timeout)
+            return
+        
         if ',' not in host:
             host = '{}://{}{}:{}'.format(scheme, creds, host, port)
 
@@ -317,6 +324,25 @@ class ElasticsearchManager:
                 '_index': self.index,
                 '_id': uuid
             }
+
+    def _create_ci_connection(self, scheme: str, host: str, timeout: int):
+        host = '{}://{}'.format(scheme, host)
+
+        session = boto3.Session()
+        credentials = session.get_credentials()
+        awsauth = AWS4Auth(credentials.access_key, credentials.secret_key, 'us-east-1', 'es', session_token=credentials.token)
+
+        connection_config = {
+            'hosts': [host],
+            'timeout': timeout,
+            'http_auth': awsauth,
+            'connection_class': RequestsHttpConnection,
+            'use_ssl': True,
+            'verify_certs': True,
+        }
+
+        self.client = connections.create_connection(**connection_config)
+        self.es = Elasticsearch(**connection_config)
 
     @staticmethod
     def _splitWorkBatch(works):
