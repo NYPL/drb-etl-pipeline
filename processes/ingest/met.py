@@ -9,9 +9,9 @@ from mappings.base_mapping import MappingError
 from mappings.met import METMapping
 from managers import RabbitMQManager, WebpubManifest
 from model import get_file_message
-from logger import createLog
+from logger import create_log
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class METProcess(CoreProcess):

@@ -5,14 +5,14 @@ import os
 import requests
 
 from ..core import CoreProcess
-from logger import createLog
+from logger import create_log
 from mappings.doab import DOABMapping
 from mappings.base_mapping import MappingError
 from managers import DOABLinkManager, RabbitMQManager
 from model import get_file_message
 
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 class DOABProcess(CoreProcess):
     ROOT_NAMESPACE = {None: 'http://www.openarchives.org/OAI/2.0/'}

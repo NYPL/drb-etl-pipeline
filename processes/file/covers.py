@@ -5,9 +5,9 @@ from ..core import CoreProcess
 from managers import CoverManager, RedisManager
 from model import Edition, Link
 from model.postgres.edition import EDITION_LINKS
-from logger import createLog
+from logger import create_log
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class CoverProcess(CoreProcess):
