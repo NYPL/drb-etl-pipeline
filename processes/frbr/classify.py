@@ -7,19 +7,17 @@ from ..core import CoreProcess
 from managers import OCLCCatalogManager, RabbitMQManager, RedisManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
-from logger import createLog
+from logger import create_log
 
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class ClassifyProcess(CoreProcess):
-    WINDOW_SIZE = 100
-
     def __init__(self, *args):
         super(ClassifyProcess, self).__init__(*args[:4], batchSize=50)
 
-        self.ingestLimit = int(args[4]) if len(args) >= 5 and args[4] else None
+        self.ingest_limit = int(args[4]) if len(args) >= 5 and args[4] else None
 
         self.generateEngine()
         self.createSession()
@@ -49,11 +47,11 @@ class ClassifyProcess(CoreProcess):
             else:
                 logger.warning(f'Unknown classify process type: {self.process}')
                 return
-
+            
             self.saveRecords()
             self.commitChanges()
             
-            logger.info(f'Classified {self.classified_count} records and saved {len(self.records)} classify records')
+            logger.info(f'Classified {self.classified_count} records')
         except Exception as e:
             logger.exception(f'Failed to run classify process')
             raise e
@@ -71,29 +69,22 @@ class ClassifyProcess(CoreProcess):
             
             get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.date_modified > start_date_time)
 
-        window_size = min(self.ingestLimit or self.WINDOW_SIZE, self.WINDOW_SIZE)
-        frbrized_records = []
+        while unfrbrized_record := get_unfrbrized_records_query.first():
+            self.frbrize_record(unfrbrized_record)
 
-        for record in self.windowedQuery(Record, get_unfrbrized_records_query, windowSize=window_size):
-            self.frbrize_record(record)
+            unfrbrized_record.cluster_status = False
+            unfrbrized_record.frbr_status = 'complete'
 
-            record.cluster_status = False
-            record.frbr_status = 'complete'
-            frbrized_records.append(record)
+            self.session.add(unfrbrized_record)
+            self.session.commit()
+            self.classified_count += 1
+
+            if self.ingest_limit and self.classified_count >= self.ingest_limit:
+                break
 
             if self.redis_manager.checkIncrementerRedis('oclcCatalog', 'API'):
                 logger.warning('Exceeded max requests to OCLC catalog')
                 break
-
-            if len(frbrized_records) >= window_size:
-                self.classified_count += len(frbrized_records)
-                self.bulkSaveObjects(frbrized_records)
-                
-                frbrized_records = []
-
-        if len(frbrized_records):
-            self.classified_count += len(frbrized_records)
-            self.bulkSaveObjects(frbrized_records)
 
     def frbrize_record(self, record: Record):
         queryable_ids = self._get_queryable_identifiers(record.identifiers)

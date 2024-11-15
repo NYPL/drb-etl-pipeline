@@ -2,9 +2,9 @@ from flask import Blueprint, request, current_app
 from ..db import DBClient
 from ..utils import APIUtils
 from ..validation_utils import is_valid_numeric_id
-from logger import createLog
+from logger import create_log
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 edition = Blueprint('edition', __name__, url_prefix='/edition')
 

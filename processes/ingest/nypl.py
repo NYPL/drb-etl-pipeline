@@ -1,8 +1,8 @@
 from ..core import CoreProcess
-from logger import createLog
+from logger import create_log
 from services import NYPLBibService
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class NYPLProcess(CoreProcess):

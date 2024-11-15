@@ -3,10 +3,10 @@ import os
 import requests
 from requests.exceptions import ReadTimeout
 
-from logger import createLog
+from logger import create_log
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class ContentCafeFetcher(AbstractFetcher):

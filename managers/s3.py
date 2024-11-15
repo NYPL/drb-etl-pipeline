@@ -7,9 +7,9 @@ import mimetypes
 import os
 from zipfile import ZipFile
 
-from logger import createLog
+from logger import create_log
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class S3Manager:

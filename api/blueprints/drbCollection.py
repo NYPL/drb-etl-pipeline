@@ -12,11 +12,11 @@ from ..opdsUtils import OPDSUtils
 from ..utils import APIUtils
 from ..validation_utils import is_valid_uuid
 from ..opds2 import Feed, Publication
-from logger import createLog
+from logger import create_log
 from model import Work, Edition
 from model.postgres.collection import COLLECTION_EDITIONS
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 collection = Blueprint('collection', __name__, url_prefix='/collection')
 
