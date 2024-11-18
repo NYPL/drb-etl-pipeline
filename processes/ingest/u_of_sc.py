@@ -5,7 +5,7 @@ from requests.exceptions import HTTPError, ConnectionError
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.UofSC import UofSCMapping
-from managers import WebpubManifest
+from managers import S3Manager, WebpubManifest
 from logger import create_log
 
 logger = create_log(__name__)
@@ -23,7 +23,8 @@ class UofSCProcess(CoreProcess):
         self.createSession()
 
         self.s3Bucket = os.environ['FILE_BUCKET']
-        self.createS3Client()
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
 
     def runProcess(self):
         with open('UofSC_metadata.json') as f:
@@ -61,7 +62,7 @@ class UofSCProcess(CoreProcess):
 
                 manifestJSON = self.generateManifest(record, uri, manifestURI)
 
-                self.createManifestInS3(manifestPath, manifestJSON)
+                self.s3_manager.createManifestInS3(manifestPath, manifestJSON)
 
                 linkString = '|'.join([
                     itemNo,

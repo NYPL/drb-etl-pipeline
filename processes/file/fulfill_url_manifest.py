@@ -5,6 +5,7 @@ from botocore.exceptions import ClientError
 
 from ..core import CoreProcess
 from datetime import datetime, timedelta, timezone
+from managers import S3Manager
 from model import Link
 from logger import create_log
 
@@ -24,7 +25,8 @@ class FulfillURLManifestProcess(CoreProcess):
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.host = os.environ['DRB_API_HOST']
         self.prefix = 'manifests/UofM/'
-        self.createS3Client()
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
 
     def runProcess(self):
         if self.process == 'daily':
@@ -40,7 +42,7 @@ class FulfillURLManifestProcess(CoreProcess):
 
     def fetch_and_update_manifests(self, start_timestamp=None):
 
-        batches = self.load_batches(self.prefix, self.s3Bucket)
+        batches = self.s3_manager.load_batches(self.prefix, self.s3Bucket)
         if start_timestamp:
             #Using JMESPath to extract keys from the JSON batches
             filtered_batch_keys = batches.search(f"Contents[?to_string(LastModified) > '\"{start_timestamp}\"'].Key")
@@ -88,7 +90,7 @@ class FulfillURLManifestProcess(CoreProcess):
         if metadata_json != metadata_json_copy:
             try:
                 fulfill_manifest = json.dumps(metadata_json, ensure_ascii = False)
-                return self.s3Client.put_object(
+                return self.s3_manager.s3Client.put_object(
                     Bucket=bucket_name, 
                     Key=curr_key, 
                     Body=fulfill_manifest, 

@@ -8,7 +8,7 @@ from requests.exceptions import ReadTimeout, HTTPError
 
 from ..core import CoreProcess
 from mappings.muse import MUSEMapping
-from managers import MUSEError, MUSEManager, RabbitMQManager
+from managers import MUSEError, MUSEManager, RabbitMQManager, S3Manager
 from model import get_file_message
 from logger import create_log
 
@@ -27,7 +27,8 @@ class MUSEProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        self.createS3Client()
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
 
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
@@ -70,7 +71,7 @@ class MUSEProcess(CoreProcess):
         museManager.addReadableLinks()
 
         if museManager.pdfWebpubManifest:
-            self.putObjectInBucket(
+            self.s3_manager.putObjectInBucket(
                 museManager.pdfWebpubManifest.toJson().encode('utf-8'),
                 museManager.s3PDFReadPath,
                 museManager.s3Bucket

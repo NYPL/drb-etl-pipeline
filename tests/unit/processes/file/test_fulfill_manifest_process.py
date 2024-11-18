@@ -17,7 +17,7 @@ class TestUofMProcess:
         class TestFulfill(FulfillURLManifestProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
-                self.s3Client = mocker.MagicMock(s3Client='testS3Client')
+                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.session = mocker.MagicMock(session='testSession')
                 self.records = mocker.MagicMock(record='testRecord')
                 self.batchSize = mocker.MagicMock(batchSize='testBatchSize')
@@ -41,14 +41,11 @@ class TestUofMProcess:
 
 
     def test_fetch_and_update_manifests(self, test_process, mocker):
-        process_mocks = mocker.patch.multiple(FulfillURLManifestProcess,
-            load_batches=mocker.DEFAULT,
-            update_metadata_object=mocker.DEFAULT
-        )
+        mocker.patch.multiple(FulfillURLManifestProcess, update_metadata_object=mocker.DEFAULT)
 
         mock_timestamp = mocker.MagicMock(time_stamp='test_timestamp')
         
         test_process.fetch_and_update_manifests(mock_timestamp)
 
-        process_mocks['load_batches'].assert_called_once_with('testPrefix','test_aws_bucket')
+        test_process.s3_manager.load_batches.assert_called_once_with('testPrefix','test_aws_bucket')
         

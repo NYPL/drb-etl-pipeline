@@ -23,6 +23,7 @@ class TestMUSEProcess:
         class TestMUSE(MUSEProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
+                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.records = []
                 self.ingest_limit = None
                 self.fileQueue = 'fileQueue'
@@ -258,11 +259,7 @@ class TestMUSEProcess:
         mockManagerInit = mocker.patch('processes.ingest.muse.MUSEManager')
         mockManagerInit.return_value = mockManager
 
-        processMocks = mocker.patch.multiple(
-            MUSEProcess,
-            putObjectInBucket=mocker.DEFAULT,
-            addDCDWToUpdateList=mocker.DEFAULT
-        )
+        processMocks = mocker.patch.multiple(MUSEProcess, addDCDWToUpdateList=mocker.DEFAULT)
 
         testProcess.parseMuseRecord('testMARC')
 
@@ -273,7 +270,7 @@ class TestMUSEProcess:
         mockManager.identifyReadableVersions.assert_called_once()
         mockManager.addReadableLinks.assert_called_once()
 
-        processMocks['putObjectInBucket'].assert_called_once_with(
+        testProcess.s3_manager.putObjectInBucket.assert_called_once_with(
             b'testManifest', 'testPDFPath', 'testBucket'
         )
         testProcess.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(

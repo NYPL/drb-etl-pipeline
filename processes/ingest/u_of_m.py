@@ -7,7 +7,7 @@ from ..core import CoreProcess
 from urllib.error import HTTPError
 from mappings.base_mapping import MappingError
 from mappings.UofM import UofMMapping
-from managers import WebpubManifest
+from managers import S3Manager, WebpubManifest
 from logger import create_log
 
 logger = create_log(__name__)
@@ -25,7 +25,8 @@ class UofMProcess(CoreProcess):
         self.createSession()
 
         self.s3Bucket = os.environ['FILE_BUCKET']
-        self.createS3Client()
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
 
     def runProcess(self):
         with open('ingestJSONFiles/UofM_Updated_CSV.json') as f:
@@ -57,7 +58,7 @@ class UofMProcess(CoreProcess):
 
         try:
             #The get_object method is to make sure the object with a specific bucket and key exists in S3
-            self.s3Client.get_object(Bucket=bucket, 
+            self.s3_manager.s3Client.get_object(Bucket=bucket, 
                                     Key=f'{resultsRecord["File ID 1"]}_060pct.pdf')
             key = f'{resultsRecord["File ID 1"]}_060pct.pdf'
             urlPDFObject = f'https://{bucket}.s3.amazonaws.com/{key}'
@@ -91,7 +92,7 @@ class UofMProcess(CoreProcess):
         if not record.has_part:
             try:
                 #The get_object method is to make sure the object with a specific bucket and key exists in S3
-                self.s3Client.get_object(Bucket= 'ump-pdf-repository', 
+                self.s3_manager.s3Client.get_object(Bucket= 'ump-pdf-repository', 
                                         Key= f'{resultsRecord["File ID 1"]}_100pct.pdf')
                 key = f'{resultsRecord["File ID 1"]}_100pct.pdf'
                 urlPDFObject = f'https://{bucket}.s3.amazonaws.com/{key}'
@@ -138,7 +139,7 @@ class UofMProcess(CoreProcess):
 
                 manifestJSON = self.generateManifest(record, uri, manifestURI)
 
-                self.createManifestInS3(manifestPath, manifestJSON)
+                self.s3_manager.createManifestInS3(manifestPath, manifestJSON)
 
                 if 'in_copyright' in record.rights:
                     linkString = '|'.join([

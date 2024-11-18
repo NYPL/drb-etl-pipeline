@@ -18,7 +18,7 @@ class TestChicagoISACProcess:
         class TestISAC(ChicagoISACProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
-                self.s3_client = mocker.MagicMock(s3_client='test_s3_client')
+                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.session = mocker.MagicMock(session='test_session')
                 self.records = mocker.MagicMock(record='test_record')
                 self.batch_size = mocker.MagicMock(batch_size='test_batch_size')
@@ -71,7 +71,6 @@ class TestChicagoISACProcess:
 
         mock_generate_man = mocker.patch.object(ChicagoISACProcess, 'generate_manifest')
         mock_generate_man.return_value = 'test_json'
-        mock_create_man = mocker.patch.object(ChicagoISACProcess, 'createManifestInS3')
 
         test_process.store_pdf_manifest(mock_record)
 
@@ -79,7 +78,7 @@ class TestChicagoISACProcess:
         assert mock_record.has_part[0] == '1|{}|isac|application/webpub+json|{{}}'.format(test_manifest_url)
 
         mock_generate_man.assert_called_once_with(mock_record, 'test_url', test_manifest_url)
-        mock_create_man.assert_called_once_with('manifests/isac/1.json', 'test_json')
+        test_process.s3_manager.createManifestInS3.assert_called_once_with('manifests/isac/1.json', 'test_json')
 
     def test_generate_manifest(self, mocker):
         mock_manifest = mocker.MagicMock(links=[])

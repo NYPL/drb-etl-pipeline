@@ -7,7 +7,7 @@ from requests.exceptions import HTTPError, ConnectionError
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.met import METMapping
-from managers import RabbitMQManager, WebpubManifest
+from managers import RabbitMQManager, S3Manager, WebpubManifest
 from model import get_file_message
 from logger import create_log
 
@@ -42,7 +42,8 @@ class METProcess(CoreProcess):
         self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
         self.s3Bucket = os.environ['FILE_BUCKET']
-        self.createS3Client()
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
 
     def runProcess(self):
         self.setStartTime()
@@ -173,7 +174,7 @@ class METProcess(CoreProcess):
 
                 manifestJSON = self.generateManifest(record, uri, manifestURI)
 
-                self.createManifestInS3(manifestPath, manifestJSON)
+                self.s3_manager.createManifestInS3(manifestPath, manifestJSON)
 
                 linkString = '|'.join([
                     itemNo,

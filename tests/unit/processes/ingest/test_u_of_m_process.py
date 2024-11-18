@@ -18,7 +18,7 @@ class TestUofMProcess:
         class TestUofM(UofMProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
-                self.s3Client = mocker.MagicMock(s3Client='testS3Client')
+                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.session = mocker.MagicMock(session='testSession')
                 self.records = mocker.MagicMock(record='testRecord')
                 self.batchSize = mocker.MagicMock(batchSize='testBatchSize')
@@ -82,13 +82,6 @@ class TestUofMProcess:
 
     #     mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
     #     mockCreateMan.assert_called_once_with('manifests/UofM/1.json', 'testJSON')
-
-    def test_createManifestInS3(self, testProcess, mocker):
-        mockPut = mocker.patch.object(UofMProcess, 'putObjectInBucket')
-        
-        testProcess.createManifestInS3('testPath', '{"data": "testJSON"}')
-
-        mockPut.assert_called_once_with(b'{"data": "testJSON"}', 'testPath', 'test_aws_bucket')
 
     def test_generateManifest(self, mocker):
         mockManifest = mocker.MagicMock(links=[])

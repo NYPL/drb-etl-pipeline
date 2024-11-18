@@ -1,4 +1,4 @@
-from managers import DBManager, S3Manager
+from managers import DBManager
 from model import Record
 
 from logger import create_log
@@ -7,7 +7,7 @@ from logger import create_log
 logger = create_log(__name__)
 
 
-class CoreProcess(DBManager, S3Manager):
+class CoreProcess(DBManager):
     def __init__(self, process, customFile, ingestPeriod, singleRecord, batchSize=500):
         super(CoreProcess, self).__init__()
         self.process = process
