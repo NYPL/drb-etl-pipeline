@@ -7,8 +7,8 @@ class TestCoreMapping:
     @pytest.fixture
     def testMapping(self, mocker):
         class TestCore(BaseMapping):
-            def ___init__(self, source, statics):
-                super(self, TestCore).__init__(source, statics)
+            def ___init__(self, source, constants):
+                super(self, TestCore).__init__(source, constants)
 
             def createMapping(self):
                 pass
@@ -21,7 +21,7 @@ class TestCoreMapping:
         assert testMapping.mapping == {}
         assert testMapping.source == 'test'
         assert testMapping.record == None
-        assert testMapping.staticValues == {'static': 'values'}
+        assert testMapping.constants == {'static': 'values'}
         assert testMapping.formatter == 'mockFormatter'
 
     def test_initEmptyRecord(self, testMapping, mocker):

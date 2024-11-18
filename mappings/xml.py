@@ -8,8 +8,8 @@ logger = create_log(__name__)
 
 
 class XMLMapping(BaseMapping):
-    def __init__(self, source, namespace, statics):
-        super().__init__(source, statics)
+    def __init__(self, source, namespace, constants):
+        super().__init__(source, constants)
         self.namespace = namespace
 
     def applyMapping(self):

@@ -32,10 +32,10 @@ class TestJSONMapping:
     @pytest.fixture
     def testMapper(self, testMapping, testDocument, mocker):
         class TestJSON(JSONMapping):
-            def __init__(self, source, mapping, statics):
+            def __init__(self, source, mapping, constants):
                 self.source = source
                 self.mapping = mapping
-                self.statics = statics
+                self.constants = constants
 
             def createMapping(self):
                 pass

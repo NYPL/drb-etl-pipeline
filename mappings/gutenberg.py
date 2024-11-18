@@ -4,8 +4,8 @@ import re
 from mappings.xml import XMLMapping
 
 class GutenbergMapping(XMLMapping):
-    def __init__(self, source, namespace, statics):
-        super(GutenbergMapping, self).__init__(source, namespace, statics)
+    def __init__(self, source, namespace, constants):
+        super(GutenbergMapping, self).__init__(source, namespace, constants)
         self.mapping = self.createMapping()
     
     def createMapping(self):
@@ -69,7 +69,7 @@ class GutenbergMapping(XMLMapping):
         # Parse contributors to set proper roles
         for i, contributor in enumerate(self.record.contributors):
             contribComponents = contributor.split('|')
-            lcRelation = self.staticValues['lc']['relators'].get(contribComponents[-1], 'Contributor')
+            lcRelation = self.constants['lc']['relators'].get(contribComponents[-1], 'Contributor')
             self.record.contributors[i] = '{}|{}|{}|{}'.format(
                 *contribComponents[:-1], lcRelation
             )

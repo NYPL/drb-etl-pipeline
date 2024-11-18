@@ -3,9 +3,9 @@ import os
 import requests
 from typing import Optional
 
+from constants.get_constants import get_constants
 from logger import create_log
 from managers.db import DBManager
-from static.manager import StaticManager
 from managers.nyplApi import NyplApiManager
 from mappings.nypl import NYPLMapping
 from .source_service import SourceService
@@ -32,7 +32,7 @@ class NYPLBibService(SourceService):
         self.location_codes = self.load_location_codes()
         self.cce_api = os.environ['BARDO_CCE_API']
 
-        self.static_manager = StaticManager()
+        self.constants = get_constants()
 
     def get_records(
         self,
@@ -79,7 +79,7 @@ class NYPLBibService(SourceService):
             if self.is_pd_research_bib(dict(bib)):
                 bib_items = self.fetch_bib_items(dict(bib))
                 
-                nypl_record = NYPLMapping(bib, bib_items, self.static_manager.statics, self.location_codes)
+                nypl_record = NYPLMapping(bib, bib_items, self.constants, self.location_codes)
                 nypl_record.applyMapping()
                 
                 return nypl_record

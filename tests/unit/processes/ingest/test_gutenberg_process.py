@@ -20,7 +20,7 @@ class TestGutenbergProcess:
     def testInstance(self, mocker):
         class TestGutenbergProcess(GutenbergProcess):
             def __init__(self, process, customFile, ingestPeriod):
-                self.statics = {}
+                self.constants = {}
                 self.ingestOffset = 0
                 self.ingestLimit = 5000
                 self.s3Bucket = os.environ['FILE_BUCKET']

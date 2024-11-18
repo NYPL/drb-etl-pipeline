@@ -5,17 +5,17 @@ from mappings.nypl import NYPLMapping
 
 class TestNYPLMapping:
     @pytest.fixture
-    def testMapping(self, testStatics):
+    def testMapping(self, test_constants):
         class TestNYPL(NYPLMapping):
             def __init__(self):
                 self.source = None
                 self.mapping = None
-                self.staticValues = testStatics
+                self.constants = test_constants
         
         return TestNYPL()
 
     @pytest.fixture
-    def testStatics(self):
+    def test_constants(self):
         return {
             'lc': {
                 'relators': {'tst': 'Tester'}

@@ -22,7 +22,7 @@ class TestHathiTrustProcess:
     def testInstance(self, mocker):
         class TestHathiProcess(HathiTrustProcess):
             def __init__(self, process, customFile, ingestPeriod):
-                self.statics = {}
+                self.constants = {}
                 self.records = []
                 self.ingest_limit = None
         

@@ -4,6 +4,7 @@ from lxml import etree
 import os
 import requests
 
+from constants.get_constants import get_constants
 from ..core import CoreProcess
 from logger import create_log
 from mappings.doab import DOABMapping
@@ -44,6 +45,8 @@ class DOABProcess(CoreProcess):
         self.rabbitmq_manager.createRabbitConnection()
         self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
 
+        self.constants = get_constants()
+
     def runProcess(self):
         if self.process == 'daily':
             self.importOAIRecords()
@@ -61,7 +64,7 @@ class DOABProcess(CoreProcess):
 
     def parseDOABRecord(self, oaiRec):
         try:
-            doabRec = DOABMapping(oaiRec, self.OAI_NAMESPACES, self.statics)
+            doabRec = DOABMapping(oaiRec, self.OAI_NAMESPACES, self.constants)
             doabRec.applyMapping()
         except MappingError as e:
             raise DOABError(e.message)

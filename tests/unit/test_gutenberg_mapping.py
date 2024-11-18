@@ -5,12 +5,12 @@ from mappings.gutenberg import GutenbergMapping
 
 class TestGutenbergMapping:
     @pytest.fixture
-    def testMapping(self, testStatics):
+    def testMapping(self, test_constants):
         class TestGutenberg(GutenbergMapping):
             def __init__(self):
                 self.source = None
                 self.mapping = None
-                self.staticValues = testStatics
+                self.constants = test_constants
                 self.namespace = None
 
             def applyMapping(self):
@@ -28,7 +28,7 @@ class TestGutenbergMapping:
         )
 
     @pytest.fixture
-    def testStatics(self):
+    def test_constants(self):
         return {
             'lc': {
                 'relators': {'tst': 'Tester'}

@@ -4,8 +4,8 @@ from logger import create_log
 logger = create_log(__name__)
 
 class CSVMapping(BaseMapping):
-    def __init__(self, source, statics):
-        super().__init__(source, statics)
+    def __init__(self, source, constants):
+        super().__init__(source, constants)
 
     def applyMapping(self):
         newRecord = self.initEmptyRecord()

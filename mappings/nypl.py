@@ -3,8 +3,8 @@ import requests
 from .sql import SQLMapping
 
 class NYPLMapping(SQLMapping):
-    def __init__(self, source, bibItems, statics, locationCodes):
-        super().__init__(source, statics)
+    def __init__(self, source, bibItems, constants, locationCodes):
+        super().__init__(source, constants)
         self.mapping = self.createMapping()
         self.locationCodes = locationCodes
         self.bibItems = bibItems
@@ -119,7 +119,7 @@ class NYPLMapping(SQLMapping):
         # Parse contributors to set proper roles
         for i, contributor in enumerate(self.record.contributors):
             contribComponents = contributor.split('|')
-            lcRelation = self.staticValues['lc']['relators'].get(contribComponents[-1], 'Contributor')
+            lcRelation = self.constants['lc']['relators'].get(contribComponents[-1], 'Contributor')
             self.record.contributors[i] = '{}|{}|{}|{}'.format(
                 *contribComponents[:-1], lcRelation
             )

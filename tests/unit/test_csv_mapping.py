@@ -28,10 +28,10 @@ class TestCSVMapping:
     @pytest.fixture
     def testMapper(self, testMapping, mocker):
         class TestCSV(CSVMapping):
-            def __init__(self, source, mapping, statics):
+            def __init__(self, source, mapping, constants):
                 self.source = source
                 self.mapping = mapping
-                self.statics = statics
+                self.constants = constants
 
             def createMapping(self):
                 pass

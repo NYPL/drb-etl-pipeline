@@ -18,7 +18,7 @@ class TestOCLCCatalogProcess:
     def test_instance(self, mocker):
         class TestCatalogProcess(CatalogProcess):
             def __init__(self):
-                self.statics = {}
+                self.constants = {}
                 self.oclc_catalog_manager = mocker.MagicMock()
                 self.records = []
                 self.rabbitmq_manager = mocker.MagicMock()

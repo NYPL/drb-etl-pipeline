@@ -5,8 +5,8 @@ from .csv import CSVMapping
 
 
 class HathiMapping(CSVMapping):
-    def __init__(self, source, statics):
-        super(HathiMapping, self).__init__(source, statics)
+    def __init__(self, source, constants):
+        super(HathiMapping, self).__init__(source, constants)
         self.mapping = self.createMapping()
     
     def createMapping(self):
@@ -67,15 +67,15 @@ class HathiMapping(CSVMapping):
         self.record.contributors = self.record.contributors or []
         for i, contributor in enumerate(self.record.contributors):
             contribElements = contributor.lower().split('|')
-            fullContribName = self.staticValues['hathitrust']['sourceCodes'].get(contribElements[0], contribElements[0])
+            fullContribName = self.constants['hathitrust']['sourceCodes'].get(contribElements[0], contribElements[0])
             self.record.contributors[i] = contributor.replace(contribElements[0], fullContribName)
 
         # Parse rights codes
         rightsElements = self.record.rights.split('|') if self.record.rights else [''] * 5
-        rightsMetadata = self.staticValues['hathitrust']['rightsValues'].get(rightsElements[1], {'license': 'und', 'statement': 'und'}) 
+        rightsMetadata = self.constants['hathitrust']['rightsValues'].get(rightsElements[1], {'license': 'und', 'statement': 'und'}) 
         self.record.rights = 'hathitrust|{}|{}|{}|{}'.format(
             rightsMetadata['license'],
-            self.staticValues['hathitrust']['rightsReasons'].get(rightsElements[2], rightsElements[2]),
+            self.constants['hathitrust']['rightsReasons'].get(rightsElements[2], rightsElements[2]),
             rightsMetadata['statement'],
             rightsElements[4]
         )
@@ -102,4 +102,4 @@ class HathiMapping(CSVMapping):
 
         # Parse spatial (pub place) codes
         self.record.spatial = self.record.spatial or ''
-        self.record.spatial = self.staticValues['marc']['countryCodes'].get(self.record.spatial.strip(), 'xx')
+        self.record.spatial = self.constants['marc']['countryCodes'].get(self.record.spatial.strip(), 'xx')
