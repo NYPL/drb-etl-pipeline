@@ -1,10 +1,10 @@
 from managers import DBManager, S3Manager
 from model import Record
 
-from logger import createLog
+from logger import create_log
 
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class CoreProcess(DBManager, S3Manager):

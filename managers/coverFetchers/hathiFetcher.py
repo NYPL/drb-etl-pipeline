@@ -4,9 +4,9 @@ from requests.exceptions import ReadTimeout, HTTPError
 from requests_oauthlib import OAuth1
 
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
-from logger import createLog
+from logger import create_log
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class HathiFetcher(AbstractFetcher):

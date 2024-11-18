@@ -10,10 +10,10 @@ from ..core import CoreProcess
 from mappings.muse import MUSEMapping
 from managers import MUSEError, MUSEManager, RabbitMQManager
 from model import get_file_message
-from logger import createLog
+from logger import create_log
 
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class MUSEProcess(CoreProcess):

@@ -4,7 +4,7 @@ import requests
 from typing import Optional
 
 from constants.get_constants import get_constants
-from logger import createLog
+from logger import create_log
 from managers.db import DBManager
 from managers.nyplApi import NyplApiManager
 from mappings.nypl import NYPLMapping
@@ -12,7 +12,7 @@ from .source_service import SourceService
 from sqlalchemy import text
 
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class NYPLBibService(SourceService):

@@ -6,9 +6,9 @@ from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.UofSC import UofSCMapping
 from managers import WebpubManifest
-from logger import createLog
+from logger import create_log
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 class UofSCProcess(CoreProcess):
 

@@ -6,12 +6,12 @@ import requests
 
 from constants.get_constants import get_constants
 from ..core import CoreProcess
-from logger import createLog
+from logger import create_log
 from managers import RedisManager
 from mappings.hathitrust import HathiMapping
 from processes import CatalogProcess, ClassifyProcess, ClusterProcess
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class SeedLocalDataProcess(CoreProcess):

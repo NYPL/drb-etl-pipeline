@@ -1,8 +1,8 @@
 from api.app import FlaskAPI
-from logger import createLog
+from logger import create_log
 from managers import DBManager, ElasticsearchManager, RedisManager
 
-logger = createLog(__name__)
+logger = create_log(__name__)
 
 
 class APIProcess():
