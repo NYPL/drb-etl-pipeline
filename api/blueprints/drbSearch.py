@@ -3,7 +3,6 @@ from ..elastic import ElasticClient, ElasticClientError
 from ..db import DBClient
 from ..utils import APIUtils
 from logger import create_log
-import traceback
 
 logger = create_log(__name__)
 
