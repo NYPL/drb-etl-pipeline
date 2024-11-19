@@ -1,5 +1,5 @@
 import os
-from ..util import airtable_integration
+from services import PublisherBacklistService
 
 from ..core import CoreProcess
 from logger import create_log
@@ -10,24 +10,40 @@ class PublisherBacklistProcess(CoreProcess):
     def __init__(self, *args):
         super(PublisherBacklistProcess, self).__init__(*args[:4])
 
-        self.ingest_offset = int(args[5] or 0)
-        self.ingest_limit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
-        self.full_import = self.process == 'complete' 
+        self.limit = (len(args) >= 5 and args[4] and args(4) <= 100) or None
+        self.offset = (len(args) >= 6 and args[5]) or None
 
-        self.generateEngine()
-        self.createSession()
-
-        self.s3_bucket = os.environ['FILE_BUCKET']
+        self.s3Bucket = os.environ['FILE_BUCKET']
         self.createS3Client()
 
+        self.publisher_backlist_service = PublisherBacklistService()
+        
     def runProcess(self):
         try:
+            self.generateEngine()
+            self.createSession()
 
-            response = airtable_integration.create_airtable_request()
+            if self.process == 'daily':
+                records = self.publisher_backlist_service.get_records(offset=self.offset, limit=self.limit)
+            elif self.process == 'complete':
+                records = self.publisher_backlist_service.get_records(full_import=True)
+            elif self.process == 'custom':
+                records = self.publisher_backlist_service.get_records(start_timestamp=self.ingestPeriod, offset=self.offset, limit=self.limit)
+            else: 
+                logger.warning(f'Unknown NYPL ingestion process type {self.process}')
+                return
             
-            print(response)
+            for record in records:
+                self.addDCDWToUpdateList(record)
+            
+            self.saveRecords()
+            self.commitChanges()
+
+            logger.info(f'Ingested {len(self.records)} UofM records')
 
         except Exception as e:
             logger.exception('Failed to run Pub Backlist process')
-            raise e
+            raise e   
+        finally:
+            self.close_connection()
     
