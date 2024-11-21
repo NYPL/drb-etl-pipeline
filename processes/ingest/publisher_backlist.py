@@ -33,6 +33,8 @@ class PublisherBacklistProcess(CoreProcess):
                 logger.warning(f'Unknown Publisher Backlist ingestion process type {self.process}')
                 return
             
+            raise Exception
+        
             for record in records:
                 self.addDCDWToUpdateList(record)
             
