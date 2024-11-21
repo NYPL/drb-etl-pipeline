@@ -5,6 +5,7 @@ import gzip
 import os
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
+import sys
 
 from constants.get_constants import get_constants
 from ..core import CoreProcess
@@ -106,6 +107,8 @@ class HathiTrustProcess(CoreProcess):
             self.readHathiFile(hathi_tsv, start_date_time)
 
     def readHathiFile(self, hathi_tsv, start_date_time=None):
+        csv.field_size_limit(sys.maxsize)
+
         for number_of_books_ingested, book in enumerate(hathi_tsv):
             if self.ingest_limit and number_of_books_ingested > self.ingest_limit:
                 break
@@ -114,7 +117,10 @@ class HathiTrustProcess(CoreProcess):
             book_date_updated = (len(book) > 14 and book[14]) or None
 
             if book_date_updated:
-                hathi_date_modified = datetime.strptime(book_date_updated, '%Y-%m-%d %H:%M:%S').replace(tzinfo=None)
+                try:
+                    hathi_date_modified = datetime.strptime(book_date_updated, '%Y-%m-%d %H:%M:%S').replace(tzinfo=None)
+                except Exception: 
+                    hathi_date_modified = None
 
             if book_right and book_right not in self.HATHI_RIGHTS_SKIPS:
                 if not start_date_time or hathi_date_modified >= start_date_time:
