@@ -5,7 +5,6 @@ import gzip
 import os
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
-import sys
 
 from constants.get_constants import get_constants
 from ..core import CoreProcess
