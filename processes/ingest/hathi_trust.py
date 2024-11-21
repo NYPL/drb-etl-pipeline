@@ -16,6 +16,7 @@ logger = create_log(__name__)
 
 class HathiTrustProcess(CoreProcess):
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
+    FIELD_SIZE_LIMIT = 131072 * 2 # 131072 is the default size limit
 
     def __init__(self, *args):
         super(HathiTrustProcess, self).__init__(*args[:4], batchSize=1000)
@@ -107,7 +108,7 @@ class HathiTrustProcess(CoreProcess):
             self.readHathiFile(hathi_tsv, start_date_time)
 
     def readHathiFile(self, hathi_tsv, start_date_time=None):
-        csv.field_size_limit(sys.maxsize)
+        csv.field_size_limit(self.FIELD_SIZE_LIMIT)
 
         for number_of_books_ingested, book in enumerate(hathi_tsv):
             if self.ingest_limit and number_of_books_ingested > self.ingest_limit:
