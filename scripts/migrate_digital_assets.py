@@ -21,7 +21,7 @@ def create_drive_service(service_account_file):
 
 
 def upload_to_google_drive(file_name, file_data):
-    drive_service = create_drive_service(drive_service)
+    drive_service = create_drive_service(service_account_file=SERVICE_ACCOUNT_FILE)
     
     file = drive_service.files().create(
         body={ 'name': file_name, 'parents': [FOLDER_ID] },
