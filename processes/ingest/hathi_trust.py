@@ -15,6 +15,7 @@ logger = create_log(__name__)
 
 class HathiTrustProcess(CoreProcess):
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
+    FIELD_SIZE_LIMIT = 131072 * 2 # 131072 is the default size limit
 
     def __init__(self, *args):
         super(HathiTrustProcess, self).__init__(*args[:4], batchSize=1000)
@@ -106,6 +107,8 @@ class HathiTrustProcess(CoreProcess):
             self.readHathiFile(hathi_tsv, start_date_time)
 
     def readHathiFile(self, hathi_tsv, start_date_time=None):
+        csv.field_size_limit(self.FIELD_SIZE_LIMIT)
+
         for number_of_books_ingested, book in enumerate(hathi_tsv):
             if self.ingest_limit and number_of_books_ingested > self.ingest_limit:
                 break
@@ -114,7 +117,10 @@ class HathiTrustProcess(CoreProcess):
             book_date_updated = (len(book) > 14 and book[14]) or None
 
             if book_date_updated:
-                hathi_date_modified = datetime.strptime(book_date_updated, '%Y-%m-%d %H:%M:%S').replace(tzinfo=None)
+                try:
+                    hathi_date_modified = datetime.strptime(book_date_updated, '%Y-%m-%d %H:%M:%S').replace(tzinfo=None)
+                except Exception: 
+                    hathi_date_modified = None
 
             if book_right and book_right not in self.HATHI_RIGHTS_SKIPS:
                 if not start_date_time or hathi_date_modified >= start_date_time:
