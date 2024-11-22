@@ -1,4 +1,3 @@
-import os
 import io
 import boto3
 from googleapiclient.discovery import build
