@@ -1,1 +1,2 @@
 from .sources.nypl_bib_service import NYPLBibService
+from .sources.publisher_backlist_service import PublisherBacklistService
