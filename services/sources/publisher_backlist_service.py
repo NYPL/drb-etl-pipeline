@@ -9,7 +9,6 @@ from logger import create_log
 from mappings.UofM import UofMMapping
 from .source_service import SourceService
 
-
 logger = create_log(__name__)
 
 BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%20%26%20Collections%20%F0%9F%93%96?view=All%20Lists"
@@ -25,9 +24,7 @@ class PublisherBacklistService(SourceService):
         offset: Optional[int]=None,
         limit: Optional[int]=None
     ) -> list[UofMMapping]:
-        
         array_json_records = self.get_records_json(full_import, start_timestamp, offset, limit)
-
 
         for json_dict in array_json_records:
             for records_value in json_dict['records']:
@@ -35,8 +32,8 @@ class PublisherBacklistService(SourceService):
                     record_metadata_dict = records_value
                     record = UofMMapping(record_metadata_dict)
                     record.applyMapping()
-                except Exception as e:
-                    logger.exception(f'Failed to process Publisher Backlist record due to {e}')
+                except Exception:
+                    logger.exception(f'Failed to process Publisher Backlist record')
         return array_json_records
 
     def get_records_json(self,
@@ -45,34 +42,27 @@ class PublisherBacklistService(SourceService):
         offset: Optional[int]=None,
         limit: Optional[int]=None
     ) -> list[dict]:
-
         if offset == None:
             limit = 100
 
-        headers = {"Authorization": f"Bearer {self.airtable_auth_token}"}
-
         if not full_import:
             if start_timestamp:
-
                 filter_by_formula = self.build_filter_by_formula_parameter(start_timestamp)
 
-                array_json_records = self.get_records_array(headers, limit, filter_by_formula)
+                array_json_records = self.get_records_array(limit, filter_by_formula)
 
                 return array_json_records
 
             else:
-
                 filter_by_formula = self.build_filter_by_formula_parameter(start_timestamp)
 
-                array_json_records = self.get_records_array(headers, limit, filter_by_formula)
+                array_json_records = self.get_records_array(limit, filter_by_formula)
 
-                return array_json_records
-            
-        else:
-
-            array_json_records = self.get_records_array(headers, limit, filter_by_formula=None)
+                return array_json_records  
+                
+        array_json_records = self.get_records_array(limit, filter_by_formula=None)
         
-            return array_json_records
+        return array_json_records
         
     def build_filter_by_formula_parameter(self, start_timestamp: datetime=None) -> str:
         if not start_timestamp:
@@ -86,13 +76,12 @@ class PublisherBacklistService(SourceService):
 
         return filter_by_formula
         
-    def get_records_array(self, 
-        headers: Dict[str, str], 
+    def get_records_array(self,
         limit: Optional[int]=None, 
         filter_by_formula: str=None,
     ) -> list[dict]:
-        
         url = f'{BASE_URL}&pageSize={limit}'
+        headers = {"Authorization": f"Bearer {self.airtable_auth_token}"}
 
         if filter_by_formula:
             url += f'&filterByFormula{filter_by_formula}'
