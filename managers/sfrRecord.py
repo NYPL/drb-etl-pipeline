@@ -391,7 +391,7 @@ class SFRRecordManager:
 
         # Set Edition Data
         if len(edition['edition_data']):
-            editionStmt, editionNo = tuple(edition['edition_data'].most_common(1)[0][0].split('|'))
+            editionStmt, editionNo, *_ = tuple(edition['edition_data'].most_common(1)[0][0].split('|'))
             newEd.edition_statement = editionStmt
             try:
                 newEd.edition = int(editionNo)
