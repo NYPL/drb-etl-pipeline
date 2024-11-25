@@ -9,17 +9,17 @@ class RecordBuffer:
         self.batch_size = batch_size
         self.ingest_count = 0
 
-    def add(self, record: BaseMapping):
+    def add(self, record_mapping: BaseMapping):
         existing_record = self.db_manager.session.query(Record).filter(
-            Record.source_id == record.record.source_id
+            Record.source_id == record_mapping.record.source_id
         ).first()
 
         if existing_record:
-            record.updateExisting(existing_record)
+            record_mapping.updateExisting(existing_record)
             self.records.discard(existing_record)
             self.records.add(existing_record)
         else:
-            self.records.add(record.record)
+            self.records.add(record_mapping.record)
 
         if self.batch_size >= len(self.records):
             self.flush()
