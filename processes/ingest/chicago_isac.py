@@ -3,18 +3,22 @@ import os
 
 from ..core import CoreProcess
 from mappings.chicagoISAC import ChicagoISACMapping
-from managers import S3Manager, WebpubManifest
+from managers import DBManager, S3Manager, WebpubManifest
 from logger import create_log
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
 class ChicagoISACProcess(CoreProcess):
-
     def __init__(self, *args):
         super(ChicagoISACProcess, self).__init__(*args[:4])
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.s3_manager = S3Manager()
@@ -27,18 +31,17 @@ class ChicagoISACProcess(CoreProcess):
         for meta_dict in chicago_isac_data:
             self.process_chicago_isac_record(meta_dict)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} ISAC records')
+        logger.info(f'Ingested {len(self.record_buffer.number_of_ingested_records)} ISAC records')
 
     def process_chicago_isac_record(self, record):
         try:
             chicago_isac_rec = ChicagoISACMapping(record)
             chicago_isac_rec.applyMapping()
             self.store_pdf_manifest(chicago_isac_rec.record)
-            self.addDCDWToUpdateList(chicago_isac_rec)
             
+            self.record_buffer.add(chicago_isac_rec)
         except Exception:
             logger.exception(ChicagoISACError('Unable to process ISAC record'))
             

@@ -9,8 +9,9 @@ from ..core import CoreProcess
 from logger import create_log
 from mappings.doab import DOABMapping
 from mappings.base_mapping import MappingError
-from managers import DOABLinkManager, RabbitMQManager, S3Manager
+from managers import DBManager, DOABLinkManager, RabbitMQManager, S3Manager
 from model import get_file_message
+from ..record_buffer import RecordBuffer
 
 
 logger = create_log(__name__)
@@ -32,8 +33,12 @@ class DOABProcess(CoreProcess):
         self.ingestOffset = int(args[5]) if args[5] else 0
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 10000
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(self.db_manager)
 
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
@@ -58,10 +63,9 @@ class DOABProcess(CoreProcess):
         elif self.process == 'single':
             self.importSingleOAIRecord(self.singleRecord)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} DOAB records')
+        logger.info(f'Ingested {len(self.record_buffer.number_of_ingested_records)} DOAB records')
 
     def parseDOABRecord(self, oaiRec):
         try:
@@ -82,7 +86,7 @@ class DOABProcess(CoreProcess):
             ePubPath, ePubURI = epubLink
             self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(ePubURI, ePubPath))
 
-        self.addDCDWToUpdateList(doabRec)
+        self.record_buffer.add(doabRec)
 
     def importSingleOAIRecord(self, recordID):
         urlParams = 'verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:{}'.format(recordID)
