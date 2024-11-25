@@ -19,7 +19,7 @@ class TestLOCProcess:
         class TestLOC(LOCProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
-                self.s3Client = mocker.MagicMock(s3Client='testS3Client')
+                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.session = mocker.MagicMock(session='testSession')
                 self.records = mocker.MagicMock(record='testRecord')
                 self.batchSize = mocker.MagicMock(batchSize='testBatchSize')
@@ -92,7 +92,6 @@ class TestLOCProcess:
 
         mockGenerateMan = mocker.patch.object(LOCProcess, 'generateManifest')
         mockGenerateMan.return_value = 'testJSON'
-        mockCreateMan = mocker.patch.object(LOCProcess, 'createManifestInS3')
 
         testProcess.storePDFManifest(mockRecord)
 
@@ -100,7 +99,7 @@ class TestLOCProcess:
         assert mockRecord.has_part[0] == '1|{}|loc|application/webpub+json|{{"catalog": false, "download": false, "reader": true, "embed": false}}'.format(testManifestURI)
 
         mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
-        mockCreateMan.assert_called_once_with('manifests/loc/1.json', 'testJSON')
+        testProcess.s3_manager.createManifestInS3.assert_called_once_with('manifests/loc/1.json', 'testJSON')
 
     def test_storeEpubsInS3(self, testProcess, mocker):
         mockRecord = mocker.MagicMock(identifiers=['1|loc'])
@@ -121,13 +120,6 @@ class TestLOCProcess:
         mockAddEPUBManifest.assert_has_calls([
             mocker.call(mockRecord, '1', 'loc', '{"reader": false, "catalog": false, "download": true}', 'application/epub+zip', 'epubs/loc/1.epub'),
         ])
-
-    def test_createManifestInS3(self, testProcess, mocker):
-        mockPut = mocker.patch.object(LOCProcess, 'putObjectInBucket')
-        
-        testProcess.createManifestInS3('testPath', '{"data": "testJSON"}')
-
-        mockPut.assert_called_once_with(b'{"data": "testJSON"}', 'testPath', 'test_aws_bucket')
 
     def test_addEPUBManifest(self, testProcess, mocker):
         mockRecord = mocker.MagicMock(has_part=[])

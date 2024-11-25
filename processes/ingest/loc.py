@@ -5,7 +5,7 @@ from requests.exceptions import HTTPError, ConnectionError
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.loc import LOCMapping
-from managers import RabbitMQManager, WebpubManifest
+from managers import RabbitMQManager, S3Manager, WebpubManifest
 from model import get_file_message
 from logger import create_log
 from datetime import datetime, timedelta, timezone
@@ -28,6 +28,8 @@ class LOCProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
+        self.createS3Client()
+        self.s3_manager = S3Manager()
         self.createS3Client()
         self.s3Bucket = os.environ['FILE_BUCKET']
 
@@ -226,7 +228,7 @@ class LOCProcess(CoreProcess):
 
                 manifestJSON = self.generateManifest(record, uri, manifestURI)
 
-                self.createManifestInS3(manifestPath, manifestJSON)
+                self.s3_manager.createManifestInS3(manifestPath, manifestJSON)
 
                 linkString = '|'.join([
                     itemNo,

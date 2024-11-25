@@ -20,6 +20,7 @@ class TestMetProcess:
     def testProcess(self, mocker):
         class TestMET(METProcess):
             def __init__(self):
+                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.s3Bucket = 'test_aws_bucket'
                 self.fileQueue = 'test_file_queue'
                 self.fileRoute = 'test_file_key'
@@ -184,7 +185,6 @@ class TestMetProcess:
 
         mockGenerateMan = mocker.patch.object(METProcess, 'generateManifest')
         mockGenerateMan.return_value = 'testJSON'
-        mockCreateMan = mocker.patch.object(METProcess, 'createManifestInS3')
 
         testProcess.storePDFManifest(mockRecord)
 
@@ -192,14 +192,7 @@ class TestMetProcess:
         assert mockRecord.has_part[0] == '1|{}|met|application/webpub+json|{{}}'.format(testManifestURI)
 
         mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
-        mockCreateMan.assert_called_once_with('manifests/met/1.json', 'testJSON')
-
-    def test_createManifestInS3(self, testProcess, mocker):
-        mockPut = mocker.patch.object(METProcess, 'putObjectInBucket')
-        
-        testProcess.createManifestInS3('testPath', '{"data": "testJSON"}')
-
-        mockPut.assert_called_once_with(b'{"data": "testJSON"}', 'testPath', 'test_aws_bucket')
+        testProcess.s3_manager.createManifestInS3.assert_called_once_with('manifests/met/1.json', 'testJSON')
 
     def test_generateManifest(self, mocker):
         mockManifest = mocker.MagicMock(links=[])

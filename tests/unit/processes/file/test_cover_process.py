@@ -15,6 +15,7 @@ class TestCoverProcess:
                 self.batchSize = 3
                 self.runTime = datetime(1900, 1, 1)
                 self.redis_manager = mocker.MagicMock()
+                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
 
         return TestCoverProcess()
 
@@ -182,7 +183,6 @@ class TestCoverProcess:
         ])
 
     def test_storeFoundCover(self, testProcess, mocker):
-        mockPut = mocker.patch.object(CoverProcess, 'putObjectInBucket')
         mockSave = mocker.patch.object(CoverProcess, 'bulkSaveObjects')
 
         mockFetcher = mocker.MagicMock(SOURCE='test', coverID=1)
@@ -197,4 +197,4 @@ class TestCoverProcess:
         assert mockEdition.links[0].media_type == 'image/tst'
         assert mockEdition.links[0].flags == {'cover': True}
         assert mockSave.call_args[0][0] == set(['ed1', 'ed2', mockEdition])
-        mockPut.assert_called_once_with('testBytes', 'covers/test/1.tst', 'test_aws_bucket')
+        testProcess.s3_manager.putObjectInBucket.assert_called_once_with('testBytes', 'covers/test/1.tst', 'test_aws_bucket')

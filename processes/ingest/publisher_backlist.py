@@ -3,6 +3,7 @@ from services import PublisherBacklistService
 
 from ..core import CoreProcess
 from logger import create_log
+from managers import S3Manager
 
 logger = create_log(__name__)
 
@@ -14,7 +15,7 @@ class PublisherBacklistProcess(CoreProcess):
         self.offset = (len(args) >= 6 and args[5]) or None
 
         self.s3_bucket = os.environ['FILE_BUCKET']
-        self.createS3Client()
+        self.s3_manager = S3Manager()
 
         self.publisher_backlist_service = PublisherBacklistService()
         

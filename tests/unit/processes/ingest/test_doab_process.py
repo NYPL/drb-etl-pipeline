@@ -25,6 +25,7 @@ class TestDOABProcess:
         class TestDOAB(DOABProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
+                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.fileQueue = 'test_file_queue'
                 self.fileRoute = 'test_file_key'
                 self.constants = {}
@@ -281,17 +282,14 @@ class TestDOABProcess:
         mockLinkManager = mocker.patch('processes.ingest.doab.DOABLinkManager')
         mockLinkManager.return_value = mockManager
 
-        processMocks = mocker.patch.multiple(DOABProcess,
-            createManifestInS3=mocker.DEFAULT,
-            addDCDWToUpdateList=mocker.DEFAULT
-        )
+        processMocks = mocker.patch.multiple(DOABProcess, addDCDWToUpdateList=mocker.DEFAULT)
 
         testProcess.parseDOABRecord('testMARC')
 
         mockMapper.assert_called_once_with('testMARC', testProcess.OAI_NAMESPACES, {})
         mockMapping.applyMapping.assert_called_once()
         mockManager.parseLinks.assert_called_once()
-        processMocks['createManifestInS3'].assert_called_once_with('pdfPath', 'pdfJSON')
+        testProcess.s3_manager.createManifestInS3.assert_called_once_with('pdfPath', 'pdfJSON')
         testProcess.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
             testProcess.fileQueue, 
             testProcess.fileRoute, 
@@ -307,10 +305,3 @@ class TestDOABProcess:
 
         with pytest.raises(DOABError):
             testProcess.parseDOABRecord('testMARC')
-
-    def test_createManifestInS3(self, testProcess, mocker):
-        mockPut = mocker.patch.object(DOABProcess, 'putObjectInBucket')
-
-        testProcess.createManifestInS3('testPath', 'testManifest')
-
-        mockPut.assert_called_once_with(b'testManifest', 'testPath', 'test_aws_bucket')

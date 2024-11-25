@@ -3,7 +3,7 @@ import os
 
 from ..core import CoreProcess
 from mappings.chicagoISAC import ChicagoISACMapping
-from managers import WebpubManifest
+from managers import S3Manager, WebpubManifest
 from logger import create_log
 
 logger = create_log(__name__)
@@ -17,7 +17,8 @@ class ChicagoISACProcess(CoreProcess):
         self.createSession()
 
         self.s3Bucket = os.environ['FILE_BUCKET']
-        self.createS3Client()
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
 
     def runProcess(self):    
         with open('ingestJSONFiles/chicagoISAC_metadata.json') as f:
@@ -56,7 +57,7 @@ class ChicagoISACProcess(CoreProcess):
 
                 manifest_json = self.generate_manifest(record, uri, manifest_url)
 
-                self.createManifestInS3(manifest_path, manifest_json)
+                self.s3_manager.createManifestInS3(manifest_path, manifest_json)
 
                 link_string = '|'.join([
                     item_no,

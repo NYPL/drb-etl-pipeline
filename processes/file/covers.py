@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import os
 
 from ..core import CoreProcess
-from managers import CoverManager, RedisManager
+from managers import CoverManager, RedisManager, S3Manager
 from model import Edition, Link
 from model.postgres.edition import EDITION_LINKS
 from logger import create_log
@@ -20,7 +20,8 @@ class CoverProcess(CoreProcess):
         self.redis_manager = RedisManager()
         self.redis_manager.createRedisClient()
 
-        self.createS3Client()
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
         self.fileBucket = os.environ['FILE_BUCKET']
 
         self.ingestLimit = None
@@ -87,7 +88,7 @@ class CoverProcess(CoreProcess):
             manager.coverFormat.lower()
         )
 
-        self.putObjectInBucket(manager.coverContent, coverPath, self.fileBucket)
+        self.s3_manager.putObjectInBucket(manager.coverContent, coverPath, self.fileBucket)
 
         coverLink = Link(
             url='https://{}.s3.amazonaws.com/{}'.format(self.fileBucket, coverPath),

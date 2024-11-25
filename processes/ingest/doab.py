@@ -9,7 +9,7 @@ from ..core import CoreProcess
 from logger import create_log
 from mappings.doab import DOABMapping
 from mappings.base_mapping import MappingError
-from managers import DOABLinkManager, RabbitMQManager
+from managers import DOABLinkManager, RabbitMQManager, S3Manager
 from model import get_file_message
 
 
@@ -35,7 +35,8 @@ class DOABProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        self.createS3Client()
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
         self.s3Bucket = os.environ['FILE_BUCKET']
 
         self.fileQueue = os.environ['FILE_QUEUE']
@@ -75,7 +76,7 @@ class DOABProcess(CoreProcess):
 
         for manifest in linkManager.manifests:
             manifestPath, manifestJSON = manifest
-            self.createManifestInS3(manifestPath, manifestJSON)
+            self.s3_manager.createManifestInS3(manifestPath, manifestJSON)
 
         for epubLink in linkManager.ePubLinks:
             ePubPath, ePubURI = epubLink
