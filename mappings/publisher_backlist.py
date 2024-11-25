@@ -22,12 +22,10 @@ class PublisherBacklistMapping(JSONMapping):
             'publisher_project_source': ('Publisher (from Projects)', '{0}')
         }
 
-    def apply_formatting(self):
+    def applyFormatting(self):
         self.record.has_part = []
-
         if self.record.source:
             source_list = self.record.source.split(' ')
-            print(source_list)
             self.record.source = source_list[0]
 
         if self.record.publisher_project_source:

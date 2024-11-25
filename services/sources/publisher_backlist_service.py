@@ -29,7 +29,7 @@ class PublisherBacklistService(SourceService):
         for json_dict in array_json_records:
             for records_value in json_dict['records']:
                 try:
-                    record_metadata_dict = records_value
+                    record_metadata_dict = records_value['fields']
                     record = PublisherBacklistMapping(record_metadata_dict)
                     record.applyMapping()
                 except Exception:
