@@ -5,8 +5,9 @@ from requests.exceptions import HTTPError, ConnectionError
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.UofSC import UofSCMapping
-from managers import S3Manager, WebpubManifest
+from managers import DBManager, S3Manager, WebpubManifest
 from logger import create_log
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
@@ -19,8 +20,12 @@ class UofSCProcess(CoreProcess):
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
         self.fullImport = self.process == 'complete' 
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.s3_manager = S3Manager()
@@ -33,16 +38,15 @@ class UofSCProcess(CoreProcess):
         for metaDict in UofSCData:
             self.processUofSCRecord(metaDict)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
     def processUofSCRecord(self, record):
         try:
             UofSCRec = UofSCMapping(record)
             UofSCRec.applyMapping()
             self.storePDFManifest(UofSCRec.record)
-            self.addDCDWToUpdateList(UofSCRec)
             
+            self.record_buffer.add(UofSCRec)
         except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
             logger.exception(e)
             logger.warn(UofSCError('Unable to process UofSC record'))

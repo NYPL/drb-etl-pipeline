@@ -33,7 +33,7 @@ class ChicagoISACProcess(CoreProcess):
 
         self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.record_buffer.number_of_ingested_records)} ISAC records')
+        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} ISAC records')
 
     def process_chicago_isac_record(self, record):
         try:

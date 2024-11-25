@@ -7,9 +7,10 @@ from requests.exceptions import HTTPError, ConnectionError
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.met import METMapping
-from managers import RabbitMQManager, S3Manager, WebpubManifest
+from managers import DBManager, RabbitMQManager, S3Manager, WebpubManifest
 from model import get_file_message
 from logger import create_log
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
@@ -31,8 +32,12 @@ class METProcess(CoreProcess):
         self.fullImport = self.process == 'complete'
         self.startTimestamp = None
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+        
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
@@ -49,10 +54,9 @@ class METProcess(CoreProcess):
         self.setStartTime()
         self.importDCRecords()
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} MET records')
+        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} MET records')
 
     def setStartTime(self):
         if not self.fullImport:
@@ -115,7 +119,7 @@ class METProcess(CoreProcess):
         except METError as e:
             logger.warning('Unable to fetch cover ({})'.format(e))
 
-        self.addDCDWToUpdateList(metRec)
+        self.record_buffer.add(metRec)
 
     def addCoverAndStoreInS3(self, record, filetype):
         recordID = record.identifiers[0].split('|')[0]

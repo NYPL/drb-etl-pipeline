@@ -7,8 +7,9 @@ from ..core import CoreProcess
 from urllib.error import HTTPError
 from mappings.base_mapping import MappingError
 from mappings.UofM import UofMMapping
-from managers import S3Manager, WebpubManifest
+from managers import DBManager, S3Manager, WebpubManifest
 from logger import create_log
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
@@ -19,10 +20,14 @@ class UofMProcess(CoreProcess):
 
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
-        self.fullImport = self.process == 'complete' 
+        self.fullImport = self.process == 'complete'
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.s3_manager = S3Manager()
@@ -38,8 +43,7 @@ class UofMProcess(CoreProcess):
             if 'QA test' in metaDict['Project steps']:
                 self.processUofMRecord(metaDict)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
     def processUofMRecord(self, record):
         try:
@@ -47,8 +51,8 @@ class UofMProcess(CoreProcess):
             UofMRec.applyMapping()
             self.addHasPartMapping(record, UofMRec.record)
             self.storePDFManifest(UofMRec.record)
-            self.addDCDWToUpdateList(UofMRec)
             
+            self.record_buffer.add(UofMRec)
         except (MappingError, HTTPError, ConnectionError, IndexError, TypeError) as e:
             logger.exception(e)
             logger.warn(UofMError('Unable to process UofM record'))

@@ -8,8 +8,10 @@ from requests.exceptions import ReadTimeout, HTTPError
 
 from constants.get_constants import get_constants
 from ..core import CoreProcess
+from managers import DBManager
 from mappings.hathitrust import HathiMapping
 from logger import create_log
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
@@ -22,8 +24,12 @@ class HathiTrustProcess(CoreProcess):
 
         self.ingest_limit = int(args[4]) if args[4] else None
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.constants = get_constants()
 
@@ -36,10 +42,9 @@ class HathiTrustProcess(CoreProcess):
         elif self.process == 'custom':
             self.importFromSpecificFile(self.customFile)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} Hathi Trust records')
+        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} Hathi Trust records')
 
     def importFromSpecificFile(self, file_path):
         try:
@@ -53,8 +58,8 @@ class HathiTrustProcess(CoreProcess):
     def parseHathiDataRow(self, data_row):
         hathiRec = HathiMapping(data_row, self.constants)
         hathiRec.applyMapping()
-        self.addDCDWToUpdateList(hathiRec)
-
+        
+        self.record_buffer.add(hathiRec)
 
     def importFromHathiTrustDataFile(self, full_dump=False, start_date_time=None):
         try:

@@ -18,6 +18,8 @@ class TestUofMProcess:
         class TestUofM(UofMProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock(db_manager=self.db_manager)
                 self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.session = mocker.MagicMock(session='testSession')
                 self.records = mocker.MagicMock(record='testRecord')
@@ -26,24 +28,16 @@ class TestUofMProcess:
         
         return TestUofM()
 
-    def test_runProcess(self, testProcess, mocker):
-        runMocks = mocker.patch.multiple(
-            UofMProcess,
-            saveRecords=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT,
-        )
-
+    def test_runProcess(self, testProcess):
         testProcess.runProcess()
 
-        runMocks['saveRecords'].assert_called_once()
-        runMocks['commitChanges'].assert_called_once()
+        testProcess.record_buffer.flush.assert_called_once()
 
 
     def test_processUofMRecord_success(self, testProcess, mocker):
         processMocks = mocker.patch.multiple(UofMProcess,
             addHasPartMapping=mocker.DEFAULT,
             storePDFManifest=mocker.DEFAULT,
-            addDCDWToUpdateList=mocker.DEFAULT
         )
 
         mockMapping = mocker.MagicMock(record='testRecord')
@@ -56,7 +50,7 @@ class TestUofMProcess:
 
         processMocks['addHasPartMapping'].assert_called_once_with(mockMapping, 'testRecord')
         #processMocks['storePDFManifest'].assert_called_once_with('testRecord')
-        processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
+        testProcess.record_buffer.add.assert_called_once_with(mockMapping)
 
     def test_processUofMRecord_error(self, mocker):
 

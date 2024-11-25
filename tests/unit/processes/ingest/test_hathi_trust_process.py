@@ -3,7 +3,7 @@ import gzip
 import pytest
 import requests
 from requests.exceptions import HTTPError
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 
 from tests.helper import TestHelpers
 from processes import HathiTrustProcess
@@ -24,6 +24,8 @@ class TestHathiTrustProcess:
             def __init__(self, process, customFile, ingestPeriod):
                 self.constants = {}
                 self.records = []
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock(db_manager=self.db_manager)
                 self.ingest_limit = None
         
         return TestHathiProcess('TestProcess', 'testFile', 'testDate')
@@ -60,40 +62,31 @@ class TestHathiTrustProcess:
 
     def test_runProcess_daily(self, testInstance, mocker):
         mockImport = mocker.patch.object(HathiTrustProcess, 'importFromHathiTrustDataFile')
-        mockSave = mocker.patch.object(HathiTrustProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(HathiTrustProcess, 'commitChanges')
 
         testInstance.process = 'daily'
         testInstance.runProcess()
 
         mockImport.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testInstance.record_buffer.flush.assert_called_once()
 
     def test_runProcess_complete(self, testInstance, mocker):
         mockImport = mocker.patch.object(HathiTrustProcess, 'importFromHathiTrustDataFile')
-        mockSave = mocker.patch.object(HathiTrustProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(HathiTrustProcess, 'commitChanges')
 
         testInstance.process = 'complete'
         testInstance.runProcess()
 
         mockImport.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testInstance.record_buffer.flush.assert_called_once
 
     def test_runProcess_custom(self, testInstance, mocker):
         mockImport = mocker.patch.object(HathiTrustProcess, 'importFromSpecificFile')
-        mockSave = mocker.patch.object(HathiTrustProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(HathiTrustProcess, 'commitChanges')
 
         testInstance.process = 'custom'
         testInstance.customFile = 'testFile'
         testInstance.runProcess()
 
         mockImport.assert_called_once_with('testFile')
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testInstance.record_buffer.flush.assert_called_once()
 
     def test_importFromSpecificFile_success(self, testInstance, mocker):
         mockOpen = mocker.patch('processes.ingest.hathi_trust.open')

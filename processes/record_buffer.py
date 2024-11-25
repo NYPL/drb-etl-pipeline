@@ -7,7 +7,7 @@ class RecordBuffer:
         self.db_manager = db_manager
         self.records = set()
         self.batch_size = batch_size
-        self.number_of_ingested_records = 0
+        self.ingest_count = 0
 
     def add(self, record: BaseMapping):
         existing_record = self.db_manager.session.query(Record).filter(
@@ -26,5 +26,5 @@ class RecordBuffer:
 
     def flush(self):
         self.db_manager.bulkSaveObjects(self.records)
-        self.number_of_ingested_records += len(self.records)
+        self.ingest_count += len(self.records)
         self.records.clear()

@@ -1,5 +1,7 @@
 from ..core import CoreProcess
 from logger import create_log
+from managers import DBManager
+from ..record_buffer import RecordBuffer
 from services import NYPLBibService
 
 logger = create_log(__name__)
@@ -14,11 +16,15 @@ class NYPLProcess(CoreProcess):
 
         self.nypl_bib_service = NYPLBibService()
 
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
+
     def runProcess(self):
         try:
-            self.generateEngine()
-            self.createSession()
-
             if self.process == 'daily':
                 records = self.nypl_bib_service.get_records(offset=self.offset, limit=self.limit)
             elif self.process == 'complete':
@@ -30,14 +36,13 @@ class NYPLProcess(CoreProcess):
                 return
             
             for record in records:
-                self.addDCDWToUpdateList(record)
+                self.record_buffer.add(record)
             
-            self.saveRecords()
-            self.commitChanges()
+            self.record_buffer.flush()
 
-            logger.info(f'Ingested {len(self.records)} NYPL records')
+            logger.info(f'Ingested {len(self.record_buffer.ingest_count)} NYPL records')
         except Exception as e:
             logger.exception(f'Failed to ingest NYPL records')
             raise e
         finally:
-            self.close_connection()
+            self.db_manager.close_connection()

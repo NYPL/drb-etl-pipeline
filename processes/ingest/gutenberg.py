@@ -6,10 +6,11 @@ import re
 
 from constants.get_constants import get_constants
 from ..core import CoreProcess
-from managers import GutenbergManager, RabbitMQManager
+from managers import DBManager, GutenbergManager, RabbitMQManager
 from mappings.gutenberg import GutenbergMapping
 from model import get_file_message
 from logger import create_log
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
@@ -30,8 +31,12 @@ class GutenbergProcess(CoreProcess):
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.fileQueue = os.environ['FILE_QUEUE']
         self.fileRoute = os.environ['FILE_ROUTING_KEY']
@@ -52,10 +57,9 @@ class GutenbergProcess(CoreProcess):
         elif self.process == 'custom':
             self.importRDFRecords(startTimestamp=self.ingestPeriod)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} Gutenberg records')
+        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} Gutenberg records')
 
     def importRDFRecords(self, fullImport=False, startTimestamp=None):
         orderDirection = 'DESC'
@@ -104,7 +108,7 @@ class GutenbergProcess(CoreProcess):
             except (KeyError, AttributeError):
                 logger.warning('Unable to store cover for {}'.format(gutenbergRec.record.source_id))
 
-            self.addDCDWToUpdateList(gutenbergRec)
+            self.record_buffer.add(gutenbergRec)
 
     def storeEpubsInS3(self, gutenbergRec):
         newParts = []

@@ -8,9 +8,10 @@ from requests.exceptions import ReadTimeout, HTTPError
 
 from ..core import CoreProcess
 from mappings.muse import MUSEMapping
-from managers import MUSEError, MUSEManager, RabbitMQManager, S3Manager
+from managers import DBManager, MUSEError, MUSEManager, RabbitMQManager, S3Manager
 from model import get_file_message
 from logger import create_log
+from ..record_buffer import RecordBuffer
 
 
 logger = create_log(__name__)
@@ -24,8 +25,12 @@ class MUSEProcess(CoreProcess):
 
         self.ingest_limit = int(args[4]) if args[4] else None
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+        
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
@@ -47,10 +52,9 @@ class MUSEProcess(CoreProcess):
         elif self.process == 'single':
             self.importMARCRecords(recID=self.singleRecord)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} MUSE records')
+        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} MUSE records')
 
     def parseMuseRecord(self, marcRec):
         museRec = MUSEMapping(marcRec)
@@ -80,7 +84,7 @@ class MUSEProcess(CoreProcess):
         if museManager.epubURL:
             self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(museManager.epubURL, museManager.s3EpubPath))
 
-        self.addDCDWToUpdateList(museRec)
+        self.record_buffer.add(museRec)
 
     def importMARCRecords(self, full=False, startTimestamp=None, recID=None):
         self.downloadRecordUpdates()

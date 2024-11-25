@@ -3,7 +3,8 @@ from services import PublisherBacklistService
 
 from ..core import CoreProcess
 from logger import create_log
-from managers import S3Manager
+from managers import DBManager, S3Manager
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
@@ -14,6 +15,13 @@ class PublisherBacklistProcess(CoreProcess):
         self.limit = (len(args) >= 5 and args[4] and args(4) <= 100) or None
         self.offset = (len(args) >= 6 and args[5]) or None
 
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manger=self.db_manager)
+
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.s3_manager = S3Manager()
 
@@ -21,9 +29,6 @@ class PublisherBacklistProcess(CoreProcess):
         
     def runProcess(self):
         try:
-            self.generateEngine()
-            self.createSession()
-
             if self.process == 'daily':
                 records = self.publisher_backlist_service.get_records(offset=self.offset, limit=self.limit)
             elif self.process == 'complete':
@@ -35,12 +40,11 @@ class PublisherBacklistProcess(CoreProcess):
                 return
         
             for record in records:
-                self.addDCDWToUpdateList(record)
+                self.record_buffer.add(record)
             
-            self.saveRecords()
-            self.commitChanges()
+            self.record_buffer.flush()
 
-            logger.info(f'Ingested {len(self.records)} Publisher Backlist records')
+            logger.info(f'Ingested {len(self.record_buffer.ingest_count)} Publisher Backlist records')
 
         except Exception as e:
             logger.exception('Failed to run Publisher Backlist process')
