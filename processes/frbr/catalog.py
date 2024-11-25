@@ -4,9 +4,10 @@ from lxml import etree
 from time import sleep
 
 from ..core import CoreProcess
-from managers import OCLCCatalogManager, RabbitMQManager
+from managers import DBManager, OCLCCatalogManager, RabbitMQManager
 from mappings.oclcCatalog import CatalogMapping
 from logger import create_log
+from ..record_buffer import RecordBuffer
 
 
 logger = create_log(__name__)
@@ -14,10 +15,14 @@ logger = create_log(__name__)
 
 class CatalogProcess(CoreProcess):
     def __init__(self, *args):
-        super(CatalogProcess, self).__init__(*args[:4], batchSize=50)
+        super(CatalogProcess, self).__init__(*args[:4])
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager, batch_size=50)
 
         self.rabbitmq_manager = RabbitMQManager()
         self.rabbitmq_manager.createRabbitConnection()
@@ -28,10 +33,9 @@ class CatalogProcess(CoreProcess):
     def runProcess(self, max_attempts: int=4):
         self.process_catalog_messages(max_attempts=max_attempts)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Saved {len(self.records)} catalog records')
+        logger.info(f'Saved {len(self.record_buffer.ingest_count)} catalog records')
 
     def process_catalog_messages(self, max_attempts: int=4):
         for attempt in range(0, max_attempts):
@@ -76,6 +80,6 @@ class CatalogProcess(CoreProcess):
             catalog_record_mapping.applyMapping()
             catalog_record_mapping.record.identifiers.append('{}|owi'.format(owi_number))
             
-            self.addDCDWToUpdateList(catalog_record_mapping)
+            self.record_buffer.add(catalog_record_mapping)
         except Exception:
             logger.exception(f'Unable to map OCLC catalog record for OCLC number: {oclc_number}')

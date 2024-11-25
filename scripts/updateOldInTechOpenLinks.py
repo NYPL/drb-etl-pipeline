@@ -37,7 +37,7 @@ def main():
 
             if match == None:
                 doabProcess.importSingleOAIRecord(record.source_id)
-                doabProcess.saveRecords()
+                doabProcess.record_buffer.flush()
                 doabProcess.records = set()     #Clears memory space for process class after each import
 
     dbManager.commitChanges()

@@ -74,7 +74,7 @@ class TestPublisherBacklistProcess:
         test_instance.record_buffer.flush.assert_not_called()
         test_instance.db_manager.close_connection.assert_called_once()
 
-    def test_runProcess_error(self, test_instance: PublisherBacklistProcess, mocks):
+    def test_runProcess_error(self, test_instance: PublisherBacklistProcess):
         test_instance.publisher_backlist_service.get_records.side_effect = Exception()
 
         test_instance.process = 'daily'

@@ -34,40 +34,28 @@ class TestClusterProcess:
 
     def test_runProcess_daily(self, testInstance, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'cluster_records')
-        mockSave = mocker.patch.object(ClusterProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
 
         testInstance.process = 'daily'
         testInstance.runProcess()
 
         mockCluster.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
 
     def test_runProcess_complete(self, testInstance, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'cluster_records')
-        mockSave = mocker.patch.object(ClusterProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
 
         testInstance.process = 'complete'
         testInstance.runProcess()
 
         mockCluster.assert_called_once_with(full=True)
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
 
     def test_runProcess_custom(self, testInstance, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'cluster_records')
-        mockSave = mocker.patch.object(ClusterProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
 
         testInstance.process = 'custom'
         testInstance.ingestPeriod = 'testDate'
         testInstance.runProcess()
 
         mockCluster.assert_called_once_with(start_datetime='testDate')
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
 
     def test_cluster_records_not_full(self, testInstance, mocker):
         clusterMocks = mocker.patch.multiple(

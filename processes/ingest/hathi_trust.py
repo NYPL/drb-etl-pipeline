@@ -20,7 +20,7 @@ class HathiTrustProcess(CoreProcess):
     FIELD_SIZE_LIMIT = 131072 * 2 # 131072 is the default size limit
 
     def __init__(self, *args):
-        super(HathiTrustProcess, self).__init__(*args[:4], batchSize=1000)
+        super(HathiTrustProcess, self).__init__(*args[:4])
 
         self.ingest_limit = int(args[4]) if args[4] else None
 
@@ -29,7 +29,7 @@ class HathiTrustProcess(CoreProcess):
         self.db_manager.generateEngine()
         self.db_manager.createSession()
 
-        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager, batch_size=1000)
 
         self.constants = get_constants()
 

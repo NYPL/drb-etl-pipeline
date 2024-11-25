@@ -17,13 +17,15 @@ class LocalDevelopmentSetupProcess(CoreProcess):
         super(LocalDevelopmentSetupProcess, self).__init__(*args[:4])
 
         self.elastic_search_manager = ElasticsearchManager()
+        
+        self.db_manager = DBManager()
+        
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
 
     def runProcess(self):
         try:
             self.initialize_db()
-
-            self.generateEngine()
-            self.createSession()
 
             self.initializeDatabase()
 

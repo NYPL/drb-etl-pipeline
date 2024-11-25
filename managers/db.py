@@ -2,6 +2,7 @@ import os
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError
+from typing import Optional
 
 from model import Base
 from logger import create_log
@@ -97,6 +98,31 @@ class DBManager:
         except OperationalError as oprErr:
             logger.error('Deadlock in database layer, retry batch')
             logger.debug(oprErr)
+
+    def windowedQuery(self, table, query, ingest_limit: Optional[int], windowSize=100):
+        singleEntity = query.is_single_entity
+        query = query.add_column(table.date_modified).order_by(table.date_modified)
+        query = query.add_column(table.id).order_by(table.id)
+
+        lastID = None
+        totalFetched = 0
+
+        while True:
+            subQuery = query
+
+            if lastID is not None:
+                subQuery = subQuery.filter(table.id > lastID)
+
+            queryChunk = subQuery.limit(windowSize).all()
+            totalFetched += windowSize
+
+            if not queryChunk or (ingest_limit and totalFetched > ingest_limit):
+                break
+
+            lastID = queryChunk[-1][-1]
+
+            for row in queryChunk:
+                yield row[0] if singleEntity else row[0:-2]
 
     @staticmethod
     def decryptEnvVar(envVar):

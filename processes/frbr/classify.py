@@ -4,10 +4,11 @@ import newrelic.agent
 import re
 
 from ..core import CoreProcess
-from managers import OCLCCatalogManager, RabbitMQManager, RedisManager
+from managers import DBManager, OCLCCatalogManager, RabbitMQManager, RedisManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
 from logger import create_log
+from ..record_buffer import RecordBuffer
 
 
 logger = create_log(__name__)
@@ -15,12 +16,16 @@ logger = create_log(__name__)
 
 class ClassifyProcess(CoreProcess):
     def __init__(self, *args):
-        super(ClassifyProcess, self).__init__(*args[:4], batchSize=50)
+        super(ClassifyProcess, self).__init__(*args[:4])
 
         self.ingest_limit = int(args[4]) if len(args) >= 5 and args[4] else None
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager, batch_size=50)
 
         self.redis_manager = RedisManager()
         self.redis_manager.createRedisClient()
@@ -48,8 +53,7 @@ class ClassifyProcess(CoreProcess):
                 logger.warning(f'Unknown classify process type: {self.process}')
                 return
             
-            self.saveRecords()
-            self.commitChanges()
+            self.record_buffer.flush()
             
             logger.info(f'Classified {self.classified_count} records')
         except Exception as e:
@@ -58,7 +62,7 @@ class ClassifyProcess(CoreProcess):
 
     def classify_records(self, full=False, start_date_time=None):
         get_unfrbrized_records_query = (
-            self.session.query(Record)
+            self.db_manager.session.query(Record)
                 .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')
                 .filter(Record.frbr_status == 'to_do')
         )
@@ -75,8 +79,8 @@ class ClassifyProcess(CoreProcess):
             unfrbrized_record.cluster_status = False
             unfrbrized_record.frbr_status = 'complete'
 
-            self.session.add(unfrbrized_record)
-            self.session.commit()
+            self.db_manager.session.add(unfrbrized_record)
+            self.db_manager.session.commit()
             self.classified_count += 1
 
             if self.ingest_limit and self.classified_count >= self.ingest_limit:
@@ -137,7 +141,7 @@ class ClassifyProcess(CoreProcess):
                 related_oclc_numbers=related_oclc_numbers
             )
 
-            self.addDCDWToUpdateList(oclc_record)
+            self.record_buffer.add(oclc_record)
             self.get_oclc_catalog_records(oclc_record.record.identifiers)
 
     def get_oclc_catalog_records(self, identifiers):

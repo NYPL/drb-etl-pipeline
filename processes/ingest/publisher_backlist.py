@@ -50,4 +50,4 @@ class PublisherBacklistProcess(CoreProcess):
             logger.exception('Failed to run Publisher Backlist process')
             raise e   
         finally:
-            self.close_connection()
+            self.db_manager.close_connection()

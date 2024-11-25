@@ -7,9 +7,10 @@ import requests
 from constants.get_constants import get_constants
 from ..core import CoreProcess
 from logger import create_log
-from managers import RedisManager
+from managers import DBManager, RedisManager
 from mappings.hathitrust import HathiMapping
 from processes import CatalogProcess, ClassifyProcess, ClusterProcess
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
@@ -17,6 +18,13 @@ logger = create_log(__name__)
 class SeedLocalDataProcess(CoreProcess):
     def __init__(self, *args):
         super(SeedLocalDataProcess, self).__init__(*args[:4])
+
+        self.db_manager = DBManager()
+        
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.redis_manager = RedisManager()
         self.constants = get_constants()
@@ -49,10 +57,9 @@ class SeedLocalDataProcess(CoreProcess):
     def fetch_hathi_sample_data(self):
         self.import_from_hathi_trust_data_file()
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} Hathi Trust sample records')
+        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} Hathi Trust sample records')
 
     def import_from_hathi_trust_data_file(self):
         hathi_files_response = requests.get(os.environ['HATHI_DATAFILES'])
@@ -91,7 +98,7 @@ class SeedLocalDataProcess(CoreProcess):
                     hathi_record = HathiMapping(book, self.constants)
                     hathi_record.applyMapping()
 
-                    self.addDCDWToUpdateList(hathi_record)
+                    self.record_buffer.add(hathi_record)
     
     def map_to_hathi_date_format(self, date: str):
         if 'T' in date and '-' in date:

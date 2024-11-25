@@ -112,13 +112,12 @@ class TestHathiTrustProcess:
 
     def test_parseHathiDataRow(self, testInstance, mocker):
         mockHathiMapping = mocker.patch('processes.ingest.hathi_trust.HathiMapping')
-        mockAddDCDW = mocker.patch.object(HathiTrustProcess, 'addDCDWToUpdateList')
 
         testInstance.parseHathiDataRow('testRow')
 
         mockHathiMapping.assert_called_once_with('testRow', {})
         mockHathiMapping.applyMapping.assert_called_once
-        mockAddDCDW.assert_called_once
+        testInstance.record_buffer.add.assert_called_once()
 
     def test_importFromHathiTrustDataFile_standard(self, testInstance, hathiFilesData, start_date_time, mocker):
         mockRequest = mocker.patch.object(requests, 'get')

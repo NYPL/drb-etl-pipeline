@@ -28,15 +28,6 @@ class TestNYPLProcess:
         return TestNYPLProcess('TestProcess', 'testFile', 'testDate')
     
     @pytest.fixture
-    def mocks(self, mocker):
-        return {
-            'generate_engine': mocker.patch.object(NYPLProcess, 'generateEngine'),
-            'create_session': mocker.patch.object(NYPLProcess, 'createSession'),
-            'close': mocker.patch.object(NYPLProcess, 'close_connection'),
-            'add_record': mocker.patch.object(NYPLProcess, 'addDCDWToUpdateList')
-        }
-    
-    @pytest.fixture
     def record_mappings(self, mocker):
         return [mocker.MagicMock()]
     
@@ -82,7 +73,7 @@ class TestNYPLProcess:
         test_instance.record_buffer.flush.assert_not_called()
         test_instance.db_manager.close_connection.assert_called_once()
 
-    def test_runProcess_error(self, test_instance: NYPLProcess, mocks):
+    def test_runProcess_error(self, test_instance: NYPLProcess):
         test_instance.nypl_bib_service.get_records.side_effect = Exception()
 
         test_instance.process = 'daily'
