@@ -36,10 +36,10 @@ class TestPublisherBacklistMapping:
         ]
         assert recordMapping['title'] == ('Title', '{0}')
 
-    def test_apply_formatting_standard(self, testMapping, testRecordStandard):
+    def test_applyFormatting_standard(self, testMapping, testRecordStandard):
         testMapping.record = testRecordStandard
 
-        testMapping.apply_formatting()
+        testMapping.applyFormatting()
 
         assert testMapping.record.has_part == []
         assert testMapping.record.source == 'UofM'
