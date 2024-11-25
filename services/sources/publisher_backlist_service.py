@@ -96,4 +96,5 @@ class PublisherBacklistService(SourceService):
             pub_backlist_records_response_json = pub_backlist_records_response.json()
             array_json.append(pub_backlist_records_response_json)
 
+        print(len(array_json))
         return array_json
