@@ -63,7 +63,6 @@ class TestClusterProcess:
             cluster_record=mocker.DEFAULT,
             update_elastic_search=mocker.DEFAULT,
             delete_stale_works=mocker.DEFAULT,
-            closeConnection=mocker.DEFAULT,
         )
 
         mockQuery = mocker.MagicMock()
@@ -95,7 +94,6 @@ class TestClusterProcess:
             cluster_record=mocker.DEFAULT,
             update_elastic_search=mocker.DEFAULT,
             delete_stale_works=mocker.DEFAULT,
-            closeConnection=mocker.DEFAULT,
         )
         mockQuery = mocker.MagicMock()
         testInstance.process = 'custom'
@@ -129,7 +127,6 @@ class TestClusterProcess:
             cluster_record=mocker.DEFAULT,
             update_elastic_search=mocker.DEFAULT,
             delete_stale_works=mocker.DEFAULT,
-            closeConnection=mocker.DEFAULT,
             update_cluster_status=mocker.DEFAULT
         )
 

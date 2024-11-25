@@ -55,7 +55,7 @@ class ClusterProcess(CoreProcess):
             logger.exception('Failed to run cluster process')
             raise e
         finally:
-            self.close_connection()
+            self.db_manager.session.close_connection()
 
     def cluster_records(self, full=False, start_datetime=None, record_uuid=None):
         get_unclustered_records_query = (
