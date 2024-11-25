@@ -3,10 +3,10 @@ import os
 import requests
 import json
 import urllib.parse
-from typing import Optional, Dict
+from typing import Optional
 
 from logger import create_log
-from mappings.UofM import UofMMapping
+from mappings.publisher_backlist import PublisherBacklistMapping
 from .source_service import SourceService
 
 logger = create_log(__name__)
@@ -23,14 +23,14 @@ class PublisherBacklistService(SourceService):
         start_timestamp: datetime=None,
         offset: Optional[int]=None,
         limit: Optional[int]=None
-    ) -> list[UofMMapping]:
+    ) -> list[PublisherBacklistMapping]:
         array_json_records = self.get_records_json(full_import, start_timestamp, offset, limit)
 
         for json_dict in array_json_records:
             for records_value in json_dict['records']:
                 try:
                     record_metadata_dict = records_value
-                    record = UofMMapping(record_metadata_dict)
+                    record = PublisherBacklistMapping(record_metadata_dict)
                     record.applyMapping()
                 except Exception:
                     logger.exception(f'Failed to process Publisher Backlist record')

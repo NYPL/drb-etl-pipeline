@@ -1,10 +1,9 @@
 from .json import JSONMapping
 
-
-class UofMMapping(JSONMapping):
+class PublisherBacklistMapping(JSONMapping):
     def __init__(self, source):
         super().__init__(source, {})
-        self.mapping = self.createMapping() 
+        self.mapping = self.createMapping()
 
     def createMapping(self):
         return {
@@ -19,33 +18,41 @@ class UofMMapping(JSONMapping):
             'rights': ('DRB Rights Classification', '{0}||||'),
             'contributors': [('Contributors', '{0}|||contributor')],
             'subjects': ('Subject 1', '{0}'),
+            'source': ('Projects', '{0}'),
+            'publisher_project_source': ('Publisher (from Projects)', '{0}')
         }
 
-    def applyFormatting(self):
+    def apply_formatting(self):
         self.record.has_part = []
-        self.record.spatial = 'Michigan'
-        self.record.source = 'UofM'
-        self.record.publisher_project_source = 'UofMichigan Press'
+
+        if self.record.source:
+            source_list = self.record.source.split(' ')
+            print(source_list)
+            self.record.source = source_list[0]
+
+        if self.record.publisher_project_source:
+            publisher_source = self.record.publisher_project_source[0]
+            self.record.publisher_project_source = publisher_source
 
         if self.record.authors:
-            self.record.authors = self.formatAuthors()
+            self.record.authors = self.format_authors()
 
         if self.record.subjects:
-            self.record.subjects = self.formatSubjects()
+            self.record.subjects = self.format_subjects()
 
         if self.record.identifiers:
             if len(self.record.identifiers) == 1:
                 source_id = self.record.identifiers[0].split('|')[0]
-                self.record.source_id = f'UofM_{source_id}'
-                self.record.identifiers = self.formatIdentifiers()
+                self.record.source_id = f'{self.record.source}_{source_id}'
+                self.record.identifiers = self.format_identifiers()
             else:
                 source_id = self.record.identifiers[1].split('|')[0]
-                self.record.source_id = f'UofM_{source_id}'
-                self.record.identifiers = self.formatIdentifiers()
+                self.record.source_id = f'{self.record.source}_{source_id}'
+                self.record.identifiers = self.format_identifiers()
 
-        self.record.rights = self.formatRights()
+        self.record.rights = self.format_rights()
 
-    def formatAuthors(self):
+    def format_authors(self):
         authorList = []
 
         if ';' in self.record.authors:
@@ -57,7 +64,7 @@ class UofMMapping(JSONMapping):
             return authorList
         
         
-    def formatIdentifiers(self):
+    def format_identifiers(self):
         if 'isbn' in self.record.identifiers[0]:
             isbnString = self.record.identifiers[0].split('|')[0]
             if ';' in isbnString:
@@ -71,7 +78,7 @@ class UofMMapping(JSONMapping):
                 
         return self.record.identifiers
     
-    def formatSubjects(self):
+    def format_subjects(self):
         subjectList = []
 
         if '|' in self.record.subjects:
@@ -82,7 +89,7 @@ class UofMMapping(JSONMapping):
             subjectList.append(f'{self.record.subjects}||')
             return subjectList
     
-    def formatRights(self):
+    def format_rights(self):
         if not self.record.rights: 
             return None
 
@@ -90,9 +97,9 @@ class UofMMapping(JSONMapping):
         rightsStatus = rightsElements[0]
 
         if rightsStatus == 'in copyright':
-            return 'UofM|{}||{}|'.format('in_copyright', 'In Copyright') 
+            return '{}|{}||{}|'.format('self.record.source', 'in_copyright', 'In Copyright') 
         
         if rightsStatus == 'public domain':
-            return 'UofM|{}||{}|'.format('public_domain', 'Public Domain') 
+            return '{}|{}||{}|'.format('self.record.source', 'public_domain', 'Public Domain') 
         
         return None
