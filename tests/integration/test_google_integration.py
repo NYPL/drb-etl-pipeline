@@ -10,6 +10,5 @@ def test_get_drive_file():
     file = get_drive_file(test_id)
 
     assert file != None
-    print(file.seek(0, 2))
     assert file.seek(0, 2) > 1
 
