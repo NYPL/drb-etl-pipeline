@@ -4,7 +4,7 @@ from mappings.publisher_backlist import PublisherBacklistMapping
 
 class TestPublisherBacklistMapping:
     @pytest.fixture
-    def testMapping(self):
+    def test_mapping(self):
         class TestPublisherBacklistMapping(PublisherBacklistMapping):
             def __init__(self):
                 self.mapping = None
@@ -27,25 +27,25 @@ class TestPublisherBacklistMapping:
             publisher_project_source=['University of Michigan Press']
         )
 
-    def test_createMapping(self, testMapping):
-        recordMapping = testMapping.createMapping()
+    def test_createMapping(self, test_mapping):
+        record_mapping = test_mapping.createMapping()
 
-        assert list(recordMapping.keys()) == [
+        assert list(record_mapping.keys()) == [
             'title', 'authors', 'dates', 'publisher',
             'identifiers', 'rights', 'contributors', 'subjects',
             'source', 'source_id', 'publisher_project_source'
         ]
-        assert recordMapping['title'] == ('Title', '{0}')
+        assert record_mapping['title'] == ('Title', '{0}')
 
-    def test_applyFormatting_standard(self, testMapping, testRecordStandard):
-        testMapping.record = testRecordStandard
+    def test_applyFormatting_standard(self, test_mapping, testRecordStandard):
+        test_mapping.record = testRecordStandard
 
-        testMapping.applyFormatting()
+        test_mapping.applyFormatting()
 
-        assert testMapping.record.has_part == []
-        assert testMapping.record.source == 'UofMichigan'
-        assert testMapping.record.identifiers == ['testISBN|isbn', 'testOCLC|oclc']
-        assert testMapping.record.source_id == 'testSourceID'
-        assert testMapping.record.publisher == ['testPublisher||']
-        assert testMapping.record.publisher_project_source == 'University of Michigan Press'
-        assert testMapping.record.subjects == ['testSubject||']
+        assert test_mapping.record.has_part == []
+        assert test_mapping.record.source == 'UofMichigan'
+        assert test_mapping.record.identifiers == ['testISBN|isbn', 'testOCLC|oclc']
+        assert test_mapping.record.source_id == 'testSourceID'
+        assert test_mapping.record.publisher == ['testPublisher||']
+        assert test_mapping.record.publisher_project_source == 'University of Michigan Press'
+        assert test_mapping.record.subjects == ['testSubject||']

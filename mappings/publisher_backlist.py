@@ -60,13 +60,13 @@ class PublisherBacklistMapping(JSONMapping):
         if 'isbn' in self.record.identifiers[0]:
             isbn_string = self.record.identifiers[0].split('|')[0]
             if ';' in isbn_string:
-                isbnList = isbn_string.split('; ')
-                new_isbn_list = [f'{isbn}|isbn' for isbn in isbnList]
+                isbns = isbn_string.split('; ')
+                formatted_isbns = [f'{isbn}|isbn' for isbn in isbns]
                 if len(self.record.identifiers) > 1 and 'oclc' in self.record.identifiers[1]:
-                    new_isbn_list.append(f'{self.record.identifiers[1]}')
-                    return new_isbn_list
+                    formatted_isbns.append(f'{self.record.identifiers[1]}')
+                    return formatted_isbns
                 else:
-                    return new_isbn_list
+                    return formatted_isbns
                 
         return self.record.identifiers
     
@@ -75,8 +75,7 @@ class PublisherBacklistMapping(JSONMapping):
 
         if '|' in self.record.subjects:
             subject_list = self.record.subjects.split('|')
-            new_subject_list = [f'{subject}||' for subject in subject_list] 
-            return new_subject_list
+            return [f'{subject}||' for subject in subject_list]
         else:
             subject_list.append(f'{self.record.subjects}||')
             return subject_list
