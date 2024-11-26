@@ -83,12 +83,6 @@ class UofMMapping(JSONMapping):
             return subjectList
     
     def formatRights(self):
-        '''
-        The pipe delimiter is to separate the Rights table attributes into this format:
-        source|license|reason|statement|date 
-        which makes it easy to place the right data into the columns when clustered
-        '''
-
         if not self.record.rights: 
             return None
 
@@ -102,9 +96,3 @@ class UofMMapping(JSONMapping):
             return 'UofM|{}||{}|'.format('public_domain', 'Public Domain') 
         
         return None
-
-
-
-
-            
-        
