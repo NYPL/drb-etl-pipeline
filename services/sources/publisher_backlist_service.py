@@ -89,12 +89,10 @@ class PublisherBacklistService(SourceService):
         pub_backlist_records_response = requests.get(url, headers=headers)
         pub_backlist_records_response_json = pub_backlist_records_response.json()
         array_json = [pub_backlist_records_response_json]
-        
         while 'offset' in pub_backlist_records_response_json:
             next_page_url = url + f"&offset={pub_backlist_records_response_json['offset']}"
             pub_backlist_records_response = requests.get(next_page_url, headers=headers)
             pub_backlist_records_response_json = pub_backlist_records_response.json()
             array_json.append(pub_backlist_records_response_json)
 
-        print(len(array_json))
         return array_json

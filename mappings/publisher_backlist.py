@@ -18,14 +18,15 @@ class PublisherBacklistMapping(JSONMapping):
             'rights': ('DRB Rights Classification', '{0}||||'),
             'contributors': [('Contributors', '{0}|||contributor')],
             'subjects': ('Subject 1', '{0}'),
-            'source': ('Projects', '{0}'),
+            'source': ('Project Name (from Projects)', '{0}'),
+            'source_id': ('DRB Record_ID', '{0}'),
             'publisher_project_source': ('Publisher (from Projects)', '{0}')
         }
 
     def applyFormatting(self):
         self.record.has_part = []
         if self.record.source:
-            source_list = self.record.source.split(' ')
+            source_list = self.record.source[0].split(' ')
             self.record.source = source_list[0]
 
         if self.record.publisher_project_source:
@@ -39,65 +40,58 @@ class PublisherBacklistMapping(JSONMapping):
             self.record.subjects = self.format_subjects()
 
         if self.record.identifiers:
-            if len(self.record.identifiers) == 1:
-                source_id = self.record.identifiers[0].split('|')[0]
-                self.record.source_id = f'{self.record.source}_{source_id}'
-                self.record.identifiers = self.format_identifiers()
-            else:
-                source_id = self.record.identifiers[1].split('|')[0]
-                self.record.source_id = f'{self.record.source}_{source_id}'
-                self.record.identifiers = self.format_identifiers()
+            self.record.identifiers = self.format_identifiers()
 
         self.record.rights = self.format_rights()
 
     def format_authors(self):
-        authorList = []
+        author_list = []
 
         if ';' in self.record.authors:
-            authorList = self.record.authors.split('; ')
-            newAuthorList = [f'{author}|||true' for author in authorList] 
-            return newAuthorList
+            author_list = self.record.authors.split('; ')
+            new_author_list = [f'{author}|||true' for author in author_list] 
+            return new_author_list
         else:
-            authorList.append(f'{self.record.authors}|||true)')
-            return authorList
+            author_list.append(f'{self.record.authors}|||true)')
+            return author_list
         
         
     def format_identifiers(self):
         if 'isbn' in self.record.identifiers[0]:
-            isbnString = self.record.identifiers[0].split('|')[0]
-            if ';' in isbnString:
-                isbnList = isbnString.split('; ')
-                newISBNList = [f'{isbn}|isbn' for isbn in isbnList]
+            isbn_string = self.record.identifiers[0].split('|')[0]
+            if ';' in isbn_string:
+                isbnList = isbn_string.split('; ')
+                new_isbn_list = [f'{isbn}|isbn' for isbn in isbnList]
                 if len(self.record.identifiers) > 1 and 'oclc' in self.record.identifiers[1]:
-                    newISBNList.append(f'{self.record.identifiers[1]}')
-                    return newISBNList
+                    new_isbn_list.append(f'{self.record.identifiers[1]}')
+                    return new_isbn_list
                 else:
-                    return newISBNList
+                    return new_isbn_list
                 
         return self.record.identifiers
     
     def format_subjects(self):
-        subjectList = []
+        subject_list = []
 
         if '|' in self.record.subjects:
-            subjectList = self.record.subjects.split('|')
-            newSubjectList = [f'{subject}||' for subject in subjectList] 
-            return newSubjectList
+            subject_list = self.record.subjects.split('|')
+            new_subject_list = [f'{subject}||' for subject in subject_list] 
+            return new_subject_list
         else:
-            subjectList.append(f'{self.record.subjects}||')
-            return subjectList
+            subject_list.append(f'{self.record.subjects}||')
+            return subject_list
     
     def format_rights(self):
         if not self.record.rights: 
             return None
 
-        rightsElements = self.record.rights.split('|')
-        rightsStatus = rightsElements[0]
+        rights_elements = self.record.rights.split('|')
+        rights_status = rights_elements[0]
 
-        if rightsStatus == 'in copyright':
+        if rights_status == 'in copyright':
             return '{}|{}||{}|'.format('self.record.source', 'in_copyright', 'In Copyright') 
         
-        if rightsStatus == 'public domain':
+        if rights_status == 'public domain':
             return '{}|{}||{}|'.format('self.record.source', 'public_domain', 'Public Domain') 
         
         return None

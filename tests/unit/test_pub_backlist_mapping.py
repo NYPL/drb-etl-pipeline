@@ -22,8 +22,9 @@ class TestPublisherBacklistMapping:
             rights='in copyright||||',
             contributor=['testContributor|||contributor'],
             subjects='testSubject',
-            source='UofM Press',
-            publisher_project_source=['University of Michigan']
+            source=['UofMichigan Backlist'],
+            source_id='testSourceID',
+            publisher_project_source=['University of Michigan Press']
         )
 
     def test_createMapping(self, testMapping):
@@ -32,7 +33,7 @@ class TestPublisherBacklistMapping:
         assert list(recordMapping.keys()) == [
             'title', 'authors', 'dates', 'publisher',
             'identifiers', 'rights', 'contributors', 'subjects',
-            'source', 'publisher_project_source'
+            'source', 'source_id', 'publisher_project_source'
         ]
         assert recordMapping['title'] == ('Title', '{0}')
 
@@ -42,10 +43,9 @@ class TestPublisherBacklistMapping:
         testMapping.applyFormatting()
 
         assert testMapping.record.has_part == []
-        assert testMapping.record.source == 'UofM'
+        assert testMapping.record.source == 'UofMichigan'
         assert testMapping.record.identifiers == ['testISBN|isbn', 'testOCLC|oclc']
-        assert testMapping.record.source_id == 'UofM_testOCLC'
+        assert testMapping.record.source_id == 'testSourceID'
         assert testMapping.record.publisher == ['testPublisher||']
-        assert testMapping.record.source == 'UofM'
-        assert testMapping.record.publisher_project_source == 'University of Michigan'
+        assert testMapping.record.publisher_project_source == 'University of Michigan Press'
         assert testMapping.record.subjects == ['testSubject||']
