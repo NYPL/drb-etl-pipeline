@@ -28,9 +28,8 @@ class LOCProcess(CoreProcess):
         self.generateEngine()
         self.createSession()
 
-        self.createS3Client()
         self.s3_manager = S3Manager()
-        self.createS3Client()
+        self.s3_manager.createS3Client()
         self.s3Bucket = os.environ['FILE_BUCKET']
 
         self.fileQueue = os.environ['FILE_QUEUE']
