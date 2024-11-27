@@ -33,12 +33,6 @@ def get_drive_file(file_id: str) -> BytesIO:
         logger.warning(f"HTTP error occurred when downloading Drive file {file_id}: {error}")
         file = None
     except Exception as err:
-        logger.warning(f"Unexpected {type(err)=} occurred when downloading drive file {file_id}: {error}")
+        logger.exception(f"Error occurred when downloading Drive file {file_id}: {error}")
 
     return file
-
-
-
-
-
-
