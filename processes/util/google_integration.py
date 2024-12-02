@@ -11,14 +11,13 @@ from logger import create_log
 
 logger = create_log(__name__)
 
-def create_drive_service(service_account_info):
-    scopes = ['https://www.googleapis.com/auth/drive']
-    credentials = Credentials.from_service_account_info(service_account_info, scopes=scopes)
+service_account_info=json.loads(SERVICE_ACCOUNT_FILE)
+scopes = ['https://www.googleapis.com/auth/drive']
+credentials = Credentials.from_service_account_info(service_account_info, scopes=scopes)
 
-    return build('drive', 'v3', credentials=credentials)
+drive_service = build('drive', 'v3', credentials=credentials)
 
 def get_drive_file(file_id: str) -> BytesIO:
-    drive_service = create_drive_service(service_account_info=json.loads(SERVICE_ACCOUNT_FILE))
     request = drive_service.files().get_media(fileId=file_id)
     file = BytesIO()
 
