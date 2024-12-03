@@ -20,6 +20,9 @@ class CatalogMapping(XMLMapping):
         super(CatalogMapping, self).__init__(source, namespace, constants)
         self.mapping = self.createMapping()
 
+    def remove_oclc_prefixes(self, oclc_id):
+        return oclc_id.removeprefix('(OCoLC)').removeprefix('on').removeprefix('ocn').removeprefix('ocm')
+
     def createMapping(self):
         return {
             'title': ('//oclc:datafield[@tag=\'245\']/oclc:subfield[@code=\'a\' or @code=\'b\']/text()', '{0} {1}'),
@@ -158,12 +161,13 @@ class CatalogMapping(XMLMapping):
 
     def applyFormatting(self):
         self.record.source = 'oclcCatalog'
+        self.record.identifiers[0] = self.remove_oclc_prefixes(self.record.identifiers[0])
         self.record.source_id = self.record.identifiers[0]
         self.record.frbr_status = 'complete'
-        
+
         _, _, lang_3, *_ = tuple(self.record.languages[0].split('|'))
         self.record.languages = [('||{}'.format(lang_3[35:38]))]
-        
+
         self.record.has_part = self.record.has_part[:10]
 
         self.record.has_part = list(filter(None, [
