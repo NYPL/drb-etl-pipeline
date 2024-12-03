@@ -18,9 +18,6 @@ class OCLCCatalogManager:
     MAX_NUMBER_OF_RECORDS = 100
     BEST_MATCH = 'bestMatch'
 
-    def __init__(self):
-        pass
-
     def query_catalog(self, oclc_no):
         catalog_query = self.METADATA_BIB_URL.format(oclc_no)
 
