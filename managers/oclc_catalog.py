@@ -11,7 +11,6 @@ logger = create_log(__name__)
 
 
 class OCLCCatalogManager:
-    CATALOG_URL = 'http://www.worldcat.org/webservices/catalog/content/{}?wskey={}'
     METADATA_BIB_URL = 'https://metadata.api.oclc.org/worldcat/manage/bibs/{}'
     OCLC_SEARCH_URL = 'https://americas.discovery.api.oclc.org/worldcat/search/v2/'
     ITEM_TYPES = ['archv', 'audiobook', 'book', 'encyc', 'jrnl']
@@ -20,16 +19,16 @@ class OCLCCatalogManager:
     BEST_MATCH = 'bestMatch'
 
     def __init__(self):
-        self.oclc_key = os.environ['OCLC_API_KEY']
+        pass
 
-    def query_catalog_v2(self, oclc_no):
-        catalog_query = self.CATALOG_URL.format(oclc_no, self.oclc_key)
+    def query_catalog(self, oclc_no):
+        catalog_query = self.METADATA_BIB_URL.format(oclc_no)
 
         for _ in range(0, 3):
             try:
                 token = OCLCAuthManager.get_metadata_token()
                 headers = { 'Authorization': f'Bearer {token}' }
-                
+
                 catalog_response = requests.get(catalog_query, headers=headers, timeout=3)
 
                 if catalog_response.status_code != 200:
@@ -42,27 +41,7 @@ class OCLCCatalogManager:
             except Exception as e:
                 logger.error(f'Failed to query catalog with query {catalog_query} due to {e}')
                 return None
-            
-        return None
 
-    def query_catalog(self, oclc_no):
-        catalog_query = self.CATALOG_URL.format(oclc_no, self.oclc_key)
-
-        for _ in range(0, 3):
-            try:
-                catalog_response = requests.get(catalog_query, timeout=3)
-
-                if catalog_response.status_code != 200:
-                    logger.warning(f'OCLC catalog request failed with status {catalog_response.status_code}')
-                    return None
-
-                return catalog_response.text
-            except (Timeout, ConnectionError):
-                logger.warning(f'Could not connect to {catalog_query} or timed out')
-            except Exception as e:
-                logger.error(f'Failed to query catalog with query {catalog_query} due to {e}')
-                return None
-            
         return None
 
     def get_related_oclc_numbers(self, oclc_number: int) -> list[int]:
