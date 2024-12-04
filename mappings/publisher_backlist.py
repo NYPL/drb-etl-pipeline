@@ -59,18 +59,15 @@ class PublisherBacklistMapping(JSONMapping):
     def format_identifiers(self):
         if 'isbn' in self.record.identifiers[0]:
             isbn_string = self.record.identifiers[0].split('|')[0]
-            print(isbn_string)
             isbns = []
 
             if ';' in isbn_string:
-                isbns = isbn_string.split('; ')
-                
-            if ',' in isbn_string:
+                isbns = isbn_string.split('; ')    
+            elif ',' in isbn_string:
                 isbns = isbn_string.split(', ')
  
             if isbns:
                 formatted_isbns = [f'{isbn}|isbn' for isbn in isbns]
-                print(formatted_isbns)
                 if len(self.record.identifiers) > 1 and 'oclc' in self.record.identifiers[1]:
                     formatted_isbns.append(f'{self.record.identifiers[1]}')
                     return formatted_isbns
@@ -98,8 +95,7 @@ class PublisherBacklistMapping(JSONMapping):
 
         if rights_status == 'in copyright':
             return '{}|{}||{}|'.format('self.record.source', 'in_copyright', 'In Copyright') 
-        
-        if rights_status == 'public domain':
+        elif rights_status == 'public domain':
             return '{}|{}||{}|'.format('self.record.source', 'public_domain', 'Public Domain') 
         
         return None

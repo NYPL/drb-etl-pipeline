@@ -34,11 +34,11 @@ class PublisherBacklistService(SourceService):
                     record_metadata_dict = records_value['fields']
                     pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
                     pub_backlist_record.applyMapping()
-                    self.addHasPartMapping(pub_backlist_record, pub_backlist_record.record)
-                    self.storePDFManifest(pub_backlist_record.record)
+                    self.add_has_part_mapping(pub_backlist_record, pub_backlist_record.record)
+                    self.store_pdf_manifest(pub_backlist_record.record)
                     complete_records.append(pub_backlist_record)
                 except Exception:
-                    logger.exception(f'Failed to process Publisher Backlist record')
+                    logger.exception(f'Failed to process Publisher Backlist record: {records_value}')
         return complete_records
     
     def get_records_json(self,
@@ -102,94 +102,88 @@ class PublisherBacklistService(SourceService):
 
         return array_json
     
-    def addHasPartMapping(self, resultsRecord, record):
+    def add_has_part_mapping(self, record):
 
         #GOOGLE DRIVE API CALL TO GET PDF/EPUB FILES
 
         try:
             if 'in_copyright' in record.rights:
-                linkString = '|'.join([
+                link_string = '|'.join([
                     '1',
                     #LINK TO PDF/EPUB,
                     record.source,
                     'application/pdf',
                     '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
                 ])
-                record.has_part.append(linkString)
+                record.has_part.append(link_string)
 
             if 'public_domain' in record.rights:
-                linkString = '|'.join([
+                link_string = '|'.join([
                     '1',
                     #LINK TO PDF/EPUB,
                     record.source,
                     'application/pdf',
                     '{"catalog": false, "download": true, "reader": false, "embed": false}'
                 ])
-                record.has_part.append(linkString)
+                record.has_part.append(link_string)
 
         except Exception as e:
-            if e.response['Error']['Code'] == 'NoSuchKey':
-                logger.exception(PubBacklistError("Key doesn't exist"))
-            else: 
-                logger.info(PubBacklistError("Object doesn't exist"))
+            logger.exception(e)
 
-    def storePDFManifest(self, record):
+    def store_pdf_manifest(self, record):
         for link in record.has_part:
-            itemNo, url, source, mediaType, flags = link.split('|')
+            item_no, url, source, media_type, flags = link.split('|')
 
-            if mediaType == 'application/pdf':
-                recordID = record.identifiers[0].split('|')[0]
-                manifestPath = 'manifests/{}/{}.json'.format(source, recordID)
-                manifestURI = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3Bucket, manifestPath
+            if media_type == 'application/pdf':
+                record_id = record.identifiers[0].split('|')[0]
+                manifest_path = 'manifests/{}/{}.json'.format(source, record_id)
+                manifest_url = 'https://{}.s3.amazonaws.com/{}'.format(
+                    self.s3Bucket, manifest_path
                 )
 
-                manifestJSON = self.generateManifest(record, url, manifestURI)
+                manifest_json = self.generate_manifest(record, url, manifest_url)
 
-                self.s3_manager.createManifestInS3(manifestPath, manifestJSON)
+                self.s3_manager.createManifestInS3(manifest_path, manifest_json)
 
                 if 'in_copyright' in record.rights:
-                    linkString = '|'.join([
-                        itemNo,
-                        manifestURI,
+                    link_string = '|'.join([
+                        item_no,
+                        manifest_url,
                         source,
                         'application/webpub+json',
                         '{"catalog": false, "download": false, "reader": true, "embed": false, "fulfill_limited_access": false}'
                     ])
 
-                    record.has_part.insert(0, linkString)
+                    record.has_part.insert(0, link_string)
                     break
 
                 if 'public_domain' in record.rights:
-                    linkString = '|'.join([
-                        itemNo,
-                        manifestURI,
+                    link_string = '|'.join([
+                        item_no,
+                        manifest_url,
                         source,
                         'application/webpub+json',
                         '{"catalog": false, "download": false, "reader": true, "embed": false}'
                     ])
 
-                    record.has_part.insert(0, linkString)
+                    record.has_part.insert(0, link_string)
                     break
 
     @staticmethod
-    def generateManifest(record, sourceURI, manifestURI):
-        manifest = WebpubManifest(sourceURI, 'application/pdf')
+    def generate_manifest(record, source_url, manifest_url):
+        manifest = WebpubManifest(source_url, 'application/pdf')
 
         manifest.addMetadata(
             record,
             conformsTo=os.environ['WEBPUB_PDF_PROFILE']
         )
         
-        manifest.addChapter(sourceURI, record.title)
+        manifest.addChapter(source_url, record.title)
 
         manifest.links.append({
             'rel': 'self',
-            'href': manifestURI,
+            'href': manifest_url,
             'type': 'application/webpub+json'
         })
 
         return manifest.toJson()
-
-class PubBacklistError(Exception):
-    pass
