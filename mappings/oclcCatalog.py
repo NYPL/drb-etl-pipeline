@@ -16,12 +16,17 @@ class CatalogMapping(XMLMapping):
         'hathitrust': r'catalog.hathitrust.org\/api\/volumes\/([a-z]{3,6}\/[a-zA-Z0-9]+)\.html'
     }
 
+    OCLC_PREFIXES = ['(OCoLC)', 'on', 'ocn', 'ocm']
+
     def __init__(self, source, namespace, constants):
         super(CatalogMapping, self).__init__(source, namespace, constants)
         self.mapping = self.createMapping()
 
     def remove_oclc_prefixes(self, oclc_id):
-        return oclc_id.removeprefix('(OCoLC)').removeprefix('on').removeprefix('ocn').removeprefix('ocm')
+        for prefix in self.OCLC_PREFIXES:
+            oclc_id = oclc_id.removeprefix(prefix)
+        return oclc_id
+
 
     def createMapping(self):
         return {
