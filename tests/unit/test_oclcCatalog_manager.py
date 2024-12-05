@@ -8,17 +8,15 @@ from managers.oclc_catalog import OCLCCatalogError
 class TestOCLCCatalogManager:
     @pytest.fixture
     def testInstance(self, mocker):
-        mocker.patch.dict('os.environ', {'OCLC_API_KEY': 'test_api_key'})
-
         return OCLCCatalogManager()
-
-    def test_initializer(self, testInstance):
-        assert testInstance.oclc_key == 'test_api_key'
 
     def test_query_catalog_success(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()
         mockRequest = mocker.patch('managers.oclc_catalog.requests')
         mockRequest.get.return_value = mockResponse
+
+        mock_auth = mocker.patch('managers.oclc_auth.OCLCAuthManager.get_metadata_token')
+        mock_auth.return_value = 'foo'
 
         mockResponse.status_code = 200
         mockResponse.text = 'testClassifyRecord'
@@ -27,7 +25,8 @@ class TestOCLCCatalogManager:
 
         assert testResponse == 'testClassifyRecord'
         mockRequest.get.assert_called_once_with(
-            'http://www.worldcat.org/webservices/catalog/content/1?wskey=test_api_key',
+            'https://metadata.api.oclc.org/worldcat/manage/bibs/1',
+            headers={'Authorization': 'Bearer foo'},
             timeout=3
         )
 
@@ -36,6 +35,9 @@ class TestOCLCCatalogManager:
         mockRequest = mocker.patch('managers.oclc_catalog.requests')
         mockRequest.get.return_value = mockResponse
 
+        mock_auth = mocker.patch('managers.oclc_auth.OCLCAuthManager.get_metadata_token')
+        mock_auth.return_value = 'foo'
+
         mockResponse.status_code = 500
         mockResponse.text = 'testClassifyRecord'
 
@@ -43,7 +45,8 @@ class TestOCLCCatalogManager:
 
         assert testResponse == None
         mockRequest.get.assert_called_once_with(
-            'http://www.worldcat.org/webservices/catalog/content/1?wskey=test_api_key',
+            'https://metadata.api.oclc.org/worldcat/manage/bibs/1',
+            headers={'Authorization': 'Bearer foo'},
             timeout=3
         )
 
@@ -52,6 +55,9 @@ class TestOCLCCatalogManager:
         mockRequest = mocker.patch('managers.oclc_catalog.requests')
         mockRequest.get.side_effect = [ConnectionError, mockResponse]
 
+        mock_auth = mocker.patch('managers.oclc_auth.OCLCAuthManager.get_metadata_token')
+        mock_auth.return_value = 'foo'
+
         mockResponse.status_code = 200
         mockResponse.text = 'testClassifyRecord'
 
@@ -59,13 +65,16 @@ class TestOCLCCatalogManager:
 
         assert testResponse == 'testClassifyRecord'
         mockRequest.get.assert_has_calls(
-            [mocker.call('http://www.worldcat.org/webservices/catalog/content/1?wskey=test_api_key', timeout=3)] * 2
+            [mocker.call('https://metadata.api.oclc.org/worldcat/manage/bibs/1', timeout=3, headers={'Authorization': 'Bearer foo'})] * 2
         )
 
     def test_query_catalog_exhaust_retries(self, testInstance, mocker):
         mockResponse = mocker.MagicMock()
         mockRequest = mocker.patch('managers.oclc_catalog.requests')
         mockRequest.get.side_effect = [ConnectionError, ConnectionError, Timeout]
+
+        mock_auth = mocker.patch('managers.oclc_auth.OCLCAuthManager.get_metadata_token')
+        mock_auth.return_value = 'foo'
 
         mockResponse.status_code = 200
         mockResponse.text = 'testClassifyRecord'
@@ -74,7 +83,7 @@ class TestOCLCCatalogManager:
 
         assert testResponse == None
         mockRequest.get.assert_has_calls(
-            [mocker.call('http://www.worldcat.org/webservices/catalog/content/1?wskey=test_api_key', timeout=3)] * 3
+            [mocker.call('https://metadata.api.oclc.org/worldcat/manage/bibs/1', timeout=3, headers={'Authorization': 'Bearer foo'})] * 3
         )
 
     def test_generate_search_query_w_identifier(self, testInstance):

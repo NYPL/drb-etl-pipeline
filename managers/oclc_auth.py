@@ -16,7 +16,7 @@ class OCLCAuthManager:
     _metadata_token = None
     _metadata_token_expires_at = None
     OCLC_SEARCH_AUTH_URL = 'https://oauth.oclc.org/token?scope=wcapi&grant_type=client_credentials'
-    OCLC_METADATA_AUTH_URL = 'https://oauth.oclc.org/token?scope=WorldCatMetadataAPI&grant_type=client_credentials'
+    OCLC_METADATA_AUTH_URL = 'https://oauth.oclc.org/token?scope=WorldCatMetadataAPI:view_marc_bib&grant_type=client_credentials'
 
     TIME_TO_REFRESH_IN_SECONDS = 60
 
