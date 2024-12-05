@@ -7,6 +7,7 @@ from typing import Optional
 
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
+from managers import S3Manager, WebpubManifest
 from .source_service import SourceService
 
 logger = create_log(__name__)
@@ -15,6 +16,7 @@ BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%
 
 class PublisherBacklistService(SourceService):
     def __init__(self):
+        self.s3_manager = S3Manager()
         self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
 
     def get_records(
@@ -25,17 +27,20 @@ class PublisherBacklistService(SourceService):
         limit: Optional[int]=None
     ) -> list[PublisherBacklistMapping]:
         array_json_records = self.get_records_json(full_import, start_timestamp, offset, limit)
-
+        complete_records = []
         for json_dict in array_json_records:
             for records_value in json_dict['records']:
                 try:
                     record_metadata_dict = records_value['fields']
-                    record = PublisherBacklistMapping(record_metadata_dict)
-                    record.applyMapping()
+                    pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
+                    pub_backlist_record.applyMapping()
+                    self.add_has_part_mapping(pub_backlist_record, pub_backlist_record.record)
+                    self.store_pdf_manifest(pub_backlist_record.record)
+                    complete_records.append(pub_backlist_record)
                 except Exception:
-                    logger.exception(f'Failed to process Publisher Backlist record')
-        return array_json_records
-
+                    logger.exception(f'Failed to process Publisher Backlist record: {records_value}')
+        return complete_records
+    
     def get_records_json(self,
         full_import: bool=False, 
         start_timestamp: datetime=None,
@@ -96,3 +101,89 @@ class PublisherBacklistService(SourceService):
             array_json.append(pub_backlist_records_response_json)
 
         return array_json
+    
+    def add_has_part_mapping(self, record):
+
+        #GOOGLE DRIVE API CALL TO GET PDF/EPUB FILES
+
+        try:
+            if 'in_copyright' in record.rights:
+                link_string = '|'.join([
+                    '1',
+                    #LINK TO PDF/EPUB,
+                    record.source,
+                    'application/pdf',
+                    '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
+                ])
+                record.has_part.append(link_string)
+
+            if 'public_domain' in record.rights:
+                link_string = '|'.join([
+                    '1',
+                    #LINK TO PDF/EPUB,
+                    record.source,
+                    'application/pdf',
+                    '{"catalog": false, "download": true, "reader": false, "embed": false}'
+                ])
+                record.has_part.append(link_string)
+
+        except Exception as e:
+            logger.exception(e)
+
+    def store_pdf_manifest(self, record):
+        for link in record.has_part:
+            item_no, url, source, media_type, flags = link.split('|')
+
+            if media_type == 'application/pdf':
+                record_id = record.identifiers[0].split('|')[0]
+                manifest_path = 'manifests/{}/{}.json'.format(source, record_id)
+                manifest_url = 'https://{}.s3.amazonaws.com/{}'.format(
+                    self.s3Bucket, manifest_path
+                )
+
+                manifest_json = self.generate_manifest(record, url, manifest_url)
+
+                self.s3_manager.createManifestInS3(manifest_path, manifest_json)
+
+                if 'in_copyright' in record.rights:
+                    link_string = '|'.join([
+                        item_no,
+                        manifest_url,
+                        source,
+                        'application/webpub+json',
+                        '{"catalog": false, "download": false, "reader": true, "embed": false, "fulfill_limited_access": false}'
+                    ])
+
+                    record.has_part.insert(0, link_string)
+                    break
+
+                if 'public_domain' in record.rights:
+                    link_string = '|'.join([
+                        item_no,
+                        manifest_url,
+                        source,
+                        'application/webpub+json',
+                        '{"catalog": false, "download": false, "reader": true, "embed": false}'
+                    ])
+
+                    record.has_part.insert(0, link_string)
+                    break
+
+    @staticmethod
+    def generate_manifest(record, source_url, manifest_url):
+        manifest = WebpubManifest(source_url, 'application/pdf')
+
+        manifest.addMetadata(
+            record,
+            conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+        )
+        
+        manifest.addChapter(source_url, record.title)
+
+        manifest.links.append({
+            'rel': 'self',
+            'href': manifest_url,
+            'type': 'application/webpub+json'
+        })
+
+        return manifest.toJson()

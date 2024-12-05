@@ -118,7 +118,7 @@ The currently available processes (with the exception of the UofSC and ChicagoIS
 - `METProcess` Fetch open access books from The MET Watson Digital Collections and import them
 - `DOABProcess` Fetch open access books from the Directory of Open Access Books and import them
 - `LOCProcess` Fetch open access and digitized books from the Library of Congress and import them
-- `UofMProcess` Fetch open access books from the Univerity of Michigan and import them
+- `PublisherBacklistProcess` Fetch open access and limited access books from the Publisher Backlist Project and import them
 - `CoverProcess` Fetch covers for edition records
 
 ### Database Migration
