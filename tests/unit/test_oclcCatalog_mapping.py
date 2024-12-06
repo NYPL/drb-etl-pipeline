@@ -28,6 +28,12 @@ class TestCatalogMapping:
             has_part=['1|uri|test|text/html|{}', '1|uri|bad|text/html|{}']
         )
 
+    def test_remove_oclc_prefixes(self, testMapping):
+        assert testMapping.remove_oclc_prefixes('on48542660') == '48542660'
+        assert testMapping.remove_oclc_prefixes('ocm48542660') == '48542660'
+        assert testMapping.remove_oclc_prefixes('(OCoLC)on48542660') == '48542660'
+        assert testMapping.remove_oclc_prefixes('foo48542660') == 'foo48542660'
+
     def test_createMapping(self, testMapping):
         recordMapping = testMapping.createMapping()
 

@@ -38,7 +38,6 @@ class PublisherBacklistProcess(CoreProcess):
             else: 
                 logger.warning(f'Unknown Publisher Backlist ingestion process type {self.process}')
                 return
-        
             for record in records:
                 self.record_buffer.add(record)
             

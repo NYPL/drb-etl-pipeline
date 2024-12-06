@@ -27,8 +27,8 @@ class LOCProcess(CoreProcess):
 
         self.db_manager = DBManager()
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
 
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
