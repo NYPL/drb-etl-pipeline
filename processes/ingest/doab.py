@@ -65,7 +65,7 @@ class DOABProcess(CoreProcess):
 
         self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} DOAB records')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} DOAB records')
 
     def parseDOABRecord(self, oaiRec):
         try:

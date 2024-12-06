@@ -56,7 +56,7 @@ class LOCProcess(CoreProcess):
 
         self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} LOC records')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} LOC records')
     
     def importLOCRecords(self, startTimeStamp=None):
         openAccessRequestCount = 0 

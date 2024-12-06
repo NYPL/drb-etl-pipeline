@@ -59,7 +59,7 @@ class SeedLocalDataProcess(CoreProcess):
 
         self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} Hathi Trust sample records')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} Hathi Trust sample records')
 
     def import_from_hathi_trust_data_file(self):
         hathi_files_response = requests.get(os.environ['HATHI_DATAFILES'])

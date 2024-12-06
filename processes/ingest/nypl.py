@@ -40,7 +40,7 @@ class NYPLProcess(CoreProcess):
             
             self.record_buffer.flush()
 
-            logger.info(f'Ingested {len(self.record_buffer.ingest_count)} NYPL records')
+            logger.info(f'Ingested {self.record_buffer.ingest_count} NYPL records')
         except Exception as e:
             logger.exception(f'Failed to ingest NYPL records')
             raise e

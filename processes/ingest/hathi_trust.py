@@ -44,7 +44,7 @@ class HathiTrustProcess(CoreProcess):
 
         self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} Hathi Trust records')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} Hathi Trust records')
 
     def importFromSpecificFile(self, file_path):
         try:

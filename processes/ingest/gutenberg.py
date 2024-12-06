@@ -59,7 +59,7 @@ class GutenbergProcess(CoreProcess):
 
         self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.record_buffer.ingest_count)} Gutenberg records')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} Gutenberg records')
 
     def importRDFRecords(self, fullImport=False, startTimestamp=None):
         orderDirection = 'DESC'

@@ -35,7 +35,7 @@ class CatalogProcess(CoreProcess):
 
         self.record_buffer.flush()
 
-        logger.info(f'Saved {len(self.record_buffer.ingest_count)} catalog records')
+        logger.info(f'Saved {self.record_buffer.ingest_count} catalog records')
 
     def process_catalog_messages(self, max_attempts: int=4):
         for attempt in range(0, max_attempts):
