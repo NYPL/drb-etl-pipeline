@@ -1,14 +1,14 @@
 import time
 import os, requests
-from requests.exceptions import HTTPError, ConnectionError
+from requests.exceptions import HTTPError
 
 from ..core import CoreProcess
-from mappings.base_mapping import MappingError
 from mappings.loc import LOCMapping
-from managers import RabbitMQManager, S3Manager, WebpubManifest
+from managers import DBManager, RabbitMQManager, S3Manager, WebpubManifest
 from model import get_file_message
 from logger import create_log
 from datetime import datetime, timedelta, timezone
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
@@ -25,8 +25,12 @@ class LOCProcess(CoreProcess):
         self.process == 'complete'
         self.startTimestamp = None 
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
@@ -50,14 +54,11 @@ class LOCProcess(CoreProcess):
             startTimeStamp = datetime.strptime(timeStamp, '%Y-%m-%dT%H:%M:%S')
             self.importLOCRecords(startTimeStamp)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} LOC records')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} LOC records')
     
-
     def importLOCRecords(self, startTimeStamp=None):
-
         openAccessRequestCount = 0 
         digitizedRequestCount = 0
 
@@ -74,8 +75,6 @@ class LOCProcess(CoreProcess):
         
         except Exception or HTTPError as e:
             logger.exception(e)
-
-        
 
     def importOpenAccessRecords(self, count, customTimeStamp):
         sp = 1
@@ -187,7 +186,8 @@ class LOCProcess(CoreProcess):
             self.addHasPartMapping(record, LOCRec.record)
             self.storePDFManifest(LOCRec.record)
             self.storeEpubsInS3(LOCRec.record)
-            self.addDCDWToUpdateList(LOCRec)
+            
+            self.record_buffer.add(LOCRec)
         except Exception:
             logger.exception(f'Unable to process LOC record')
             

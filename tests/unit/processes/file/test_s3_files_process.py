@@ -35,8 +35,6 @@ class TestS3Process:
     
     def test_run_process(self, test_instance, mocker):
         mock_process_files = mocker.patch.object(S3Process, 'process_files')
-        mock_save_records = mocker.patch.object(S3Process, 'saveRecords')
-        mock_commit_changes = mocker.patch.object(S3Process, 'commitChanges')
         mock_file_process = mocker.MagicMock()
         mock_process = mocker.patch('processes.file.s3_files.Process')
         mock_process.return_value = mock_file_process
@@ -44,8 +42,6 @@ class TestS3Process:
         test_instance.runProcess()
 
         mock_process_files.assert_called_once
-        mock_save_records.assert_called_once
-        mock_commit_changes.assert_called_once
         assert mock_process.call_count == 4
         assert mock_file_process.start.call_count == 4
         assert mock_file_process.join.call_count == 4

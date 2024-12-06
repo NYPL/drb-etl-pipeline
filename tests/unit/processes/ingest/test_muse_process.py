@@ -23,6 +23,8 @@ class TestMUSEProcess:
         class TestMUSE(MUSEProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock(db_manager=self.db_manager)
                 self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.records = []
                 self.ingest_limit = None
@@ -54,40 +56,31 @@ class TestMUSEProcess:
 
     def test_runProcess_daily(self, testProcess, mocker):
         mockImport = mocker.patch.object(MUSEProcess, 'importMARCRecords')
-        mockSave = mocker.patch.object(MUSEProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(MUSEProcess, 'commitChanges')
 
         testProcess.process = 'daily'
         testProcess.runProcess()
 
         mockImport.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once()
 
     def test_runProcess_complete(self, testProcess, mocker):
         mockImport = mocker.patch.object(MUSEProcess, 'importMARCRecords')
-        mockSave = mocker.patch.object(MUSEProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(MUSEProcess, 'commitChanges')
 
         testProcess.process = 'complete'
         testProcess.runProcess()
 
         mockImport.assert_called_once_with(full=True)
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once()
 
     def test_runProcess_custom(self, testProcess, mocker):
         mockImport = mocker.patch.object(MUSEProcess, 'importMARCRecords')
-        mockSave = mocker.patch.object(MUSEProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(MUSEProcess, 'commitChanges')
 
         testProcess.process = 'custom'
         testProcess.ingestPeriod = 'customTimestamp'
         testProcess.runProcess()
 
         mockImport.assert_called_once_with(startTimestamp='customTimestamp')
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once()
 
     def test_importMARCRecords_daily(self, testProcess, mocker):
         processMocks = mocker.patch.multiple(
@@ -259,8 +252,6 @@ class TestMUSEProcess:
         mockManagerInit = mocker.patch('processes.ingest.muse.MUSEManager')
         mockManagerInit.return_value = mockManager
 
-        processMocks = mocker.patch.multiple(MUSEProcess, addDCDWToUpdateList=mocker.DEFAULT)
-
         testProcess.parseMuseRecord('testMARC')
 
         mockMapper.assert_called_once_with('testMARC')
@@ -278,4 +269,4 @@ class TestMUSEProcess:
             testProcess.fileRoute, 
             get_file_message('testURL', 'testPath')
         )
-        processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
+        testProcess.record_buffer.add.assert_called_once_with(mockMapping)

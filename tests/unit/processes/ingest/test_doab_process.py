@@ -26,6 +26,8 @@ class TestDOABProcess:
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
                 self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock(db_manager=self.db_manager)
                 self.fileQueue = 'test_file_queue'
                 self.fileRoute = 'test_file_key'
                 self.constants = {}
@@ -61,53 +63,41 @@ class TestDOABProcess:
 
     def test_runProcess_daily(self, testProcess, mocker):
         mockImport = mocker.patch.object(DOABProcess, 'importOAIRecords')
-        mockSave = mocker.patch.object(DOABProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(DOABProcess, 'commitChanges')
 
         testProcess.process = 'daily'
         testProcess.runProcess()
 
         mockImport.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once
 
     def test_runProcess_complete(self, testProcess, mocker):
         mockImport = mocker.patch.object(DOABProcess, 'importOAIRecords')
-        mockSave = mocker.patch.object(DOABProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(DOABProcess, 'commitChanges')
 
         testProcess.process = 'complete'
         testProcess.runProcess()
 
         mockImport.assert_called_once_with(fullOrPartial=True)
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once
 
     def test_runProcess_custom(self, testProcess, mocker):
         mockImport = mocker.patch.object(DOABProcess, 'importOAIRecords')
-        mockSave = mocker.patch.object(DOABProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(DOABProcess, 'commitChanges')
 
         testProcess.process = 'custom'
         testProcess.ingestPeriod = 'customTimestamp'
         testProcess.runProcess()
 
         mockImport.assert_called_once_with(startTimestamp='customTimestamp')
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once
 
     def test_runProcess_single(self, testProcess, mocker):
         mockImport = mocker.patch.object(DOABProcess, 'importSingleOAIRecord')
-        mockSave = mocker.patch.object(DOABProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(DOABProcess, 'commitChanges')
 
         testProcess.process = 'single'
         testProcess.singleRecord = 1
         testProcess.runProcess()
 
         mockImport.assert_called_once_with(1)
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once
 
     def test_importSingleOAIRecord_success(self, testProcess, mocker):
         mockResponse = mocker.MagicMock()
@@ -282,8 +272,6 @@ class TestDOABProcess:
         mockLinkManager = mocker.patch('processes.ingest.doab.DOABLinkManager')
         mockLinkManager.return_value = mockManager
 
-        processMocks = mocker.patch.multiple(DOABProcess, addDCDWToUpdateList=mocker.DEFAULT)
-
         testProcess.parseDOABRecord('testMARC')
 
         mockMapper.assert_called_once_with('testMARC', testProcess.OAI_NAMESPACES, {})
@@ -295,7 +283,7 @@ class TestDOABProcess:
             testProcess.fileRoute, 
             get_file_message('epubURI', 'epubPath')
         )
-        processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
+        testProcess.record_buffer.add.assert_called_once_with(mockMapping)
 
     def test_parseDOABRecord_error(self, testProcess, mocker):
         mockMapping = mocker.MagicMock()

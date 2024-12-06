@@ -20,6 +20,8 @@ class TestMetProcess:
     def testProcess(self, mocker):
         class TestMET(METProcess):
             def __init__(self):
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock(db_manager=self.db_manager)
                 self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.s3Bucket = 'test_aws_bucket'
                 self.fileQueue = 'test_file_queue'
@@ -42,17 +44,14 @@ class TestMetProcess:
         runMocks = mocker.patch.multiple(
             METProcess,
             setStartTime=mocker.DEFAULT,
-            importDCRecords=mocker.DEFAULT,
-            saveRecords=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT
+            importDCRecords=mocker.DEFAULT
         )
 
         testProcess.runProcess()
         
         runMocks['setStartTime'].assert_called_once()
         runMocks['importDCRecords'].assert_called_once()
-        runMocks['saveRecords'].assert_called_once()
-        runMocks['commitChanges'].assert_called_once()
+        testProcess.record_buffer.flush.assert_called_once()
 
         testProcess.fullImport = True
         testProcess.startTimestamp = None
@@ -116,7 +115,6 @@ class TestMetProcess:
             queryMetAPI=mocker.DEFAULT,
             storePDFManifest=mocker.DEFAULT,
             addCoverAndStoreInS3=mocker.DEFAULT,
-            addDCDWToUpdateList=mocker.DEFAULT
         )
         processMocks['queryMetAPI'].return_value = 'testDetail'
 
@@ -135,7 +133,7 @@ class TestMetProcess:
 
         processMocks['storePDFManifest'].assert_called_once_with('testRecord')
         processMocks['addCoverAndStoreInS3'].assert_called_once_with('testRecord', 'tst')
-        processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
+        testProcess.record_buffer.add.assert_called_once_with(mockMapping)
 
     def test_processMetRecord_error(self, testProcess, mocker):
         mockQuery = mocker.patch.object(METProcess, 'queryMetAPI')
