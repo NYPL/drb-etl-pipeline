@@ -17,6 +17,9 @@ BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%
 class PublisherBacklistService(SourceService):
     def __init__(self):
         self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
+        self.s3_bucket = os.environ['FILE_BUCKET']
+        
         self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
 
     def get_records(
@@ -143,7 +146,7 @@ class PublisherBacklistService(SourceService):
 
                 manifest_json = self.generate_manifest(record, url, manifest_url)
 
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json)
+                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3_bucket)
 
                 if 'in_copyright' in record.rights:
                     link_string = '|'.join([
