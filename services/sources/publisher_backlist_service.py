@@ -49,37 +49,31 @@ class PublisherBacklistService(SourceService):
     ) -> list[dict]:
         if offset == None:
             limit = 100
-
-        if not full_import:
-            if start_timestamp:
-                filter_by_formula = self.build_filter_by_formula_parameter(start_timestamp)
-
-                array_json_records = self.get_records_array(limit, filter_by_formula)
-
-                return array_json_records
-
-            else:
-                filter_by_formula = self.build_filter_by_formula_parameter(start_timestamp)
-
-                array_json_records = self.get_records_array(limit, filter_by_formula)
-
-                return array_json_records  
+        
+        filter_by_formula = self.build_filter_by_formula_parameter(full_import, start_timestamp)
                 
-        array_json_records = self.get_records_array(limit, filter_by_formula=None)
+        array_json_records = self.get_records_array(limit, filter_by_formula)
         
         return array_json_records
         
-    def build_filter_by_formula_parameter(self, start_timestamp: datetime=None) -> str:
+    def build_filter_by_formula_parameter(self, full_import: bool=False, start_timestamp: datetime=None) -> str:
         if not start_timestamp:
             start_timestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
 
-        start_date_time_str = start_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
-        start_date_time_encoded = urllib.parse.quote(start_date_time_str)
-        is_same_date_time_filter = f"IS_SAME(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
-        is_after_date_time_filter = f"%20IS_AFTER(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
-        filter_by_formula = f"OR({is_same_date_time_filter}),{is_after_date_time_filter}))"
+        if_ready_to_ingest_is_true_filter = f"%20IF(%7BNext%20step%20(from%20Project%20steps)%7D%20%3D%20%22Ready%20to%20ingest%22,%20TRUE(),%20FALSE())"
 
-        return filter_by_formula
+        if full_import:
+            filter_by_formula = f'&filterByFormula={if_ready_to_ingest_is_true_filter}'
+            return filter_by_formula
+        else:
+            start_date_time_str = start_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
+            start_date_time_encoded = urllib.parse.quote(start_date_time_str)
+            is_same_date_time_filter = f"IS_SAME(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
+            is_after_date_time_filter = f"%20IS_AFTER(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
+
+            filter_by_formula = f"&filterByFormula=AND(OR({is_same_date_time_filter}),{is_after_date_time_filter})),{if_ready_to_ingest_is_true_filter})"
+
+            return filter_by_formula
         
     def get_records_array(self,
         limit: Optional[int]=None, 
@@ -89,7 +83,7 @@ class PublisherBacklistService(SourceService):
         headers = {"Authorization": f"Bearer {self.airtable_auth_token}"}
 
         if filter_by_formula:
-            url += f'&filterByFormula{filter_by_formula}'
+            url += f'{filter_by_formula}'
 
         pub_backlist_records_response = requests.get(url, headers=headers)
         pub_backlist_records_response_json = pub_backlist_records_response.json()
