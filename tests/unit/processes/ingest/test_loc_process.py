@@ -99,7 +99,7 @@ class TestLOCProcess:
         assert mockRecord.has_part[0] == '1|{}|loc|application/webpub+json|{{"catalog": false, "download": false, "reader": true, "embed": false}}'.format(testManifestURI)
 
         mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
-        testProcess.s3_manager.createManifestInS3.assert_called_once_with('manifests/loc/1.json', 'testJSON')
+        testProcess.s3_manager.createManifestInS3.assert_called_once_with('manifests/loc/1.json', 'testJSON', testProcess.s3Bucket)
 
     def test_storeEpubsInS3(self, testProcess, mocker):
         mockRecord = mocker.MagicMock(identifiers=['1|loc'])

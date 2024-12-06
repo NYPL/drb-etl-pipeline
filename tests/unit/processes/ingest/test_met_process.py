@@ -192,7 +192,7 @@ class TestMetProcess:
         assert mockRecord.has_part[0] == '1|{}|met|application/webpub+json|{{}}'.format(testManifestURI)
 
         mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
-        testProcess.s3_manager.createManifestInS3.assert_called_once_with('manifests/met/1.json', 'testJSON')
+        testProcess.s3_manager.createManifestInS3.assert_called_once_with('manifests/met/1.json', 'testJSON', testProcess.s3Bucket)
 
     def test_generateManifest(self, mocker):
         mockManifest = mocker.MagicMock(links=[])
