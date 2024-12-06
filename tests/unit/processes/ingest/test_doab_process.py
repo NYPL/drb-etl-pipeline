@@ -289,7 +289,7 @@ class TestDOABProcess:
         mockMapper.assert_called_once_with('testMARC', testProcess.OAI_NAMESPACES, {})
         mockMapping.applyMapping.assert_called_once()
         mockManager.parseLinks.assert_called_once()
-        testProcess.s3_manager.createManifestInS3.assert_called_once_with('pdfPath', 'pdfJSON')
+        testProcess.s3_manager.createManifestInS3.assert_called_once_with('pdfPath', 'pdfJSON', testProcess.s3Bucket)
         testProcess.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
             testProcess.fileQueue, 
             testProcess.fileRoute, 

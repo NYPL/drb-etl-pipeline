@@ -78,7 +78,7 @@ class TestChicagoISACProcess:
         assert mock_record.has_part[0] == '1|{}|isac|application/webpub+json|{{}}'.format(test_manifest_url)
 
         mock_generate_man.assert_called_once_with(mock_record, 'test_url', test_manifest_url)
-        test_process.s3_manager.createManifestInS3.assert_called_once_with('manifests/isac/1.json', 'test_json')
+        test_process.s3_manager.createManifestInS3.assert_called_once_with('manifests/isac/1.json', 'test_json', test_process.s3Bucket)
 
     def test_generate_manifest(self, mocker):
         mock_manifest = mocker.MagicMock(links=[])
