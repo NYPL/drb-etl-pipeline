@@ -5,7 +5,7 @@ from botocore.exceptions import ClientError
 
 from ..core import CoreProcess
 from datetime import datetime, timedelta, timezone
-from managers import S3Manager
+from managers import DBManager, S3Manager
 from model import Link
 from logger import create_log
 
@@ -19,8 +19,10 @@ class FulfillURLManifestProcess(CoreProcess):
         self.fullImport = self.process == 'complete' 
         self.start_timestamp = None
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
 
         self.s3Bucket = os.environ['FILE_BUCKET']
         self.host = os.environ['DRB_API_HOST']
@@ -131,7 +133,7 @@ class FulfillURLManifestProcess(CoreProcess):
         for toc in metadata_json['toc']:
             if 'pdf' in toc['href'] \
                 or 'epub' in toc['href']:
-                    for link in self.session.query(Link) \
+                    for link in self.db_manager.session.query(Link) \
                         .filter(Link.url == toc['href'].replace('https://', '')):
                             counter += 1
                             toc['href'] = f'https://{self.host}/fulfill/{link.id}'
@@ -141,7 +143,7 @@ class FulfillURLManifestProcess(CoreProcess):
     def fulfill_replace(self, metadata, counter):
         if metadata['type'] == 'application/pdf' or metadata['type'] == 'application/epub+zip' \
             or metadata['type'] == 'application/epub+xml':
-                for link in self.session.query(Link) \
+                for link in self.db_manager.session.query(Link) \
                     .filter(Link.url == metadata['href'].replace('https://', '')):
                             counter += 1            
                             metadata['href'] = f'https://{self.host}/fulfill/{link.id}'
@@ -150,7 +152,7 @@ class FulfillURLManifestProcess(CoreProcess):
     
     def fulfill_flag_update(self, metadata):
         if metadata['type'] == 'application/webpub+json':
-            for link in self.session.query(Link) \
+            for link in self.db_manager.session.query(Link) \
                 .filter(Link.url == metadata['href'].replace('https://', '')):   
                         if 'fulfill_limited_access' in link.flags.keys():
                             if link.flags['fulfill_limited_access'] == False:
@@ -162,7 +164,7 @@ class FulfillURLManifestProcess(CoreProcess):
     def check_copyright_status(self, metadata_json):
         for link in metadata_json['links']:
             if link['type'] == 'application/webpub+json':
-                for psql_link in self.session.query(Link) \
+                for psql_link in self.db_manager.session.query(Link) \
                     .filter(Link.url == link['href'].replace('https://', '')):   
                         if 'fulfill_limited_access' not in psql_link.flags.keys():
                             copyright_status = False
