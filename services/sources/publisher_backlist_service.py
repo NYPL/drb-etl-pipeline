@@ -133,9 +133,9 @@ class PublisherBacklistService(SourceService):
 
             if media_type == 'application/pdf':
                 record_id = record.identifiers[0].split('|')[0]
-                manifest_path = 'manifests/{}/{}.json'.format(source, record_id)
+                manifest_path = 'manifests/pubBacklist/{}/{}.json'.format(source, record_id)
                 manifest_url = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3Bucket, manifest_path
+                    self.s3_bucket, manifest_path
                 )
 
                 manifest_json = self.generate_manifest(record, url, manifest_url)
