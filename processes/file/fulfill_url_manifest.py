@@ -24,7 +24,7 @@ class FulfillURLManifestProcess(CoreProcess):
 
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.host = os.environ['DRB_API_HOST']
-        self.prefix = 'manifests/pubBacklist/'
+        self.prefix = 'manifests/publisher_backlist/'
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
 

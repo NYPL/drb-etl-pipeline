@@ -19,6 +19,7 @@ class PublisherBacklistService(SourceService):
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
+        self.prefix = 'manifests/publisher_backlist'
         
         self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
 
@@ -133,7 +134,7 @@ class PublisherBacklistService(SourceService):
 
             if media_type == 'application/pdf':
                 record_id = record.identifiers[0].split('|')[0]
-                manifest_path = 'manifests/pubBacklist/{}/{}.json'.format(source, record_id)
+                manifest_path = f'{self.prefix}/{source}/{record_id}.json'
                 manifest_url = 'https://{}.s3.amazonaws.com/{}'.format(
                     self.s3_bucket, manifest_path
                 )
