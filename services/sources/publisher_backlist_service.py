@@ -64,7 +64,7 @@ class PublisherBacklistService(SourceService):
         if not start_timestamp:
             start_timestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
 
-        if_ready_to_ingest_is_true_filter = f"%20IF(%7BNext%20step%20(from%20Project%20steps)%7D%20%3D%20%22Ready%20to%20ingest%22,%20TRUE(),%20FALSE())"
+        if_ready_to_ingest_is_true_filter = f"%20IF(%7BDRB_Ready%20to%20ingest%7D%20%3D%20TRUE(),%20TRUE(),%20FALSE())"
 
         if full_import:
             filter_by_formula = f'&filterByFormula={if_ready_to_ingest_is_true_filter}'
