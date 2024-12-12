@@ -29,7 +29,7 @@ class PublisherBacklistService(SourceService):
         offset: Optional[int]=None,
         limit: Optional[int]=None
     ):
-        filter_by_formula = self.build_filter_by_formula_parameter(deleted=True, full_import=False, start_timestamp=None)
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=True)
         
         array_json_records = self.get_records_array(limit, filter_by_formula)
 
@@ -38,33 +38,26 @@ class PublisherBacklistService(SourceService):
                 for records_value in json_dict['records']:
                     try:
                         record_metadata_dict = records_value['fields']
-                        pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
-                        pub_backlist_record.applyMapping()
-                        self.delete_manifest(record_metadata_dict, pub_backlist_record.record)
-                        self.delete_digital_asset_file()
+                        self.delete_manifest(record_metadata_dict)
                     except Exception:
-                        logger.exception(f'Record has not been created {records_value}')
+                        logger.exception(f'Delete manifest method has failed for {records_value}')
         
-    def delete_manifest(self, record_metadata_dict, mapped_record):
+    def delete_manifest(self, record_metadata_dict):
         try:
-            for record in self.session.query(Record) \
-                .filter(Record.source_id == mapped_record.source_id):  
-                    key_format = f"{self.prefix}{record.source}"
+            record = self.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+            key_format = f"{self.prefix}{record.source}"
 
-                    if record_metadata_dict['File ID 1']:
-                        file_title = record_metadata_dict['File ID 1']
-                        self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= f'{key_format}{file_title}.json')
-                    elif record_metadata_dict['File ID 2']:
-                        file_title = record_metadata_dict['File ID 2']
-                        self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= f'{key_format}{file_title}.json')
-                    elif record_metadata_dict['Hathi ID']:
-                        file_title = record_metadata_dict['Hathi ID']
-                        self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= f'{key_format}{file_title}.json')
+            if record_metadata_dict['File ID 1']:
+                file_title = record_metadata_dict['File ID 1']
+                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= f'{key_format}{file_title}.json')
+            elif record_metadata_dict['File ID 2']:
+                file_title = record_metadata_dict['File ID 2']
+                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= f'{key_format}{file_title}.json')
+            elif record_metadata_dict['Hathi ID']:
+                file_title = record_metadata_dict['Hathi ID']
+                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= f'{key_format}{file_title}.json')
         except Exception:
-            logger.exception('Key does not exist')
-            
-    def delete_digital_asset_file(self):
-        pass
+            logger.exception(f'Failed to delete manifest for record: {record.source_id}')
 
     def get_records(
         self,
@@ -104,12 +97,12 @@ class PublisherBacklistService(SourceService):
         return array_json_records
         
     def build_filter_by_formula_parameter(self, deleted=None, full_import: bool=False, start_timestamp: datetime=None) -> str:
-        if deleted == True:
+        if deleted:
             deleted_filter = f"IF(%7BDRB_Deleted%7D%20%3D%20TRUE(),%20TRUE(),%20FALSE())"
             filter_by_formula = f"&filterByFormula={deleted_filter}"
             return filter_by_formula
-        else:
-            deleted_filter = f"IF(%7BDRB_Deleted%7D%20!%3D%20TRUE(),%20TRUE(),%20FALSE())"
+        
+        is_not_deleted_filter = f"IF(%7BDRB_Deleted%7D%20!%3D%20TRUE(),%20TRUE(),%20FALSE())"
 
         if not start_timestamp:
             start_timestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
@@ -125,7 +118,7 @@ class PublisherBacklistService(SourceService):
             is_same_date_time_filter = f"IS_SAME(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
             is_after_date_time_filter = f"%20IS_AFTER(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
 
-            filter_by_formula = f"&filterByFormula=AND(OR({is_same_date_time_filter}),{is_after_date_time_filter})),AND({if_ready_to_ingest_is_true_filter},{deleted_filter}))"
+            filter_by_formula = f"&filterByFormula=AND(OR({is_same_date_time_filter}),{is_after_date_time_filter})),AND({if_ready_to_ingest_is_true_filter},{is_not_deleted_filter}))"
 
             return filter_by_formula
         
