@@ -38,3 +38,7 @@ jobs:
       - name: Force ECS Update
         run: |
           aws ecs update-service --cluster sfr-pipeline-production --service sfr-pipeline-production --force-new-deployment
+
+      - name: Force ECS TF Update
+        run: |
+          aws ecs update-service --cluster sfr-pipeline-production-tf --service sfr-pipeline-production-tf --force-new-deployment
