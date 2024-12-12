@@ -26,7 +26,6 @@ class PublisherBacklistService(SourceService):
 
     def delete_records(
         self,
-        offset: Optional[int]=None,
         limit: Optional[int]=None
     ):
         filter_by_formula = self.build_filter_by_formula_parameter(deleted=True)
