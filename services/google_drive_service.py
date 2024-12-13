@@ -1,6 +1,7 @@
 from io import BytesIO
 import json
 import os
+from typing import Optional
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.errors import HttpError
