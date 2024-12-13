@@ -25,7 +25,7 @@ class PublisherBacklistProcess(CoreProcess):
             self.createSession()
 
             if self.process == 'daily':
-                records = self.publisher_backlist_service.get_records(offset=self.offset, limit=self.limit)
+                records = self.publisher_backlist_service.get_records(limit=self.limit)
             elif self.process == 'complete':
                 records = self.publisher_backlist_service.get_records(full_import=True)
             elif self.process == 'custom':

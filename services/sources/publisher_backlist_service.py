@@ -4,11 +4,14 @@ import requests
 import json
 import urllib.parse
 from typing import Optional
+from model import Record, Work, Edition, Item, Link
 
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
 from .source_service import SourceService
+from managers import DBManager, ElasticsearchManager
+from elasticsearch_dsl import Search
 
 logger = create_log(__name__)
 
@@ -16,12 +19,87 @@ BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%
 
 class PublisherBacklistService(SourceService):
     def __init__(self):
+
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.prefix = 'manifests/publisher_backlist'
         
         self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
+
+    def delete_records(
+        self,
+        limit: Optional[int]=None
+    ):
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=True)
+        
+        array_json_records = self.get_records_array(limit, filter_by_formula)
+
+        dbManager = DBManager(
+        user= os.environ.get('POSTGRES_USER', None),
+        pswd= os.environ.get('POSTGRES_PSWD', None),
+        host= os.environ.get('POSTGRES_HOST', None),
+        port= os.environ.get('POSTGRES_PORT', None),
+        db= os.environ.get('POSTGRES_NAME', None)
+    )
+
+        dbManager.generateEngine()
+
+        dbManager.createSession()
+
+        esManager = ElasticsearchManager()
+        esManager.createElasticConnection()
+
+        for json_dict in array_json_records:
+            if json_dict['records']:
+                for records_value in json_dict['records']:
+                    if records_value['fields']:
+                        record_metadata_dict = records_value['fields']
+                        self.delete_manifest(record_metadata_dict)
+                        self.delete_work(dbManager, record_metadata_dict)
+        
+    def delete_manifest(self, record_metadata_dict):
+        try:
+            record = self.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+            if record:
+                key_name = self.get_metadata_file_name(record, record_metadata_dict)
+                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
+        except Exception:
+            logger.exception(f'Failed to delete manifest for record: {record.source_id}')
+
+    def delete_work(self, dbManager, record_metadata_dict):
+        record = dbManager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+
+        try:
+            if record:
+                record_uuid_str = str(record.uuid)
+                edition =  dbManager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
+                work = dbManager.session.query(Work).filter(Work.id == edition.work_id).first()
+                work_uuid_str = str(work.uuid)
+                es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
+                es_work_resp.delete()
+                work.delete()
+        except Exception:
+            logger.exception('Failed to delete work')
+
+        dbManager.session.commit()
+        dbManager.session.close()
+            
+
+    def get_metadata_file_name(self, record, record_metadata_dict):
+        key_format = f"{self.prefix}{record.source}"
+
+        if record_metadata_dict['File ID 1']:
+            file_title = record_metadata_dict['File ID 1']
+        elif record_metadata_dict['File ID 2']:
+            file_title = record_metadata_dict['File ID 2']
+        elif record_metadata_dict['Hathi ID']:
+            file_title = record_metadata_dict['Hathi ID']
+        else:
+            raise Exception
+        
+        key_name = f'{key_format}{file_title}.json'
+        return key_name
 
     def get_records(
         self,
@@ -38,7 +116,7 @@ class PublisherBacklistService(SourceService):
                     record_metadata_dict = records_value['fields']
                     pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
                     pub_backlist_record.applyMapping()
-                    self.add_has_part_mapping(pub_backlist_record, pub_backlist_record.record)
+                    self.add_has_part_mapping(pub_backlist_record.record)
                     self.store_pdf_manifest(pub_backlist_record.record)
                     complete_records.append(pub_backlist_record)
                 except Exception:
@@ -54,13 +132,20 @@ class PublisherBacklistService(SourceService):
         if offset == None:
             limit = 100
         
-        filter_by_formula = self.build_filter_by_formula_parameter(full_import, start_timestamp)
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=None, start_timestamp=None)
                 
         array_json_records = self.get_records_array(limit, filter_by_formula)
         
         return array_json_records
         
-    def build_filter_by_formula_parameter(self, full_import: bool=False, start_timestamp: datetime=None) -> str:
+    def build_filter_by_formula_parameter(self, deleted=None, full_import: bool=False, start_timestamp: datetime=None) -> str:
+        if deleted:
+            deleted_filter = f"IF(%7BDRB_Deleted%7D%20%3D%20TRUE(),%20TRUE(),%20FALSE())"
+            filter_by_formula = f"&filterByFormula={deleted_filter}"
+            return filter_by_formula
+        
+        is_not_deleted_filter = f"IF(%7BDRB_Deleted%7D%20!%3D%20TRUE(),%20TRUE(),%20FALSE())"
+
         if not start_timestamp:
             start_timestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
 
@@ -75,7 +160,7 @@ class PublisherBacklistService(SourceService):
             is_same_date_time_filter = f"IS_SAME(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
             is_after_date_time_filter = f"%20IS_AFTER(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
 
-            filter_by_formula = f"&filterByFormula=AND(OR({is_same_date_time_filter}),{is_after_date_time_filter})),{if_ready_to_ingest_is_true_filter})"
+            filter_by_formula = f"&filterByFormula=AND(OR({is_same_date_time_filter}),{is_after_date_time_filter})),AND({if_ready_to_ingest_is_true_filter},{is_not_deleted_filter}))"
 
             return filter_by_formula
         
