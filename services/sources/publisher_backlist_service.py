@@ -131,6 +131,8 @@ class PublisherBacklistService(SourceService):
     ) -> list[dict]:
         if offset == None:
             limit = 100
+            
+        limit = offset
         
         filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=None, start_timestamp=None)
                 

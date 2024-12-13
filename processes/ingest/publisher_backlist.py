@@ -25,11 +25,11 @@ class PublisherBacklistProcess(CoreProcess):
             self.createSession()
 
             if self.process == 'daily':
-                records = self.publisher_backlist_service.get_records(limit=self.limit)
+                records = self.publisher_backlist_service.get_records(offset=self.offset, limit=self.limit)
             elif self.process == 'complete':
                 records = self.publisher_backlist_service.get_records(full_import=True)
             elif self.process == 'custom':
-                records = self.publisher_backlist_service.get_records(start_timestamp=self.ingestPeriod, offset=self.offset, limit=self.limit)
+                records = self.publisher_backlist_service.get_records(start_timestamp=self.ingestPeriod, limit=self.limit)
             else: 
                 logger.warning(f'Unknown Publisher Backlist ingestion process type {self.process}')
                 return
