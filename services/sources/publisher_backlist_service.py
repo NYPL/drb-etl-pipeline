@@ -35,28 +35,33 @@ class PublisherBacklistService(SourceService):
         for json_dict in array_json_records:
             if json_dict['records']:
                 for records_value in json_dict['records']:
-                    try:
+                    if records_value['fields']:
                         record_metadata_dict = records_value['fields']
                         self.delete_manifest(record_metadata_dict)
-                    except Exception:
-                        logger.exception(f'Delete manifest method has failed for {records_value}')
         
     def delete_manifest(self, record_metadata_dict):
         try:
             record = self.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
-            key_format = f"{self.prefix}{record.source}"
-
-            if record_metadata_dict['File ID 1']:
-                file_title = record_metadata_dict['File ID 1']
-                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= f'{key_format}{file_title}.json')
-            elif record_metadata_dict['File ID 2']:
-                file_title = record_metadata_dict['File ID 2']
-                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= f'{key_format}{file_title}.json')
-            elif record_metadata_dict['Hathi ID']:
-                file_title = record_metadata_dict['Hathi ID']
-                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= f'{key_format}{file_title}.json')
+            if record:
+                key_name = self.get_metadata_file_name(record, record_metadata_dict)
+                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
         except Exception:
             logger.exception(f'Failed to delete manifest for record: {record.source_id}')
+
+    def get_metadata_file_name(self, record, record_metadata_dict):
+        key_format = f"{self.prefix}{record.source}"
+
+        if record_metadata_dict['File ID 1']:
+            file_title = record_metadata_dict['File ID 1']
+        elif record_metadata_dict['File ID 2']:
+            file_title = record_metadata_dict['File ID 2']
+        elif record_metadata_dict['Hathi ID']:
+            file_title = record_metadata_dict['Hathi ID']
+        else:
+            raise Exception
+        
+        key_name = f'{key_format}{file_title}.json'
+        return key_name
 
     def get_records(
         self,
