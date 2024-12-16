@@ -24,6 +24,16 @@ class PublisherBacklistService(SourceService):
         self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.prefix = 'manifests/publisher_backlist'
+        self.db_manager = DBManager(
+            user= os.environ.get('POSTGRES_USER', None),
+            pswd= os.environ.get('POSTGRES_PSWD', None),
+            host= os.environ.get('POSTGRES_HOST', None),
+            port= os.environ.get('POSTGRES_PORT', None),
+            db= os.environ.get('POSTGRES_NAME', None)
+        )
+        self.db_manager.generateEngine()
+        self.es_manager = ElasticsearchManager()
+        self.es_manager.createElasticConnection()
         
         self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
 
@@ -35,30 +45,16 @@ class PublisherBacklistService(SourceService):
         
         array_json_records = self.get_records_array(limit, filter_by_formula)
 
-        dbManager = DBManager(
-        user= os.environ.get('POSTGRES_USER', None),
-        pswd= os.environ.get('POSTGRES_PSWD', None),
-        host= os.environ.get('POSTGRES_HOST', None),
-        port= os.environ.get('POSTGRES_PORT', None),
-        db= os.environ.get('POSTGRES_NAME', None)
-    )
-
-        dbManager.generateEngine()
-
-        dbManager.createSession()
-
-        esManager = ElasticsearchManager()
-        esManager.createElasticConnection()
-
         for json_dict in array_json_records:
             if json_dict['records']:
                 for records_value in json_dict['records']:
                     if records_value['fields']:
                         record_metadata_dict = records_value['fields']
-                        self.delete_manifest(record_metadata_dict)
-                        self.delete_work(dbManager, record_metadata_dict)
+                        self.delete_manifest(self.db_manager, record_metadata_dict)
+                        self.delete_work(record_metadata_dict)
         
     def delete_manifest(self, record_metadata_dict):
+        self.db_manager.createSession()
         try:
             record = self.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
             if record:
@@ -66,24 +62,27 @@ class PublisherBacklistService(SourceService):
                 self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
         except Exception:
             logger.exception(f'Failed to delete manifest for record: {record.source_id}')
+        finally:
+            self.db_manager.session.close()
 
-    def delete_work(self, dbManager, record_metadata_dict):
-        record = dbManager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+    def delete_work(self, record_metadata_dict):
+        self.db_manager.createSession()
+        record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
 
         try:
             if record:
                 record_uuid_str = str(record.uuid)
-                edition =  dbManager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
-                work = dbManager.session.query(Work).filter(Work.id == edition.work_id).first()
+                edition =  self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
+                work = self.db_manager.session.query(Work).filter(Work.id == edition.work_id).first()
                 work_uuid_str = str(work.uuid)
                 es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
+                self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
                 es_work_resp.delete()
-                work.delete()
+                self.db_manager.session.commit()
         except Exception:
-            logger.exception('Failed to delete work')
-
-        dbManager.session.commit()
-        dbManager.session.close()
+            logger.exception('Work/Edition does not exist or failed to delete work: {work.id}')
+        finally:
+            self.db_manager.session.close()
             
 
     def get_metadata_file_name(self, record, record_metadata_dict):

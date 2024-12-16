@@ -24,6 +24,8 @@ class PublisherBacklistProcess(CoreProcess):
             self.generateEngine()
             self.createSession()
 
+            self.publisher_backlist_service.delete_records(limit=self.limit)
+
             if self.process == 'daily':
                 records = self.publisher_backlist_service.get_records(offset=self.offset, limit=self.limit)
             elif self.process == 'complete':
