@@ -4,6 +4,7 @@ import requests
 import json
 import urllib.parse
 from typing import Optional
+from model import Record
 
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
@@ -23,6 +24,45 @@ class PublisherBacklistService(SourceService):
         
         self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
 
+    def delete_records(
+        self,
+        limit: Optional[int]=None
+    ):
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=True)
+        
+        array_json_records = self.get_records_array(limit, filter_by_formula)
+
+        for json_dict in array_json_records:
+            if json_dict['records']:
+                for records_value in json_dict['records']:
+                    if records_value['fields']:
+                        record_metadata_dict = records_value['fields']
+                        self.delete_manifest(record_metadata_dict)
+        
+    def delete_manifest(self, record_metadata_dict):
+        try:
+            record = self.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+            if record:
+                key_name = self.get_metadata_file_name(record, record_metadata_dict)
+                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
+        except Exception:
+            logger.exception(f'Failed to delete manifest for record: {record.source_id}')
+
+    def get_metadata_file_name(self, record, record_metadata_dict):
+        key_format = f"{self.prefix}{record.source}"
+
+        if record_metadata_dict['File ID 1']:
+            file_title = record_metadata_dict['File ID 1']
+        elif record_metadata_dict['File ID 2']:
+            file_title = record_metadata_dict['File ID 2']
+        elif record_metadata_dict['Hathi ID']:
+            file_title = record_metadata_dict['Hathi ID']
+        else:
+            raise Exception
+        
+        key_name = f'{key_format}{file_title}.json'
+        return key_name
+
     def get_records(
         self,
         full_import: bool=False, 
@@ -38,7 +78,7 @@ class PublisherBacklistService(SourceService):
                     record_metadata_dict = records_value['fields']
                     pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
                     pub_backlist_record.applyMapping()
-                    self.add_has_part_mapping(pub_backlist_record, pub_backlist_record.record)
+                    self.add_has_part_mapping(pub_backlist_record.record)
                     self.store_pdf_manifest(pub_backlist_record.record)
                     complete_records.append(pub_backlist_record)
                 except Exception:
@@ -54,13 +94,20 @@ class PublisherBacklistService(SourceService):
         if offset == None:
             limit = 100
         
-        filter_by_formula = self.build_filter_by_formula_parameter(full_import, start_timestamp)
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=None, start_timestamp=None)
                 
         array_json_records = self.get_records_array(limit, filter_by_formula)
         
         return array_json_records
         
-    def build_filter_by_formula_parameter(self, full_import: bool=False, start_timestamp: datetime=None) -> str:
+    def build_filter_by_formula_parameter(self, deleted=None, full_import: bool=False, start_timestamp: datetime=None) -> str:
+        if deleted:
+            deleted_filter = f"IF(%7BDRB_Deleted%7D%20%3D%20TRUE(),%20TRUE(),%20FALSE())"
+            filter_by_formula = f"&filterByFormula={deleted_filter}"
+            return filter_by_formula
+        
+        is_not_deleted_filter = f"IF(%7BDRB_Deleted%7D%20!%3D%20TRUE(),%20TRUE(),%20FALSE())"
+
         if not start_timestamp:
             start_timestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
 
@@ -75,7 +122,7 @@ class PublisherBacklistService(SourceService):
             is_same_date_time_filter = f"IS_SAME(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
             is_after_date_time_filter = f"%20IS_AFTER(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
 
-            filter_by_formula = f"&filterByFormula=AND(OR({is_same_date_time_filter}),{is_after_date_time_filter})),{if_ready_to_ingest_is_true_filter})"
+            filter_by_formula = f"&filterByFormula=AND(OR({is_same_date_time_filter}),{is_after_date_time_filter})),AND({if_ready_to_ingest_is_true_filter},{is_not_deleted_filter}))"
 
             return filter_by_formula
         
