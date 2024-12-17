@@ -74,8 +74,6 @@ class PublisherBacklistService(SourceService):
                     self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
                     es_work_resp.delete()
                     self.db_manager.session.commit()
-                else:
-                    self.delete_edition(record.uuid_str, work)
 
         except Exception:
             logger.exception('Work/Edition does not exist or failed to delete work: {work.id}')
@@ -87,7 +85,6 @@ class PublisherBacklistService(SourceService):
             if record_uuid_str not in edition.dcdw_uuids:
                 return False
         return True
-            
 
     def get_metadata_file_name(self, record, record_metadata_dict):
         key_format = f"{self.prefix}{record.source}"
