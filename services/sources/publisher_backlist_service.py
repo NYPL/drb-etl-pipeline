@@ -8,6 +8,7 @@ from typing import Optional
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
+from services.ssm_service import get_parameter
 from .source_service import SourceService
 
 logger = create_log(__name__)
@@ -20,8 +21,12 @@ class PublisherBacklistService(SourceService):
         self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.prefix = 'manifests/publisher_backlist'
-        
-        self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
+
+        if os.environ['ENVIRONMENT'] == 'production':
+            # self.airtable_auth_token = get_parameter
+            pass
+        else:
+            self.airtable_auth_token = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/airtable/pub-backlist/api-key')
 
     def get_records(
         self,
