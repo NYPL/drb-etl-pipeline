@@ -24,13 +24,7 @@ class PublisherBacklistService(SourceService):
         self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.prefix = 'manifests/publisher_backlist'
-        self.db_manager = DBManager(
-            user= os.environ.get('POSTGRES_USER', None),
-            pswd= os.environ.get('POSTGRES_PSWD', None),
-            host= os.environ.get('POSTGRES_HOST', None),
-            port= os.environ.get('POSTGRES_PORT', None),
-            db= os.environ.get('POSTGRES_NAME', None)
-        )
+        self.db_manager = DBManager()
         self.db_manager.generateEngine()
         self.es_manager = ElasticsearchManager()
         self.es_manager.createElasticConnection()
@@ -74,15 +68,25 @@ class PublisherBacklistService(SourceService):
                 record_uuid_str = str(record.uuid)
                 edition =  self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
                 work = self.db_manager.session.query(Work).filter(Work.id == edition.work_id).first()
-                work_uuid_str = str(work.uuid)
-                es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
-                self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
-                es_work_resp.delete()
-                self.db_manager.session.commit()
+                if self.checkAllEditionsRelatedToRecord(record_uuid_str, work) == True:
+                    work_uuid_str = str(work.uuid)
+                    es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
+                    self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
+                    es_work_resp.delete()
+                    self.db_manager.session.commit()
+                else:
+                    self.delete_edition(record.uuid_str, work)
+
         except Exception:
             logger.exception('Work/Edition does not exist or failed to delete work: {work.id}')
         finally:
             self.db_manager.session.close()
+
+    def checkAllEditionsRelatedToRecord(self, record_uuid_str, work):
+        for edition in self.db_manager.session.query(Edition).filter(Edition.work_id == work.id):
+            if record_uuid_str not in edition.dcdw_uuids:
+                return False
+        return True
             
 
     def get_metadata_file_name(self, record, record_metadata_dict):
