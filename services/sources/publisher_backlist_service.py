@@ -74,18 +74,28 @@ class PublisherBacklistService(SourceService):
                     self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
                     es_work_resp.delete()
                     self.db_manager.session.commit()
-
+                else:
+                    self.delete_pub_backlist_edition_only(record.uuid_str, work)
         except Exception:
             logger.exception('Work/Edition does not exist or failed to delete work: {work.id}')
         finally:
             self.db_manager.session.close()
 
     def checkAllEditionsRelatedToRecord(self, record_uuid_str, work):
-        for edition in self.db_manager.session.query(Edition).filter(Edition.work_id == work.id):
+        for edition in self.db_manager.session.query(Edition).filter(Edition.work_id == work.id).all():
             if record_uuid_str not in edition.dcdw_uuids:
                 return False
         return True
-
+            
+    def delete_pub_backlist_edition_only(self, record_uuid_str, work):
+        for edition in self.db_manager.session.query(Edition) \
+            .filter(Edition.work_id == work.id) \
+            .filter(Edition.dcdw_uuids.contains([record_uuid_str])) \
+            .all():
+                self.db_manager.session.delete(edition)
+                # es_edition_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=uuid)
+                # es_edition_esp.delete()
+            
     def get_metadata_file_name(self, record, record_metadata_dict):
         key_format = f"{self.prefix}{record.source}"
 
