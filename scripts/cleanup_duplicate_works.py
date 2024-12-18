@@ -25,6 +25,7 @@ def main():
         )
 
         first_work = True
+        
         for work in works:
             if first_work:
                 first_work = False
