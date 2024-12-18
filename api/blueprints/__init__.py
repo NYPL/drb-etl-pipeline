@@ -1,5 +1,5 @@
 from .drbCitation import citation
-from .drbCollection import collection
+from .drbCollection import collection, collections
 from .drbEdition import edition
 from .drbInfo import info
 from .drbLink import link

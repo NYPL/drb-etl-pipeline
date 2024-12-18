@@ -596,7 +596,7 @@
                  }
             }
         },
-        "/collection": {
+        "/collections": {
             "post": {
                 "tags": ["digital-research-books"],
                 "summary": "Create DRB Collection",
@@ -699,7 +699,7 @@
                 }
             }
         },
-        "/collection/{uuid}": {
+        "/collections/{uuid}": {
             "get": {
                 "tags": ["digital-research-books"],
                 "summary": "Return DRB Collection",
@@ -800,7 +800,7 @@
                 }
             }
         },
-        "/collection/replace/{uuid}": {
+        "/collections/replace/{uuid}": {
             "post": {
                 "tags": ["digital-research-books"],
                 "summary": "Replace a DRB Collection",
@@ -880,7 +880,7 @@
                 }
             }
         },
-        "/collection/update/{uuid}": {
+        "/collections/update/{uuid}": {
             "post": {
                 "tags": ["digital-research-books"],
                 "summary": "Update a DRB Collection",
@@ -962,7 +962,7 @@
                 }
             }
         },
-        "/collection/delete/{uuid}": {
+        "/collections/delete/{uuid}": {
             "delete": {
                 "tags": ["digital-research-books"],
                 "summary": "Delete a Edition/Work from a DRB Collection",
@@ -1016,7 +1016,7 @@
                 }
             }
         },
-        "/collection/list": {
+        "/collections/list": {
             "get": {
                 "tags": ["digital-research-books"],
                 "summary": "Return list of DRB Collections",
