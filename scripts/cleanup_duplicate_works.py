@@ -1,5 +1,4 @@
 import os
-from sqlalchemy import delete
 
 from managers import DBManager, ElasticsearchManager
 from model import Work
