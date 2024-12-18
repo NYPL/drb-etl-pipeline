@@ -18,23 +18,24 @@ def main():
     es_manager.createElasticConnection()
 
     for title in TITLES:
-        work_uuids = (
-            db_manager.session.query(Work.uuid)
+        works = (
+            db_manager.session.query(Work)
                 .filter(Work.title == title)
                 .order_by(Work.date_created.desc())
-                .all()
+                .yield_per(100)
         )
 
-        work_uuids = [uuid[0] for uuid in work_uuids]
+        first_work = True
+        for work in works:
+            if first_work:
+                first_work = False
+                continue
 
-        for work_uuid in work_uuids[1:]:
-            delete_work = delete(Work).where(Work.uuid == work_uuid)
-
-            db_manager.session.execute(delete_work)
+            db_manager.session.delete(work)
             
             es_manager.client.delete(
                 index=os.environ['ELASTICSEARCH_INDEX'],
-                id=str(work_uuid)
+                id=str(work.uuid)
             )
 
         db_manager.session.commit()
