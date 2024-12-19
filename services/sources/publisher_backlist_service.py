@@ -11,7 +11,7 @@ from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
-from elasticsearch_dsl import Search
+from elasticsearch_dsl import Search, Q
 
 logger = create_log(__name__)
 
@@ -50,7 +50,7 @@ class PublisherBacklistService(SourceService):
     def delete_manifest(self, record_metadata_dict):
         self.db_manager.createSession()
         try:
-            record = self.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+            record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
             if record:
                 key_name = self.get_metadata_file_name(record, record_metadata_dict)
                 self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
@@ -68,24 +68,31 @@ class PublisherBacklistService(SourceService):
                 record_uuid_str = str(record.uuid)
                 edition =  self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
                 work = self.db_manager.session.query(Work).filter(Work.id == edition.work_id).first()
-                if self.checkAllEditionsRelatedToRecord(record_uuid_str, work) == True:
+                if len(work.editions) == 1:
                     work_uuid_str = str(work.uuid)
                     es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
                     self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
                     es_work_resp.delete()
                     self.db_manager.session.commit()
-
+                else:
+                    self.delete_pub_backlist_edition_only(record.uuid_str, work)
         except Exception:
             logger.exception('Work/Edition does not exist or failed to delete work: {work.id}')
         finally:
             self.db_manager.session.close()
-
-    def checkAllEditionsRelatedToRecord(self, record_uuid_str, work):
-        for edition in self.db_manager.session.query(Edition).filter(Edition.work_id == work.id):
-            if record_uuid_str not in edition.dcdw_uuids:
-                return False
-        return True
-
+            
+    def delete_pub_backlist_edition_only(self, record_uuid_str, work):
+        edition = self.db_manager.session.query(Edition) \
+            .filter(Edition.work_id == work.id) \
+            .filter(Edition.dcdw_uuids.contains([record_uuid_str])) \
+            .first()
+        self.db_manager.session.delete(edition)
+        es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=str(work.uuid))
+        for work_hit in es_work_resp:
+            for edition_hit in work_hit:
+                edition_es_response = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('nested', path='editions', query=Q('match', **{'editions.edition_id': edition_hit['edition_id']}))
+                edition_es_response.delete()
+            
     def get_metadata_file_name(self, record, record_metadata_dict):
         key_format = f"{self.prefix}{record.source}"
 
