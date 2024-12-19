@@ -6,5 +6,5 @@ from .drbLink import link
 from .drbOPDS2 import opds
 from .drbSearch import search
 from .drbUtils import utils
-from .drbWork import work
+from .drbWork import work, works
 from .drbFulfill import fulfill
