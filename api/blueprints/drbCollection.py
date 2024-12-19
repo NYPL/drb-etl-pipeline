@@ -362,7 +362,7 @@ def collectionDeleteWorkEdition(uuid, user=None):
 
 
 @collection.route('/list', methods=['GET'])
-@collections.route('/list', methods=['GET'])
+@collections.route('', methods=['GET'])
 def get_collections():
     logger.info('Getting all collections')
     response_type = 'collectionList'
