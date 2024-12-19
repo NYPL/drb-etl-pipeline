@@ -7,8 +7,10 @@ from logger import create_log
 logger = create_log(__name__)
 
 link = Blueprint('link', __name__, url_prefix='/link')
+links = Blueprint('links', __name__, url_prefix='/links')
 
 @link.route('/<link_id>', methods=['GET'])
+@links.route('/<link_id>', methods=['GET'])
 def get_link(link_id):
     logger.info(f'Getting link with id {link_id}')
     response_type = 'singleLink'

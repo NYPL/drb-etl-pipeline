@@ -4,13 +4,13 @@ from .constants import API_URL
 from .utils import assert_response_status
 
 @pytest.mark.parametrize("endpoint, expected_status", [
-    ("/collection/3650664c-c8be-4d07-8d64-2d7003b02048", 200),
-    ("/collection/00000000-0000-0000-0000-000000000000", 404),
-    ("/collection/invalid_id_format", 400),
-    ("/collection/", 404),
-    ("/collection/%$@!*", 400)
+    ("/search?query=keyword%3Abaseball&page=1&size=5&readerVersion=v1", 200),
+    ("/search/00000000-0000-0000-0000-000000000000", 404),
+    ("/search/invalid_id_format", 404),
+    ("/search/", 404),
+    ("/search/%$@!*", 404)
 ])
-def test_get_collection(endpoint, expected_status):
+def test_search(endpoint, expected_status):
     url = API_URL + endpoint
     response = requests.get(url)
 

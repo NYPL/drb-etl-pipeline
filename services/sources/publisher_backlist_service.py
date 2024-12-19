@@ -4,11 +4,14 @@ import requests
 import json
 import urllib.parse
 from typing import Optional
+from model import Record, Work, Edition, Item, Link
 
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
 from .source_service import SourceService
+from managers import DBManager, ElasticsearchManager
+from elasticsearch_dsl import Search, Q
 
 logger = create_log(__name__)
 
@@ -16,8 +19,94 @@ BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%
 
 class PublisherBacklistService(SourceService):
     def __init__(self):
+
         self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
+        self.s3_bucket = os.environ['FILE_BUCKET']
+        self.prefix = 'manifests/publisher_backlist'
+        self.db_manager = DBManager()
+        self.db_manager.generateEngine()
+        self.es_manager = ElasticsearchManager()
+        self.es_manager.createElasticConnection()
+        
         self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
+
+    def delete_records(
+        self,
+        limit: Optional[int]=None
+    ):
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=True)
+        
+        array_json_records = self.get_records_array(limit, filter_by_formula)
+
+        for json_dict in array_json_records:
+            if json_dict['records']:
+                for records_value in json_dict['records']:
+                    if records_value['fields']:
+                        record_metadata_dict = records_value['fields']
+                        self.delete_manifest(self.db_manager, record_metadata_dict)
+                        self.delete_work(record_metadata_dict)
+        
+    def delete_manifest(self, record_metadata_dict):
+        self.db_manager.createSession()
+        try:
+            record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+            if record:
+                key_name = self.get_metadata_file_name(record, record_metadata_dict)
+                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
+        except Exception:
+            logger.exception(f'Failed to delete manifest for record: {record.source_id}')
+        finally:
+            self.db_manager.session.close()
+
+    def delete_work(self, record_metadata_dict):
+        self.db_manager.createSession()
+        record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+
+        try:
+            if record:
+                record_uuid_str = str(record.uuid)
+                edition =  self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
+                work = self.db_manager.session.query(Work).filter(Work.id == edition.work_id).first()
+                if len(work.editions) == 1:
+                    work_uuid_str = str(work.uuid)
+                    es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
+                    self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
+                    es_work_resp.delete()
+                    self.db_manager.session.commit()
+                else:
+                    self.delete_pub_backlist_edition_only(record.uuid_str, work)
+        except Exception:
+            logger.exception('Work/Edition does not exist or failed to delete work: {work.id}')
+        finally:
+            self.db_manager.session.close()
+            
+    def delete_pub_backlist_edition_only(self, record_uuid_str, work):
+        edition = self.db_manager.session.query(Edition) \
+            .filter(Edition.work_id == work.id) \
+            .filter(Edition.dcdw_uuids.contains([record_uuid_str])) \
+            .first()
+        self.db_manager.session.delete(edition)
+        es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=str(work.uuid))
+        for work_hit in es_work_resp:
+            for edition_hit in work_hit:
+                edition_es_response = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('nested', path='editions', query=Q('match', **{'editions.edition_id': edition_hit['edition_id']}))
+                edition_es_response.delete()
+            
+    def get_metadata_file_name(self, record, record_metadata_dict):
+        key_format = f"{self.prefix}{record.source}"
+
+        if record_metadata_dict['File ID 1']:
+            file_title = record_metadata_dict['File ID 1']
+        elif record_metadata_dict['File ID 2']:
+            file_title = record_metadata_dict['File ID 2']
+        elif record_metadata_dict['Hathi ID']:
+            file_title = record_metadata_dict['Hathi ID']
+        else:
+            raise Exception
+        
+        key_name = f'{key_format}{file_title}.json'
+        return key_name
 
     def get_records(
         self,
@@ -34,7 +123,7 @@ class PublisherBacklistService(SourceService):
                     record_metadata_dict = records_value['fields']
                     pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
                     pub_backlist_record.applyMapping()
-                    self.add_has_part_mapping(pub_backlist_record, pub_backlist_record.record)
+                    self.add_has_part_mapping(pub_backlist_record.record)
                     self.store_pdf_manifest(pub_backlist_record.record)
                     complete_records.append(pub_backlist_record)
                 except Exception:
@@ -49,37 +138,40 @@ class PublisherBacklistService(SourceService):
     ) -> list[dict]:
         if offset == None:
             limit = 100
-
-        if not full_import:
-            if start_timestamp:
-                filter_by_formula = self.build_filter_by_formula_parameter(start_timestamp)
-
-                array_json_records = self.get_records_array(limit, filter_by_formula)
-
-                return array_json_records
-
-            else:
-                filter_by_formula = self.build_filter_by_formula_parameter(start_timestamp)
-
-                array_json_records = self.get_records_array(limit, filter_by_formula)
-
-                return array_json_records  
+            
+        limit = offset
+        
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=None, start_timestamp=None)
                 
-        array_json_records = self.get_records_array(limit, filter_by_formula=None)
+        array_json_records = self.get_records_array(limit, filter_by_formula)
         
         return array_json_records
         
-    def build_filter_by_formula_parameter(self, start_timestamp: datetime=None) -> str:
+    def build_filter_by_formula_parameter(self, deleted=None, full_import: bool=False, start_timestamp: datetime=None) -> str:
+        if deleted:
+            deleted_filter = f"IF(%7BDRB_Deleted%7D%20%3D%20TRUE(),%20TRUE(),%20FALSE())"
+            filter_by_formula = f"&filterByFormula={deleted_filter}"
+            return filter_by_formula
+        
+        is_not_deleted_filter = f"IF(%7BDRB_Deleted%7D%20!%3D%20TRUE(),%20TRUE(),%20FALSE())"
+
         if not start_timestamp:
             start_timestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
 
-        start_date_time_str = start_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
-        start_date_time_encoded = urllib.parse.quote(start_date_time_str)
-        is_same_date_time_filter = f"IS_SAME(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
-        is_after_date_time_filter = f"%20IS_AFTER(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
-        filter_by_formula = f"OR({is_same_date_time_filter}),{is_after_date_time_filter}))"
+        if_ready_to_ingest_is_true_filter = f"%20IF(%7BDRB_Ready%20to%20ingest%7D%20%3D%20TRUE(),%20TRUE(),%20FALSE())"
 
-        return filter_by_formula
+        if full_import:
+            filter_by_formula = f'&filterByFormula={if_ready_to_ingest_is_true_filter}'
+            return filter_by_formula
+        else:
+            start_date_time_str = start_timestamp.strftime("%Y-%m-%d %H:%M:%S.%f")
+            start_date_time_encoded = urllib.parse.quote(start_date_time_str)
+            is_same_date_time_filter = f"IS_SAME(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
+            is_after_date_time_filter = f"%20IS_AFTER(%7BLast%20Modified%7D,%20%22{start_date_time_encoded}%22"
+
+            filter_by_formula = f"&filterByFormula=AND(OR({is_same_date_time_filter}),{is_after_date_time_filter})),AND({if_ready_to_ingest_is_true_filter},{is_not_deleted_filter}))"
+
+            return filter_by_formula
         
     def get_records_array(self,
         limit: Optional[int]=None, 
@@ -89,7 +181,7 @@ class PublisherBacklistService(SourceService):
         headers = {"Authorization": f"Bearer {self.airtable_auth_token}"}
 
         if filter_by_formula:
-            url += f'&filterByFormula{filter_by_formula}'
+            url += f'{filter_by_formula}'
 
         pub_backlist_records_response = requests.get(url, headers=headers)
         pub_backlist_records_response_json = pub_backlist_records_response.json()
@@ -136,14 +228,14 @@ class PublisherBacklistService(SourceService):
 
             if media_type == 'application/pdf':
                 record_id = record.identifiers[0].split('|')[0]
-                manifest_path = 'manifests/{}/{}.json'.format(source, record_id)
+                manifest_path = f'{self.prefix}/{source}/{record_id}.json'
                 manifest_url = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3Bucket, manifest_path
+                    self.s3_bucket, manifest_path
                 )
 
                 manifest_json = self.generate_manifest(record, url, manifest_url)
 
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json)
+                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3_bucket)
 
                 if 'in_copyright' in record.rights:
                     link_string = '|'.join([

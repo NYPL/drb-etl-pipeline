@@ -16,7 +16,7 @@ class FulfillURLManifestProcess(CoreProcess):
     def __init__(self, *args):
         super(FulfillURLManifestProcess, self).__init__(*args[:4])
 
-        self.fullImport = self.process == 'complete' 
+        self.full_import = self.process == 'complete' 
         self.start_timestamp = None
 
         self.db_manager = DBManager()
@@ -24,9 +24,9 @@ class FulfillURLManifestProcess(CoreProcess):
         self.db_manager.generateEngine()
         self.db_manager.createSession()
 
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3_bucket = os.environ['FILE_BUCKET']
         self.host = os.environ['DRB_API_HOST']
-        self.prefix = 'manifests/UofM/'
+        self.prefix = 'manifests/publisher_backlist/'
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
 
@@ -75,10 +75,8 @@ class FulfillURLManifestProcess(CoreProcess):
             metadata_json, counter = self.reading_order_fulfill(metadata_json, counter)
             metadata_json, counter = self.resource_fulfill(metadata_json, counter)
             metadata_json, counter = self.toc_fulfill(metadata_json, counter)
-        except (Exception, IndexError) as e:
-            logger.error(e)
-        except:
-            logger.error('One of the Link fulfill methods failed')  
+        except Exception as e:
+            logger.exception(e)
 
         if counter >= 4: 
             for link in metadata_json['links']:

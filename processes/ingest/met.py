@@ -178,7 +178,7 @@ class METProcess(CoreProcess):
 
                 manifestJSON = self.generateManifest(record, uri, manifestURI)
 
-                self.s3_manager.createManifestInS3(manifestPath, manifestJSON)
+                self.s3_manager.createManifestInS3(manifestPath, manifestJSON, self.s3Bucket)
 
                 linkString = '|'.join([
                     itemNo,

@@ -60,7 +60,7 @@ class ChicagoISACProcess(CoreProcess):
 
                 manifest_json = self.generate_manifest(record, uri, manifest_url)
 
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json)
+                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3Bucket)
 
                 link_string = '|'.join([
                     item_no,

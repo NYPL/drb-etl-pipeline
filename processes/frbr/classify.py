@@ -120,9 +120,6 @@ class ClassifyProcess(CoreProcess):
 
         related_oclc_bibs = self.oclc_catalog_manager.query_bibs(search_query)
 
-        if not len(related_oclc_bibs):
-            logger.warning(f'No OCLC bibs returned for query {search_query}')
-
         for related_oclc_bib in related_oclc_bibs:
             oclc_number = related_oclc_bib.get('identifier', {}).get('oclcNumber')
             owi_number = related_oclc_bib.get('work', {}).get('id')
