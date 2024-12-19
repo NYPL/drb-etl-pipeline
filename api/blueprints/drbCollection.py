@@ -19,6 +19,7 @@ from model.postgres.collection import COLLECTION_EDITIONS
 logger = create_log(__name__)
 
 collection = Blueprint('collection', __name__, url_prefix='/collection')
+collections = Blueprint('collections', __name__, url_prefix='/collections')
 
 
 def validateToken(func):
@@ -57,6 +58,7 @@ def validateToken(func):
 
 
 @collection.route('', methods=['POST'])
+@collections.route('', methods=['POST'])
 @validateToken
 def collectionCreate(user=None):
     logger.info('Creating new collection')
@@ -139,6 +141,7 @@ def _validateAutoCollectionDef(autoDef: dict) -> str:
 
 
 @collection.route('/replace/<uuid>', methods=['POST'])
+@collections.route('/replace/<uuid>', methods=['POST'])
 @validateToken
 def collectionReplace(uuid, user=None):
     logger.info('Handling collection replacement request')
@@ -190,6 +193,7 @@ def collectionReplace(uuid, user=None):
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
 @collection.route('/update/<uuid>', methods=['POST'])
+@collections.route('/update/<uuid>', methods=['POST'])
 @validateToken
 def collectionUpdate(uuid, user=None):
     logger.info('Handling collection update request')
@@ -259,6 +263,7 @@ def collectionUpdate(uuid, user=None):
 
 
 @collection.route('/<uuid>', methods=['GET'])
+@collections.route('/<uuid>', methods=['GET'])
 def get_collection(uuid):
     logger.info(f'Getting collection with id {uuid}')
     response_type = 'fetchCollection'
@@ -291,6 +296,7 @@ def get_collection(uuid):
         return APIUtils.formatResponseObject(500, response_type, { 'message': f'Unable to get collection with id {uuid}' })
 
 @collection.route('/<uuid>', methods=['DELETE'])
+@collections.route('/<uuid>', methods=['DELETE'])
 @validateToken
 def collectionDelete(uuid, user=None):
     logger.info('Deleting collection {}'.format(uuid))
@@ -311,6 +317,7 @@ def collectionDelete(uuid, user=None):
     return (jsonify({'message': 'Deleted {}'.format(uuid)}), 200)
 
 @collection.route('/delete/<uuid>', methods=['DELETE'])
+@collections.route('/delete/<uuid>', methods=['DELETE'])
 @validateToken
 def collectionDeleteWorkEdition(uuid, user=None):
     logger.info('Handling collection work/edition deletion request')
@@ -355,6 +362,7 @@ def collectionDeleteWorkEdition(uuid, user=None):
 
 
 @collection.route('/list', methods=['GET'])
+@collections.route('', methods=['GET'])
 def get_collections():
     logger.info('Getting all collections')
     response_type = 'collectionList'
