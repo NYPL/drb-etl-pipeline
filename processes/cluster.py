@@ -55,7 +55,7 @@ class ClusterProcess(CoreProcess):
             logger.exception('Failed to run cluster process')
             raise e
         finally:
-            self.db_manager.session.close_connection()
+            self.db_manager.close_connection()
 
     def cluster_records(self, full=False, start_datetime=None, record_uuid=None):
         get_unclustered_records_query = (
@@ -146,7 +146,7 @@ class ClusterProcess(CoreProcess):
         self.index_works_in_elastic_search(works_to_index)
 
     def delete_stale_works(self, work_ids: set[str]):
-        self.deleteRecordsByQuery(self.db_manager.session.query(Work).filter(Work.id.in_(list(work_ids))))
+        self.db_manager.deleteRecordsByQuery(self.db_manager.session.query(Work).filter(Work.id.in_(list(work_ids))))
 
     def cluster_matched_records(self, record_ids: list[str]):
         records = self.db_manager.session.query(Record).filter(Record.id.in_(record_ids)).all()

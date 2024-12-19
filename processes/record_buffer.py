@@ -21,7 +21,7 @@ class RecordBuffer:
         else:
             self.records.add(record_mapping.record)
 
-        if self.batch_size >= len(self.records):
+        if len(self.records) > self.batch_size:
             self.flush()
 
     def flush(self):
