@@ -4,12 +4,14 @@ import requests
 import json
 import urllib.parse
 from typing import Optional
-from model import Record
+from model import Record, Work, Edition, Item, Link
 
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
 from .source_service import SourceService
+from managers import DBManager, ElasticsearchManager
+from elasticsearch_dsl import Search
 
 logger = create_log(__name__)
 
@@ -17,10 +19,15 @@ BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%
 
 class PublisherBacklistService(SourceService):
     def __init__(self):
+
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.prefix = 'manifests/publisher_backlist'
+        self.db_manager = DBManager()
+        self.db_manager.generateEngine()
+        self.es_manager = ElasticsearchManager()
+        self.es_manager.createElasticConnection()
         
         self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
 
@@ -37,9 +44,11 @@ class PublisherBacklistService(SourceService):
                 for records_value in json_dict['records']:
                     if records_value['fields']:
                         record_metadata_dict = records_value['fields']
-                        self.delete_manifest(record_metadata_dict)
+                        self.delete_manifest(self.db_manager, record_metadata_dict)
+                        self.delete_work(record_metadata_dict)
         
     def delete_manifest(self, record_metadata_dict):
+        self.db_manager.createSession()
         try:
             record = self.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
             if record:
@@ -47,6 +56,35 @@ class PublisherBacklistService(SourceService):
                 self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
         except Exception:
             logger.exception(f'Failed to delete manifest for record: {record.source_id}')
+        finally:
+            self.db_manager.session.close()
+
+    def delete_work(self, record_metadata_dict):
+        self.db_manager.createSession()
+        record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+
+        try:
+            if record:
+                record_uuid_str = str(record.uuid)
+                edition =  self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
+                work = self.db_manager.session.query(Work).filter(Work.id == edition.work_id).first()
+                if self.checkAllEditionsRelatedToRecord(record_uuid_str, work) == True:
+                    work_uuid_str = str(work.uuid)
+                    es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
+                    self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
+                    es_work_resp.delete()
+                    self.db_manager.session.commit()
+
+        except Exception:
+            logger.exception('Work/Edition does not exist or failed to delete work: {work.id}')
+        finally:
+            self.db_manager.session.close()
+
+    def checkAllEditionsRelatedToRecord(self, record_uuid_str, work):
+        for edition in self.db_manager.session.query(Edition).filter(Edition.work_id == work.id):
+            if record_uuid_str not in edition.dcdw_uuids:
+                return False
+        return True
 
     def get_metadata_file_name(self, record, record_metadata_dict):
         key_format = f"{self.prefix}{record.source}"
@@ -93,6 +131,8 @@ class PublisherBacklistService(SourceService):
     ) -> list[dict]:
         if offset == None:
             limit = 100
+            
+        limit = offset
         
         filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=None, start_timestamp=None)
                 
