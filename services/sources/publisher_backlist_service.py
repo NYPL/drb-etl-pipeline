@@ -68,7 +68,7 @@ class PublisherBacklistService(SourceService):
                 record_uuid_str = str(record.uuid)
                 edition =  self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
                 work = self.db_manager.session.query(Work).filter(Work.id == edition.work_id).first()
-                if self.has_only_one_edition(work):
+                if len(work.editions) == 1:
                     work_uuid_str = str(work.uuid)
                     es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
                     self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
@@ -80,11 +80,6 @@ class PublisherBacklistService(SourceService):
             logger.exception('Work/Edition does not exist or failed to delete work: {work.id}')
         finally:
             self.db_manager.session.close()
-
-    def has_only_one_edition(self, work):
-        if len(work.editions) > 1:
-            return False
-        return True
             
     def delete_pub_backlist_edition_only(self, record_uuid_str, work):
         edition = self.db_manager.session.query(Edition) \
