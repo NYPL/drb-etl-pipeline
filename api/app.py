@@ -9,7 +9,7 @@ from waitress import serve
 
 from logger import create_log
 from .blueprints import (
-    search, work, info, edition, utils, link, opds, collection, citation, fulfill
+    search, work, info, edition, editions, utils, link, opds, collection, citation, fulfill
 )
 from .utils import APIUtils
 
@@ -31,6 +31,7 @@ class FlaskAPI:
         self.app.register_blueprint(search)
         self.app.register_blueprint(work)
         self.app.register_blueprint(edition)
+        self.app.register_blueprint(editions)
         self.app.register_blueprint(utils)
         self.app.register_blueprint(link)
         self.app.register_blueprint(opds)
