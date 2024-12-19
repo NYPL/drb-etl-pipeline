@@ -19,6 +19,8 @@ class TestLOCProcess:
         class TestLOC(LOCProcess):
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock(db_manager=self.db_manager)
                 self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.session = mocker.MagicMock(session='testSession')
                 self.records = mocker.MagicMock(record='testRecord')
@@ -31,18 +33,12 @@ class TestLOCProcess:
         return TestLOC()
 
     def test_runProcess(self, testProcess, mocker):
-        runMocks = mocker.patch.multiple(
-            LOCProcess,
-            saveRecords=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT,
-            importLOCRecords=mocker.DEFAULT
-        )
+        runMocks = mocker.patch.multiple(LOCProcess, importLOCRecords=mocker.DEFAULT)
 
         testProcess.runProcess()
 
         runMocks['importLOCRecords'].assert_called_once_with()
-        runMocks['saveRecords'].assert_called_once()
-        runMocks['commitChanges'].assert_called_once()
+        testProcess.record_buffer.flush.assert_called_once()
 
 
     def test_processLOCRecord_success(self, testProcess, mocker):
@@ -50,7 +46,6 @@ class TestLOCProcess:
             addHasPartMapping=mocker.DEFAULT,
             storePDFManifest=mocker.DEFAULT,
             storeEpubsInS3=mocker.DEFAULT,
-            addDCDWToUpdateList=mocker.DEFAULT
         )
 
         test_record = Record(authors=[])
@@ -66,10 +61,9 @@ class TestLOCProcess:
 
         processMocks['addHasPartMapping'].assert_called_once_with(mockMapping, test_record)
         processMocks['storePDFManifest'].assert_called_once_with(test_record)
-        processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
+        testProcess.record_buffer.add.assert_called_once_with(mockMapping)
 
     def test_processlocRecord_error(self, mocker):
-
         mockMapper = mocker.patch('processes.ingest.loc.LOCMapping')
         mockMapper.side_effect = MappingError('testError')
 

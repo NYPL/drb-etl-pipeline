@@ -19,29 +19,23 @@ class TestChicagoISACProcess:
             def __init__(self):
                 self.s3Bucket = 'test_aws_bucket'
                 self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock(db_manager=self.db_manager)
                 self.session = mocker.MagicMock(session='test_session')
                 self.records = mocker.MagicMock(record='test_record')
                 self.batch_size = mocker.MagicMock(batch_size='test_batch_size')
         
         return TestISAC()
 
-    def test_run_process(self, test_process, mocker):
-        run_mocks = mocker.patch.multiple(
-            ChicagoISACProcess,
-            saveRecords=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT
-        )
-
+    def test_run_process(self, test_process):
         test_process.runProcess()
 
-        run_mocks['saveRecords'].assert_called_once()
-        run_mocks['commitChanges'].assert_called_once()
+        test_process.record_buffer.flush.assert_called_once()
 
 
     def test_process_chicago_isac_record_success(self, test_process, mocker):
         processMocks = mocker.patch.multiple(ChicagoISACProcess,
             store_pdf_manifest=mocker.DEFAULT,
-            addDCDWToUpdateList=mocker.DEFAULT
         )
 
         mock_mapping = mocker.MagicMock(record='test_record')
@@ -53,7 +47,7 @@ class TestChicagoISACProcess:
         mock_mapping.applyMapping.assert_called_once()
 
         processMocks['store_pdf_manifest'].assert_called_once_with('test_record')
-        processMocks['addDCDWToUpdateList'].assert_called_once_with(mock_mapping)
+        test_process.record_buffer.add.assert_called_once_with(mock_mapping)
 
     def test_process_chicago_isac_record_error(self, mocker):
 

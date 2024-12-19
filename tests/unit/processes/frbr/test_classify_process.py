@@ -18,6 +18,8 @@ class TestOCLCClassifyProcess:
     def test_instance(self, mocker):
         class TestClassifyProcess(ClassifyProcess):
             def __init__(self, *args):
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock(db_manger=self.db_manager)
                 self.records = set()
                 self.ingest_limit = None
                 self.records = []
@@ -32,12 +34,7 @@ class TestOCLCClassifyProcess:
 
     @pytest.fixture
     def run_process_mocks(self, mocker):
-        return mocker.patch.multiple(
-            ClassifyProcess,
-            classify_records=mocker.DEFAULT,
-            saveRecords=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT,
-        )
+        return mocker.patch.multiple(ClassifyProcess, classify_records=mocker.DEFAULT)
 
     @pytest.fixture
     def test_record(self, mocker):
@@ -75,11 +72,9 @@ class TestOCLCClassifyProcess:
 
     def test_classify_records_not_full(self, test_instance, mocker):
         mock_frbrize_record = mocker.patch.object(ClassifyProcess, 'frbrize_record')
-        mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
-        test_instance.session = mock_session
 
-        mock_session.query().filter.return_value = mock_query
+        test_instance.db_manager.session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
@@ -93,12 +88,10 @@ class TestOCLCClassifyProcess:
 
     def test_classify_records_custom_range(self, test_instance, mocker):
         mock_frbrize = mocker.patch.object(ClassifyProcess, 'frbrize_record')
-        mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
-        test_instance.session = mock_session
         mock_start_time = mocker.spy(datetime, 'datetime')
 
-        mock_session.query().filter.return_value = mock_query
+        test_instance.db_manager.session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
@@ -114,12 +107,10 @@ class TestOCLCClassifyProcess:
 
     def test_classify_records_full(self, test_instance, mocker):
         mock_frbrize_record = mocker.patch.object(ClassifyProcess, 'frbrize_record')
-        mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
-        test_instance.session = mock_session
         mock_start_time = mocker.spy(datetime, 'datetime')
 
-        mock_session.query().filter.return_value = mock_query
+        test_instance.db_manager.session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
         mock_query.first.side_effect = mock_records + [None]
@@ -134,12 +125,10 @@ class TestOCLCClassifyProcess:
 
     def test_classify_records_full_batch(self, test_instance, mocker):
         mock_frbrize_record = mocker.patch.object(ClassifyProcess, 'frbrize_record')
-        mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
-        test_instance.session = mock_session
         mock_start_time = mocker.spy(datetime, 'datetime')
 
-        mock_session.query().filter.return_value = mock_query
+        test_instance.db_manager.session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
         mock_query.first.side_effect = mock_records + [None]

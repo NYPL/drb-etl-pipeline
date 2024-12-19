@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import os
 
 from ..core import CoreProcess
-from managers import CoverManager, RedisManager, S3Manager
+from managers import DBManager, CoverManager, RedisManager, S3Manager
 from model import Edition, Link
 from model.postgres.edition import EDITION_LINKS
 from logger import create_log
@@ -12,10 +12,16 @@ logger = create_log(__name__)
 
 class CoverProcess(CoreProcess):
     def __init__(self, *args):
-        super(CoverProcess, self).__init__(*args[:4], batchSize=25)
+        super(CoverProcess, self).__init__(*args[:4])
 
-        self.generateEngine()
-        self.createSession()
+        self.batch_size = 25
+
+        self.db_manager = DBManager()
+
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
+
+        self.editions = set()
 
         self.redis_manager = RedisManager()
         self.redis_manager.createRedisClient()
@@ -32,13 +38,12 @@ class CoverProcess(CoreProcess):
 
         self.fetchEditionCovers(coverQuery)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.db_manager.bulkSaveObjects(self.editions)
 
     def generateQuery(self):
-        baseQuery = self.session.query(Edition)
+        baseQuery = self.db_manager.session.query(Edition)
 
-        subQuery = self.session.query(EDITION_LINKS.c.edition_id)\
+        subQuery = self.db_manager.session.query(EDITION_LINKS.c.edition_id)\
             .join(Link)\
             .distinct('edition_id')\
             .filter(Link.flags['cover'] == 'true')
@@ -56,7 +61,7 @@ class CoverProcess(CoreProcess):
         return baseQuery.filter(*filters)
 
     def fetchEditionCovers(self, coverQuery):
-        for edition in self.windowedQuery(Edition, coverQuery, windowSize=self.batchSize):
+        for edition in self.db_manager.windowedQuery(Edition, coverQuery, ingest_limit=self.ingestLimit, windowSize=self.batch_size):
             coverManager = self.searchForCover(edition)
 
             if coverManager: self.storeFoundCover(coverManager, edition)
@@ -65,7 +70,7 @@ class CoverProcess(CoreProcess):
 
     def searchForCover(self, edition):
         identifiers = [i for i in self.getEditionIdentifiers(edition)]
-        manager = CoverManager(identifiers, self.session)
+        manager = CoverManager(identifiers, self.db_manager.session)
 
         if manager.fetchCover() is True:
             manager.fetchCoverFile()
@@ -97,8 +102,8 @@ class CoverProcess(CoreProcess):
         )
 
         edition.links.append(coverLink)
-        self.records.add(edition)
+        self.editions.add(edition)
 
-        if len(self.records) >= self.batchSize:
-            self.bulkSaveObjects(self.records)
-            self.records = set()
+        if len(self.editions) >= self.batch_size:
+            self.db_manager.bulkSaveObjects(self.editions)
+            self.editions.clear()
