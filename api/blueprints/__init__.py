@@ -1,6 +1,5 @@
 from .drbCitation import citation
 from .drbCollection import collection, collections
-from .drbEdition import edition
 from .drbEdition import edition, editions
 from .drbInfo import info
 from .drbLink import link
