@@ -10,7 +10,7 @@ from .utils import assert_response_status
     ("/search/", 404),
     ("/search/%$@!*", 404)
 ])
-def test_api_endpoints(endpoint, expected_status):
+def test_search(endpoint, expected_status):
     url = API_URL + endpoint
     response = requests.get(url)
 
