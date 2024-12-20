@@ -25,7 +25,6 @@ class PublisherBacklistService(SourceService):
         self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.prefix = 'manifests/publisher_backlist'
-
         self.db_manager = DBManager()
         self.db_manager.generateEngine()
         self.es_manager = ElasticsearchManager()
