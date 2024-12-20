@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 from googleapiclient.errors import HttpError
 from google.oauth2.service_account import Credentials
-from services.ssm_service import get_parameter
+from services.ssm_service import SSMService
 
 
 from logger import create_log
@@ -16,10 +16,11 @@ logger = create_log(__name__)
 
 class GoogleDriveService:
     def __init__(self):
+        ssm_service = SSMService()
         if os.environ['ENVIRONMENT'] == 'production':
-            SERVICE_ACCOUNT_FILE = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/google-drive-service-key')
+            SERVICE_ACCOUNT_FILE = ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/google-drive-service-key')
         else:
-            SERVICE_ACCOUNT_FILE = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/google-drive-service-key')
+            SERVICE_ACCOUNT_FILE = ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/google-drive-service-key')
         self.service_account_info = json.loads(SERVICE_ACCOUNT_FILE)
         self.scopes = ['https://www.googleapis.com/auth/drive',
         'https://www.googleapis.com/auth/drive.file',
