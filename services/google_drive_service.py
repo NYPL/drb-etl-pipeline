@@ -21,12 +21,12 @@ class GoogleDriveService:
             SERVICE_ACCOUNT_FILE = ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/google-drive-service-key')
         else:
             SERVICE_ACCOUNT_FILE = ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/google-drive-service-key')
-        self.service_account_info = json.loads(SERVICE_ACCOUNT_FILE)
-        self.scopes = ['https://www.googleapis.com/auth/drive',
+        service_account_info = json.loads(SERVICE_ACCOUNT_FILE)
+        scopes = ['https://www.googleapis.com/auth/drive',
         'https://www.googleapis.com/auth/drive.file',
         'https://www.googleapis.com/auth/drive.metadata']
-        self.credentials = Credentials.from_service_account_info(self.service_account_info, scopes=self.scopes)
-        self.drive_service = build('drive', 'v3', credentials=self.credentials)
+        credentials = Credentials.from_service_account_info(service_account_info, scopes=scopes)
+        self.drive_service = build('drive', 'v3', credentials=credentials)
 
     def get_drive_file(self, file_id: str) -> Optional[BytesIO]:
         request = self.drive_service.files().get_media(fileId=file_id)
