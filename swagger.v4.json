@@ -112,7 +112,7 @@
                 }
             }
         },
-        "/work/{uuid}": {
+        "/works/{uuid}": {
            "get": {
                 "tags": ["digital-research-books"],
                 "summary": "v4 Get Single Work",
@@ -179,7 +179,7 @@
                 }
            }
         },
-        "/edition/{id}": {
+        "/editions/{id}": {
             "get": {
                 "tags": ["digital-research-books"],
                 "summary": "v4 Get Single Edition",
@@ -246,7 +246,7 @@
                 }
             }
         },
-        "/link/{id}": {
+        "/links/{id}": {
             "get": {
                 "tags": ["digital-research-books"],
                 "summary": "v4 Get Single Link",
@@ -596,7 +596,7 @@
                  }
             }
         },
-        "/collection": {
+        "/collections": {
             "post": {
                 "tags": ["digital-research-books"],
                 "summary": "Create DRB Collection",
@@ -697,9 +697,57 @@
                         }
                     }
                 }
+            },
+            "get": {
+                "tags": ["digital-research-books"],
+                "summary": "Return list of DRB Collections",
+                "description": "Returns list of collections in DRB",
+                "parameters": [
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "description": "Method of sorting collections. Either title or creator",
+                        "type": "string",
+                        "required": false
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page of collections to load",
+                        "type": "integer",
+                        "required": false
+                    },
+                    {
+                        "name": "perPage",
+                        "in": "query",
+                        "description": "Number of collections to load per page",
+                        "type": "integer",
+                        "required": false
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "A basic OPDS2 feed response",
+                        "schema": {
+                            "$ref": "#/definitions/OPDSFeedResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "default": {
+                        "description": "Unexpected Error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
             }
         },
-        "/collection/{uuid}": {
+        "/collections/{uuid}": {
             "get": {
                 "tags": ["digital-research-books"],
                 "summary": "Return DRB Collection",
@@ -800,7 +848,7 @@
                 }
             }
         },
-        "/collection/replace/{uuid}": {
+        "/collections/replace/{uuid}": {
             "post": {
                 "tags": ["digital-research-books"],
                 "summary": "Replace a DRB Collection",
@@ -880,7 +928,7 @@
                 }
             }
         },
-        "/collection/update/{uuid}": {
+        "/collections/update/{uuid}": {
             "post": {
                 "tags": ["digital-research-books"],
                 "summary": "Update a DRB Collection",
@@ -962,7 +1010,7 @@
                 }
             }
         },
-        "/collection/delete/{uuid}": {
+        "/collections/delete/{uuid}": {
             "delete": {
                 "tags": ["digital-research-books"],
                 "summary": "Delete a Edition/Work from a DRB Collection",
@@ -1013,56 +1061,6 @@
                             "$ref": "#/definitions/ErrorResponse"
                         }
                     } 
-                }
-            }
-        },
-        "/collection/list": {
-            "get": {
-                "tags": ["digital-research-books"],
-                "summary": "Return list of DRB Collections",
-                "description": "Returns list of collections in DRB",
-                "parameters": [
-                    {
-                        "name": "sort",
-                        "in": "query",
-                        "description": "Method of sorting collections. Either title or creator",
-                        "type": "string",
-                        "required": false
-                    },
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page of collections to load",
-                        "type": "integer",
-                        "required": false
-                    },
-                    {
-                        "name": "perPage",
-                        "in": "query",
-                        "description": "Number of collections to load per page",
-                        "type": "integer",
-                        "required": false
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "A basic OPDS2 feed response",
-                        "schema": {
-                            "$ref": "#/definitions/OPDSFeedResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    },
-                    "default": {
-                        "description": "Unexpected Error",
-                        "schema": {
-                            "$ref": "#/definitions/ErrorResponse"
-                        }
-                    }
                 }
             }
         }

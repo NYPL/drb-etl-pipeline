@@ -4,7 +4,7 @@ import requests
 
 
 def test_get_collection():
-    url = API_URL + '/collection/list?sort=title'
+    url = API_URL + '/collections?sort=title'
     response = requests.get(url)
 
     assert response.status_code is not None
