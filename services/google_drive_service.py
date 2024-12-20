@@ -33,7 +33,6 @@ def get_or_create_drive_service():
     drive_service = create_drive_service()
     return drive_service
 
-
 def get_drive_file(file_id: str) -> Optional[BytesIO]:
     request = get_or_create_drive_service().files().get_media(fileId=file_id)
     file = BytesIO()
