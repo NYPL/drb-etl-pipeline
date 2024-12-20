@@ -17,7 +17,6 @@ logger = create_log(__name__)
 def _create_drive_service():
     if os.environ['ENVIRONMENT'] == 'production':
         SERVICE_ACCOUNT_FILE = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/google-drive-service-key')
-        pass
     else:
         SERVICE_ACCOUNT_FILE = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/google-drive-service-key')
     service_account_info = json.loads(SERVICE_ACCOUNT_FILE)
