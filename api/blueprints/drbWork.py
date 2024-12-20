@@ -7,8 +7,10 @@ from logger import create_log
 logger = create_log(__name__)
 
 work = Blueprint('work', __name__, url_prefix='/work')
+works = Blueprint('works', __name__, url_prefix='/works')
 
 @work.route('/<uuid>', methods=['GET'])
+@works.route('/<uuid>', methods=['GET'])
 def get_work(uuid):
     logger.info(f'Getting work with id {uuid}')
     response_type = 'singleWork'
