@@ -3,7 +3,7 @@ from .utils import assert_response_status
 import requests
 
 
-def test_get_collections():
+def test_get_collection():
     url = API_URL + '/collections?sort=title'
     response = requests.get(url)
 
