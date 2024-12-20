@@ -24,8 +24,7 @@ class PublisherBacklistService(SourceService):
         self.prefix = 'manifests/publisher_backlist'
 
         if os.environ['ENVIRONMENT'] == 'production':
-            # self.airtable_auth_token = get_parameter
-            pass
+            self.airtable_auth_token = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/airtable/pub-backlist/api-key')
         else:
             self.airtable_auth_token = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/airtable/pub-backlist/api-key')
 
