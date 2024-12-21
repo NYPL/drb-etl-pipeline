@@ -49,7 +49,7 @@ class TestHelpers:
         'DOAB_OAI_URL': 'test_doab_url',
         'WEBPUB_CONVERSION_URL': 'test_conversion_url',
         'WEBPUB_PDF_PROFILE': 'test_profile_uri',
-        'ENVIRONMENT':'test'
+        'ENVIRONMENT': 'test'
     }
 
     @classmethod

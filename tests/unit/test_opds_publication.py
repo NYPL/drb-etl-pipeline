@@ -1,9 +1,18 @@
 import pytest
+from tests.helper import TestHelpers
 
 from api.opds2.publication import Publication, OPDS2PublicationException
 
 
 class TestOPDSPublication:
+    @classmethod
+    def setup_class(cls):
+        TestHelpers.setEnvVars()
+
+    @classmethod
+    def teardown_class(cls):
+        TestHelpers.clearEnvVars()
+
     @pytest.fixture
     def testPubEls(self, mocker):
         pubMocks = mocker.patch.multiple('api.opds2.publication',
@@ -265,7 +274,7 @@ class TestOPDSPublication:
             mocker.call('rights', {'source': 'testSource', 'license': 'testLicense', 'rightsStatement': 'testStatement'})
         ])
 
-        pubMocks['addLink'].assert_called_with({'href': 'https://digital-research-books-beta.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access', 'identifier': 'readable'})
+        pubMocks['addLink'].assert_called_with({'href': 'https://drb-qa.nypl.org/read/testID', 'type': 'testType', 'rel': 'http://opds-spec.org/acquisition/open-access', 'identifier': 'readable'})
         pubMocks['setContributors'].assert_called_once_with([{'name': 'Test Contrib'}])
         pubMocks['setBestIdentifier'].assert_called_once_with(['id1', 'id2', 'id3'])
         pubMocks['findAndAddCover'].assert_called_once_with(testEdition)
