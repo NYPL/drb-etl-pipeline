@@ -19,6 +19,7 @@ logger = create_log(__name__)
 
 BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%20%26%20Collections%20%F0%9F%93%96?view=All%20Lists"
 
+
 class PublisherBacklistService(SourceService):
     def __init__(self):
 
