@@ -33,6 +33,7 @@ class Item(Base, Core):
     physical_location = Column(JSONB)
 
     edition_id = Column(Integer, ForeignKey('editions.id', ondelete='CASCADE'), index=True)
+    record_id = Column(Integer, ForeignKey('records.id', ondelete='CASCADE'))
 
     identifiers = relationship('Identifier', secondary=ITEM_IDENTIFIERS, backref='items', cascade='all, delete')
     links = relationship('Link', secondary=ITEM_LINKS, backref='items', cascade='all, delete')
