@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
+import json
 import os
 import requests
-import json
 import urllib.parse
 from typing import Optional
-from model import Record, Work, Edition, Item, Link
+import traceback
+from model import Record, Work, Edition
 
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
@@ -16,6 +17,7 @@ from elasticsearch_dsl import Search, Q
 logger = create_log(__name__)
 
 BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%20%26%20Collections%20%F0%9F%93%96?view=All%20Lists"
+SOURCE_RECORD_ID_FIELD = 'DRB Record_ID'
 
 class PublisherBacklistService(SourceService):
     def __init__(self):
@@ -39,47 +41,40 @@ class PublisherBacklistService(SourceService):
         
         array_json_records = self.get_records_array(limit, filter_by_formula)
 
-        for json_dict in array_json_records:
-            if json_dict['records']:
-                for records_value in json_dict['records']:
-                    if records_value['fields']:
-                        record_metadata_dict = records_value['fields']
-                        self.delete_manifest(self.db_manager, record_metadata_dict)
-                        self.delete_work(record_metadata_dict)
+        self.db_manager.createSession()
+
+        for json_record in array_json_records:
+            records = json_record.get('records', [])
+            
+            for record in records:
+                record_metadata = record.get('fields')
+                
+                if record_metadata:
+                    record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata[SOURCE_RECORD_ID_FIELD]).first()
+
+                    self.delete_record_digital_assets(record, record_metadata)
+                    self.delete_record_data(record_metadata)
         
-    def delete_manifest(self, record_metadata_dict):
-        self.db_manager.createSession()
-        try:
-            record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
-            if record:
-                key_name = self.get_metadata_file_name(record, record_metadata_dict)
-                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
-        except Exception:
-            logger.exception(f'Failed to delete manifest for record: {record.source_id}')
-        finally:
-            self.db_manager.session.close()
+    def delete_record_digital_assets(self, record: Record, record_metadata: dict):
+        # TODO: delete assets using has_part
+        manifest_file_name = self.get_metadata_file_name(record, record_metadata)
 
-    def delete_work(self, record_metadata_dict):
-        self.db_manager.createSession()
-        record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
+        self.s3_manager.s3Client.delete_object(Bucket=self.s3_bucket, Key=manifest_file_name)
 
-        try:
-            if record:
-                record_uuid_str = str(record.uuid)
-                edition =  self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
-                work = self.db_manager.session.query(Work).filter(Work.id == edition.work_id).first()
-                if len(work.editions) == 1:
-                    work_uuid_str = str(work.uuid)
-                    es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
-                    self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
-                    es_work_resp.delete()
-                    self.db_manager.session.commit()
-                else:
-                    self.delete_pub_backlist_edition_only(record.uuid_str, work)
-        except Exception:
-            logger.exception('Work/Edition does not exist or failed to delete work: {work.id}')
-        finally:
-            self.db_manager.session.close()
+
+    def delete_record_data(self, record: Record):
+        # TODO: delete record and corresponding data with record id
+        record_uuid_str = str(record.uuid)
+        edition =  self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
+        work = self.db_manager.session.query(Work).filter(Work.id == edition.work_id).first()
+        if len(work.editions) == 1:
+            work_uuid_str = str(work.uuid)
+            es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
+            self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
+            es_work_resp.delete()
+            self.db_manager.session.commit()
+        else:
+            self.delete_pub_backlist_edition_only(record.uuid_str, work)
             
     def delete_pub_backlist_edition_only(self, record_uuid_str, work):
         edition = self.db_manager.session.query(Edition) \
@@ -128,6 +123,7 @@ class PublisherBacklistService(SourceService):
                     complete_records.append(pub_backlist_record)
                 except Exception:
                     logger.exception(f'Failed to process Publisher Backlist record: {records_value}')
+                    logger.error(traceback.format_exc())
         return complete_records
     
     def get_records_json(self,
@@ -141,7 +137,7 @@ class PublisherBacklistService(SourceService):
             
         limit = offset
         
-        filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=None, start_timestamp=None)
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=full_import, start_timestamp=start_timestamp)
                 
         array_json_records = self.get_records_array(limit, filter_by_formula)
         
@@ -194,33 +190,21 @@ class PublisherBacklistService(SourceService):
 
         return array_json
     
-    def add_has_part_mapping(self, record):
+    def add_has_part_mapping(self, record: Record):
+        # TODO: GOOGLE DRIVE API CALL TO GET PDF/EPUB FILES
+        
+        part_number = '1'
+        file_link = 'https://link-to-pdf' # TODO: get link after implementing upload to S3
+        file_type = 'application/pdf'
+        link_flags = {
+            'catalog': 'false',
+            'download': 'true',
+            'reader': 'true',
+            'embed': 'false',
+            'nypl_login': 'true' if 'in_copyright' in record.rights else 'false'
+        }
 
-        #GOOGLE DRIVE API CALL TO GET PDF/EPUB FILES
-
-        try:
-            if 'in_copyright' in record.rights:
-                link_string = '|'.join([
-                    '1',
-                    #LINK TO PDF/EPUB,
-                    record.source,
-                    'application/pdf',
-                    '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
-                ])
-                record.has_part.append(link_string)
-
-            if 'public_domain' in record.rights:
-                link_string = '|'.join([
-                    '1',
-                    #LINK TO PDF/EPUB,
-                    record.source,
-                    'application/pdf',
-                    '{"catalog": false, "download": true, "reader": false, "embed": false}'
-                ])
-                record.has_part.append(link_string)
-
-        except Exception as e:
-            logger.exception(e)
+        return '|'.join([part_number, file_link, record.source, file_type, json.dumps(link_flags)])
 
     def store_pdf_manifest(self, record):
         for link in record.has_part:

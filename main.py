@@ -3,6 +3,7 @@ import newrelic.agent
 
 import argparse
 import inspect
+import traceback
 
 from load_env import load_env_file
 from logger import create_log
@@ -43,6 +44,7 @@ def main(args):
         )
     except:
         logger.exception(f'Failed to initialize process {process} in {environment}')
+        logger.error(traceback.format_exc())
         return
 
     if process in (
