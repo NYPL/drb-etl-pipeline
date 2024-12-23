@@ -9,8 +9,8 @@ from model import Record, Work, Edition, Item, Link
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
-from services.ssm_service import get_parameter
-from services.google_drive_service import get_drive_file, id_from_url, get_file_metadata
+from services.ssm_service import SSMService
+from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
 from elasticsearch_dsl import Search, Q
@@ -22,26 +22,25 @@ BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%
 class PublisherBacklistService(SourceService):
     def __init__(self):
 
+        self.ssm_service = SSMService()
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
-<<<<<<< HEAD
+        self.drive_service = GoogleDriveService()
         self.manifest_prefix = 'manifests/publisher_backlist'
         self.title_prefix = 'titles/publisher_backlist'
-
-        if os.environ['ENVIRONMENT'] == 'production':
-            self.airtable_auth_token = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/airtable/pub-backlist/api-key')
-        else:
-            self.airtable_auth_token = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/airtable/pub-backlist/api-key')
-=======
         self.prefix = 'manifests/publisher_backlist'
         self.db_manager = DBManager()
         self.db_manager.generateEngine()
         self.es_manager = ElasticsearchManager()
         self.es_manager.createElasticConnection()
-        
-        self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
->>>>>>> Drive-refactor-as-class
+
+        if os.environ['ENVIRONMENT'] == 'production':
+            self.airtable_auth_token = self.ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/airtable/pub-backlist/api-key')
+        else:
+            self.airtable_auth_token = self.ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/airtable/pub-backlist/api-key')
+
+        self.airtable_auth_token = os.environ['AIRTABLE_KEY']
 
     def delete_records(
         self,
@@ -133,18 +132,21 @@ class PublisherBacklistService(SourceService):
             for records_value in json_dict['records']:
                 try:
                     record_metadata_dict = records_value['fields']
-                    file_id = f'{id_from_url(record_metadata_dict["DRB_File Location"])}'
-                    file_name = get_file_metadata(file_id).get("name")
-                    file = get_drive_file(file_id)
-                    import sys
-                    print(f'how big file? {sys.getsizeof(file)}')
+                    file_id = f'{self.drive_service.id_from_url(record_metadata_dict["DRB_File Location"])}'
+                    file_name = self.drive_service.get_file_metadata(file_id).get("name")
+                    file = self.drive_service.get_drive_file(file_id)
                     if not file:
-                        logger.warn(f'Could not retrieve file for {record_metadata_dict["id"]}, skipping')
+                        logger.warn(f'Could not retrieve file for {record_metadata_dict["id"]} from Drive, skipping')
                         continue
-                    file_put = self.s3_manager.putObjectInBucket(file.getvalue(), f'{self.title_prefix}/{record_metadata_dict["Publisher (from Projects)"][0]}/{file_name}', self.s3_bucket)
+                    s3_path = f'{self.title_prefix}/{record_metadata_dict["Publisher (from Projects)"][0]}/{file_name}'
+                    s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, self.s3_bucket)
+                    if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
+                        logger.warn(f'Could not upload file for {record_metadata_dict["id"]} to s3, skipping')
+                        continue
+                    s3_url = f'https://{self.s3_bucket}.s3.amazonaws.com/{s3_path}'
                     pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
                     pub_backlist_record.applyMapping()
-                    self.add_has_part_mapping(pub_backlist_record.record)
+                    self.add_has_part_mapping(pub_backlist_record.record, s3_url)
                     self.store_pdf_manifest(pub_backlist_record.record)
                     complete_records.append(pub_backlist_record)
                 except Exception:
@@ -159,16 +161,8 @@ class PublisherBacklistService(SourceService):
     ) -> list[dict]:
         if offset == None:
             limit = 100
-<<<<<<< HEAD
 
         filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=full_import, start_timestamp=start_timestamp)
-=======
-            
-        limit = offset
-        
-        filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=None, start_timestamp=None)
-                
->>>>>>> Drive-refactor-as-class
         array_json_records = self.get_records_array(limit, filter_by_formula)
         
         return array_json_records
@@ -220,15 +214,12 @@ class PublisherBacklistService(SourceService):
 
         return array_json
     
-    def add_has_part_mapping(self, record):
-
-        #GOOGLE DRIVE API CALL TO GET PDF/EPUB FILES
-
+    def add_has_part_mapping(self, record, s3_url):
         try:
             if 'in_copyright' in record.rights:
                 link_string = '|'.join([
                     '1',
-                    #LINK TO PDF/EPUB,
+                    s3_url,
                     record.source,
                     'application/pdf',
                     '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
@@ -238,7 +229,7 @@ class PublisherBacklistService(SourceService):
             if 'public_domain' in record.rights:
                 link_string = '|'.join([
                     '1',
-                    #LINK TO PDF/EPUB,
+                    s3_url,
                     record.source,
                     'application/pdf',
                     '{"catalog": false, "download": true, "reader": false, "embed": false}'
