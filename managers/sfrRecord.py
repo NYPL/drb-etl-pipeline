@@ -6,7 +6,7 @@ import pycountry
 import re
 from uuid import uuid4
 
-from model import Work, Edition, Item, Identifier, Link, Rights
+from model import Work, Edition, Item, Identifier, Link, Record, Rights
 from logger import create_log
 
 logger = create_log(__name__)
@@ -257,7 +257,7 @@ class SFRRecordManager:
 
         editionData['dcdw_uuids'].append(rec.uuid.hex)
 
-    def buildItems(self, editionData, rec, itemContributors):
+    def buildItems(self, editionData, rec: Record, itemContributors):
         number_of_parts = max(
             max((int(part.split('|')[0]) for part in rec.has_part if part.split('|')[0].isdigit()), default=0),
             len(rec.has_part)
@@ -289,6 +289,7 @@ class SFRRecordManager:
             editionData['items'][itemPos] = {
                 **editionData['items'][itemPos],
                 **{
+                    'record_id': rec.id,
                     'source': source,
                     'publisher_project_source': rec.publisher_project_source,
                     'content_type': 'ebook',
