@@ -19,7 +19,7 @@ class PublisherBacklistMapping(JSONMapping):
             'contributors': [('Contributors', '{0}|||contributor')],
             'subjects': ('Subject 1', '{0}'),
             'source': ('Project Name (from Projects)', '{0}'),
-            'source_id': ('DRB Record_ID', '{0}'),
+            'source_id': ('DRB_Record ID', '{0}'),
             'publisher_project_source': ('Publisher (from Projects)', '{0}')
         }
 

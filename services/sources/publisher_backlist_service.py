@@ -6,6 +6,7 @@ import urllib.parse
 from typing import Optional
 import traceback
 from model import Record, Work, Edition
+from urllib.parse import urlparse
 
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
@@ -55,11 +56,14 @@ class PublisherBacklistService(SourceService):
                     self.delete_record_digital_assets(record, record_metadata)
                     self.delete_record_data(record_metadata)
         
-    def delete_record_digital_assets(self, record: Record, record_metadata: dict):
-        # TODO: delete assets using has_part
-        manifest_file_name = self.get_metadata_file_name(record, record_metadata)
+    def delete_record_digital_assets(self, record: Record):
+        for part in record.has_part:
+            _, link, *_ = part
+            url = urlparse(link)
+            bucket_name = url.hostname.split('.')[0]
+            file_path = url.path.lstrip('/')
 
-        self.s3_manager.s3Client.delete_object(Bucket=self.s3_bucket, Key=manifest_file_name)
+            self.s3_manager.s3Client.delete_object(Bucket=bucket_name, Key=file_path)
 
 
     def delete_record_data(self, record: Record):
@@ -87,21 +91,6 @@ class PublisherBacklistService(SourceService):
             for edition_hit in work_hit:
                 edition_es_response = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('nested', path='editions', query=Q('match', **{'editions.edition_id': edition_hit['edition_id']}))
                 edition_es_response.delete()
-            
-    def get_metadata_file_name(self, record, record_metadata_dict):
-        key_format = f"{self.prefix}{record.source}"
-
-        if record_metadata_dict['File ID 1']:
-            file_title = record_metadata_dict['File ID 1']
-        elif record_metadata_dict['File ID 2']:
-            file_title = record_metadata_dict['File ID 2']
-        elif record_metadata_dict['Hathi ID']:
-            file_title = record_metadata_dict['Hathi ID']
-        else:
-            raise Exception
-        
-        key_name = f'{key_format}{file_title}.json'
-        return key_name
 
     def get_records(
         self,
@@ -204,7 +193,7 @@ class PublisherBacklistService(SourceService):
             'nypl_login': 'true' if 'in_copyright' in record.rights else 'false'
         }
 
-        return '|'.join([part_number, file_link, record.source, file_type, json.dumps(link_flags)])
+        record.has_part.append('|'.join([part_number, file_link, record.source, file_type, json.dumps(link_flags)]))
 
     def store_pdf_manifest(self, record):
         for link in record.has_part:
