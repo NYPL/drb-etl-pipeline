@@ -34,27 +34,19 @@ class PublisherBacklistService(SourceService):
         
         self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
 
-    def delete_records(
-        self,
-        limit: Optional[int]=None
-    ):
-        filter_by_formula = self.build_filter_by_formula_parameter(deleted=True)
-        
-        array_json_records = self.get_records_array(limit, filter_by_formula)
+    def delete_records(self):        
+        records = self.get_publisher_backlist_records(deleted=True)
 
         self.db_manager.createSession()
 
-        for json_record in array_json_records:
-            records = json_record.get('records', [])
-            
-            for record in records:
-                record_metadata = record.get('fields')
+        for record in records:
+            record_metadata = record.get('fields')
                 
-                if record_metadata:
-                    record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata['DRB_Record ID']).first()
+            if record_metadata:
+                record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata['DRB_Record ID']).first()
 
-                    self.delete_record_digital_assets(record, record_metadata)
-                    self.delete_record_data(record_metadata)
+                self.delete_record_digital_assets(record, record_metadata)
+                self.delete_record_data(record_metadata)
         
     def delete_record_digital_assets(self, record: Record):
         for part in record.has_part:
@@ -64,7 +56,6 @@ class PublisherBacklistService(SourceService):
             file_path = url.path.lstrip('/')
 
             self.s3_manager.s3Client.delete_object(Bucket=bucket_name, Key=file_path)
-
 
     def delete_record_data(self, record: Record):
         # TODO: delete record and corresponding data with record id
@@ -99,38 +90,25 @@ class PublisherBacklistService(SourceService):
         offset: Optional[int]=None,
         limit: Optional[int]=None
     ) -> list[PublisherBacklistMapping]:
-        array_json_records = self.get_records_json(full_import, start_timestamp, offset, limit)
-        complete_records = []
-        for json_dict in array_json_records:
-            for records_value in json_dict['records']:
-                try:
-                    record_metadata_dict = records_value['fields']
-                    pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
-                    pub_backlist_record.applyMapping()
-                    self.add_has_part_mapping(pub_backlist_record.record)
-                    self.store_pdf_manifest(pub_backlist_record.record)
-                    complete_records.append(pub_backlist_record)
-                except Exception:
-                    logger.exception(f'Failed to process Publisher Backlist record: {records_value}')
-                    logger.error(traceback.format_exc())
-        return complete_records
-    
-    def get_records_json(self,
-        full_import: bool=False, 
-        start_timestamp: datetime=None,
-        offset: Optional[int]=None,
-        limit: Optional[int]=None
-    ) -> list[dict]:
-        if offset == None:
-            limit = 100
-            
-        limit = offset
+        records = self.get_publisher_backlist_records(deleted=False, full_import=full_import, start_timestamp=start_timestamp, offset=offset, limit=limit)
+        mapped_records = []
         
-        filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=full_import, start_timestamp=start_timestamp)
+        for record in records:
+            try:
+                record_metadata = record.get('fields')
                 
-        array_json_records = self.get_records_array(limit, filter_by_formula)
+                publisher_backlist_record = PublisherBacklistMapping(record_metadata)
+                publisher_backlist_record.applyMapping()
+                
+                self.add_has_part_mapping(publisher_backlist_record.record)
+                self.store_pdf_manifest(publisher_backlist_record.record)
+                
+                mapped_records.append(publisher_backlist_record)
+            except Exception:
+                logger.exception(f'Failed to process Publisher Backlist record: {record_metadata}')
+                logger.error(traceback.format_exc())
         
-        return array_json_records
+        return mapped_records
         
     def build_filter_by_formula_parameter(self, deleted=None, full_import: bool=False, start_timestamp: datetime=None) -> str:
         if deleted:
@@ -158,26 +136,32 @@ class PublisherBacklistService(SourceService):
 
             return filter_by_formula
         
-    def get_records_array(self,
-        limit: Optional[int]=None, 
-        filter_by_formula: str=None,
+    def get_publisher_backlist_records(self,
+        deleted: bool=False,
+        full_import: bool=False, 
+        start_timestamp: datetime=None,
+        offset: Optional[int]=None,
+        limit: Optional[int]=None
     ) -> list[dict]:
-        url = f'{BASE_URL}&pageSize={limit}'
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=deleted, full_import=full_import, start_timestamp=start_timestamp)
+        url = f'{BASE_URL}&pageSize={limit}{filter_by_formula}'
         headers = {"Authorization": f"Bearer {self.airtable_auth_token}"}
+        publisher_backlist_records = []
 
-        if filter_by_formula:
-            url += f'{filter_by_formula}'
+        records_response = requests.get(url, headers=headers)
+        records_response_json = records_response.json()
+        
+        publisher_backlist_records.extend(records_response_json.get('records', []))
+        
+        while 'offset' in records_response_json:
+            next_page_url = url + f"&offset={records_response_json['offset']}"
+            
+            records_response = requests.get(next_page_url, headers=headers)
+            records_response_json = records_response.json()
+            
+            publisher_backlist_records.extend(records_response_json.get('records', []))
 
-        pub_backlist_records_response = requests.get(url, headers=headers)
-        pub_backlist_records_response_json = pub_backlist_records_response.json()
-        array_json = [pub_backlist_records_response_json]
-        while 'offset' in pub_backlist_records_response_json:
-            next_page_url = url + f"&offset={pub_backlist_records_response_json['offset']}"
-            pub_backlist_records_response = requests.get(next_page_url, headers=headers)
-            pub_backlist_records_response_json = pub_backlist_records_response.json()
-            array_json.append(pub_backlist_records_response_json)
-
-        return array_json
+        return publisher_backlist_records
     
     def add_has_part_mapping(self, record: Record):
         # TODO: GOOGLE DRIVE API CALL TO GET PDF/EPUB FILES
