@@ -18,17 +18,17 @@ from elasticsearch_dsl import Search, Q
 logger = create_log(__name__)
 
 BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%20%26%20Collections%20%F0%9F%93%96?view=All%20Lists"
-SOURCE_RECORD_ID_FIELD = 'DRB Record_ID'
 
 class PublisherBacklistService(SourceService):
     def __init__(self):
 
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
-        self.s3_bucket = os.environ['FILE_BUCKET']
-        self.prefix = 'manifests/publisher_backlist'
+        self.file_bucket = os.environ['FILE_BUCKET']
+
         self.db_manager = DBManager()
         self.db_manager.generateEngine()
+
         self.es_manager = ElasticsearchManager()
         self.es_manager.createElasticConnection()
         
@@ -51,7 +51,7 @@ class PublisherBacklistService(SourceService):
                 record_metadata = record.get('fields')
                 
                 if record_metadata:
-                    record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata[SOURCE_RECORD_ID_FIELD]).first()
+                    record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata['DRB_Record ID']).first()
 
                     self.delete_record_digital_assets(record, record_metadata)
                     self.delete_record_data(record_metadata)
@@ -182,10 +182,10 @@ class PublisherBacklistService(SourceService):
     def add_has_part_mapping(self, record: Record):
         # TODO: GOOGLE DRIVE API CALL TO GET PDF/EPUB FILES
         
-        part_number = '1'
-        file_link = 'https://link-to-pdf' # TODO: get link after implementing upload to S3
-        file_type = 'application/pdf'
-        link_flags = {
+        item_no = '1'
+        url = 'https://link-to-pdf' # TODO: get link after implementing upload to S3
+        media_tpye = 'application/pdf'
+        flags = {
             'catalog': 'false',
             'download': 'true',
             'reader': 'true',
@@ -193,46 +193,23 @@ class PublisherBacklistService(SourceService):
             'nypl_login': 'true' if 'in_copyright' in record.rights else 'false'
         }
 
-        record.has_part.append('|'.join([part_number, file_link, record.source, file_type, json.dumps(link_flags)]))
+        record.has_part.append('|'.join([item_no, url, record.source, media_tpye, json.dumps(flags)]))
 
-    def store_pdf_manifest(self, record):
+    def store_pdf_manifest(self, record: Record):
         for link in record.has_part:
             item_no, url, source, media_type, flags = link.split('|')
 
             if media_type == 'application/pdf':
-                record_id = record.identifiers[0].split('|')[0]
-                manifest_path = f'{self.prefix}/{source}/{record_id}.json'
-                manifest_url = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3_bucket, manifest_path
-                )
+                manifest_path = f'manifests/publisher_backlist/{source}/{record.id}.json'
+                manifest_url = f'https://{self.file_bucket}.s3.amazonaws.com/{manifest_path}'
 
                 manifest_json = self.generate_manifest(record, url, manifest_url)
 
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3_bucket)
+                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.file_bucket)
 
-                if 'in_copyright' in record.rights:
-                    link_string = '|'.join([
-                        item_no,
-                        manifest_url,
-                        source,
-                        'application/webpub+json',
-                        '{"catalog": false, "download": false, "reader": true, "embed": false, "fulfill_limited_access": false}'
-                    ])
-
-                    record.has_part.insert(0, link_string)
-                    break
-
-                if 'public_domain' in record.rights:
-                    link_string = '|'.join([
-                        item_no,
-                        manifest_url,
-                        source,
-                        'application/webpub+json',
-                        '{"catalog": false, "download": false, "reader": true, "embed": false}'
-                    ])
-
-                    record.has_part.insert(0, link_string)
-                    break
+                record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', flags]))
+                
+                break
 
     @staticmethod
     def generate_manifest(record, source_url, manifest_url):
