@@ -5,7 +5,7 @@ import requests
 import urllib.parse
 from typing import Optional
 import traceback
-from model import Record, Work, Edition
+from model import Record, Work, Edition, Item
 from urllib.parse import urlparse
 
 from logger import create_log
@@ -42,12 +42,22 @@ class PublisherBacklistService(SourceService):
 
         for record in records:
             record_metadata = record.get('fields')
-                
-            if record_metadata:
-                record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata['DRB_Record ID']).first()
 
+            if not record_metadata:
+                continue
+                
+            record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata['DRB_Record ID']).first()
+
+            if not record:
+                continue
+
+            try:
                 self.delete_record_digital_assets(record, record_metadata)
                 self.delete_record_data(record_metadata)
+            except:
+                logger.exception(f'Failed to delete record: {record.id}')
+
+        self.db_manager.close_connection()
         
     def delete_record_digital_assets(self, record: Record):
         for part in record.has_part:
@@ -59,30 +69,46 @@ class PublisherBacklistService(SourceService):
             self.s3_manager.s3Client.delete_object(Bucket=bucket_name, Key=file_path)
 
     def delete_record_data(self, record: Record):
-        # TODO: delete record and corresponding data with record id
-        record_uuid_str = str(record.uuid)
-        edition =  self.db_manager.session.query(Edition).filter(Edition.dcdw_uuids.contains([record_uuid_str])).first()
-        work = self.db_manager.session.query(Work).filter(Work.id == edition.work_id).first()
-        if len(work.editions) == 1:
-            work_uuid_str = str(work.uuid)
-            es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=work_uuid_str)
-            self.db_manager.session.query(Work).filter(Work.id == edition.work_id).delete()
-            es_work_resp.delete()
-            self.db_manager.session.commit()
-        else:
-            self.delete_pub_backlist_edition_only(record.uuid_str, work)
-            
-    def delete_pub_backlist_edition_only(self, record_uuid_str, work):
-        edition = self.db_manager.session.query(Edition) \
-            .filter(Edition.work_id == work.id) \
-            .filter(Edition.dcdw_uuids.contains([record_uuid_str])) \
-            .first()
-        self.db_manager.session.delete(edition)
-        es_work_resp = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('match', uuid=str(work.uuid))
-        for work_hit in es_work_resp:
-            for edition_hit in work_hit:
-                edition_es_response = Search(index=os.environ['ELASTICSEARCH_INDEX']).query('nested', path='editions', query=Q('match', **{'editions.edition_id': edition_hit['edition_id']}))
-                edition_es_response.delete()
+        items = self.db_manager.query(Item).filter(Item.record_id == record.id).all()
+        edition_ids = set([item.edition for item in items])
+
+        for item in items:
+            item.delete(synchronize_session=False)
+
+        deleted_edition_ids = {}
+        deleted_work_ids = set()
+        work_ids = set()
+
+        for edition_id in edition_ids:
+            edition = self.db_manager.query(Edition).join(Item).filter(Edition.id == edition_id).first()
+
+            if len(edition.items) == 0:
+                edition.delete(synchronize_session=False)
+                
+                work_ids.add(edition.work_id)
+                deleted_edition_ids[edition_id] = edition.work_id
+
+        for work_id in work_ids:
+            work = self.db_manager.query(Work).join(Edition).filter(Work.id == work_id).first()
+
+            if len(work.editions) == 0:
+                work.delete(synchronize_session=False)
+
+                self.es_manager.client.delete(index=os.environ['ELASTICSEARCH_INDEX'], id=work.uuid)
+
+                deleted_work_ids.add(work_id)
+        
+        for edition_id, work_id in deleted_edition_ids.items():
+            if work_id not in deleted_work_ids:
+                work_document = self.es_manager.client.get(index=os.environ['ELASTICSEARCH_INDEX'], id=work_id)
+                editions = work_document['_source'].get('editions', [])
+                
+                updated_editions = [edition for edition in editions if edition.get('id') != edition_id]
+                work_document['_source']['editions'] = updated_editions
+                
+                self.es_manager.client.index(index=os.environ['ELASTICSEARCH_INDEX'], id=work_id, body=work_document['_source'])
+
+        self.db_manager.session.commit()
 
     def get_records(
         self,
