@@ -22,7 +22,6 @@ BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%
 
 class PublisherBacklistService(SourceService):
     def __init__(self):
-
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
         self.file_bucket = os.environ['FILE_BUCKET']

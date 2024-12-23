@@ -10,7 +10,7 @@ class PublisherBacklistMapping(JSONMapping):
             'title': ('Title', '{0}'),
             'authors': ('Author(s)', '{0}'),
             'dates': [('Pub Date', '{0}|publication_date')],
-            'publisher': [('Publisher (from Projects)', '{0}||')],
+            'publisher': ('Publisher (from Projects)', '{0}||'),
             'identifiers': [
                 ('ISBN', '{0}|isbn'),
                 ('OCLC', '{0}|oclc')
