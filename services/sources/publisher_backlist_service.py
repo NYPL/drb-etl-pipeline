@@ -215,18 +215,18 @@ class PublisherBacklistService(SourceService):
         url = 'https://drb-files-local.s3.amazonaws.com/test.pdf' # TODO: get link after implementing upload to S3
         media_tpye = 'application/pdf'
         flags = {
-            'catalog': 'false',
-            'download': 'true',
-            'reader': 'true',
-            'embed': 'false',
-            'nypl_login': 'true' if 'in_copyright' in record.rights else 'false'
+            'catalog': False,
+            'download': True,
+            'reader': True,
+            'embed': False,
+            **({'nypl_login': True} if 'in_copyright' in record.rights else {})
         }
 
         record.has_part.append('|'.join([item_no, url, record.source, media_tpye, json.dumps(flags)]))
 
     def store_pdf_manifest(self, record: Record):
         for link in record.has_part:
-            item_no, url, source, media_type, flags = link.split('|')
+            item_no, url, source, media_type, _ = link.split('|')
 
             if media_type == 'application/pdf':
                 manifest_path = f'manifests/publisher_backlist/{source}/{record.source_id}.json'
@@ -236,7 +236,15 @@ class PublisherBacklistService(SourceService):
 
                 self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.file_bucket)
 
-                record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', flags]))
+                manifest_flags = {
+                    'catalog': False,
+                    'download': False,
+                    'reader': True,
+                    'embed': False,
+                    **({'fulfill_limited_access': False} if 'in_copyright' in record.rights else {})
+                }
+
+                record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', manifest_flags]))
                 
                 break
 
