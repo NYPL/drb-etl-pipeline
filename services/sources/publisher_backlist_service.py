@@ -150,12 +150,12 @@ class PublisherBacklistService(SourceService):
             try:
                 record_metadata = record.get('fields')
 
-                file_id = f'{self.drive_service.id_from_url(record_metadata["DRB_File Location"])}'
+                file_id = f'{self.drive_service.id_from_url(record_metadata.get("DRB_File Location"))}'
                 file_name = self.drive_service.get_file_metadata(file_id).get('name')
                 file = self.drive_service.get_drive_file(file_id)
                 
                 if not file:
-                    logger.error(f'Failed to retrieve file for {record_metadata.get('id')} from Google Drive')
+                    logger.error(f'Failed to retrieve file for {record_metadata.get("DRB_Record ID")} from Google Drive')
                     continue
 
                 bucket = self.file_bucket # TODO: if record is limited access, upload to limited access bucket
@@ -163,7 +163,7 @@ class PublisherBacklistService(SourceService):
                 s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
                 
                 if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
-                    logger.error(f'Failed to retrieve upload file for {record_metadata.get('id')} to S3')
+                    logger.error(f'Failed to retrieve upload file for {record_metadata.get("DRB_Record ID")} to S3')
                     continue
 
                 s3_url = f'https://{bucket}.s3.amazonaws.com/{s3_path}'
@@ -261,7 +261,7 @@ class PublisherBacklistService(SourceService):
                     **({'fulfill_limited_access': False} if 'in_copyright' in record.rights else {})
                 }
 
-                record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', manifest_flags]))
+                record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', json.dumps(manifest_flags)]))
                 
                 break
 
