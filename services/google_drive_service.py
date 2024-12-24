@@ -17,10 +17,9 @@ logger = create_log(__name__)
 class GoogleDriveService:
     def __init__(self):
         ssm_service = SSMService()
-        if os.environ['ENVIRONMENT'] == 'production':
-            SERVICE_ACCOUNT_FILE = ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/google-drive-service-key')
-        else:
-            SERVICE_ACCOUNT_FILE = ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/google-drive-service-key')
+            
+        SERVICE_ACCOUNT_FILE = ssm_service.get_parameter('google-drive-service-key')
+        
         service_account_info = json.loads(SERVICE_ACCOUNT_FILE)
         scopes = [
             'https://www.googleapis.com/auth/drive',

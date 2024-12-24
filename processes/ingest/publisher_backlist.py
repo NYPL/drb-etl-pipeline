@@ -11,7 +11,7 @@ class PublisherBacklistProcess(CoreProcess):
     def __init__(self, *args):
         super(PublisherBacklistProcess, self).__init__(*args[:4])
 
-        self.limit = (len(args) >= 5 and args[4] and args(4) <= 100) or None
+        self.limit = (len(args) >= 5 and args[4] and int(args[4]) <= 100) or None
         self.offset = (len(args) >= 6 and args[5]) or None
 
         self.s3_bucket = os.environ['FILE_BUCKET']
@@ -24,7 +24,7 @@ class PublisherBacklistProcess(CoreProcess):
             self.generateEngine()
             self.createSession()
 
-            self.publisher_backlist_service.delete_records(limit=self.limit)
+            self.publisher_backlist_service.delete_records()
 
             if self.process == 'daily':
                 records = self.publisher_backlist_service.get_records(offset=self.offset, limit=self.limit)
