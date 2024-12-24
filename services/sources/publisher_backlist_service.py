@@ -6,7 +6,6 @@ import urllib.parse
 from typing import Optional
 from model import Record, Work, Edition, Item
 from sqlalchemy.orm import joinedload
-from urllib.parse import urlparse
 
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
@@ -67,7 +66,7 @@ class PublisherBacklistService(SourceService):
     def delete_record_digital_assets(self, record: Record):
         for part in record.has_part:
             _, link, *_ = part.split('|')
-            url = urlparse(link)
+            url = urllib.parse.urlparse(link)
             bucket_name = url.hostname.split('.')[0]
             file_path = url.path.lstrip('/')
 
