@@ -151,11 +151,29 @@ class PublisherBacklistService(SourceService):
         for record in records:
             try:
                 record_metadata = record.get('fields')
+
+                file_id = f'{self.drive_service.id_from_url(record_metadata["DRB_File Location"])}'
+                file_name = self.drive_service.get_file_metadata(file_id).get('name')
+                file = self.drive_service.get_drive_file(file_id)
+                
+                if not file:
+                    logger.error(f'Failed to retrieve file for {record_metadata.get('id')} from Google Drive')
+                    continue
+
+                bucket = self.file_bucket # TODO: if record is limited access, upload to limited access bucket
+                s3_path = f'{self.title_prefix}/{record_metadata["Publisher (from Projects)"][0]}/{file_name}'
+                s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
+                
+                if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
+                    logger.error(f'Failed to retrieve upload file for {record_metadata.get('id')} to S3')
+                    continue
+
+                s3_url = f'https://{bucket}.s3.amazonaws.com/{s3_path}'
                 
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
                 
-                self.add_has_part_mapping(publisher_backlist_record.record)
+                self.add_has_part_mapping(s3_url, publisher_backlist_record.record)
                 self.store_pdf_manifest(publisher_backlist_record.record)
                 
                 mapped_records.append(publisher_backlist_record)
@@ -212,11 +230,8 @@ class PublisherBacklistService(SourceService):
 
         return publisher_backlist_records
     
-    def add_has_part_mapping(self, record: Record):
-        # TODO: GOOGLE DRIVE API CALL TO GET PDF/EPUB FILES
-        
+    def add_has_part_mapping(self, s3_url: str, record: Record):        
         item_no = '1'
-        url = 'https://drb-files-local.s3.amazonaws.com/test.pdf' # TODO: get link after implementing upload to S3
         media_tpye = 'application/pdf'
         flags = {
             'catalog': False,
@@ -226,7 +241,7 @@ class PublisherBacklistService(SourceService):
             **({'nypl_login': True} if 'in_copyright' in record.rights else {})
         }
 
-        record.has_part.append('|'.join([item_no, url, record.source, media_tpye, json.dumps(flags)]))
+        record.has_part.append('|'.join([item_no, s3_url, record.source, media_tpye, json.dumps(flags)]))
 
     def store_pdf_manifest(self, record: Record):
         for link in record.has_part:
