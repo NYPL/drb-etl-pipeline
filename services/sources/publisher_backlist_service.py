@@ -25,11 +25,10 @@ class PublisherBacklistService(SourceService):
         self.ssm_service = SSMService()
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
-        self.s3_bucket = os.environ['FILE_BUCKET']
+        self.file_bucket = os.environ['FILE_BUCKET']
         self.drive_service = GoogleDriveService()
         self.manifest_prefix = 'manifests/publisher_backlist'
         self.title_prefix = 'titles/publisher_backlist'
-        self.prefix = 'manifests/publisher_backlist'
         self.db_manager = DBManager()
         self.db_manager.generateEngine()
         self.es_manager = ElasticsearchManager()
@@ -57,14 +56,14 @@ class PublisherBacklistService(SourceService):
                         record_metadata_dict = records_value['fields']
                         self.delete_manifest(self.db_manager, record_metadata_dict)
                         self.delete_work(record_metadata_dict)
-        
+
     def delete_manifest(self, record_metadata_dict):
         self.db_manager.createSession()
         try:
             record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
             if record:
                 key_name = self.get_metadata_file_name(record, record_metadata_dict)
-                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
+                self.s3_manager.s3Client.delete_object(Bucket= self.file_bucket, Key= key_name)
         except Exception:
             logger.exception(f'Failed to delete manifest for record: {record.source_id}')
         finally:
@@ -138,12 +137,13 @@ class PublisherBacklistService(SourceService):
                     if not file:
                         logger.warn(f'Could not retrieve file for {record_metadata_dict["id"]} from Drive, skipping')
                         continue
+                    bucket = self.file_bucket # TODO: if record is limited access, upload to limited access bucket
                     s3_path = f'{self.title_prefix}/{record_metadata_dict["Publisher (from Projects)"][0]}/{file_name}'
-                    s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, self.s3_bucket)
+                    s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
                     if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
                         logger.warn(f'Could not upload file for {record_metadata_dict["id"]} to s3, skipping')
                         continue
-                    s3_url = f'https://{self.s3_bucket}.s3.amazonaws.com/{s3_path}'
+                    s3_url = f'https://{bucket}.s3.amazonaws.com/{s3_path}'
                     pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
                     pub_backlist_record.applyMapping()
                     self.add_has_part_mapping(pub_backlist_record.record, s3_url)
@@ -247,12 +247,12 @@ class PublisherBacklistService(SourceService):
                 record_id = record.identifiers[0].split('|')[0]
                 manifest_path = f'{self.manifest_prefix}/{source}/{record_id}.json'
                 manifest_url = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3_bucket, manifest_path
+                    self.file_bucket, manifest_path
                 )
 
                 manifest_json = self.generate_manifest(record, url, manifest_url)
 
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3_bucket)
+                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.file_bucket)
 
                 if 'in_copyright' in record.rights:
                     link_string = '|'.join([
