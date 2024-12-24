@@ -80,8 +80,8 @@ class S3Manager:
                 ContentType=objectType,
                 Metadata={'md5Checksum': objMD5}
             )
-        except ClientError:
-            raise S3Error('Unable to store file in s3')
+        except ClientError as e:
+            raise S3Error(f'Unable to store file {objKey} in s3: {e}')
 
     def putExplodedEpubComponentsInBucket(self, obj, objKey, bucket):
         keyRoot = '.'.join(objKey.split('.')[:-1])
