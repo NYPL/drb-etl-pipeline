@@ -217,7 +217,7 @@ class PublisherBacklistService(SourceService):
         flags = {
             'catalog': False,
             'download': True,
-            'reader': True,
+            'reader': False,
             'embed': False,
             **({'nypl_login': True} if 'in_copyright' in record.rights else {})
         }
