@@ -9,6 +9,8 @@ from model import Record, Work, Edition, Item, Link
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
+from services.ssm_service import SSMService
+from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
 from elasticsearch_dsl import Search, Q
@@ -20,23 +22,29 @@ BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%
 class PublisherBacklistService(SourceService):
     def __init__(self):
 
+        self.ssm_service = SSMService()
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
-        self.s3_bucket = os.environ['FILE_BUCKET']
-        self.prefix = 'manifests/publisher_backlist'
+        self.file_bucket = os.environ['FILE_BUCKET']
+        self.drive_service = GoogleDriveService()
+        self.manifest_prefix = 'manifests/publisher_backlist'
+        self.title_prefix = 'titles/publisher_backlist'
         self.db_manager = DBManager()
         self.db_manager.generateEngine()
         self.es_manager = ElasticsearchManager()
         self.es_manager.createElasticConnection()
-        
-        self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
+
+        if os.environ['ENVIRONMENT'] == 'production':
+            self.airtable_auth_token = self.ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/airtable/pub-backlist/api-key')
+        else:
+            self.airtable_auth_token = self.ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/airtable/pub-backlist/api-key')
 
     def delete_records(
         self,
         limit: Optional[int]=None
     ):
         filter_by_formula = self.build_filter_by_formula_parameter(deleted=True)
-        
+
         array_json_records = self.get_records_array(limit, filter_by_formula)
 
         for json_dict in array_json_records:
@@ -46,14 +54,14 @@ class PublisherBacklistService(SourceService):
                         record_metadata_dict = records_value['fields']
                         self.delete_manifest(self.db_manager, record_metadata_dict)
                         self.delete_work(record_metadata_dict)
-        
+
     def delete_manifest(self, record_metadata_dict):
         self.db_manager.createSession()
         try:
             record = self.db_manager.session.query(Record).filter(Record.source_id == record_metadata_dict['DRB Record_ID']).first()
             if record:
                 key_name = self.get_metadata_file_name(record, record_metadata_dict)
-                self.s3_manager.s3Client.delete_object(Bucket= self.s3_bucket, Key= key_name)
+                self.s3_manager.s3Client.delete_object(Bucket= self.file_bucket, Key= key_name)
         except Exception:
             logger.exception(f'Failed to delete manifest for record: {record.source_id}')
         finally:
@@ -94,7 +102,7 @@ class PublisherBacklistService(SourceService):
                 edition_es_response.delete()
             
     def get_metadata_file_name(self, record, record_metadata_dict):
-        key_format = f"{self.prefix}{record.source}"
+        key_format = f"{self.manifest_prefix}{record.source}"
 
         if record_metadata_dict['File ID 1']:
             file_title = record_metadata_dict['File ID 1']
@@ -121,9 +129,22 @@ class PublisherBacklistService(SourceService):
             for records_value in json_dict['records']:
                 try:
                     record_metadata_dict = records_value['fields']
+                    file_id = f'{self.drive_service.id_from_url(record_metadata_dict["DRB_File Location"])}'
+                    file_name = self.drive_service.get_file_metadata(file_id).get("name")
+                    file = self.drive_service.get_drive_file(file_id)
+                    if not file:
+                        logger.warn(f'Could not retrieve file for {record_metadata_dict["id"]} from Drive, skipping')
+                        continue
+                    bucket = self.file_bucket # TODO: if record is limited access, upload to limited access bucket
+                    s3_path = f'{self.title_prefix}/{record_metadata_dict["Publisher (from Projects)"][0]}/{file_name}'
+                    s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
+                    if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
+                        logger.warn(f'Could not upload file for {record_metadata_dict["id"]} to s3, skipping')
+                        continue
+                    s3_url = f'https://{bucket}.s3.amazonaws.com/{s3_path}'
                     pub_backlist_record = PublisherBacklistMapping(record_metadata_dict)
                     pub_backlist_record.applyMapping()
-                    self.add_has_part_mapping(pub_backlist_record.record)
+                    self.add_has_part_mapping(pub_backlist_record.record, s3_url)
                     self.store_pdf_manifest(pub_backlist_record.record)
                     complete_records.append(pub_backlist_record)
                 except Exception:
@@ -138,11 +159,8 @@ class PublisherBacklistService(SourceService):
     ) -> list[dict]:
         if offset == None:
             limit = 100
-            
-        limit = offset
-        
-        filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=None, start_timestamp=None)
-                
+
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=False, full_import=full_import, start_timestamp=start_timestamp)
         array_json_records = self.get_records_array(limit, filter_by_formula)
         
         return array_json_records
@@ -194,15 +212,12 @@ class PublisherBacklistService(SourceService):
 
         return array_json
     
-    def add_has_part_mapping(self, record):
-
-        #GOOGLE DRIVE API CALL TO GET PDF/EPUB FILES
-
+    def add_has_part_mapping(self, record, s3_url):
         try:
             if 'in_copyright' in record.rights:
                 link_string = '|'.join([
                     '1',
-                    #LINK TO PDF/EPUB,
+                    s3_url,
                     record.source,
                     'application/pdf',
                     '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
@@ -212,7 +227,7 @@ class PublisherBacklistService(SourceService):
             if 'public_domain' in record.rights:
                 link_string = '|'.join([
                     '1',
-                    #LINK TO PDF/EPUB,
+                    s3_url,
                     record.source,
                     'application/pdf',
                     '{"catalog": false, "download": true, "reader": false, "embed": false}'
@@ -228,14 +243,14 @@ class PublisherBacklistService(SourceService):
 
             if media_type == 'application/pdf':
                 record_id = record.identifiers[0].split('|')[0]
-                manifest_path = f'{self.prefix}/{source}/{record_id}.json'
+                manifest_path = f'{self.manifest_prefix}/{source}/{record_id}.json'
                 manifest_url = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3_bucket, manifest_path
+                    self.file_bucket, manifest_path
                 )
 
                 manifest_json = self.generate_manifest(record, url, manifest_url)
 
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3_bucket)
+                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.file_bucket)
 
                 if 'in_copyright' in record.rights:
                     link_string = '|'.join([
