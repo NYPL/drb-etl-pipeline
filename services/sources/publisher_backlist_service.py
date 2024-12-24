@@ -6,6 +6,7 @@ import urllib.parse
 from typing import Optional
 import traceback
 from model import Record, Work, Edition, Item
+from sqlalchemy.orm import joinedload
 from urllib.parse import urlparse
 
 from logger import create_log
@@ -84,9 +85,16 @@ class PublisherBacklistService(SourceService):
         work_ids_to_uuids = {}
 
         for edition_id in edition_ids:
-            edition = self.db_manager.session.query(Edition).join(Item).filter(Edition.id == edition_id).first()
+            edition = (
+                self.db_manager.session.query(Edition)
+                    .options(
+                        joinedload(Edition.items)
+                    )
+                    .filter(Edition.id == edition_id)
+                    .first()
+            )
 
-            if len(edition.items) == 0:
+            if edition and not edition.items:
                 self.db_manager.session.delete(edition)
                 
                 work_ids.add(edition.work_id)
@@ -95,10 +103,17 @@ class PublisherBacklistService(SourceService):
         self.db_manager.session.commit()
 
         for work_id in work_ids:
-            work = self.db_manager.session.query(Work).join(Edition).filter(Work.id == work_id).first()
+            work = (
+                self.db_manager.session.query(Work)
+                    .options(
+                        joinedload(Work.editions)
+                    )
+                    .filter(Work.id == work_id)
+                    .first()
+            )
             work_ids_to_uuids[work.id] = work.uuid
 
-            if len(work.editions) == 0:
+            if work and not work.editions:
                 self.db_manager.session.delete(work)
 
                 self.es_manager.client.delete(index=os.environ['ELASTICSEARCH_INDEX'], id=work.uuid)
