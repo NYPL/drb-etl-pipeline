@@ -9,6 +9,7 @@ from model import Record, Work, Edition, Item, Link
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
+from services.ssm_service import get_parameter
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
 from elasticsearch_dsl import Search, Q
@@ -29,7 +30,10 @@ class PublisherBacklistService(SourceService):
         self.es_manager = ElasticsearchManager()
         self.es_manager.createElasticConnection()
         
-        self.airtable_auth_token = os.environ.get('AIRTABLE_KEY', None)
+        if os.environ['ENVIRONMENT'] == 'production':
+            self.airtable_auth_token = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/production/airtable/pub-backlist/api-key')
+        else:
+            self.airtable_auth_token = get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/airtable/pub-backlist/api-key')
 
     def delete_records(
         self,

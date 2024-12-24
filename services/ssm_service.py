@@ -19,7 +19,7 @@ def get_parameter(parameter_name: str) -> Optional[dict]:
             Name=parameter_name,
             WithDecryption=True
         )
-        return response
+        return response['Parameter']['Value']
 
     except Exception as err:
         logger.exception(f"Parameter store retrieval for {parameter_name} failed")
