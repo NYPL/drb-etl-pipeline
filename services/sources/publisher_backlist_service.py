@@ -14,7 +14,6 @@ from services.ssm_service import SSMService
 from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
-from elasticsearch_dsl import Search, Q
 
 logger = create_log(__name__)
 
