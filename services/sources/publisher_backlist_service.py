@@ -4,7 +4,6 @@ import os
 import requests
 import urllib.parse
 from typing import Optional
-import traceback
 from model import Record, Work, Edition, Item
 from sqlalchemy.orm import joinedload
 from urllib.parse import urlparse
@@ -162,7 +161,6 @@ class PublisherBacklistService(SourceService):
                 mapped_records.append(publisher_backlist_record)
             except Exception:
                 logger.exception(f'Failed to process Publisher Backlist record: {record_metadata}')
-                logger.error(traceback.format_exc())
         
         return mapped_records
         
