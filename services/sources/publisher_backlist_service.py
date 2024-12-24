@@ -39,14 +39,12 @@ class PublisherBacklistService(SourceService):
         else:
             self.airtable_auth_token = self.ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/airtable/pub-backlist/api-key')
 
-        self.airtable_auth_token = os.environ['AIRTABLE_KEY']
-
     def delete_records(
         self,
         limit: Optional[int]=None
     ):
         filter_by_formula = self.build_filter_by_formula_parameter(deleted=True)
-        
+
         array_json_records = self.get_records_array(limit, filter_by_formula)
 
         for json_dict in array_json_records:
