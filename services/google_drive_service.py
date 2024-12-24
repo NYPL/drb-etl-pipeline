@@ -22,9 +22,11 @@ class GoogleDriveService:
         else:
             SERVICE_ACCOUNT_FILE = ssm_service.get_parameter('arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/google-drive-service-key')
         service_account_info = json.loads(SERVICE_ACCOUNT_FILE)
-        scopes = ['https://www.googleapis.com/auth/drive',
-        'https://www.googleapis.com/auth/drive.file',
-        'https://www.googleapis.com/auth/drive.metadata']
+        scopes = [
+            'https://www.googleapis.com/auth/drive',
+            'https://www.googleapis.com/auth/drive.file',
+            'https://www.googleapis.com/auth/drive.metadata'
+            ]
         credentials = Credentials.from_service_account_info(service_account_info, scopes=scopes)
         self.drive_service = build('drive', 'v3', credentials=credentials)
 
@@ -51,8 +53,8 @@ class GoogleDriveService:
     def get_file_metadata(self, file_id: str) -> Optional[str]:
         # supportsAllDrives=True required as of 12/24 despite deprecation
         request = self.drive_service.files().get(fileId=file_id, supportsAllDrives=True)
-        meta = request.execute()
-        return meta
+        metadata = request.execute()
+        return metadata
 
     @staticmethod
     def id_from_url(url: str) -> Optional[str]:
