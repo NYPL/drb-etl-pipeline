@@ -15,6 +15,7 @@ def deprecated(message):
     return decorator
 
 def warn_deprecated(response, message):
-    response[0].headers['Warning'] = message
-    logger.warning(message)
+    if isinstance(response, tuple):
+        response[0].headers['Warning'] = message
+        logger.warning(message)
     return response
