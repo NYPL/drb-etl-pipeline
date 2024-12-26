@@ -3,6 +3,7 @@ from ..db import DBClient
 from ..utils import APIUtils
 from ..validation_utils import is_valid_numeric_id
 from logger import create_log
+from ..decorators import deprecated
 
 logger = create_log(__name__)
 
@@ -11,6 +12,7 @@ editions = Blueprint('editions', __name__, url_prefix='/editions')
 
 
 @edition.route('/<edition_id>', methods=['GET'])
+@deprecated('This endpoint is deprecated please use /editions/<edition_id> instead.')
 @editions.route('/<edition_id>', methods=['GET'])
 def get_edition(edition_id):
     logger.info(f'Getting edition with id {edition_id}')

@@ -15,6 +15,7 @@ from ..opds2 import Feed, Publication
 from logger import create_log
 from model import Work, Edition
 from model.postgres.collection import COLLECTION_EDITIONS
+from ..decorators import deprecated
 
 logger = create_log(__name__)
 
@@ -58,6 +59,7 @@ def validateToken(func):
 
 
 @collection.route('', methods=['POST'])
+@deprecated('This endpoint is deprecated please use /collections instead.')
 @collections.route('', methods=['POST'])
 @validateToken
 def collectionCreate(user=None):
@@ -141,6 +143,7 @@ def _validateAutoCollectionDef(autoDef: dict) -> str:
 
 
 @collection.route('/replace/<uuid>', methods=['POST'])
+@deprecated('This endpoint is deprecated please use /collections/replace/<uuid> instead.')
 @collections.route('/replace/<uuid>', methods=['POST'])
 @validateToken
 def collectionReplace(uuid, user=None):
@@ -193,6 +196,7 @@ def collectionReplace(uuid, user=None):
     return APIUtils.formatOPDS2Object(201, opdsFeed)
 
 @collection.route('/update/<uuid>', methods=['POST'])
+@deprecated('This endpoint is deprecated please use /collections/update/<uuid> instead.')
 @collections.route('/update/<uuid>', methods=['POST'])
 @validateToken
 def collectionUpdate(uuid, user=None):
@@ -263,6 +267,7 @@ def collectionUpdate(uuid, user=None):
 
 
 @collection.route('/<uuid>', methods=['GET'])
+@deprecated('This endpoint is deprecated please use /collections/<uuid> instead.')
 @collections.route('/<uuid>', methods=['GET'])
 def get_collection(uuid):
     logger.info(f'Getting collection with id {uuid}')
@@ -296,6 +301,7 @@ def get_collection(uuid):
         return APIUtils.formatResponseObject(500, response_type, { 'message': f'Unable to get collection with id {uuid}' })
 
 @collection.route('/<uuid>', methods=['DELETE'])
+@deprecated('This endpoint is deprecated please use /collections/<uuid> instead.')
 @collections.route('/<uuid>', methods=['DELETE'])
 @validateToken
 def collectionDelete(uuid, user=None):
@@ -317,6 +323,7 @@ def collectionDelete(uuid, user=None):
     return (jsonify({'message': 'Deleted {}'.format(uuid)}), 200)
 
 @collection.route('/delete/<uuid>', methods=['DELETE'])
+@deprecated('This endpoint is deprecated please use /collections/delete/<uuid> instead.')
 @collections.route('/delete/<uuid>', methods=['DELETE'])
 @validateToken
 def collectionDeleteWorkEdition(uuid, user=None):
@@ -362,6 +369,7 @@ def collectionDeleteWorkEdition(uuid, user=None):
 
 
 @collection.route('/list', methods=['GET'])
+@deprecated('This endpoint is deprecated please use /collections instead.')
 @collections.route('', methods=['GET'])
 def get_collections():
     logger.info('Getting all collections')
