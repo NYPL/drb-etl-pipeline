@@ -301,5 +301,3 @@ class PublisherBacklistService(SourceService):
         split_bucket = os.environ['FILE_BUCKET'].rsplit('-', 1)
         split_bucket.insert(len(split_bucket)-1, '-limited-')
         return ''.join(split_bucket)
-
-
