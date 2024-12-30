@@ -26,9 +26,10 @@ class PublisherBacklistService(SourceService):
         self.s3_manager.createS3Client()
         self.title_prefix = 'titles/publisher_backlist'
         self.file_bucket = os.environ['FILE_BUCKET']
-        
+        self.limited_file_bucket = self.build_limited_bucket(self.file_bucket)
+
         self.drive_service = GoogleDriveService()
-        
+
         self.db_manager = DBManager()
         self.db_manager.generateEngine()
 
@@ -215,31 +216,31 @@ class PublisherBacklistService(SourceService):
 
         records_response = requests.get(url, headers=headers)
         records_response_json = records_response.json()
-        
+
         publisher_backlist_records.extend(records_response_json.get('records', []))
-        
+
         while 'offset' in records_response_json:
             next_page_url = url + f"&offset={records_response_json['offset']}"
-            
+
             records_response = requests.get(next_page_url, headers=headers)
             records_response_json = records_response.json()
-            
+
             publisher_backlist_records.extend(records_response_json.get('records', []))
 
         return publisher_backlist_records
-    
-    def add_has_part_mapping(self, s3_url: str, record: Record):        
+
+    def add_has_part_mapping(self, s3_url: str, record: Record, is_downloadable: bool=False, is_login_limited: bool=True):
         item_no = '1'
-        media_tpye = 'application/pdf'
+        media_type = 'application/pdf'
         flags = {
             'catalog': False,
-            'download': True,
+            'download': is_downloadable,
             'reader': False,
             'embed': False,
-            **({'nypl_login': True} if 'in_copyright' in record.rights else {})
+            'nypl_login': is_login_limited,
         }
 
-        record.has_part.append('|'.join([item_no, s3_url, record.source, media_tpye, json.dumps(flags)]))
+        record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
 
     def store_pdf_manifest(self, record: Record):
         for link in record.has_part:
@@ -283,3 +284,22 @@ class PublisherBacklistService(SourceService):
         })
 
         return manifest.toJson()
+
+    @staticmethod
+    def parse_permissions(permissions: str) -> dict:
+        if permissions == 'Full access':
+            return {'is_downloadable': True, 'is_login_limited': False}
+        if permissions == 'Partial access/read only/no download/no login':
+            return {'is_downloadable': False, 'is_login_limited': False}
+        if permissions == 'Limited Access/login for read/no download':
+            return {'is_downloadable': False, 'is_login_limited': True}
+        else:
+            return {'is_downloadable': False, 'is_login_limited': True}
+
+    @staticmethod
+    def build_limited_bucket(bucket: str) -> str:
+        split_bucket = os.environ['FILE_BUCKET'].rsplit('-', 1)
+        split_bucket.insert(len(split_bucket)-1, '-limited-')
+        return ''.join(split_bucket)
+
+
