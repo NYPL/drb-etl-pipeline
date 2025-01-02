@@ -94,8 +94,8 @@ class PublisherBacklistMapping(JSONMapping):
         rights_status = rights_elements[0]
 
         if rights_status == 'in copyright':
-            return '{}|{}||{}|'.format('self.record.source', 'in_copyright', 'In Copyright') 
+            return '{}|{}||{}|'.format(self.record.source, 'in_copyright', 'In Copyright') 
         elif rights_status == 'public domain':
-            return '{}|{}||{}|'.format('self.record.source', 'public_domain', 'Public Domain') 
+            return '{}|{}||{}|'.format(self.record.source, 'public_domain', 'Public Domain') 
         
         return None

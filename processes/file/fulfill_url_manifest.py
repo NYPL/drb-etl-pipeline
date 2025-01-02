@@ -54,7 +54,8 @@ class FulfillURLManifestProcess(CoreProcess):
                 self.update_metadata_object(metadata_object, self.s3_bucket, key)
         else:
             for batch in batches:
-                if 'Content' not in batch:
+                logger.info(batch)
+                if 'Contents' not in batch:
                     continue
 
                 for content in batch['Contents']:
