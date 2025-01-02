@@ -42,18 +42,18 @@ class FulfillURLManifestProcess(CoreProcess):
 
     def fetch_and_update_manifests(self, start_timestamp=None):
 
-        batches = self.s3_manager.load_batches(self.prefix, self.s3Bucket)
+        batches = self.s3_manager.load_batches(self.prefix, self.s3_bucket)
         if start_timestamp:
             #Using JMESPath to extract keys from the JSON batches
             filtered_batch_keys = batches.search(f"Contents[?to_string(LastModified) > '\"{start_timestamp}\"'].Key")
             for key in filtered_batch_keys:
-                metadata_object = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
+                metadata_object = self.s3_manager.s3Client.get_object(Bucket=self.s3_bucket, Key=f'{key}')
                 self.update_metadata_object(metadata_object, self.s3Bucket, key)
         else:
             for batch in batches:
                 for content in batch['Contents']:
                     key = content['Key']
-                    metadata_object = self.s3Client.get_object(Bucket=self.s3Bucket, Key= f'{key}')
+                    metadata_object = self.s3_manager.s3Client.get_object(Bucket=self.s3_bucket, Key=f'{key}')
                     self.update_metadata_object(metadata_object, self.s3Bucket, key)
 
     def update_metadata_object(self, metadata_object, bucket_name, curr_key):
