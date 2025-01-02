@@ -41,7 +41,7 @@ class APIUtils():
         'muse': 4,
         'met': 5,
         'isac': 6,
-        'UofM': 7,
+        'UofMichigan': 7,
         'UofSC': 8,
         'hathitrust': 9,
         'oclc': 10,
