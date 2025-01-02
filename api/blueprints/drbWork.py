@@ -3,6 +3,7 @@ from ..db import DBClient
 from ..utils import APIUtils
 from ..validation_utils import is_valid_uuid
 from logger import create_log
+from ..decorators import deprecated
 
 logger = create_log(__name__)
 
@@ -10,6 +11,7 @@ work = Blueprint('work', __name__, url_prefix='/work')
 works = Blueprint('works', __name__, url_prefix='/works')
 
 @work.route('/<uuid>', methods=['GET'])
+@deprecated('This endpoint is deprecated please use /works/<uuid> instead.')
 @works.route('/<uuid>', methods=['GET'])
 def get_work(uuid):
     logger.info(f'Getting work with id {uuid}')

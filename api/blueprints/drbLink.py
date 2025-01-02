@@ -3,6 +3,7 @@ from ..db import DBClient
 from ..utils import APIUtils
 from ..validation_utils import is_valid_numeric_id
 from logger import create_log
+from ..decorators import deprecated
 
 logger = create_log(__name__)
 
@@ -10,6 +11,7 @@ link = Blueprint('link', __name__, url_prefix='/link')
 links = Blueprint('links', __name__, url_prefix='/links')
 
 @link.route('/<link_id>', methods=['GET'])
+@deprecated('This endpoint is deprecated please use /links/<link_id> instead.')
 @links.route('/<link_id>', methods=['GET'])
 def get_link(link_id):
     logger.info(f'Getting link with id {link_id}')
