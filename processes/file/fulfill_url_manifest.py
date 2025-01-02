@@ -47,10 +47,16 @@ class FulfillURLManifestProcess(CoreProcess):
             #Using JMESPath to extract keys from the JSON batches
             filtered_batch_keys = batches.search(f"Contents[?to_string(LastModified) > '\"{start_timestamp}\"'].Key")
             for key in filtered_batch_keys:
+                if not key:
+                    continue
+
                 metadata_object = self.s3_manager.s3Client.get_object(Bucket=self.s3_bucket, Key=f'{key}')
                 self.update_metadata_object(metadata_object, self.s3_bucket, key)
         else:
             for batch in batches:
+                if 'Content' not in batch:
+                    continue
+
                 for content in batch['Contents']:
                     key = content['Key']
                     metadata_object = self.s3_manager.s3Client.get_object(Bucket=self.s3_bucket, Key=f'{key}')
