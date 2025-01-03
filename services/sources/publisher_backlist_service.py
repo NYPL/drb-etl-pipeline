@@ -167,7 +167,6 @@ class PublisherBacklistService(SourceService):
                     bucket = self.file_bucket
                 else:
                     bucket = self.limited_file_bucket
-                bucket = self.file_bucket # TODO: if record is limited access, upload to limited access bucket
                 s3_path = f'{self.title_prefix}/{record_metadata["Publisher (from Projects)"][0]}/{file_name}'
                 s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
                 
