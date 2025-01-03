@@ -150,8 +150,11 @@ class PublisherBacklistService(SourceService):
         for record in records:
             try:
                 record_metadata = record.get('fields')
-
-                file_id = f'{self.drive_service.id_from_url(record_metadata.get("DRB_File Location"))}'
+                try:
+                    file_id = f'{self.drive_service.id_from_url(record_metadata.get("DRB_File Location"))}'
+                except Exception:
+                    logger.error(f'Could not extract a Drive identifier from {record_metadata.get("DRB_Record ID")}')
+                    continue
                 file_name = self.drive_service.get_file_metadata(file_id).get('name')
                 file = self.drive_service.get_drive_file(file_id)
                 
@@ -159,6 +162,11 @@ class PublisherBacklistService(SourceService):
                     logger.error(f'Failed to retrieve file for {record_metadata.get("DRB_Record ID")} from Google Drive')
                     continue
 
+                record_permissions = self.parse_permissions(record_metadata.get('Access type in DRB (from Access types)')[0])
+                if not record_permissions['is_login_limited']:
+                    bucket = self.file_bucket
+                else:
+                    bucket = self.limited_file_bucket
                 bucket = self.file_bucket # TODO: if record is limited access, upload to limited access bucket
                 s3_path = f'{self.title_prefix}/{record_metadata["Publisher (from Projects)"][0]}/{file_name}'
                 s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
