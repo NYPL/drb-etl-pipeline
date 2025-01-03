@@ -26,7 +26,7 @@ class PublisherBacklistService(SourceService):
         self.s3_manager.createS3Client()
         self.title_prefix = 'titles/publisher_backlist'
         self.file_bucket = os.environ['FILE_BUCKET']
-        self.limited_file_bucket = self.build_limited_bucket(self.file_bucket)
+        self.limited_file_bucket = f'drb-files-limited-{os.environment.get('ENVIRONMENT', 'qa')}'
 
         self.drive_service = GoogleDriveService()
 
@@ -302,9 +302,3 @@ class PublisherBacklistService(SourceService):
             return {'is_downloadable': True, 'is_login_limited': True}
         else:
             return {'is_downloadable': False, 'is_login_limited': True}
-
-    @staticmethod
-    def build_limited_bucket(bucket: str) -> str:
-        split_bucket = os.environ['FILE_BUCKET'].rsplit('-', 1)
-        split_bucket.insert(len(split_bucket)-1, '-limited-')
-        return ''.join(split_bucket)
