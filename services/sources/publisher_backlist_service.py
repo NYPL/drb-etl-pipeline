@@ -26,7 +26,7 @@ class PublisherBacklistService(SourceService):
         self.s3_manager.createS3Client()
         self.title_prefix = 'titles/publisher_backlist'
         self.file_bucket = os.environ['FILE_BUCKET']
-        self.limited_file_bucket = f'drb-files-limited-{os.environment.get('ENVIRONMENT', 'qa')}'
+        self.limited_file_bucket = f'drb-files-limited-{os.environment.get("ENVIRONMENT", "qa")}'
 
         self.drive_service = GoogleDriveService()
 
