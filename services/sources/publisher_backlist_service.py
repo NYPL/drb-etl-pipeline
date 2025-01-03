@@ -291,8 +291,8 @@ class PublisherBacklistService(SourceService):
             return {'is_downloadable': True, 'is_login_limited': False}
         if permissions == 'Partial access/read only/no download/no login':
             return {'is_downloadable': False, 'is_login_limited': False}
-        if permissions == 'Limited Access/login for read/no download':
-            return {'is_downloadable': False, 'is_login_limited': True}
+        if permissions == 'Limited Access/login for read & download':
+            return {'is_downloadable': True, 'is_login_limited': True}
         else:
             return {'is_downloadable': False, 'is_login_limited': True}
 
