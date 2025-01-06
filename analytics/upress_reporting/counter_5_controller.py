@@ -19,7 +19,7 @@ from sqlalchemy import CTE, func, literal
 from typing import List
 
 VIEW_FILE_ID_REGEX = r"REST.GET.OBJECT manifests/(.*?json)\s"
-DOWNLOAD_FILE_ID_REGEX = r"REST.GET.OBJECT (.+pdf\s)"
+DOWNLOAD_FILE_ID_REGEX = r"REST.GET.OBJECT titles/(.+pdf\s)"
 PUBLISHERS = ['UofMichigan Press']
 DRB_QA_URL = 'https://drb-qa.nypl.org'
 DRB_PRODUCTION_URL = 'https://digital-research-books-beta.nypl.org'
@@ -36,10 +36,10 @@ class Counter5Controller:
         else:
             self.reporting_period = f"{datetime.now().year}-01-01 to {datetime.now().year}-01-31"
 
-        self.view_bucket = f'drb-files-${self.environment}-logs'
-        self.view_log_path = f'logs/946183545209/us-east-1/drb-files-${self.environment}'
-        self.download_bucket = f'drb-files-limited-${self.environment}-logs'
-        self.download_log_path = f'logs/946183545209/us-east-1/drb-files-limited-${self.environment}'
+        self.public_bucket = f'drb-files-${self.environment}-logs'
+        self.public_log_path = f'logs/946183545209/us-east-1/drb-files-${self.environment}'
+        self.private_bucket = f'drb-files-limited-${self.environment}-logs'
+        self.private_log_path = f'logs/946183545209/us-east-1/drb-files-limited-${self.environment}'
         self.referrer_url = DRB_QA_URL if self.environment == 'qa' else DRB_PRODUCTION_URL
 
         self.setup_db_manager()
@@ -68,31 +68,38 @@ class Counter5Controller:
                 view_data_poller = InteractionEventPoller(date_range=self.reporting_period,
                                           reporting_data=df,
                                           file_id_regex=VIEW_FILE_ID_REGEX,
-                                          bucket_name=self.view_bucket,
+                                          bucket_name=self.public_bucket,
                                           interaction_type=InteractionType.VIEW)
-                download_data_poller = InteractionEventPoller(date_range=self.reporting_period,
+                download_public_data_poller = InteractionEventPoller(date_range=self.reporting_period,
                                               reporting_data=df,
                                               file_id_regex=DOWNLOAD_FILE_ID_REGEX,
-                                              bucket_name=self.download_bucket,
+                                              bucket_name=self.public_bucket,
+                                              interaction_type=InteractionType.DOWNLOAD)
+                download_private_data_poller = InteractionEventPoller(date_range=self.reporting_period,
+                                              reporting_data=df,
+                                              file_id_regex=DOWNLOAD_FILE_ID_REGEX,
+                                              bucket_name=self.private_bucket,
                                               interaction_type=InteractionType.DOWNLOAD)
 
+                merged_downloads_reporting_data = pandas.concat([download_public_data_poller.reporting_data, download_private_data_poller.reporting_data], ignore_index=True)
                 downloads_report = DownloadsReport(publisher, self.reporting_period)
-                downloads_report.build_report(download_data_poller.events,
-                                              download_data_poller.reporting_data)
+                downloads_report.build_report(download_public_data_poller.events + download_private_data_poller.events,
+                                              merged_downloads_reporting_data)
 
                 views_report = ViewsReport(publisher, self.reporting_period)
                 views_report.build_report(view_data_poller.events,
                                           view_data_poller.reporting_data)
                 
-                merged_reporting_data = pandas.concat([download_data_poller.reporting_data, view_data_poller.reporting_data], ignore_index=True)
+
+                merged_reporting_data = pandas.concat([merged_downloads_reporting_data, view_data_poller.reporting_data], ignore_index=True)
                 merged_reporting_data = merged_reporting_data.sort_values(["accessed"]).drop_duplicates(subset=["book_id"], keep="last")
 
                 country_level_report = CountryLevelReport(publisher, self.reporting_period)
-                country_level_report.build_report(view_data_poller.events + download_data_poller.events,
+                country_level_report.build_report(view_data_poller.events + download_public_data_poller.events + download_private_data_poller.events,
                                                   merged_reporting_data)
 
                 total_usage_report = TotalUsageReport(publisher, self.reporting_period)
-                total_usage_report.build_report(view_data_poller.events + download_data_poller.events,
+                total_usage_report.build_report(view_data_poller.events + download_public_data_poller.events + download_private_data_poller.events,
                                                 merged_reporting_data)
 
             except Exception as e:
@@ -105,16 +112,24 @@ class Counter5Controller:
     def pull_aggregated_logs(self):
         aggregate_logs.aggregate_logs_in_period(
             date_range=self.reporting_period,
-            s3_bucket=self.view_bucket,
-            s3_path=self.view_log_path,
+            s3_bucket=self.public_bucket,
+            s3_path=self.public_log_path,
             regex=VIEW_FILE_ID_REGEX,
             referrer_url=self.referrer_url,
         )
 
         aggregate_logs.aggregate_logs_in_period(
             date_range=self.reporting_period,
-            s3_bucket=self.download_bucket,
-            s3_path=self.download_log_path,
+            s3_bucket=self.public_bucket,
+            s3_path=self.public_log_path,
+            regex=DOWNLOAD_FILE_ID_REGEX,
+            referrer_url=self.referrer_url,
+        )
+
+        aggregate_logs.aggregate_logs_in_period(
+            date_range=self.reporting_period,
+            s3_bucket=self.private_bucket,
+            s3_path=self.private_log_path,
             regex=DOWNLOAD_FILE_ID_REGEX,
             referrer_url=self.referrer_url,
         )
