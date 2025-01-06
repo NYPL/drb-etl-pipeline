@@ -167,7 +167,7 @@ class PublisherBacklistService(SourceService):
                     bucket = self.file_bucket
                 else:
                     bucket = self.limited_file_bucket
-                s3_path = f'{self.title_prefix}/{record_metadata["Publisher (from Projects)"][0]}/{file_name}'
+                s3_path = f'{self.title_prefix}/{record_metadata["Project Name (from Projects)"][0]}/{file_name}'
                 s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
                 
                 if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:

@@ -26,8 +26,7 @@ class PublisherBacklistMapping(JSONMapping):
     def applyFormatting(self):
         self.record.has_part = []
         if self.record.source:
-            source_list = self.record.source[0].split(' ')
-            self.record.source = source_list[0]
+            self.record.source = self.record.source[0]
 
         if self.record.publisher_project_source:
             publisher_source = self.record.publisher_project_source[0]
