@@ -26,7 +26,7 @@ class PublisherBacklistService(SourceService):
         self.s3_manager.createS3Client()
         self.title_prefix = 'titles/publisher_backlist'
         self.file_bucket = os.environ['FILE_BUCKET']
-        self.limited_file_bucket = f'drb-files-limited-{os.environment.get("ENVIRONMENT", "qa")}'
+        self.limited_file_bucket = f'drb-files-limited-{os.environ.get("ENVIRONMENT", "qa")}'
 
         self.drive_service = GoogleDriveService()
 
@@ -298,7 +298,7 @@ class PublisherBacklistService(SourceService):
             return {'is_downloadable': True, 'is_login_limited': False}
         if permissions == 'Partial access/read only/no download/no login':
             return {'is_downloadable': False, 'is_login_limited': False}
-        if permissions == 'Limited Access/login for read & download':
+        if permissions == 'Limited access/login for read & download':
             return {'is_downloadable': True, 'is_login_limited': True}
         else:
             return {'is_downloadable': False, 'is_login_limited': True}
