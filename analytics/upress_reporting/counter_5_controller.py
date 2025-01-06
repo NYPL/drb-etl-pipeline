@@ -70,29 +70,36 @@ class Counter5Controller:
                                           file_id_regex=VIEW_FILE_ID_REGEX,
                                           bucket_name=self.public_bucket,
                                           interaction_type=InteractionType.VIEW)
-                download_data_poller = InteractionEventPoller(date_range=self.reporting_period,
+                download_public_data_poller = InteractionEventPoller(date_range=self.reporting_period,
+                                              reporting_data=df,
+                                              file_id_regex=DOWNLOAD_FILE_ID_REGEX,
+                                              bucket_name=self.public_bucket,
+                                              interaction_type=InteractionType.DOWNLOAD)
+                download_private_data_poller = InteractionEventPoller(date_range=self.reporting_period,
                                               reporting_data=df,
                                               file_id_regex=DOWNLOAD_FILE_ID_REGEX,
                                               bucket_name=self.private_bucket,
                                               interaction_type=InteractionType.DOWNLOAD)
 
+                merged_downloads_reporting_data = pandas.concat([download_public_data_poller.reporting_data, download_private_data_poller.reporting_data], ignore_index=True)
                 downloads_report = DownloadsReport(publisher, self.reporting_period)
-                downloads_report.build_report(download_data_poller.events,
-                                              download_data_poller.reporting_data)
+                downloads_report.build_report(download_public_data_poller.events + download_private_data_poller.events,
+                                              merged_downloads_reporting_data)
 
                 views_report = ViewsReport(publisher, self.reporting_period)
                 views_report.build_report(view_data_poller.events,
                                           view_data_poller.reporting_data)
                 
-                merged_reporting_data = pandas.concat([download_data_poller.reporting_data, view_data_poller.reporting_data], ignore_index=True)
+
+                merged_reporting_data = pandas.concat([merged_downloads_reporting_data, view_data_poller.reporting_data], ignore_index=True)
                 merged_reporting_data = merged_reporting_data.sort_values(["accessed"]).drop_duplicates(subset=["book_id"], keep="last")
 
                 country_level_report = CountryLevelReport(publisher, self.reporting_period)
-                country_level_report.build_report(view_data_poller.events + download_data_poller.events,
+                country_level_report.build_report(view_data_poller.events + download_public_data_poller.events + download_private_data_poller.events,
                                                   merged_reporting_data)
 
                 total_usage_report = TotalUsageReport(publisher, self.reporting_period)
-                total_usage_report.build_report(view_data_poller.events + download_data_poller.events,
+                total_usage_report.build_report(view_data_poller.events + download_public_data_poller.events + download_private_data_poller.events,
                                                 merged_reporting_data)
 
             except Exception as e:
