@@ -50,10 +50,13 @@ class OCLCCatalogManager:
             if not other_editions_response:
                 return related_oclc_numbers
             
-            number_of_related_bibs = other_editions_response['numberOfRecords']
+            number_of_related_bibs = other_editions_response.get('numberOfRecords', 0)
             
             if number_of_related_bibs <= self.LIMIT:
-                related_oclc_bibs = other_editions_response['briefRecords']
+                related_oclc_bibs = other_editions_response.get('briefRecords', None)
+
+                if related_oclc_bibs is None:
+                    return related_oclc_numbers
 
                 return self._get_oclc_number_from_bibs(oclc_number=oclc_number, oclc_bibs=related_oclc_bibs)
             
@@ -64,7 +67,10 @@ class OCLCCatalogManager:
                 if not other_editions_response:
                     continue
 
-                related_oclc_bibs = other_editions_response['briefRecords']
+                related_oclc_bibs = other_editions_response.get('briefRecords', None)
+
+                if related_oclc_bibs is None:
+                    return related_oclc_numbers
 
                 related_oclc_numbers.extend(
                     self._get_oclc_number_from_bibs(oclc_number=oclc_number, oclc_bibs=related_oclc_bibs)
