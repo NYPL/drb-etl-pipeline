@@ -10,7 +10,7 @@ class PublisherBacklistMapping(JSONMapping):
             'title': ('Title', '{0}'),
             'authors': ('Author(s)', '{0}'),
             'dates': [('Pub Date', '{0}|publication_date')],
-            'publisher': ('Publisher (from Projects)', '{0}||'),
+            'publisher': ('Publisher (from Project)', '{0}||'),
             'identifiers': [
                 ('ISBN', '{0}|isbn'),
                 ('OCLC', '{0}|oclc')
@@ -18,16 +18,15 @@ class PublisherBacklistMapping(JSONMapping):
             'rights': ('DRB Rights Classification', '{0}||||'),
             'contributors': [('Contributors', '{0}|||contributor')],
             'subjects': ('Subject 1', '{0}'),
-            'source': ('Project Name (from Projects)', '{0}'),
+            'source': ('Project Name (from Project)', '{0}'),
             'source_id': ('DRB_Record ID', '{0}'),
-            'publisher_project_source': ('Publisher (from Projects)', '{0}')
+            'publisher_project_source': ('Publisher (from Project)', '{0}')
         }
 
     def applyFormatting(self):
         self.record.has_part = []
         if self.record.source:
-            source_list = self.record.source[0].split(' ')
-            self.record.source = source_list[0]
+            self.record.source = self.record.source[0]
 
         if self.record.publisher_project_source:
             publisher_source = self.record.publisher_project_source[0]

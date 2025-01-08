@@ -43,7 +43,7 @@ class TestPublisherBacklistMapping:
         test_mapping.applyFormatting()
 
         assert test_mapping.record.has_part == []
-        assert test_mapping.record.source == 'UofMichigan'
+        assert test_mapping.record.source == 'UofMichigan Backlist'
         assert test_mapping.record.identifiers == ['testISBN|isbn', 'testOCLC|oclc']
         assert test_mapping.record.source_id == 'testSourceID'
         assert test_mapping.record.publisher == ['testPublisher||']

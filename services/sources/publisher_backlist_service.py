@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import urllib.parse
+from enum import Enum
 from typing import Optional
 from model import Record, Work, Edition, Item
 from sqlalchemy.orm import joinedload
@@ -19,6 +20,13 @@ logger = create_log(__name__)
 
 BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%20%26%20Collections%20%F0%9F%93%96?view=All%20Lists"
 
+SOURCE_FIELD = "Project Name (from Project)"
+
+class LimitedAccessPermissions(Enum):
+    FULL_ACCESS = 'Full access'
+    PARTIAL_ACCESS = 'Partial access/read only/no download/no login'
+    LIMITED_DOWNLOADABLE = 'Limited access/login for read & download'
+    LIMITED_WITHOUT_DOWNLOAD = 'Limited access/login for read/no download'
 
 class PublisherBacklistService(SourceService):
     def __init__(self):
@@ -26,9 +34,10 @@ class PublisherBacklistService(SourceService):
         self.s3_manager.createS3Client()
         self.title_prefix = 'titles/publisher_backlist'
         self.file_bucket = os.environ['FILE_BUCKET']
-        
+        self.limited_file_bucket = f'drb-files-limited-{os.environ.get("ENVIRONMENT", "qa")}'
+
         self.drive_service = GoogleDriveService()
-        
+
         self.db_manager = DBManager()
         self.db_manager.generateEngine()
 
@@ -149,8 +158,11 @@ class PublisherBacklistService(SourceService):
         for record in records:
             try:
                 record_metadata = record.get('fields')
-
-                file_id = f'{self.drive_service.id_from_url(record_metadata.get("DRB_File Location"))}'
+                try:
+                    file_id = f'{self.drive_service.id_from_url(record_metadata.get("DRB_File Location"))}'
+                except Exception:
+                    logger.error(f'Could not extract a Drive identifier from {record_metadata.get("DRB_Record ID")}')
+                    continue
                 file_name = self.drive_service.get_file_metadata(file_id).get('name')
                 file = self.drive_service.get_drive_file(file_id)
                 
@@ -158,8 +170,9 @@ class PublisherBacklistService(SourceService):
                     logger.error(f'Failed to retrieve file for {record_metadata.get("DRB_Record ID")} from Google Drive')
                     continue
 
-                bucket = self.file_bucket # TODO: if record is limited access, upload to limited access bucket
-                s3_path = f'{self.title_prefix}/{record_metadata["Publisher (from Projects)"][0]}/{file_name}'
+                record_permissions = self.parse_permissions(record_metadata.get('Access type in DRB (from Access types)')[0])
+                bucket = self.file_bucket if not record_permissions['requires_login'] else self.limited_file_bucket
+                s3_path = f'{self.title_prefix}/{record_metadata[SOURCE_FIELD][0]}/{file_name}'
                 s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
                 
                 if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
@@ -172,7 +185,7 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record.applyMapping()
                 
                 self.add_has_part_mapping(s3_url, publisher_backlist_record.record)
-                self.store_pdf_manifest(publisher_backlist_record.record)
+                self.store_pdf_manifest(publisher_backlist_record.record, requires_login=record_permissions['requires_login'])
                 
                 mapped_records.append(publisher_backlist_record)
             except Exception:
@@ -215,33 +228,32 @@ class PublisherBacklistService(SourceService):
 
         records_response = requests.get(url, headers=headers)
         records_response_json = records_response.json()
-        
+
         publisher_backlist_records.extend(records_response_json.get('records', []))
-        
+
         while 'offset' in records_response_json:
             next_page_url = url + f"&offset={records_response_json['offset']}"
-            
+
             records_response = requests.get(next_page_url, headers=headers)
             records_response_json = records_response.json()
-            
-            publisher_backlist_records.extend(records_response_json.get('records', []))
 
+            publisher_backlist_records.extend(records_response_json.get('records', []))
         return publisher_backlist_records
-    
-    def add_has_part_mapping(self, s3_url: str, record: Record):        
+
+    def add_has_part_mapping(self, s3_url: str, record: Record, is_downloadable: bool, requires_login: bool):
         item_no = '1'
-        media_tpye = 'application/pdf'
+        media_type = 'application/pdf'
         flags = {
             'catalog': False,
-            'download': True,
+            'download': is_downloadable,
             'reader': False,
             'embed': False,
-            **({'nypl_login': True} if 'in_copyright' in record.rights else {})
+            'nypl_login': requires_login,
         }
 
-        record.has_part.append('|'.join([item_no, s3_url, record.source, media_tpye, json.dumps(flags)]))
+        record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
 
-    def store_pdf_manifest(self, record: Record):
+    def store_pdf_manifest(self, record: Record, requires_login: bool):
         for link in record.has_part:
             item_no, url, source, media_type, _ = link.split('|')
 
@@ -258,7 +270,7 @@ class PublisherBacklistService(SourceService):
                     'download': False,
                     'reader': True,
                     'embed': False,
-                    **({'fulfill_limited_access': False} if 'in_copyright' in record.rights else {})
+                    **({'fulfill_limited_access': False} if requires_login else {})
                 }
 
                 record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', json.dumps(manifest_flags)]))
@@ -283,3 +295,14 @@ class PublisherBacklistService(SourceService):
         })
 
         return manifest.toJson()
+
+    @staticmethod
+    def parse_permissions(permissions: str) -> dict:
+        if permissions == LimitedAccessPermissions.FULL_ACCESS.value:
+            return {'is_downloadable': True, 'requires_login': False}
+        if permissions == LimitedAccessPermissions.PARTIAL_ACCESS.value:
+            return {'is_downloadable': False, 'requires_login': False}
+        if permissions == LimitedAccessPermissions.LIMITED_DOWNLOADABLE.value:
+            return {'is_downloadable': True, 'requires_login': True}
+        else:
+            return {'is_downloadable': False, 'requires_login': True}
