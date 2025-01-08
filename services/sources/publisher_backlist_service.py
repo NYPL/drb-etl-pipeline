@@ -240,7 +240,7 @@ class PublisherBacklistService(SourceService):
             publisher_backlist_records.extend(records_response_json.get('records', []))
         return publisher_backlist_records
 
-    def add_has_part_mapping(self, s3_url: str, record: Record, is_downloadable: bool=False, requires_login: bool=True):
+    def add_has_part_mapping(self, s3_url: str, record: Record, is_downloadable: bool, requires_login: bool):
         item_no = '1'
         media_type = 'application/pdf'
         flags = {
@@ -253,7 +253,7 @@ class PublisherBacklistService(SourceService):
 
         record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
 
-    def store_pdf_manifest(self, record: Record, requires_login: bool=True):
+    def store_pdf_manifest(self, record: Record, requires_login: bool):
         for link in record.has_part:
             item_no, url, source, media_type, _ = link.split('|')
 
