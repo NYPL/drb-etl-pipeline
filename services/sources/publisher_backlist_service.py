@@ -171,10 +171,7 @@ class PublisherBacklistService(SourceService):
                     continue
 
                 record_permissions = self.parse_permissions(record_metadata.get('Access type in DRB (from Access types)')[0])
-                if not record_permissions['requires_login']:
-                    bucket = self.file_bucket
-                else:
-                    bucket = self.limited_file_bucket
+                bucket = self.file_bucket if not record_permissions['requires_login'] else self.limited_file_bucket
                 s3_path = f'{self.title_prefix}/{record_metadata[SOURCE_FIELD][0]}/{file_name}'
                 s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
                 
@@ -241,10 +238,9 @@ class PublisherBacklistService(SourceService):
             records_response_json = records_response.json()
 
             publisher_backlist_records.extend(records_response_json.get('records', []))
-
         return publisher_backlist_records
 
-    def add_has_part_mapping(self, s3_url: str, record: Record, is_downloadable: bool=False, is_login_limited: bool=True):
+    def add_has_part_mapping(self, s3_url: str, record: Record, is_downloadable: bool=False, requires_login: bool=True):
         item_no = '1'
         media_type = 'application/pdf'
         flags = {
