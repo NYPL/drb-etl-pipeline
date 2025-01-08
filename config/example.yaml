@@ -1,3 +1,5 @@
+ENVIRONMENT: xx
+
 # POSTGRES CONNECTION DETAILS
 POSTGRES_HOST: xxx
 POSTGRES_PORT: xxx
@@ -74,16 +76,3 @@ API_PROXY_CORS_ALLOWED: (?:Source1:Source2)
 
 # Current NYPL Webreader version
 READER_VERSION: xxx
-
-# ANALYTICS CONFIGURATION
-PUBLISHERS: "UofMichigan Press"    # publishers need to be a comma separated string
-REFERRER_URL: "https://digital-research-books-beta.nypl.org/"
-
-# Downloads Reports
-DOWNLOAD_BUCKET: "ump-pdf-repository-logs"
-DOWNLOAD_LOG_PATH: "logs/946183545209/us-east-1/ump-pdf-repository/"
-
-# Views Reports
-VIEW_BUCKET: "drb-files-production-logs"
-VIEW_LOG_PATH: "logs/946183545209/us-east-1/drb-files-production"
-

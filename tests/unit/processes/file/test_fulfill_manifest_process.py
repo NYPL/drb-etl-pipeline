@@ -16,7 +16,7 @@ class TestUofMProcess:
     def test_process(self, mocker):
         class TestFulfill(FulfillURLManifestProcess):
             def __init__(self):
-                self.s3Bucket = 'test_aws_bucket'
+                self.s3_bucket = 'test_aws_bucket'
                 self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
                 self.session = mocker.MagicMock(session='testSession')
                 self.records = mocker.MagicMock(record='testRecord')

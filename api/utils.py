@@ -42,6 +42,8 @@ class APIUtils():
         'met': 5,
         'isac': 6,
         'UofMichigan Backlist': 7,
+        'UofMichigan': 7,
+        'UofM': 7,
         'UofSC': 8,
         'hathitrust': 9,
         'oclc': 10,
