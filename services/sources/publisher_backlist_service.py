@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import urllib.parse
+from enum import Enum
 from typing import Optional
 from model import Record, Work, Edition, Item
 from sqlalchemy.orm import joinedload
@@ -19,6 +20,13 @@ logger = create_log(__name__)
 
 BASE_URL = "https://api.airtable.com/v0/appBoLf4lMofecGPU/Publisher%20Backlists%20%26%20Collections%20%F0%9F%93%96?view=All%20Lists"
 
+SOURCE_FIELD = "Project Name (from Project)"
+
+class LimitedAccessPermissions(Enum):
+    FULL_ACCESS = 'Full access'
+    PARTIAL_ACCESS = 'Partial access/read only/no download/no login'
+    LIMITED_DOWNLOADABLE = 'Limited access/login for read & download'
+    LIMITED_WITHOUT_DOWNLOAD = 'Limited access/login for read/no download'
 
 class PublisherBacklistService(SourceService):
     def __init__(self):
@@ -167,7 +175,7 @@ class PublisherBacklistService(SourceService):
                     bucket = self.file_bucket
                 else:
                     bucket = self.limited_file_bucket
-                s3_path = f'{self.title_prefix}/{record_metadata["Project Name (from Project)"][0]}/{file_name}'
+                s3_path = f'{self.title_prefix}/{record_metadata[SOURCE_FIELD][0]}/{file_name}'
                 s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
                 
                 if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
@@ -294,11 +302,11 @@ class PublisherBacklistService(SourceService):
 
     @staticmethod
     def parse_permissions(permissions: str) -> dict:
-        if permissions == 'Full access':
+        if permissions == LimitedAccessPermissions.FULL_ACCESS.value:
             return {'is_downloadable': True, 'is_login_limited': False}
-        if permissions == 'Partial access/read only/no download/no login':
+        if permissions == LimitedAccessPermissions.PARTIAL_ACCESS.value:
             return {'is_downloadable': False, 'is_login_limited': False}
-        if permissions == 'Limited access/login for read & download':
+        if permissions == LimitedAccessPermissions.LIMITED_DOWNLOADABLE.value:
             return {'is_downloadable': True, 'is_login_limited': True}
         else:
             return {'is_downloadable': False, 'is_login_limited': True}
