@@ -185,7 +185,7 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record.applyMapping()
                 
                 self.add_has_part_mapping(s3_url, publisher_backlist_record.record)
-                self.store_pdf_manifest(publisher_backlist_record.record)
+                self.store_pdf_manifest(publisher_backlist_record.record, requires_login=record_permissions['requires_login'])
                 
                 mapped_records.append(publisher_backlist_record)
             except Exception:
@@ -253,7 +253,7 @@ class PublisherBacklistService(SourceService):
 
         record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
 
-    def store_pdf_manifest(self, record: Record):
+    def store_pdf_manifest(self, record: Record, requires_login: bool=True):
         for link in record.has_part:
             item_no, url, source, media_type, _ = link.split('|')
 
@@ -270,7 +270,7 @@ class PublisherBacklistService(SourceService):
                     'download': False,
                     'reader': True,
                     'embed': False,
-                    **({'fulfill_limited_access': False} if 'in_copyright' in record.rights else {})
+                    **({'fulfill_limited_access': False} if requires_login else {})
                 }
 
                 record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', json.dumps(manifest_flags)]))
