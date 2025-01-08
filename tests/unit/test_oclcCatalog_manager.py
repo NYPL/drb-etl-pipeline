@@ -27,7 +27,7 @@ class TestOCLCCatalogManager:
         mockRequest.get.assert_called_once_with(
             'https://metadata.api.oclc.org/worldcat/manage/bibs/1',
             headers={'Authorization': 'Bearer foo'},
-            timeout=3
+            timeout=5
         )
 
     def test_query_catalog_error(self, testInstance, mocker):
@@ -47,7 +47,7 @@ class TestOCLCCatalogManager:
         mockRequest.get.assert_called_once_with(
             'https://metadata.api.oclc.org/worldcat/manage/bibs/1',
             headers={'Authorization': 'Bearer foo'},
-            timeout=3
+            timeout=5
         )
 
     def test_query_catalog_single_retry_then_success(self, testInstance, mocker):
@@ -65,7 +65,7 @@ class TestOCLCCatalogManager:
 
         assert testResponse == 'testClassifyRecord'
         mockRequest.get.assert_has_calls(
-            [mocker.call('https://metadata.api.oclc.org/worldcat/manage/bibs/1', timeout=3, headers={'Authorization': 'Bearer foo'})] * 2
+            [mocker.call('https://metadata.api.oclc.org/worldcat/manage/bibs/1', timeout=5, headers={'Authorization': 'Bearer foo'})] * 2
         )
 
     def test_query_catalog_exhaust_retries(self, testInstance, mocker):
@@ -83,7 +83,7 @@ class TestOCLCCatalogManager:
 
         assert testResponse == None
         mockRequest.get.assert_has_calls(
-            [mocker.call('https://metadata.api.oclc.org/worldcat/manage/bibs/1', timeout=3, headers={'Authorization': 'Bearer foo'})] * 3
+            [mocker.call('https://metadata.api.oclc.org/worldcat/manage/bibs/1', timeout=5, headers={'Authorization': 'Bearer foo'})] * 3
         )
 
     def test_generate_search_query_w_identifier(self, testInstance):
