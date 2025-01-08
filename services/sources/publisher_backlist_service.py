@@ -171,7 +171,7 @@ class PublisherBacklistService(SourceService):
                     continue
 
                 record_permissions = self.parse_permissions(record_metadata.get('Access type in DRB (from Access types)')[0])
-                if not record_permissions['is_login_limited']:
+                if not record_permissions['requires_login']:
                     bucket = self.file_bucket
                 else:
                     bucket = self.limited_file_bucket
@@ -252,7 +252,7 @@ class PublisherBacklistService(SourceService):
             'download': is_downloadable,
             'reader': False,
             'embed': False,
-            'nypl_login': is_login_limited,
+            'nypl_login': requires_login,
         }
 
         record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
@@ -303,10 +303,10 @@ class PublisherBacklistService(SourceService):
     @staticmethod
     def parse_permissions(permissions: str) -> dict:
         if permissions == LimitedAccessPermissions.FULL_ACCESS.value:
-            return {'is_downloadable': True, 'is_login_limited': False}
+            return {'is_downloadable': True, 'requires_login': False}
         if permissions == LimitedAccessPermissions.PARTIAL_ACCESS.value:
-            return {'is_downloadable': False, 'is_login_limited': False}
+            return {'is_downloadable': False, 'requires_login': False}
         if permissions == LimitedAccessPermissions.LIMITED_DOWNLOADABLE.value:
-            return {'is_downloadable': True, 'is_login_limited': True}
+            return {'is_downloadable': True, 'requires_login': True}
         else:
-            return {'is_downloadable': False, 'is_login_limited': True}
+            return {'is_downloadable': False, 'requires_login': True}
