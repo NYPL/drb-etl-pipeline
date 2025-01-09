@@ -38,8 +38,6 @@ class TestHelpers:
         'NYPL_BIB_USER': 'test_bib_user',
         'NYPL_BIB_PSWD': 'test_bib_pswd',
         'NYPL_LOCATIONS_BY_CODE': 'test_location_url',
-        'NYPL_API_CLIENT_ID': 'test_api_client',
-        'NYPL_API_CLIENT_SECRET': 'test_api_secret',
         'NYPL_API_CLIENT_TOKEN_URL': 'test_api_token_url',
         'BARDO_CCE_API': 'test_cce_url',
         'MUSE_MARC_URL': 'test_muse_url',

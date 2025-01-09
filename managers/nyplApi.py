@@ -1,16 +1,17 @@
 from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError
 import os
 from requests_oauthlib import OAuth2Session
+from services.ssm_service import SSMService
 
 
 class NyplApiManager:
     def __init__(self, clientID=None, clientSecret=None):
         super(NyplApiManager, self).__init__()
+
+        self.ssm_service = SSMService()
         self.client = None
-        self.clientID = clientID\
-            or os.environ.get('NYPL_API_CLIENT_ID', None)
-        self.clientSecret = clientSecret\
-            or os.environ.get('NYPL_API_CLIENT_SECRET', None)
+        self.clientID = clientID or self.ssm_service.get_parameter('nypl-api/client-id')
+        self.clientSecret = clientSecret or self.ssm_service.get_parameter('nypl-api/client-secret')
         self.tokenURL = os.environ.get('NYPL_API_CLIENT_TOKEN_URL', None)
         self.apiRoot = 'https://platform.nypl.org/api/v0.1'
         self.token = None
