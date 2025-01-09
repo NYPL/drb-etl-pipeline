@@ -7,6 +7,7 @@ import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
 from constants.get_constants import get_constants
+import constants.app_constants as app_constants
 from ..core import CoreProcess
 from mappings.hathitrust import HathiMapping
 from logger import create_log
@@ -14,7 +15,6 @@ from logger import create_log
 logger = create_log(__name__)
 
 class HathiTrustProcess(CoreProcess):
-    HATHI_DATA_FILES_URL = 'https://www.hathitrust.org/files/hathifiles/hathi_file_list.json'
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
     FIELD_SIZE_LIMIT = 131072 * 2 # 131072 is the default size limit
 
@@ -59,7 +59,7 @@ class HathiTrustProcess(CoreProcess):
 
     def importFromHathiTrustDataFile(self, full_dump=False, start_date_time=None):
         try:
-            file_list = requests.get(self.HATHI_DATA_FILES_URL, timeout=15)
+            file_list = requests.get(app_constants.HATHI_DATA_FILES_URL, timeout=15)
             file_list.raise_for_status()
         except (ReadTimeout, HTTPError):
             raise IOError('Unable to load data files')

@@ -5,6 +5,7 @@ import os
 import requests
 
 from constants.get_constants import get_constants
+import constants.app_constants as app_constants
 from ..core import CoreProcess
 from logger import create_log
 from managers import RedisManager
@@ -15,7 +16,6 @@ logger = create_log(__name__)
 
 
 class SeedLocalDataProcess(CoreProcess):
-    HATHI_DATA_FILES_URL = 'https://www.hathitrust.org/files/hathifiles/hathi_file_list.json'
 
     def __init__(self, *args):
         super(SeedLocalDataProcess, self).__init__(*args[:4])
@@ -57,7 +57,7 @@ class SeedLocalDataProcess(CoreProcess):
         logger.info(f'Ingested {len(self.records)} Hathi Trust sample records')
 
     def import_from_hathi_trust_data_file(self):
-        hathi_files_response = requests.get(self.HATHI_DATA_FILES_URL)
+        hathi_files_response = requests.get(app_constants.HATHI_DATA_FILES_URL)
 
         if hathi_files_response.status_code != 200:
             raise Exception('Unable to load Hathi Trust data files')
