@@ -15,7 +15,7 @@ class SSMService:
             region_name=os.environ.get('AWS_REGION', None)
         )
 
-        self.environment = 'production' if os.environ['ENVIRONMENT'] == 'production' else 'qa'
+        self.environment = 'production' if os.environ.get('ENVIRONMENT', 'qa') == 'production' else 'qa'
 
     def get_parameter(self, parameter_name: str) -> Optional[dict]:
         try:
