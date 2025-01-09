@@ -4,6 +4,7 @@ from requests.exceptions import ReadTimeout, HTTPError
 
 from logger import create_log
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
+from services.ssm_service import SSMService
 
 logger = create_log(__name__)
 
@@ -18,7 +19,9 @@ class GoogleBooksFetcher(AbstractFetcher):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.apiKey = os.environ['GOOGLE_BOOKS_KEY']
+        self.ssm_service = SSMService()
+
+        self.apiKey = self.ssm_service.get_parameter('google-books/api-key')
 
         self.uri = None
         self.mediaType = None
