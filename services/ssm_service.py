@@ -23,8 +23,8 @@ class SSMService:
                 Name=f'arn:aws:ssm:us-east-1:946183545209:parameter/drb/{self.environment}/{parameter_name}',
                 WithDecryption=True
             )
-            return response['Parameter']['Value']
 
+            return response['Parameter']['Value']
         except Exception as err:
             logger.exception(f"Parameter store retrieval for {parameter_name} failed")
             return None
