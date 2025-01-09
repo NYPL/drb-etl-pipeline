@@ -9,6 +9,7 @@ from managers.db import DBManager
 from managers.nyplApi import NyplApiManager
 from mappings.nypl import NYPLMapping
 from .source_service import SourceService
+from ssm_service import SSMService
 from sqlalchemy import text
 
 
@@ -17,9 +18,10 @@ logger = create_log(__name__)
 
 class NYPLBibService(SourceService):
     def __init__(self):
+        self.ssm_service = SSMService()
         self.bib_db_connection = DBManager(
-            user=os.environ['NYPL_BIB_USER'],
-            pswd=os.environ['NYPL_BIB_PSWD'],
+            user=self.ssm_service.get_parameter('postgres/nypl-user'),
+            pswd=self.ssm_service.get_parameter('postgres/nypl-pswd'),
             host=os.environ['NYPL_BIB_HOST'],
             port=os.environ['NYPL_BIB_PORT'],
             db=os.environ['NYPL_BIB_NAME']
