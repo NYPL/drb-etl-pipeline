@@ -5,6 +5,7 @@ from requests.exceptions import ReadTimeout
 
 from logger import create_log
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
+from services.ssm_service import SSMService
 
 logger = create_log(__name__)
 
@@ -18,8 +19,10 @@ class ContentCafeFetcher(AbstractFetcher):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.apiUser = os.environ['CONTENT_CAFE_USER']
-        self.apiPswd = os.environ['CONTENT_CAFE_PSWD']
+        self.ssm_service = SSMService()
+
+        self.apiUser = self.ssm_service.get_parameter('contentcafe/user')
+        self.apiPswd = self.ssm_service.get_parameter('contentcafe/pswd')
 
         self.uri = None
         self.content = None
