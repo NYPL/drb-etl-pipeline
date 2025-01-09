@@ -6,18 +6,21 @@ import requests
 import yaml
 
 from logger import create_log
+from services.ssm_service import SSMService
 
 logger = create_log(__name__)
 
 
 class GutenbergManager:
     def __init__(self, repoOrder, repoSortField, startTime, pageSize):
+        self.ssm_service = SSMService()
+
         self.repoOrder = repoOrder or 'DESC'
         self.repoSortField = repoSortField or 'PUSHED_AT'
         self.startTime = startTime or None
         self.pageSize = pageSize or 100
-        self.githubAPIKey = os.environ['GITHUB_API_KEY']
-        self.githubAPIRoot = os.environ['GITHUB_API_ROOT']
+        self.githubAPIKey = self.ssm_service.get_parameter('github-key')
+        self.githubAPIRoot = 'https://api.github.com/graphql'
 
         self.cursor = None
         self.repos = []
