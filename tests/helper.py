@@ -40,7 +40,6 @@ class TestHelpers:
         'MUSE_MARC_URL': 'test_muse_url',
         'MUSE_CSV_URL': 'test_muse_csv',
         'DOAB_OAI_URL': 'test_doab_url',
-        'WEBPUB_CONVERSION_URL': 'test_conversion_url',
         'ENVIRONMENT': 'test'
     }
 
