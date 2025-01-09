@@ -18,6 +18,8 @@ logger = create_log(__name__)
 
 class MUSEProcess(CoreProcess):
     MUSE_ROOT_URL = 'https://muse.jhu.edu'
+    MARC_URL = 'https://about.muse.jhu.edu/lib/metadata?format=marc&content=book&include=oa&filename=open_access_books&no_auth=1'
+    MARC_CSV_URL = 'https://about.muse.jhu.edu/static/org/local/holdings/muse_book_metadata.csv'
 
     def __init__(self, *args):
         super(MUSEProcess, self).__init__(*args[:4])
@@ -115,10 +117,8 @@ class MUSEProcess(CoreProcess):
                 logger.debug(e)
 
     def downloadMARCRecords(self):
-        marcURL = os.environ['MUSE_MARC_URL']
-
         try:
-            museResponse = requests.get(marcURL, stream=True, timeout=30)
+            museResponse = requests.get(self.MARC_URL, stream=True, timeout=30)
             museResponse.raise_for_status()
         except(ReadTimeout, HTTPError) as e:
             logger.error('Unable to load MUSE MARC records')
@@ -132,10 +132,8 @@ class MUSEProcess(CoreProcess):
         return BytesIO(content)
 
     def downloadRecordUpdates(self):
-        marcCSVURL = os.environ['MUSE_CSV_URL']
-
         try:
-            csvResponse = requests.get(marcCSVURL, stream=True, timeout=30)
+            csvResponse = requests.get(self.MARC_CSV_URL, stream=True, timeout=30)
             csvResponse.raise_for_status()
         except(ReadTimeout, HTTPError) as e:
             logger.error('Unable to load MUSE CSV records')
