@@ -1,0 +1,46 @@
+name: 'Continuous Integration'
+
+on:
+  workflow_call:
+    # TODO: determine what secrets we need to add to Github or get them from parameter store
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      NYPL_API_CLIENT_ID:
+        required: true
+      NYPL_API_CLIENT_SECRET:
+        required: true
+      NYPL_API_TOKEN_URL:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      NYPL_API_CLIENT_ID: ${{ secrets.NYPL_API_CLIENT_ID }}
+      NYPL_API_CLIENT_SECRET: ${{ secrets.NYPL_API_CLIENT_SECRET }}
+      NYPL_API_TOKEN_URL: ${{ secrets.NYPL_API_TOKEN_URL }}
+      ENVIRONMENT: qa
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          make unit-deps
+      # TODO: is this the right flow? 
+      - name: Run functional tests
+        run: |
+          make functional
+      - name: Run integration tests
+        run: |
+          make integration
