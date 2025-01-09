@@ -35,7 +35,6 @@ class TestHelpers:
         'NYPL_BIB_PORT': 'test_bib_port',
         'NYPL_BIB_NAME': 'test_bib_name',
         'NYPL_LOCATIONS_BY_CODE': 'test_location_url',
-        'NYPL_API_CLIENT_TOKEN_URL': 'test_api_token_url',
         'BARDO_CCE_API': 'test_cce_url',
         'ENVIRONMENT': 'test'
     }

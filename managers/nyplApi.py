@@ -12,7 +12,7 @@ class NyplApiManager:
         self.client = None
         self.clientID = clientID or self.ssm_service.get_parameter('nypl-api/client-id')
         self.clientSecret = clientSecret or self.ssm_service.get_parameter('nypl-api/client-secret')
-        self.tokenURL = os.environ.get('NYPL_API_CLIENT_TOKEN_URL', None)
+        self.tokenURL = 'https://isso.nypl.org/oauth/token'
         self.apiRoot = 'https://platform.nypl.org/api/v0.1'
         self.token = None
 

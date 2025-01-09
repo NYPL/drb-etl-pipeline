@@ -49,10 +49,6 @@ NYPL_BIB_PORT: '5432'
 # NYPL Location Code Lookup
 NYPL_LOCATIONS_BY_CODE: https://nypl-core-objects-mapping-qa.s3.amazonaws.com/by_sierra_location.json
 
-# NYPL API Credentials
-# API_CLIENT_ID and API_CLIENT_SECRET must be configured in secrets file
-NYPL_API_CLIENT_TOKEN_URL: https://isso.nypl.org/oauth/token
-
 # DRB API Credentials
 DRB_API_HOST: 'drb-api-qa.nypl.org'
 DRB_API_PORT: '80'
