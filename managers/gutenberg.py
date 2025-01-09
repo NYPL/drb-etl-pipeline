@@ -6,7 +6,7 @@ import requests
 import yaml
 
 from logger import create_log
-from services.ssm_service import SSMService
+from services import SSMService
 
 logger = create_log(__name__)
 

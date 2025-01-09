@@ -5,7 +5,7 @@ from requests_oauthlib import OAuth1
 
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
 from logger import create_log
-from services.ssm_service import SSMService
+from services import SSMService
 
 logger = create_log(__name__)
 

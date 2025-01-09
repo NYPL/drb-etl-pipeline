@@ -1,7 +1,7 @@
 from oauthlib.oauth2 import BackendApplicationClient, TokenExpiredError
 import os
 from requests_oauthlib import OAuth2Session
-from services.ssm_service import SSMService
+from services import SSMService
 
 
 class NyplApiManager:

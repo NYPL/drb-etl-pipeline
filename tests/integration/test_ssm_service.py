@@ -2,7 +2,7 @@ import os
 import pytest
 from load_env import load_env_file
 
-from services.ssm_service import SSMService
+from services import SSMService
 
 class TestSSMService:
     @pytest.fixture

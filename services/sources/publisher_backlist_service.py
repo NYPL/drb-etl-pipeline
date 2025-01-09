@@ -12,7 +12,7 @@ import constants.app_constants as app_constants
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
-from services.ssm_service import SSMService
+from services import SSMService
 from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager

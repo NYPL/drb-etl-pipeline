@@ -19,6 +19,7 @@ logger = create_log(__name__)
 class NYPLBibService(SourceService):
     def __init__(self):
         self.ssm_service = SSMService()
+        
         self.bib_db_connection = DBManager(
             user=self.ssm_service.get_parameter('postgres/nypl-user'),
             pswd=self.ssm_service.get_parameter('postgres/nypl-pswd'),
