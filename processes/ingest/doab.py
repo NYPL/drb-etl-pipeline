@@ -16,6 +16,7 @@ from model import get_file_message
 logger = create_log(__name__)
 
 class DOABProcess(CoreProcess):
+    DOAB_OAI_URL = 'https://directory.doabooks.org/oai/request?'
     ROOT_NAMESPACE = {None: 'http://www.openarchives.org/OAI/2.0/'}
 
     OAI_NAMESPACES = {
@@ -86,7 +87,7 @@ class DOABProcess(CoreProcess):
 
     def importSingleOAIRecord(self, recordID):
         urlParams = 'verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:{}'.format(recordID)
-        doabURL = '{}{}'.format(os.environ['DOAB_OAI_URL'], urlParams)
+        doabURL = '{}{}'.format(self.DOAB_OAI_URL, urlParams)
 
         doabResponse = requests.get(doabURL, timeout=30)
 
@@ -136,7 +137,7 @@ class DOABProcess(CoreProcess):
                 return None
 
     def downloadOAIRecords(self, fullOrPartial, startTimestamp, resumptionToken=None):
-        doabURL = os.environ['DOAB_OAI_URL']
+        doabURL = self.DOAB_OAI_URL
         headers = {
             # Pass a user-agent header to prevent 403 unauthorized responses from DOAB
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
