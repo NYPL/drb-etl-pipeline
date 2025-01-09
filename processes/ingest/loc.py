@@ -2,6 +2,7 @@ import time
 import os, requests
 from requests.exceptions import HTTPError, ConnectionError
 
+import constants.app_constants as app_constants
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.loc import LOCMapping
@@ -268,7 +269,7 @@ class LOCProcess(CoreProcess):
 
         manifest.addMetadata(
             record,
-            conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+            conformsTo=app_constants.WEBPUB_PDF_PROFILE
         )
         
         manifest.addChapter(sourceURI, record.title)

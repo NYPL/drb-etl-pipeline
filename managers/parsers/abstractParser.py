@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import re
 
+import constants.app_constants as app_constants
 from managers.webpubManifest import WebpubManifest
 
 
@@ -38,7 +39,7 @@ class AbstractParser(ABC):
         manifest = WebpubManifest(sourceURI, 'application/pdf')
 
         manifest.addMetadata(
-            self.record, conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+            self.record, conformsTo=app_constants.WEBPUB_PDF_PROFILE
         )
 
         manifest.addChapter(sourceURI, self.record.title)

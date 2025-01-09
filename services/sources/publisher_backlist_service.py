@@ -8,6 +8,7 @@ from typing import Optional
 from model import Record, Work, Edition, Item
 from sqlalchemy.orm import joinedload
 
+import constants.app_constants as app_constants
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager, WebpubManifest
@@ -283,7 +284,7 @@ class PublisherBacklistService(SourceService):
 
         manifest.addMetadata(
             record,
-            conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+            conformsTo=app_constants.WEBPUB_PDF_PROFILE
         )
         
         manifest.addChapter(source_url, record.title)

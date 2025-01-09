@@ -4,6 +4,7 @@ import os
 import requests
 from requests.exceptions import HTTPError, ConnectionError
 
+import constants.app_constants as app_constants
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.met import METMapping
@@ -193,7 +194,7 @@ class METProcess(CoreProcess):
 
         manifest.addMetadata(
             record,
-            conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+            conformsTo=app_constants.WEBPUB_PDF_PROFILE
         )
 
         manifest.addChapter(sourceURI, record.title)

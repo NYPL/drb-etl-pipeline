@@ -1,6 +1,7 @@
 import json
 import os
 
+import constants.app_constants as app_constants
 from ..core import CoreProcess
 from mappings.chicagoISAC import ChicagoISACMapping
 from managers import S3Manager, WebpubManifest
@@ -89,7 +90,7 @@ class ChicagoISACProcess(CoreProcess):
 
         manifest.addMetadata(
             record,
-            conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+            conformsTo=app_constants.WEBPUB_PDF_PROFILE
         )
         
         manifest.addChapter(source_url, record.title)

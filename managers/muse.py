@@ -4,6 +4,7 @@ import os
 import requests
 from requests.exceptions import ReadTimeout, ConnectionError, HTTPError
 
+import constants.app_constants as app_constants
 from managers import WebpubManifest
 from logger import create_log
 
@@ -101,7 +102,7 @@ class MUSEManager:
     def constructWebpubManifest(self):
         pdfManifest = WebpubManifest(self.link, self.mediaType)
         pdfManifest.addMetadata(
-            self.record.record, conformsTo=os.environ['WEBPUB_PDF_PROFILE']
+            self.record.record, conformsTo=app_constants.WEBPUB_PDF_PROFILE
         )
 
         chapterTable = self.museSoup.find(id='available_items_list_wrap')
