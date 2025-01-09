@@ -85,8 +85,6 @@ All services share a single entry point in `main.py` file. This script dynamical
 
 To set up a local environment there is a special process to initialize a database and search cluster which is the `LocalDevelopmentSetupProcess`. However, it's recommended to run the `LocalDevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. Before running a command, it's required to set these config variables in the sample-compose.yaml file:
 
-`HATHI_API_KEY`:
-`HATHI_API_SECRET`:
 `OCLC_API_KEY`:
 
 You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values. 

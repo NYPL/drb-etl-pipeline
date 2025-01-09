@@ -5,6 +5,7 @@ from requests_oauthlib import OAuth1
 
 from managers.coverFetchers.abstractFetcher import AbstractFetcher
 from logger import create_log
+from services.ssm_service import SSMService
 
 logger = create_log(__name__)
 
@@ -16,9 +17,11 @@ class HathiFetcher(AbstractFetcher):
     def __init__(self, *args):
         super().__init__(*args)
 
-        self.apiRoot = os.environ['HATHI_API_ROOT']
-        self.apiKey = os.environ['HATHI_API_KEY']
-        self.apiSecret = os.environ['HATHI_API_SECRET']
+        self.ssm_service = SSMService()
+
+        self.apiRoot = 'https://babel.hathitrust.org/cgi/htd'
+        self.apiKey = self.ssm_service.get_parameter('hathitrust/api-key')
+        self.apiSecret = self.ssm_service.get_parameter('hathitrust/api-secret')
 
         self.uri = None
         self.mediaType = None

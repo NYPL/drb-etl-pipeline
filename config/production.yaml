@@ -32,11 +32,6 @@ OCLC_ROUTING_KEY: sfrOCLCCatalog
 FILE_QUEUE: sfrS3Files
 FILE_ROUTING_KEY: sfrS3Files
 
-# HATHITRUST CONFIGURATION
-# HATHI_API_KEY and HATHI_API_SECRET must be configured as secrets
-HATHI_DATAFILES: https://www.hathitrust.org/files/hathifiles/hathi_file_list.json
-HATHI_API_ROOT: https://babel.hathitrust.org/cgi/htd
-
 # OCLC CONFIGURATION
 # OCLC_API_KEY and OCLC_CLASSIFY_API_KEY must be configured in secrets file
 OCLC_QUERY_LIMIT: '390000'
