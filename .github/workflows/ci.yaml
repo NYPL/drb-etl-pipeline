@@ -2,17 +2,10 @@ name: 'Continuous Integration'
 
 on:
   workflow_call:
-    # TODO: determine what secrets we need to add to Github or get them from parameter store
     secrets:
       AWS_ACCESS_KEY_ID:
         required: true
       AWS_SECRET_ACCESS_KEY:
-        required: true
-      NYPL_API_CLIENT_ID:
-        required: true
-      NYPL_API_CLIENT_SECRET:
-        required: true
-      NYPL_API_TOKEN_URL:
         required: true
 
 permissions:
