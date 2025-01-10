@@ -1,14 +1,11 @@
 import os
 import pytest
-from load_env import load_env_file
 from services import GoogleDriveService
 
-load_env_file('local-compose', file_string='config/local-compose.yaml')
 
 class TestGoogleDriveService:
     @pytest.fixture
     def test_instance(self):
-        load_env_file('local', file_string='config/local.yaml')
         return GoogleDriveService()
 
     def test_get_drive_file(self, test_instance: GoogleDriveService):

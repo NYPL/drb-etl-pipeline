@@ -1,13 +1,10 @@
-import os
 import pytest
-from load_env import load_env_file
 
 from services.ssm_service import SSMService
 
 class TestSSMService:
     @pytest.fixture
     def test_instance(self):
-        load_env_file('local', file_string='config/local.yaml')
         return SSMService()
 
     def test_get_parameter(self, test_instance):
