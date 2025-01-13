@@ -20,7 +20,6 @@ ENV_VAR_TO_SSM_NAME = {
     'NYPL_API_CLIENT_SECRET': 'nypl-api/client-secret',
     'NYPL_BIB_PSWD': 'postgres/nypl-pswd',
     'NYPL_BIB_USER': 'postgres/nypl-user',
-    'OCLC_API_KEY': 'oclc-key',
     'OCLC_METADATA_ID': 'oclc-metadata-clientid',
     'OCLC_METADATA_SECRET': 'oclc-metadata-secret',
     'OCLC_CLIENT_ID': 'oclc-search-clientid',
