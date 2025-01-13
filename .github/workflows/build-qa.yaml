@@ -38,5 +38,5 @@ jobs:
           aws ecs update-service --cluster sfr-pipeline-qa-tf --service sfr-pipeline-qa-tf --force-new-deployment
   run_ci:
     needs: publish_qa
-    uses: NYPL/drb-etl-pipeline/.github/workflows/ci.yml@main
+    uses: NYPL/drb-etl-pipeline/.github/workflows/ci.yaml@main
     secrets: inherit
