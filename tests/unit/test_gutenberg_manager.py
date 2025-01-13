@@ -58,7 +58,6 @@ class TestGutenbergManager:
         assert testInstance.startTime is None
         assert testInstance.pageSize == 100
         assert testInstance.githubAPIKey == 'test_github_key'
-        assert testInstance.githubAPIRoot == 'test_github_url'
         assert testInstance.cursor is None
         assert testInstance.repos == []
         assert testInstance.dataFiles == []
@@ -209,7 +208,7 @@ class TestGutenbergManager:
 
         assert testResponse == 'testResponse'
         mockPost.assert_called_once_with(
-            'test_github_url',
+            testInstance.githubAPIRoot,
             json={'query': 'testQuery'},
             headers={'Authorization': 'bearer test_github_key'}
         )
