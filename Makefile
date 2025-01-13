@@ -7,13 +7,13 @@ help:
 	@echo "make help"
 
 unit: 
-	python -m pytest --cov-report term-missing --cov=. tests/unit
+	python -m pytest --cov-report term-missing --cov=. tests/unit --env=$(ENV)
 
-allure-test:
-	python -m pytest --alluredir=./allure-results ./tests/unit
+functional:
+	python -m pytest tests/functional --env=$(ENV)
 
 integration: 
-	python -m pytest tests/integration
+	python -m pytest tests/integration --env=$(ENV)
 
 up:
 	$(compose_command) up -d
