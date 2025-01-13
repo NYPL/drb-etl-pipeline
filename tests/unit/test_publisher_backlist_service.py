@@ -136,4 +136,4 @@ class TestBacklistService:
         assert limited_access_title_link[1] == 'https://limited-bucket.s3.amazonaws.com/titles/publisher_backlist/Test Backlist/limited_access.pdf'
         assert limited_access_title_link[2] == 'Test Backlist'
         assert limited_access_title_link[3] == 'application/pdf'
-        assert limited_access_title_link[4] == '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": false}'
+        assert limited_access_title_link[4] == '{"catalog": false, "download": true, "reader": false, "embed": false, "nypl_login": true}'
