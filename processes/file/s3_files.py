@@ -5,7 +5,6 @@ import requests
 from time import sleep
 from urllib.parse import quote_plus
 
-import constants.app_constants as app_constants
 from ..core import CoreProcess
 from managers import S3Manager, RabbitMQManager
 from logger import create_log
@@ -16,6 +15,7 @@ logger = create_log(__name__)
 
 
 class S3Process(CoreProcess):
+    WEBPUB_CONVERSION_BASE_URL = 'https://epub-to-webpub.vercel.app'
 
     def __init__(self, *args):
         super(S3Process, self).__init__(*args[:4])
@@ -124,7 +124,7 @@ class S3Process(CoreProcess):
     @retry_request()
     def generate_webpub(file_root, bucket):
         s3_file_path = f'https://{bucket}.s3.amazonaws.com/{file_root}/META-INF/container.xml'
-        webpub_conversion_url = f'{app_constants.WEBPUB_CONVERSION_BASE_URL}/api/{quote_plus(s3_file_path)}'
+        webpub_conversion_url = f'{S3Process.WEBPUB_CONVERSION_BASE_URL}/api/{quote_plus(s3_file_path)}'
 
         try:
             webpub_response = requests.get(webpub_conversion_url, timeout=15)
