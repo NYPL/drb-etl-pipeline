@@ -126,7 +126,7 @@ class TestDOABProcess:
         testProcess.importSingleOAIRecord(1)
 
         mockGet.assert_called_once_with(
-            'test_doab_urlverb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
+            f'{DOABProcess.DOAB_BASE_URL}verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
             timeout=30
         )
         mockParseRecord.assert_called_once_with('mockOAIRecord')
@@ -149,7 +149,7 @@ class TestDOABProcess:
         testProcess.importSingleOAIRecord(1)
 
         mockGet.assert_called_once_with(
-            'test_doab_urlverb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
+            f'{DOABProcess.DOAB_BASE_URL}verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
             timeout=30
         )
         mockParseRecord.assert_called_once_with('mockOAIRecord')
@@ -167,7 +167,7 @@ class TestDOABProcess:
         testProcess.importSingleOAIRecord(1)
 
         mockGet.assert_called_once_with(
-            'test_doab_urlverb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
+            f'{DOABProcess.DOAB_BASE_URL}verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
             timeout=30
         )
         mockEtree.parse.assert_not_called()
@@ -216,7 +216,7 @@ class TestDOABProcess:
 
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
-            'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc',
+            f'{DOABProcess.DOAB_BASE_URL}verb=ListRecords&metadataPrefix=oai_dc',
             stream=True, 
             timeout=30,
             headers=mock.ANY
@@ -230,7 +230,7 @@ class TestDOABProcess:
 
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
-            'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc&from=1900-01-01',
+            f'{DOABProcess.DOAB_BASE_URL}verb=ListRecords&metadataPrefix=oai_dc&from=1900-01-01',
             stream=True, 
             timeout=30,
             headers=mock.ANY
@@ -241,7 +241,7 @@ class TestDOABProcess:
 
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
-            'test_doab_urlverb=ListRecords&metadataPrefix=oai_dc&from=2020-01-01',
+            f'{DOABProcess.DOAB_BASE_URL}verb=ListRecords&metadataPrefix=oai_dc&from=2020-01-01',
             stream=True, 
             timeout=30,
             headers=mock.ANY
@@ -260,7 +260,7 @@ class TestDOABProcess:
 
         assert testRecords.read() == b'marc'
         mockOAIQuery.assert_called_once_with(
-            'test_doab_urlverb=ListRecords&resumptionToken=testRes',
+            f'{DOABProcess.DOAB_BASE_URL}verb=ListRecords&resumptionToken=testRes',
             stream=True, 
             timeout=30,
             headers=mock.ANY
