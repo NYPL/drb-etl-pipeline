@@ -65,7 +65,6 @@ DRB_API_PORT: '80'
 
 # GITHUB API Credentials
 # GITHUB_API_KEY must be configured in secrets file
-GITHUB_API_ROOT: https://api.github.com/graphql
 
 # Bardo CCE API URL
 BARDO_CCE_API: http://sfr-c-ecsal-14v3injrieoy5-258691445.us-east-1.elb.amazonaws.com/search/
@@ -85,9 +84,6 @@ DOAB_OAI_URL: https://directory.doabooks.org/oai/request?
 
 # Default Cover Image for OPDS2 Feed
 DEFAULT_COVER_URL: https://drb-files-qa.s3.amazonaws.com/covers/default/defaultCover.png
-
-# ePub-to-Webpub Conversion Service
-WEBPUB_CONVERSION_URL: https://epub-to-webpub.vercel.app
 
 # Allowed sources of CORS requests to proxy endpoint
 API_PROXY_CORS_ALLOWED: (?:http[s]?:\/\/.*nypl.org|https:\/\/.*(?:nypl|sfr).*vercel.app|http[s]?:\/\/.*tugboat.qa)

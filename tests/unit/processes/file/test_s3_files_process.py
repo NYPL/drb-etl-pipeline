@@ -129,7 +129,7 @@ class TestS3Process:
         assert test_webpub == 'testWebpub'
 
         mock_get_request.assert_called_once_with(
-            'test_conversion_url/api/https%3A%2F%2FtestBucket.s3.amazonaws.com%2FtestRoot%2FMETA-INF%2Fcontainer.xml',
+            f'{S3Process.WEBPUB_CONVERSION_BASE_URL}/api/https%3A%2F%2FtestBucket.s3.amazonaws.com%2FtestRoot%2FMETA-INF%2Fcontainer.xml',
             timeout=15
         )
 
@@ -143,6 +143,6 @@ class TestS3Process:
             S3Process.generate_webpub('testRoot', 'testBucket')
 
         mock_get_request.assert_called_once_with(
-            'test_conversion_url/api/https%3A%2F%2FtestBucket.s3.amazonaws.com%2FtestRoot%2FMETA-INF%2Fcontainer.xml',
+            f'{S3Process.WEBPUB_CONVERSION_BASE_URL}/api/https%3A%2F%2FtestBucket.s3.amazonaws.com%2FtestRoot%2FMETA-INF%2Fcontainer.xml',
             timeout=15
         )
