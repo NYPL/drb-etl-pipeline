@@ -17,7 +17,7 @@ class GutenbergManager:
         self.startTime = startTime or None
         self.pageSize = pageSize or 100
         self.githubAPIKey = os.environ['GITHUB_API_KEY']
-        self.githubAPIRoot = os.environ['GITHUB_API_ROOT']
+        self.githubAPIRoot = 'https://api.github.com/graphql'
 
         self.cursor = None
         self.repos = []
