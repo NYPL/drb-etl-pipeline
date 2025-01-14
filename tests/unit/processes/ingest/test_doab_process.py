@@ -68,7 +68,7 @@ class TestDOABProcess:
         testProcess.runProcess()
 
         mockImport.assert_called_once
-        testProcess.record_buffer.flush.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once()
 
     def test_runProcess_complete(self, testProcess, mocker):
         mockImport = mocker.patch.object(DOABProcess, 'importOAIRecords')
@@ -77,7 +77,7 @@ class TestDOABProcess:
         testProcess.runProcess()
 
         mockImport.assert_called_once_with(fullOrPartial=True)
-        testProcess.record_buffer.flush.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once()
 
     def test_runProcess_custom(self, testProcess, mocker):
         mockImport = mocker.patch.object(DOABProcess, 'importOAIRecords')
@@ -87,7 +87,7 @@ class TestDOABProcess:
         testProcess.runProcess()
 
         mockImport.assert_called_once_with(startTimestamp='customTimestamp')
-        testProcess.record_buffer.flush.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once()
 
     def test_runProcess_single(self, testProcess, mocker):
         mockImport = mocker.patch.object(DOABProcess, 'importSingleOAIRecord')
@@ -97,7 +97,7 @@ class TestDOABProcess:
         testProcess.runProcess()
 
         mockImport.assert_called_once_with(1)
-        testProcess.record_buffer.flush.assert_called_once
+        testProcess.record_buffer.flush.assert_called_once()
 
     def test_importSingleOAIRecord_success(self, testProcess, mocker):
         mockResponse = mocker.MagicMock()
