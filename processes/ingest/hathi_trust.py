@@ -14,6 +14,7 @@ from logger import create_log
 logger = create_log(__name__)
 
 class HathiTrustProcess(CoreProcess):
+    HATHI_DATAFILES = 'https://www.hathitrust.org/files/hathifiles/hathi_file_list.json'
     HATHI_RIGHTS_SKIPS = ['ic', 'icus', 'ic-world', 'und']
     FIELD_SIZE_LIMIT = 131072 * 2 # 131072 is the default size limit
 
@@ -58,7 +59,7 @@ class HathiTrustProcess(CoreProcess):
 
     def importFromHathiTrustDataFile(self, full_dump=False, start_date_time=None):
         try:
-            file_list = requests.get(os.environ['HATHI_DATAFILES'], timeout=15)
+            file_list = requests.get(self.HATHI_DATAFILES, timeout=15)
             file_list.raise_for_status()
         except (ReadTimeout, HTTPError):
             raise IOError('Unable to load data files')
