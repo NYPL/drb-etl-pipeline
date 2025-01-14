@@ -37,9 +37,7 @@ class AbstractParser(ABC):
     def generateManifest(self, sourceURI, manifestURI):
         manifest = WebpubManifest(sourceURI, 'application/pdf')
 
-        manifest.addMetadata(
-            self.record, conformsTo=os.environ['WEBPUB_PDF_PROFILE']
-        )
+        manifest.addMetadata(self.record)
 
         manifest.addChapter(sourceURI, self.record.title)
 

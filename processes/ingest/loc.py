@@ -266,10 +266,7 @@ class LOCProcess(CoreProcess):
     def generateManifest(record, sourceURI, manifestURI):
         manifest = WebpubManifest(sourceURI, 'application/pdf')
 
-        manifest.addMetadata(
-            record,
-            conformsTo=os.environ['WEBPUB_PDF_PROFILE']
-        )
+        manifest.addMetadata(record)
         
         manifest.addChapter(sourceURI, record.title)
 

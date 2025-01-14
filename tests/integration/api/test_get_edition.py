@@ -4,11 +4,11 @@ from .constants import API_URL
 from .utils import assert_response_status
 
 @pytest.mark.parametrize("endpoint, expected_status", [
-    ("/edition/1982731", 200),
-    ("/edition/00000000-0000-0000-0000-000000000000", 400),
-    ("/edition/invalid_id_format", 400),
-    ("/edition/", 404),
-    ("/edition/%$@!*", 400)
+    ("/editions/1982731", 200),
+    ("/editions/00000000-0000-0000-0000-000000000000", 400),
+    ("/editions/invalid_id_format", 400),
+    ("/editions/", 404),
+    ("/editions/%$@!*", 400)
 ])
 def test_get_edition(endpoint, expected_status):
     url = API_URL + endpoint

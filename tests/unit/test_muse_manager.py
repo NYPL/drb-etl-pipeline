@@ -167,9 +167,7 @@ class TestMUSEManager:
         assert testManager.pdfWebpubManifest == mockManifest
 
         mockManifestConstructor.assert_called_once_with('testLink', 'testType')
-        mockManifest.addMetadata.assert_called_once_with(
-            'testRecord', conformsTo='test_profile_uri'
-        )
+        mockManifest.addMetadata.assert_called_once_with('testRecord')
 
         mockManifest.addSection.assert_has_calls([
             mocker.call('Part One. Reading Reading Historically', ''),

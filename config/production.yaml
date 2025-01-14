@@ -1,3 +1,5 @@
+ENVIRONMENT: production
+
 # LOGGING
 LOG_LEVEL: info
 
@@ -63,7 +65,6 @@ DRB_API_PORT: '80'
 
 # GITHUB API Credentials
 # GITHUB_API_KEY must be configured in secrets file
-GITHUB_API_ROOT: https://api.github.com/graphql
 
 # Bardo CCE API URL
 BARDO_CCE_API: http://sfr-c-ecsal-14v3injrieoy5-258691445.us-east-1.elb.amazonaws.com/search/
@@ -71,9 +72,6 @@ BARDO_CCE_API: http://sfr-c-ecsal-14v3injrieoy5-258691445.us-east-1.elb.amazonaw
 # Project MUSE MARC endpoint
 MUSE_MARC_URL: https://about.muse.jhu.edu/lib/metadata?format=marc&content=book&include=oa&filename=open_access_books&no_auth=1
 MUSE_CSV_URL: https://about.muse.jhu.edu/static/org/local/holdings/muse_book_metadata.csv
-
-# DOAB OAI-PMH endpoint
-DOAB_OAI_URL: https://directory.doabooks.org/oai/request?
 
 # Google Books API
 # GOOGLE_BOOKS_KEY must be configured as a secret
@@ -84,26 +82,8 @@ DOAB_OAI_URL: https://directory.doabooks.org/oai/request?
 # Default Cover Image for OPDS2 Feed
 DEFAULT_COVER_URL: https://drb-files-qa.s3.amazonaws.com/covers/default/defaultCover.png
 
-# ePub-to-Webpub Conversion Service
-WEBPUB_CONVERSION_URL: https://epub-to-webpub.vercel.app
-
-# Webpub PDF Profile
-WEBPUB_PDF_PROFILE: http://librarysimplified.org/terms/profiles/pdf
-
 # Allowed sources of CORS requests to proxy endpoint
 API_PROXY_CORS_ALLOWED: http[s]?://.*nypl.org
 
 # Current NYPL Webreader version
 READER_VERSION: v2
-
-# ANALYTICS CONFIGURATION
-PUBLISHERS: "UofMichigan Press"    # publishers need to be a comma separated string
-REFERRER_URL: "https://digital-research-books-beta.nypl.org/"
-
-# Downloads Reports
-DOWNLOAD_BUCKET: "ump-pdf-repository-logs"
-DOWNLOAD_LOG_PATH: "logs/946183545209/us-east-1/ump-pdf-repository/"
-
-# Views Reports
-VIEW_BUCKET: "drb-files-production-logs"
-VIEW_LOG_PATH: "logs/946183545209/us-east-1/drb-files-production"

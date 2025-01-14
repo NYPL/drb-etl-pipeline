@@ -1,8 +1,5 @@
 from processes import PublisherBacklistProcess
-from load_env import load_env_file
 from .assert_ingested_records import assert_ingested_records
-
-load_env_file('local', file_string='config/local.yaml')
 
 
 def test_publisher_backlist_process():

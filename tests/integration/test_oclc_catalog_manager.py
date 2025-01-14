@@ -1,11 +1,9 @@
 import pytest
-from load_env import load_env_file
 from managers import OCLCCatalogManager
 
 class TestOCLCCatalogManager:
     @pytest.fixture
     def test_instance(self):
-        load_env_file('local-compose', file_string='config/local-compose.yaml')
         return OCLCCatalogManager()
 
     def test_query_bibs(self, test_instance: OCLCCatalogManager):

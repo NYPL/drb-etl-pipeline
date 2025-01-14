@@ -1,3 +1,5 @@
+ENVIRONMENT: local
+
 # LOGGING
 LOG_LEVEL: debug
 
@@ -72,24 +74,9 @@ DRB_API_PORT: '5050'
 # Bardo CCE API URL
 BARDO_CCE_API: http://sfr-bardo-copyright-development.us-east-1.elasticbeanstalk.com/search
 
-# Webpub PDF Profile
-WEBPUB_PDF_PROFILE: http://librarysimplified.org/terms/profiles/pdf
-
 # Allowed sources of CORS requests to proxy endpoint
 API_PROXY_CORS_ALLOWED: '*'
 
 READER_VERSION: v2
 
 DEFAULT_COVER_URL: https://drb-files-qa.s3.amazonaws.com/covers/default/defaultCover.png
-
-# ANALYTICS CONFIGURATION
-PUBLISHERS: "UofMichigan Press"    # publishers need to be a comma separated string
-REFERRER_URL: "https://drb-qa.nypl.org/"
-
-# Downloads Reports
-DOWNLOAD_BUCKET: "ump-pdf-repository-logs"
-DOWNLOAD_LOG_PATH: "logs/946183545209/us-east-1/ump-pdf-repository/"
-
-# Views Reports
-VIEW_BUCKET: "drb-files-qa-logs"
-VIEW_LOG_PATH: "logs/946183545209/us-east-1/drb-files-qa"

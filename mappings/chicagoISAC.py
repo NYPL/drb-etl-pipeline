@@ -38,4 +38,3 @@ class ChicagoISACMapping(JSONMapping):
 
         source_id = self.record.identifiers[0].split('|')[0]
         self.record.source_id = f'isac_{source_id}'
-
