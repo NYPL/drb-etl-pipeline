@@ -25,7 +25,6 @@ def test_readable_format_flags(endpoint):
         for link in item.get('links', [])
     ]
 
-
     for link in links:
         flags = link.get('flags', {})
 
