@@ -187,7 +187,7 @@ class TestMUSEProcess:
         testRecords = testProcess.downloadMARCRecords()
 
         assert testRecords.read() == b'marc'
-        mockGet.assert_called_once_with('test_muse_url', stream=True, timeout=30)
+        mockGet.assert_called_once_with(MUSEProcess.MARC_URL, stream=True, timeout=30)
 
     def test_downloadMARCRecords_failure(self, testProcess, mocker):
         mockGet = mocker.patch.object(requests, 'get')
@@ -210,7 +210,7 @@ class TestMUSEProcess:
         testProcess.downloadRecordUpdates()
 
         assert testProcess.updateDates == {'row1': datetime(2020, 1, 1), 'row3': datetime(2020, 1, 1)}
-        mockGet.assert_called_once_with('test_muse_csv', stream=True, timeout=30)
+        mockGet.assert_called_once_with(MUSEProcess.MARC_CSV_URL, stream=True, timeout=30)
         mockResp.iter_lines.assert_called_once_with(decode_unicode=True)
         mockCSV.assert_called_once_with('testFile', skipinitialspace=True)
 
