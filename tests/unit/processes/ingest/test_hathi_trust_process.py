@@ -76,7 +76,7 @@ class TestHathiTrustProcess:
         testInstance.runProcess()
 
         mockImport.assert_called_once
-        testInstance.record_buffer.flush.assert_called_once
+        testInstance.record_buffer.flush.assert_called_once()
 
     def test_runProcess_custom(self, testInstance, mocker):
         mockImport = mocker.patch.object(HathiTrustProcess, 'importFromSpecificFile')
