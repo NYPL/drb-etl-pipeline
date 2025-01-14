@@ -4,6 +4,9 @@ from typing import NoReturn
 
 
 class WebpubManifest:
+    # TODO: change - the library simplified PDF profile no longer exists
+    WEBPUB_PDF_PROFILE = 'http://librarysimplified.org/terms/profiles/pdf'
+
     def __init__(self, source, sourceType):
         self.metadata: dict = {'@type': 'https://schema.org/Book'}
         self.links: list = [{'href': source, 'type': sourceType, 'rel': 'alternate'}]
@@ -14,7 +17,7 @@ class WebpubManifest:
         self.openSection = None
 
     # TODO validate kwargs against schema.org/Book
-    def addMetadata(self, dcdwRecord: object, conformsTo=None) -> None:
+    def addMetadata(self, dcdwRecord: object, conformsTo: str=WEBPUB_PDF_PROFILE) -> None:
         self.metadata['title'] = dcdwRecord.title
 
         if len(dcdwRecord.authors) > 0:

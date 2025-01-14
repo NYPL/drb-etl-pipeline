@@ -87,10 +87,7 @@ class ChicagoISACProcess(CoreProcess):
     def generate_manifest(record, source_url, manifest_url):
         manifest = WebpubManifest(source_url, 'application/pdf')
 
-        manifest.addMetadata(
-            record,
-            conformsTo=os.environ['WEBPUB_PDF_PROFILE']
-        )
+        manifest.addMetadata(record)
         
         manifest.addChapter(source_url, record.title)
 
