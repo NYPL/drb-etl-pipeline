@@ -9,7 +9,7 @@ from ..core import CoreProcess
 from logger import create_log
 from managers import RedisManager
 from mappings.hathitrust import HathiMapping
-from processes import CatalogProcess, ClassifyProcess, ClusterProcess
+from processes import CatalogProcess, ClassifyProcess, ClusterProcess, HathiTrustProcess
 
 logger = create_log(__name__)
 
@@ -55,7 +55,7 @@ class SeedLocalDataProcess(CoreProcess):
         logger.info(f'Ingested {len(self.records)} Hathi Trust sample records')
 
     def import_from_hathi_trust_data_file(self):
-        hathi_files_response = requests.get(os.environ['HATHI_DATAFILES'])
+        hathi_files_response = requests.get(HathiTrustProcess.HATHI_DATAFILES)
 
         if hathi_files_response.status_code != 200:
             raise Exception('Unable to load Hathi Trust data files')
