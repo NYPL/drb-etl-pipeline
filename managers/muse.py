@@ -100,9 +100,7 @@ class MUSEManager:
 
     def constructWebpubManifest(self):
         pdfManifest = WebpubManifest(self.link, self.mediaType)
-        pdfManifest.addMetadata(
-            self.record.record, conformsTo=os.environ['WEBPUB_PDF_PROFILE']
-        )
+        pdfManifest.addMetadata(self.record.record)
 
         chapterTable = self.museSoup.find(id='available_items_list_wrap')
 

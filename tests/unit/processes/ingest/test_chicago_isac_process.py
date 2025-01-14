@@ -92,5 +92,5 @@ class TestChicagoISACProcess:
         assert test_manifest == 'test_json'
         assert mock_manifest.links[0] == {'rel': 'self', 'href': 'manifest_url', 'type': 'application/webpub+json'}
 
-        mock_manifest.addMetadata.assert_called_once_with(mock_record, conformsTo='test_profile_uri')
+        mock_manifest.addMetadata.assert_called_once_with(mock_record)
         mock_manifest.addChapter.assert_called_once_with('source_url', 'test_title')
