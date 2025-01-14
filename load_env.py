@@ -73,4 +73,7 @@ def load_secrets():
 
     for env_var, param_name in ENV_VAR_TO_SSM_NAME.items():
         if os.environ.get(env_var, None) is None:
-            os.environ[env_var] = ssm_service.get_parameter(param_name)
+            param = ssm_service.get_parameter(param_name)
+
+            if param is not None:
+                os.environ[env_var] = param
