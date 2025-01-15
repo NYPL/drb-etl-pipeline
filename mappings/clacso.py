@@ -1,21 +1,41 @@
-from .json import JSONMapping
+import re
 
-class CLACSOMapping(JSONMapping):
-    def __init__(self, source):
-        super().__init__(source, {})
+from mappings.xml import XMLMapping
+
+class CLACSOMapping(XMLMapping):
+    def __init__(self, source, namespace, constants):
+        super(CLACSOMapping, self).__init__(source, namespace, constants)
         self.mapping = self.createMapping()
     
     def createMapping(self):
         return {
-            'title': ('title', '{0}'),
-            'authors': ('authors', '{0}|||true'),
-            'abstract': ('description', '{0}'),
-            'dates': [('publication_date', '{0}|publication_date')],
-            'identifiers': 
-                [('isbn', '{0}|isbn')]
-            ,
+            'title': ('./dc:title/text()', '{0}'),
+            'authors': [('./dc:creator/text()', '{0}|||true')],
+            'abstract': ('./dc:description/text()', '{0}'),
+            'dates': [
+                (
+                    [
+                        './dc:date/text()',
+                        './dc:date/@type'
+                    ],
+                    '{0}|{1}'
+                )
+            ],
+            'identifiers': [
+                ('./dc:identifier/text()', '{0}|clacso'),
+                (
+                    [
+                        './dc:alternateIdentifier/text()',
+                        './datacite:alternateIdentifier/@type'
+                    ],
+                    '{0}|{1}'
+                )
+            ],
             'spatial': ('edition_location', '{0}'),
-            'has_part': [('url', '1|{0}|clacso|application/pdf|{{"catalog": false, "download": true, "reader": false, "embed": false}}')] 
+            'has_part': [(
+                './dc:identifier/text()',
+                '1|{0}|doab|text/html|{{"reader": false, "download": false, "catalog": false, "embed": true}}'
+            )], 
         }
 
     def applyFormatting(self):
