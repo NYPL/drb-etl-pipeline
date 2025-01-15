@@ -14,11 +14,7 @@ POSTGRES_PORT: '5432'
 REDIS_PORT: '6379'
 
 # ELASTICSEARCH CONFIGURATION
-# The commented out lines must be configured in secrets file
-# ELASTICSEARCH_INDEX:
-# ELASTICSEARCH_HOST:
-# ELASTICSEARCH_SCHEME:
-# ELASTICSEARCH_PORT: 
+# ELASTICSEARCH_INDEX, ELASTICSEARCH_HOST, ELASTICSEARCH_SCHEME, ELASTICSEARCH_PORT must be configured in secrets file
 ELASTICSEARCH_TIMEOUT: '10'
 
 # RABBITMQ CONFIGURATION
@@ -33,7 +29,7 @@ FILE_QUEUE: sfrS3Files
 FILE_ROUTING_KEY: sfrS3Files
 
 # OCLC CONFIGURATION
-# OCLC_API_KEY and OCLC_CLASSIFY_API_KEY must be configured in secrets file
+# OCLC API keys must be configured in secrets file
 OCLC_QUERY_LIMIT: '390000'
 
 # AWS CONFIGURATION
@@ -51,24 +47,15 @@ NYPL_BIB_PORT: '5432'
 NYPL_LOCATIONS_BY_CODE: https://nypl-core-objects-mapping-qa.s3.amazonaws.com/by_sierra_location.json
 
 # NYPL API Credentials
-# API_CLIENT_ID and API_CLIENT_SECRET must be configured in secrets file
+# NYPL_API_CLIENT_ID and NYPL_API_CLIENT_SECRET must be configured in secrets file
 NYPL_API_CLIENT_TOKEN_URL: https://isso.nypl.org/oauth/token
 
 # DRB API Credentials
 DRB_API_HOST: 'drb-api-production.nypl.org'
 DRB_API_PORT: '80'
 
-# GITHUB API Credentials
-# GITHUB_API_KEY must be configured in secrets file
-
 # Bardo CCE API URL
 BARDO_CCE_API: http://sfr-c-ecsal-14v3injrieoy5-258691445.us-east-1.elb.amazonaws.com/search/
-
-# Google Books API
-# GOOGLE_BOOKS_KEY must be configured as a secret
-
-# ContentCafe2 API
-# CONTENT_CAFE_USER and CONTENT_CAFE_PSWD must be configured as secrets
 
 # Default Cover Image for OPDS2 Feed
 DEFAULT_COVER_URL: https://drb-files-qa.s3.amazonaws.com/covers/default/defaultCover.png
