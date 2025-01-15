@@ -171,13 +171,10 @@ class ElasticsearchManager:
         )
 
     def createElasticSearchIndex(self):
-        esIndex = Index(self.index)
-        if esIndex.exists() is False:
-            ESWork.init()
-        else:
-            logger.info(
-                'ElasticSearch index {} already exists'.format(self.index)
-            )
+        es_index = Index(self.index)
+        
+        if es_index.exists() is False:
+            ESWork.init(index=self.index)
 
     @staticmethod
     def constructLanguagePipeline(client, id, description, prefix='', field=''):
