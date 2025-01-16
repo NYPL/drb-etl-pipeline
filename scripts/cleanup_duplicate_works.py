@@ -1,4 +1,5 @@
 import os
+from elasticsearch.exceptions import NotFoundError
 
 from managers import DBManager, ElasticsearchManager
 from model import Work
@@ -17,6 +18,8 @@ def main():
     es_manager.createElasticConnection()
 
     for title in TITLES:
+        print(f'Deleting duplicate works with title: {title}')
+
         works = (
             db_manager.session.query(Work)
                 .filter(Work.title == title)
@@ -33,10 +36,13 @@ def main():
 
             db_manager.session.delete(work)
             
-            es_manager.client.delete(
-                index=os.environ['ELASTICSEARCH_INDEX'],
-                id=str(work.uuid)
-            )
+            try:
+                es_manager.client.delete(
+                    index=os.environ['ELASTICSEARCH_INDEX'],
+                    id=str(work.uuid)
+                )
+            except NotFoundError: 
+                print(f'No work document found for work uuid {work.uuid}')
 
         db_manager.session.commit()
 
