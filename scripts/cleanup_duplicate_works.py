@@ -46,6 +46,8 @@ def main():
             except NotFoundError: 
                 print(f'No work document found for work uuid {work.uuid}')
 
+            number_of_works_deleted += 1
+
             if number_of_works_deleted % BATCH_SIZE == 0:
                 db_manager.session.commit()
 
