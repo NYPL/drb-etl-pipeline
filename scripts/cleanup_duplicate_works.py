@@ -9,6 +9,7 @@ TITLES = [
     'Thoughts and things at home and abroad. By Elihu Burritt ... With a memoir, by Mary Howitt',
     'Legends of the sea. 39 men for one woman: an episode of the colonization of Canada. Tr. from the French of H. Émile Chevalier, by E. I. Sears'
 ]
+BATCH_SIZE = 100
 
 def main():
     db_manager = DBManager()
@@ -28,6 +29,7 @@ def main():
         )
 
         first_work = True
+        number_of_works_deleted = 0
         
         for work in works:
             if first_work:
@@ -43,6 +45,9 @@ def main():
                 )
             except NotFoundError: 
                 print(f'No work document found for work uuid {work.uuid}')
+
+            if number_of_works_deleted % BATCH_SIZE == 0:
+                db_manager.session.commit()
 
         db_manager.session.commit()
 
