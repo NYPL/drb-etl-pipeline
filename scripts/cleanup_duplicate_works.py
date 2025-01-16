@@ -34,7 +34,7 @@ def main():
                 first_work = False
                 continue
 
-            db_manager.session.delete(work)   
+            db_manager.session.delete(work)
             
             try:
                 es_manager.client.delete(
