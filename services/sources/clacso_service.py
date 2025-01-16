@@ -65,15 +65,18 @@ class CLACSOService(SourceService):
 
             oai_dc_records = etree.parse(oai_file)
 
-            for record in oai_dc_records.xpath('//oai_dc:dc', name_spaces=self.OAI_NAMESPACES):
+            for record in oai_dc_records.xpath('//oai_dc:dc', namespaces=self.OAI_NAMESPACES):
                 if record is None: continue
 
                 try:
                     parsed_record = self.parse_clacso_record(record)
                     records_array.append(parsed_record)
+                    print(f'Record metadata: Title: {parsed_record.record.title}, Authors: {parsed_record.record.authors}, Abstract: {parsed_record.record.abstract}, Dates: {parsed_record.record.dates}, Identifiers: {parsed_record.record.identifiers}, has_part: {parsed_record.record.has_part}')
+                    raise Exception
                 except Exception:
                     logger.exception(f'Error parsing CLACSO record {record}')
-
+                    break
+                
             records_processed += 100
 
             if not resumption_token or records_processed >= limit:
@@ -84,6 +87,7 @@ class CLACSOService(SourceService):
         try:
             clacso_rec = CLACSOMapping(oaiRec, self.OAI_NAMESPACES, self.constants)
             clacso_rec.applyMapping()
+            return clacso_rec
         except Exception as e:
             logger.exception(f'Error applying mapping to CLACSO Record')
 
@@ -119,6 +123,6 @@ class CLACSOService(SourceService):
     def get_resumption_token(self, oai_file):
         try:
             oai_xml = etree.parse(oai_file)
-            return oai_xml.find('.//resumptionToken', name_spaces=self.ROOT_NAMESPACE).text
+            return oai_xml.find('.//resumptionToken', namespaces=self.ROOT_NAMESPACE).text
         except AttributeError:
             return None

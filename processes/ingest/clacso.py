@@ -11,8 +11,8 @@ class CLACSOProcess(CoreProcess):
     def __init__(self, *args):
         super(CLACSOProcess, self).__init__(*args[:4])
 
-        self.limit = (len(args) >= 5 and args[4] and int(args[4]) <= 100) or None
-        self.offset = (len(args) >= 6 and args[5]) or None
+        self.offset = int(args[5]) if args[5] else 0
+        self.limit = (int(args[4]) + self.offset) if args[4] else 1000
 
         self.clacso_service = CLACSOService()
         
@@ -26,15 +26,15 @@ class CLACSOProcess(CoreProcess):
             elif self.process == 'complete':
                 records = self.clacso_service.get_records(full_import=True, offset=self.offset, limit=self.limit)
             elif self.process == 'custom':
-                records = self.clacso_service.get_records(start_timestamp=self.ingestPeriod)
+                records = self.clacso_service.get_records(start_timestamp=self.ingestPeriod, offset=self.offset, limit=self.limit)
             else: 
                 logger.warning(f'Unknown CLACSO ingestion process type {self.process}')
                 return
-            for record in records:
-                self.addDCDWToUpdateList(record)
+            # for record in records:
+            #     self.addDCDWToUpdateList(record)
             
-            self.saveRecords()
-            self.commitChanges()
+            # self.saveRecords()
+            # self.commitChanges()
 
             logger.info(f'Ingested {len(self.records)} CLACSO records')
 

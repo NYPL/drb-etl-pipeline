@@ -16,26 +16,18 @@ class CLACSOMapping(XMLMapping):
                 (
                     [
                         './dc:date/text()',
-                        './dc:date/@type'
                     ],
-                    '{0}|{1}'
+                    '{0}'
                 )
             ],
             'identifiers': [
                 ('./dc:identifier/text()', '{0}|clacso'),
-                (
-                    [
-                        './dc:alternateIdentifier/text()',
-                        './datacite:alternateIdentifier/@type'
-                    ],
-                    '{0}|{1}'
-                )
             ],
-            'spatial': ('edition_location', '{0}'),
+            # 'spatial': ('edition_location', '{0}'),
             'has_part': [(
                 './dc:identifier/text()',
-                '1|{0}|doab|text/html|{{"reader": false, "download": false, "catalog": false, "embed": true}}'
-            )], 
+                '1|{0}|clacso|text/html|{{"reader": false, "download": false, "catalog": false, "embed": true}}'
+            )]
         }
 
     def applyFormatting(self):
