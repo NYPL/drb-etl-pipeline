@@ -1,0 +1,143 @@
+from datetime import datetime, timedelta, timezone
+import os
+import requests
+from io import BytesIO
+from lxml import etree
+from constants.get_constants import get_constants
+from logger import create_log
+from mappings.base_mapping import MappingError
+from managers import S3Manager, RabbitMQManager
+from mappings.xml import XMLMapping
+from .source_service import SourceService
+
+logger = create_log(__name__)
+
+
+class DSpaceService(SourceService):
+    OAI_NAMESPACES = {
+        'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
+        'dc': 'http://purl.org/dc/elements/1.1/',
+        'datacite': 'https://schema.datacite.org/meta/kernel-4.1/metadata.xsd',
+        'oapen': 'http://purl.org/dc/elements/1.1/',
+        'oaire': 'https://raw.githubusercontent.com/rcic/openaire4/master/schemas/4.0/oaire.xsd'
+    }
+
+    def __init__(self, base_url, SourceMapping: XMLMapping):
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
+        self.s3_bucket = os.environ['FILE_BUCKET']
+
+        self.file_queue = os.environ['FILE_QUEUE']
+        self.file_route = os.environ['FILE_ROUTING_KEY']
+
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(
+            self.file_queue, self.file_route)
+
+        self.constants = get_constants()
+
+        self.base_url = base_url
+        self.SourceMapping = SourceMapping
+
+    def get_records(self, full_or_partial=False, start_timestamp=None, offset=None, limit=None):
+        resumption_token = None
+
+        records_processed = 0
+        while True:
+            oai_file = self.download_records(
+                full_or_partial, start_timestamp, resumption_token=resumption_token)
+
+            resumption_token = self.get_resumption_token(oai_file)
+
+            if records_processed < offset:
+                records_processed += 100
+                continue
+
+            oaidc_records = etree.parse(oai_file)
+            mapped_records = []
+
+            for record in oaidc_records.xpath('//oai_dc:dc', namespaces=self.OAI_NAMESPACES):
+                if record is None:
+                    continue
+
+                try:
+                    parsed_record = self.parse_record(record)
+                    mapped_records.append(parsed_record)
+                except DSpaceError as e:
+                    logger.error(f'Error parsing DSpace record {record}')
+
+            records_processed += 100
+
+            if not resumption_token or records_processed >= limit:
+                return mapped_records
+
+    def parse_record(self, record):
+        try:
+            record = self.SourceMapping(
+                record, self.OAI_NAMESPACES, self.constants)
+            record.applyMapping()
+            return record
+        except MappingError as e:
+            raise DSpaceError(e.message)
+
+    def get_single_record(self, record_id, source_identifier):
+        url = f'{self.base_url}verb=GetRecord&metadataPrefix=oai_dc&identifier={source_identifier}:{record_id}'
+
+        response = requests.get(url, timeout=30)
+
+        if response.status_code == 200:
+            content = BytesIO(response.content)
+            oaidc_XML = etree.parse(content)
+            oaidc_record = oaidc_XML.xpath(
+                '//oai_dc:dc', namespaces=self.OAI_NAMESPACES)[0]
+
+            try:
+                parsed_record = self.parse_record(oaidc_record)
+                return parsed_record
+            except DSpaceError as e:
+                logger.error(f'Error parsing DSpace record {oaidc_record}')
+
+    def get_resumption_token(self, oai_file):
+        try:
+            oai_XML = etree.parse(oai_file)
+            return oai_XML.find('.//resumptionToken', namespaces=self.ROOT_NAMESPACE).text
+        except AttributeError:
+            return None
+
+    def download_records(self, full_or_partial, start_timestamp, resumption_token=None):
+        headers = {
+            # Pass a user-agent header to prevent 403 unauthorized responses from DSpace
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+        }
+
+        url_params = 'verb=ListRecords'
+        if resumption_token:
+            url_params = f'{url_params}&resumptionToken={resumption_token}'
+        elif full_or_partial is False:
+            if not start_timestamp:
+                start_timestamp = (datetime.now(timezone.utc).replace(
+                    tzinfo=None) - timedelta(hours=24)).strftime('%Y-%m-%d')
+            url_params = f'{url_params}&metadataPrefix=oai_dc&from={start_timestamp}'
+        else:
+            url_params = f'{url_params}&metadataPrefix=oai_dc'
+
+        url = f'{self.base_url}{url_params}'
+
+        response = requests.get(url, stream=True, timeout=30, headers=headers)
+
+        if response.status_code == 200:
+            content = bytes()
+
+            for chunk in response.iter_content(1024 * 100):
+                content += chunk
+
+            return BytesIO(content)
+
+        raise DSpaceError(
+            f'Received {response.status_code} status code from {url}')
+
+
+class DSpaceError(Exception):
+    def __init__(self, message):
+        self.message = message
