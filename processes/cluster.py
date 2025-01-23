@@ -22,7 +22,7 @@ class ClusterProcess(CoreProcess):
         super(ClusterProcess, self).__init__(*args[:4])
 
         self.limit = int(args[4]) if len(args) >= 5 and args[4] else None
-        self.source = int(args[6]) if len(args) >= 7 and args[6] else None
+        self.source = args[6] if len(args) >= 7 and args[6] else None
 
         self.generateEngine()
         self.createSession()
@@ -93,6 +93,11 @@ class ClusterProcess(CoreProcess):
             except Exception as e:
                 logger.exception(f'Failed to cluster record {unclustered_record}')
                 raise e
+            
+            number_of_records_clusters += 1
+
+            if self.limit and number_of_records_clusters >= self.limit:
+                break
 
             if len(works_to_index) >= self.CLUSTER_BATCH_SIZE:
                 self.update_elastic_search(works_to_index, work_ids_to_delete)
@@ -103,9 +108,6 @@ class ClusterProcess(CoreProcess):
                 work_ids_to_delete = set()
 
                 self.session.commit()
-
-            if self.limit and number_of_records_clusters >= self.limit:
-                break
 
         logger.info(f'Clustered {len(works_to_index)} works')
         self.update_elastic_search(works_to_index, work_ids_to_delete)
