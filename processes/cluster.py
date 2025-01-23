@@ -58,7 +58,7 @@ class ClusterProcess(CoreProcess):
             self.close_connection()
 
     def cluster_records(self, start_datetime=None, record_uuid=None, source=None):
-        filters = [
+        query_filters = [
             Record.frbr_status == 'complete',
             Record.cluster_status == False,
             Record.source.notin_(['oclcClassify', 'oclcCatalog']),
@@ -66,15 +66,15 @@ class ClusterProcess(CoreProcess):
         ]
 
         if start_datetime:
-            filters.append(Record.date_modified > start_datetime)
+            query_filters.append(Record.date_modified > start_datetime)
 
         if record_uuid:
-            filters.append(Record.uuid == record_uuid)
+            query_filters.append(Record.uuid == record_uuid)
 
         if source:
-            filters.append(Record.source == source)
+            query_filters.append(Record.source == source)
 
-        get_unclustered_records_query = self.session.query(Record).filter(*filters)
+        get_unclustered_records_query = self.session.query(Record).filter(*query_filters)
 
         works_to_index = []
         work_ids_to_delete = set()
