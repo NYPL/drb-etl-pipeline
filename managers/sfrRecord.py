@@ -600,6 +600,10 @@ class SFRRecordManager:
 
     def normalizeDates(self, dates):
         outDates = set()
+
+        if dates is None:
+            return outDates
+
         for date in dates:
             try:
                 dateValue, dateType = tuple(date.split('|'))
