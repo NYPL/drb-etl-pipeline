@@ -1,10 +1,9 @@
-from datetime import datetime, timedelta, timezone
-
+import os
 from services import DSpaceService
 from ..core import CoreProcess
 from logger import create_log
 from mappings.doab import DOABMapping
-from managers import DOABLinkManager
+from managers import DOABLinkManager, S3Manager, RabbitMQManager
 from model import get_file_message
 
 
@@ -27,11 +26,22 @@ class DOABProcess(CoreProcess):
     def __init__(self, *args):
         super(DOABProcess, self).__init__(*args[:4])
 
+        self.s3_manager = S3Manager()
+        self.s3_manager.createS3Client()
+        self.s3_bucket = os.environ['FILE_BUCKET']
+
+        self.file_queue = os.environ['FILE_QUEUE']
+        self.file_route = os.environ['FILE_ROUTING_KEY']
+
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(
+            self.file_queue, self.file_route)
+
         self.offset = int(args[5]) if args[5] else 0
         self.limit = (int(args[4]) + self.offset) if args[4] else 10000
 
-        self.dSpace_service = DSpaceService(
-            base_url=self.DOAB_BASE_URL, SourceMapping=DOABMapping)
+        self.dSpace_service = DSpaceService(base_url=self.DOAB_BASE_URL, source_mapping=DOABMapping)
 
     def runProcess(self):
         try:
@@ -43,7 +53,7 @@ class DOABProcess(CoreProcess):
             if self.process == 'daily':
                 records = self.dSpace_service.get_records(offset=self.offset, limit=self.limit)
             elif self.process == 'complete':
-                records = self.dSpace_service.get_records(full_or_partial=True, offset=self.offset, limit=self.limit)
+                records = self.dSpace_service.get_records(full_import=True, offset=self.offset, limit=self.limit)
             elif self.process == 'custom':
                 records = self.dSpace_service.get_records(start_timestamp=self.ingestPeriod, offset=self.offset, limit=self.limit)
             elif self.singleRecord:
@@ -63,7 +73,7 @@ class DOABProcess(CoreProcess):
             logger.exception('Failed to run DOAB process')
             raise e
         finally:
-            self.close_connection
+            self.close_connection()
 
     def manage_links(self, record):
         linkManager = DOABLinkManager(record.record)
@@ -72,12 +82,11 @@ class DOABProcess(CoreProcess):
 
         for manifest in linkManager.manifests:
             manifestPath, manifestJSON = manifest
-            self.dSpace_service.s3_manager.createManifestInS3(
-                manifestPath, manifestJSON, self.dSpace_service.s3_bucket)
+            self.s3_manager.createManifestInS3(
+                manifestPath, manifestJSON, self.s3_bucket)
 
         for epubLink in linkManager.ePubLinks:
             ePubPath, ePubURI = epubLink
-            self.dSpace_service.rabbitmq_manager.sendMessageToQueue(
-                self.dSpace_service.file_queue, self.dSpace_service.file_route, get_file_message(ePubURI, ePubPath))
+            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(ePubURI, ePubPath))
 
         self.addDCDWToUpdateList(record)

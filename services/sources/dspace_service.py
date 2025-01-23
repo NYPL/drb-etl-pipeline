@@ -1,12 +1,10 @@
 from datetime import datetime, timedelta, timezone
-import os
 import requests
 from io import BytesIO
 from lxml import etree
 from constants.get_constants import get_constants
 from logger import create_log
 from mappings.base_mapping import MappingError
-from managers import S3Manager, RabbitMQManager
 from mappings.xml import XMLMapping
 from .source_service import SourceService
 
@@ -22,31 +20,19 @@ class DSpaceService(SourceService):
         'oaire': 'https://raw.githubusercontent.com/rcic/openaire4/master/schemas/4.0/oaire.xsd'
     }
 
-    def __init__(self, base_url, SourceMapping: XMLMapping):
-        self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
-        self.s3_bucket = os.environ['FILE_BUCKET']
-
-        self.file_queue = os.environ['FILE_QUEUE']
-        self.file_route = os.environ['FILE_ROUTING_KEY']
-
-        self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(
-            self.file_queue, self.file_route)
-
+    def __init__(self, base_url, source_mapping: type[XMLMapping]):
         self.constants = get_constants()
 
         self.base_url = base_url
-        self.SourceMapping = SourceMapping
+        self.source_mapping = source_mapping
 
-    def get_records(self, full_or_partial=False, start_timestamp=None, offset=None, limit=None):
+    def get_records(self, full_import=False, start_timestamp=None, offset=None, limit=None):
         resumption_token = None
 
         records_processed = 0
         while True:
             oai_file = self.download_records(
-                full_or_partial, start_timestamp, resumption_token=resumption_token)
+                full_import, start_timestamp, resumption_token=resumption_token)
 
             resumption_token = self.get_resumption_token(oai_file)
 
@@ -74,7 +60,7 @@ class DSpaceService(SourceService):
 
     def parse_record(self, record):
         try:
-            record = self.SourceMapping(
+            record = self.source_mapping(
                 record, self.OAI_NAMESPACES, self.constants)
             record.applyMapping()
             return record
@@ -105,7 +91,7 @@ class DSpaceService(SourceService):
         except AttributeError:
             return None
 
-    def download_records(self, full_or_partial, start_timestamp, resumption_token=None):
+    def download_records(self, full_import, start_timestamp, resumption_token=None):
         headers = {
             # Pass a user-agent header to prevent 403 unauthorized responses from DSpace
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
@@ -114,7 +100,7 @@ class DSpaceService(SourceService):
         url_params = 'verb=ListRecords'
         if resumption_token:
             url_params = f'{url_params}&resumptionToken={resumption_token}'
-        elif full_or_partial is False:
+        elif full_import is False:
             if not start_timestamp:
                 start_timestamp = (datetime.now(timezone.utc).replace(
                     tzinfo=None) - timedelta(hours=24)).strftime('%Y-%m-%d')
