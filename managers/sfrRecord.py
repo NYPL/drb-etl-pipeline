@@ -602,7 +602,7 @@ class SFRRecordManager:
         outDates = set()
 
         if dates is None:
-            return outDates
+            return list()
 
         for date in dates:
             try:
