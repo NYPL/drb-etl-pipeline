@@ -21,7 +21,8 @@ class ClusterProcess(CoreProcess):
     def __init__(self, *args):
         super(ClusterProcess, self).__init__(*args[:4])
 
-        self.ingest_limit = int(args[4]) if len(args) >= 5 and args[4] else None
+        self.limit = int(args[4]) if len(args) >= 5 and args[4] else None
+        self.source = int(args[6]) if len(args) >= 7 and args[6] else None
 
         self.generateEngine()
         self.createSession()
@@ -39,45 +40,45 @@ class ClusterProcess(CoreProcess):
 
     def runProcess(self):
         try:
-            if self.process == 'daily':
-                self.cluster_records()
-            elif self.process == 'complete':
-                self.cluster_records(full=True)
-            elif self.process == 'custom':
-                self.cluster_records(start_datetime=self.ingestPeriod)
-            elif self.process == 'single':
-                self.cluster_records(record_uuid=self.singleRecord)
-            else: 
-                logger.warning(f'Unknown cluster process type {self.process}')
+            start_datetime = (
+                datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+                if self.process == 'daily'
+                else self.ingestPeriod and datetime.strptime(self.ingestPeriod, '%Y-%m-%dT%H:%M:%S')
+            )
+            
+            self.cluster_records(
+                start_datetime=start_datetime,
+                record_uuid=self.singleRecord,
+                source=self.source, 
+            )
         except Exception as e:
             logger.exception('Failed to run cluster process')
             raise e
         finally:
             self.close_connection()
 
-    def cluster_records(self, full=False, start_datetime=None, record_uuid=None):
-        get_unclustered_records_query = (
-            self.session.query(Record)
-                .filter(Record.frbr_status == 'complete')
-                .filter(Record.cluster_status == False)
-                .filter(Record.source != 'oclcClassify')
-                .filter(Record.source != 'oclcCatalog')
-                .filter(Record.title.isnot(None))
-        )
+    def cluster_records(self, start_datetime=None, record_uuid=None, source=None):
+        filters = [
+            Record.frbr_status == 'complete',
+            Record.cluster_status == False,
+            Record.source.notin_(['oclcClassify', 'oclcCatalog']),
+            Record.title.isnot(None)
+        ]
 
-        if not full:
-            if not start_datetime:
-                start_datetime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-            elif self.process == 'custom':
-                start_datetime = datetime.strptime(start_datetime, '%Y-%m-%dT%H:%M:%S')
-
-            get_unclustered_records_query = get_unclustered_records_query.filter(Record.date_modified > start_datetime)
+        if start_datetime:
+            filters.append(Record.date_modified > start_datetime)
 
         if record_uuid:
-            get_unclustered_records_query = get_unclustered_records_query.filter(Record.uuid == record_uuid)
+            filters.append(Record.uuid == record_uuid)
+
+        if source:
+            filters.append(Record.source == source)
+
+        get_unclustered_records_query = self.session.query(Record).filter(*filters)
 
         works_to_index = []
         work_ids_to_delete = set()
+        number_of_records_clusters = 0
 
         while unclustered_record := get_unclustered_records_query.first():
             try:
@@ -102,6 +103,9 @@ class ClusterProcess(CoreProcess):
                 work_ids_to_delete = set()
 
                 self.session.commit()
+
+            if self.limit and number_of_records_clusters >= self.limit:
+                break
 
         logger.info(f'Clustered {len(works_to_index)} works')
         self.update_elastic_search(works_to_index, work_ids_to_delete)

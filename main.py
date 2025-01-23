@@ -35,6 +35,7 @@ def main(args):
     single_record = args.singleRecord
     limit = args.limit
     offset = args.offset
+    source = args.source
     options = args.options
 
     logger.info(f'Starting process {process} in {environment}')
@@ -44,7 +45,7 @@ def main(args):
     try:
         process_class = available_processes[process]
         
-        process_instance = process_class(process_type, custom_file, start_date, single_record, limit, offset, options)
+        process_instance = process_class(process_type, custom_file, start_date, single_record, limit, offset, source, options)
     except:
         logger.exception(f'Failed to initialize process {process} in {environment}')
         return
@@ -95,6 +96,7 @@ def create_arg_parser():
     parser.add_argument('-l', '--limit', help='Set overall limit for number of records imported in this process')
     parser.add_argument('-o', '--offset', help='Set start offset for current processed (for batched import process)')
     parser.add_argument('-r', '--singleRecord', help='Single record ID for ingesting an individual record')
+    parser.add_argument('-src', '--source', help='Run a process against records from a specified source')
     parser.add_argument('options', nargs='*', help='Additional arguments')
 
     return parser
