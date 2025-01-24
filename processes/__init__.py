@@ -8,6 +8,7 @@ from .frbr.classify import ClassifyProcess
 from .cluster import ClusterProcess
 from .local_development.local_development_setup import LocalDevelopmentSetupProcess
 from .local_development.seed_local_data import SeedLocalDataProcess
+from .local_development.seed_test_data import testSeedLocalDataProcess
 from .file.s3_files import S3Process
 from .api import APIProcess
 from .ingest.muse import MUSEProcess
