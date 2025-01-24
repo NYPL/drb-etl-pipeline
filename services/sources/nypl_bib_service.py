@@ -59,9 +59,6 @@ class NYPLBibService(SourceService):
         if limit:
             nypl_bib_query += ' LIMIT {}'.format(limit)
 
-        print(nypl_bib_query)
-
-
         with self.bib_db_connection.engine.connect() as db_connection:
             bib_results = db_connection.execution_options(stream_results=True).execute(text(nypl_bib_query))
             
