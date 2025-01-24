@@ -4,7 +4,6 @@ from mappings.base_mapping import BaseMapping
 from datetime import datetime, timezone
 from model import Record
 from constants.get_constants import get_constants
-from ..core import CoreProcess
 from logger import create_log
 from managers import RedisManager
 from processes import CatalogProcess, ClassifyProcess, ClusterProcess, HathiTrustProcess
@@ -18,11 +17,10 @@ class TestMapping(BaseMapping):
     def createMapping(self):
          pass
 
-class testSeedLocalDataProcess(CoreProcess):
+class SeedTestDataProcess():
     def __init__(self, *args):
-        super(testSeedLocalDataProcess, self).__init__(*args[:4])
+        super(SeedTestDataProcess, self).__init__(*args[:4])
 
-        self.redis_manager = RedisManager()
         self.constants = get_constants()
         self.test_data = {
             'title': 'test data 1',
