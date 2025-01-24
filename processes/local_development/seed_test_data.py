@@ -60,6 +60,9 @@ class SeedTestDataProcess():
                     setattr(existing_record, key, value)
         
             existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
+
+            self.test_data['uuid'] = existing_record.uuid
+            
         else:
             test_record = Record(**self.test_data)
             self.db_manager.session.add(test_record)
