@@ -1,14 +1,12 @@
 from datetime import datetime
 from uuid import uuid4
-from mappings.base_mapping import BaseMapping
 from datetime import datetime, timezone
 from model import Record
-from constants.get_constants import get_constants
 from logger import create_log
 from managers import DBManager
-from processes import CatalogProcess, ClassifyProcess, ClusterProcess, HathiTrustProcess
 
 logger = create_log(__name__)
+
 
 class SeedTestDataProcess():
     def __init__(self, *args):
@@ -39,27 +37,17 @@ class SeedTestDataProcess():
 
     def runProcess(self):
         try:
-            
             self.db_manager.createSession()
 
             self.save_test_record()
-
-            process_args = ['complete'] + ([None] * 4)
-
-            classify_process = ClassifyProcess(*process_args)
-            classify_process.runProcess()
-
-            catalog_process = CatalogProcess(*process_args)
-            catalog_process.runProcess(max_attempts=1)
-            
-            cluster_process = ClusterProcess(*process_args)
-            cluster_process.runProcess()
-
         except Exception as e:
             logger.exception(f'Failed to seed test data')
             raise e
+        finally:
+            self.db_manager.close_connection()
 
     def save_test_record(self):
         test_record = Record(**self.test_data)
+
         self.db_manager.session.add(test_record)
         self.db_manager.session.commit()
