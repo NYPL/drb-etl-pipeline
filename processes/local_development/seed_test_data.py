@@ -17,7 +17,7 @@ class SeedTestDataProcess():
             'uuid' : uuid4(),
             'date_created' : datetime.now(timezone.utc).replace(tzinfo=None),
             'date_modified' :datetime.now(timezone.utc).replace(tzinfo=None),
-            'frbr_status': 'to_do',
+            'frbr_status': 'complete',
             'cluster_status': False,
             "source": 'test data source',
             'authors': ['Ayan||true'],
@@ -47,15 +47,7 @@ class SeedTestDataProcess():
             self.db_manager.close_connection()
 
     def save_test_record(self):
-        existing_record = self.db_manager.session.query(Record).filter_by(source_id=self.test_data['source_id']).first()
+        test_record = Record(**self.test_data)
 
-        if existing_record:
-            for key, value in self.test_data.items():
-                if key != 'uuid' and hasattr(existing_record, key):
-                    setattr(existing_record, key, value)
-            existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
-        else:
-            test_record = Record(**self.test_data)
-            self.db_manager.session.add(test_record)
-
+        self.db_manager.session.add(test_record)
         self.db_manager.session.commit()
