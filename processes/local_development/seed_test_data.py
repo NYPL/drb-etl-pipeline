@@ -1,6 +1,7 @@
-from datetime import datetime
-from uuid import uuid4
 from datetime import datetime, timezone
+import json
+from uuid import uuid4
+
 from model import Record
 from logger import create_log
 from managers import DBManager
@@ -11,8 +12,9 @@ TEST_SOURCE = 'test_source'
 
 class SeedTestDataProcess():
     def __init__(self, *args):
-
         self.db_manager = DBManager()
+
+        flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
         self.test_data = {
             'title': 'test data 1',
             'uuid' : uuid4(),
@@ -31,7 +33,7 @@ class SeedTestDataProcess():
             'abstract': ['test abstract 1', 'test abstract 2'],
             'subjects': ['test subjects 1||'],
             'rights': ('hathitrust|public_domain|expiration of copyright term for non-US work with corporate author|Public Domain|2021-10-02 05:25:13'),
-            'has_part': ['1|example.com/1.pdf|{TEST_SOURCE}}|text/html|{"catalog": false, "download": false, "reader": false, "embed": true}']
+            'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}']
         }
 
     def runProcess(self):
@@ -54,9 +56,8 @@ class SeedTestDataProcess():
                     setattr(existing_record, key, value)
         
             existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
-
         else:
             test_record = Record(**self.test_data)
             self.db_manager.session.add(test_record)
-            
+        
         self.db_manager.session.commit()
