@@ -124,7 +124,10 @@ class DOABProcess(CoreProcess):
                 except DOABError as e:
                     logger.error(f'Error parsing DOAB record {record}')
 
-            recordsProcessed += 100
+                recordsProcessed += 1
+                
+                if recordsProcessed >= self.ingestLimit:
+                    break
 
             if not resumptionToken or recordsProcessed >= self.ingestLimit:
                 break
