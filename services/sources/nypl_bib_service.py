@@ -59,11 +59,13 @@ class NYPLBibService(SourceService):
         if limit:
             nypl_bib_query += ' LIMIT {}'.format(limit)
 
+        print(nypl_bib_query)
+
+
         with self.bib_db_connection.engine.connect() as db_connection:
             bib_results = db_connection.execution_options(stream_results=True).execute(text(nypl_bib_query))
-            bib_result_mappings = [bib_result_mapping for bib_result_mapping in bib_results.mappings()]
             
-            for bib_result_mapping in bib_result_mappings:
+            for bib_result_mapping in bib_results.mappings():
                 if bib_result_mapping['var_fields'] is None:
                     continue
 
