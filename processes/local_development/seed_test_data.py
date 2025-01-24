@@ -42,8 +42,7 @@ class SeedTestDataProcess():
 
             self.save_test_record()
 
-            process_args = ['complete'] + ([None] * 4)
-            cluster_process = ClusterProcess(*process_args)
+            cluster_process = ClusterProcess('complete', None, None, self.test_data['uuid'], None)
             cluster_process.runProcess()
             
         except Exception as e:
