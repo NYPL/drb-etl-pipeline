@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import json
 from uuid import uuid4
-from process import ClusterProcess
+from processes import ClusterProcess
 from model import Record
 from logger import create_log
 from managers import DBManager
