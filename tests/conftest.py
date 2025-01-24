@@ -10,7 +10,7 @@ def pytest_addoption(parser):
 
 @pytest.fixture(scope='session', autouse=True)
 def setup_env(pytestconfig):
-    environment = os.environ.get('ENVIRONMENT') or pytestconfig.getoption('--env')
+    environment = os.environ.get('ENVIRONMENT') or pytestconfig.getoption('--env') or 'local'
 
     if environment in ['local', 'qa']:
         load_env_file(environment, file_string=f'config/{environment}.yaml')
