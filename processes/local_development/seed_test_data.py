@@ -5,23 +5,15 @@ from datetime import datetime, timezone
 from model import Record
 from constants.get_constants import get_constants
 from logger import create_log
-from managers import RedisManager
+from managers import DBManager
 from processes import CatalogProcess, ClassifyProcess, ClusterProcess, HathiTrustProcess
 
 logger = create_log(__name__)
 
-class TestMapping(BaseMapping):
-    def __init__(self, record):
-        self.record = record
-
-    def createMapping(self):
-         pass
-
 class SeedTestDataProcess():
     def __init__(self, *args):
-        super(SeedTestDataProcess, self).__init__(*args[:4])
 
-        self.constants = get_constants()
+        self.db_manager = DBManager()
         self.test_data = {
             'title': 'test data 1',
             'uuid' : uuid4(),
@@ -47,15 +39,12 @@ class SeedTestDataProcess():
 
     def runProcess(self):
         try:
-            self.generateEngine()
-            self.createSession()
+            
+            self.db_manager.createSession()
 
             self.save_test_record()
 
             process_args = ['complete'] + ([None] * 4)
-
-            self.redis_manager.createRedisClient()
-            self.redis_manager.clear_cache()
 
             classify_process = ClassifyProcess(*process_args)
             classify_process.runProcess()
@@ -67,13 +56,10 @@ class SeedTestDataProcess():
             cluster_process.runProcess()
 
         except Exception as e:
-            logger.exception(f'Failed to seed local data')
+            logger.exception(f'Failed to seed test data')
             raise e
 
     def save_test_record(self):
-            test_record = Record(**self.test_data)
-            test_mapping = TestMapping(test_record)
-            test_mapping.record = test_record
-            self.addDCDWToUpdateList(test_mapping)
-            self.saveRecords()
-            
+        test_record = Record(**self.test_data)
+        self.db_manager.session.add(test_record)
+        self.db_manager.session.commit()
