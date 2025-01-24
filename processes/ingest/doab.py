@@ -12,7 +12,6 @@ logger = create_log(__name__)
 
 class DOABProcess(CoreProcess):
     DOAB_BASE_URL = 'https://directory.doabooks.org/oai/request?'
-    ROOT_NAMESPACE = {None: 'http://www.openarchives.org/OAI/2.0/'}
     DOAB_IDENTIFIER = "oai:directory.doabooks.org"
 
     OAI_NAMESPACES = {

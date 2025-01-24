@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 import requests
 from io import BytesIO
 from lxml import etree
@@ -12,6 +13,7 @@ logger = create_log(__name__)
 
 
 class DSpaceService(SourceService):
+    ROOT_NAMESPACE = {None: 'http://www.openarchives.org/OAI/2.0/'}
     OAI_NAMESPACES = {
         'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
         'dc': 'http://purl.org/dc/elements/1.1/',
@@ -26,7 +28,7 @@ class DSpaceService(SourceService):
         self.base_url = base_url
         self.source_mapping = source_mapping
 
-    def get_records(self, full_import=False, start_timestamp=None, offset=None, limit=None):
+    def get_records(self, full_import=False, start_timestamp=None, offset: Optional[int]=None, limit: Optional[int]=None):
         resumption_token = None
 
         records_processed = 0
@@ -53,15 +55,17 @@ class DSpaceService(SourceService):
                 except DSpaceError as e:
                     logger.error(f'Error parsing DSpace record {record}')
 
-            records_processed += 100
+            records_processed += 1
+
+            if records_processed >= limit:
+                break
 
             if not resumption_token or records_processed >= limit:
                 return mapped_records
 
     def parse_record(self, record):
         try:
-            record = self.source_mapping(
-                record, self.OAI_NAMESPACES, self.constants)
+            record = self.source_mapping(record, self.OAI_NAMESPACES, self.constants)
             record.applyMapping()
             return record
         except MappingError as e:
@@ -75,8 +79,7 @@ class DSpaceService(SourceService):
         if response.status_code == 200:
             content = BytesIO(response.content)
             oaidc_XML = etree.parse(content)
-            oaidc_record = oaidc_XML.xpath(
-                '//oai_dc:dc', namespaces=self.OAI_NAMESPACES)[0]
+            oaidc_record = oaidc_XML.xpath('//oai_dc:dc', namespaces=self.OAI_NAMESPACES)[0]
 
             try:
                 parsed_record = self.parse_record(oaidc_record)
