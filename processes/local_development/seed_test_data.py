@@ -47,7 +47,15 @@ class SeedTestDataProcess():
             self.db_manager.close_connection()
 
     def save_test_record(self):
-        test_record = Record(**self.test_data)
+        existing_record = self.db_manager.session.query(Record).filter_by(source_id=self.test_data['source_id']).first()
 
-        self.db_manager.session.add(test_record)
+        if existing_record:
+            for key, value in self.test_data.items():
+                if key != 'uuid' and hasattr(existing_record, key):
+                    setattr(existing_record, key, value)
+            existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
+        else:
+            test_record = Record(**self.test_data)
+            self.db_manager.session.add(test_record)
+
         self.db_manager.session.commit()
