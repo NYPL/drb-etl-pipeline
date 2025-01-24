@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 import json
 from uuid import uuid4
-
+from processes import ClusterProcess
 from model import Record
 from logger import create_log
 from managers import DBManager
@@ -41,6 +41,10 @@ class SeedTestDataProcess():
             self.db_manager.createSession()
 
             self.save_test_record()
+
+            cluster_process = ClusterProcess('complete', None, None, self.test_data['uuid'], None)
+            cluster_process.runProcess()
+            
         except Exception as e:
             logger.exception(f'Failed to seed test data')
             raise e
@@ -56,6 +60,9 @@ class SeedTestDataProcess():
                     setattr(existing_record, key, value)
         
             existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
+
+            self.test_data['uuid'] = existing_record.uuid
+            
         else:
             test_record = Record(**self.test_data)
             self.db_manager.session.add(test_record)
