@@ -1,10 +1,10 @@
+from model import Part
 from processes import METProcess
 from .assert_ingested_records import assert_ingested_records
-from managers.s3 import S3Manager, S3Error
+from managers.s3 import S3Manager
 
 
 def test_met_process():
-
     met_process = METProcess('complete', None, None, None, 5, None)
 
     met_process.runProcess()
@@ -14,13 +14,11 @@ def test_met_process():
     s3_manager = S3Manager()
     s3_manager.createS3Client() 
 
-    s3_bucket_name = 'drb-files-local'
     for record in records:
-        pdf_key = f"manifests/{record.id}.pdf"
+        parts = record.get_parts()
 
-        try:
-            s3_manager.getObjectFromBucket(pdf_key, s3_bucket_name)
-        except S3Error as e:
-            assert False, f"PDF manifest for record {record.id} does not exist in S3: {e.message}"
-        except Exception as e:
-            assert False, f"An error occurred while checking for the PDF manifest: {str(e)}"
+        manifest_part: Part = next(part for part in parts if part.file_type == 'application/webpub+json')
+
+        manifest = s3_manager.getObjectFromBucket(manifest_part.get_file_key(), manifest_part.get_file_bucket())
+
+        assert manifest is not None
