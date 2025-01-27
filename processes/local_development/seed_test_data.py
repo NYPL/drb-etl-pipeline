@@ -45,6 +45,8 @@ class SeedTestDataProcess():
             cluster_process = ClusterProcess('complete', None, None, self.test_data['uuid'], None)
             cluster_process.runProcess()
             
+            self.save_test_data_ids_to_file()
+
         except Exception as e:
             logger.exception(f'Failed to seed test data')
             raise e
@@ -68,3 +70,12 @@ class SeedTestDataProcess():
             self.db_manager.session.add(test_record)
         
         self.db_manager.session.commit()
+    
+    def save_test_data_ids_to_file(self):
+        record = self.db_manager.session.query(Record).filter_by(source_id=self.test_data['source_id']).first()
+        if record:
+            with open('test_data_ids.json', 'w') as f:
+                json.dump({
+                    'edition_id': str(record.edition_id),
+                    'uuid': str(record.uuid)
+                }, f)
