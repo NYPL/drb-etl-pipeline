@@ -23,9 +23,6 @@ class ChicagoISACMapping(JSONMapping):
     def applyFormatting(self):
         self.record.source = 'isac'
 
-        if len(self.record.identifiers) == 0:
-            raise Exception(f'No identifiers found for record: {self.record}')
-
         if ',' in self.record.identifiers[0]:
             identifierArray = self.record.identifiers[0].split(', ')
             updatedIdentifierArray = []
