@@ -31,14 +31,14 @@ class TestDSpaceService:
 
     @pytest.fixture
     def mock_query(self, mocker):
-        mockGet = mocker.patch.object(requests, 'get')
-        mockResp = mocker.MagicMock()
-        mockResp.status_code = 200
-        mockResp.iter_content.return_value = [b'm', b'a', b'r', b'c']
-        mockGet.return_value = mockResp
+        mock_get = mocker.patch.object(requests, 'get')
+        mock_resp = mocker.MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.content = b'testing'
+        mock_resp.iter_content.return_value = [b'm', b'a', b'r', b'c']
+        mock_get.return_value = mock_resp
 
-        return mockGet
-
+        return mock_get
 
     def test_get_records(self, test_instance: DSpaceService):
         records = test_instance.get_records(
@@ -49,13 +49,7 @@ class TestDSpaceService:
 
         assert records is not None
 
-    def test_get_single_record_success(self, test_instance: DSpaceService, mocker):
-        mock_response = mocker.MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = b'testing'
-        mock_get = mocker.patch.object(requests, 'get')
-        mock_get.return_value = mock_response
-
+    def test_get_single_record_success(self, test_instance: DSpaceService, mock_query, mocker):
         mock_XML = mocker.MagicMock()
         mock_XML.xpath.return_value = ['mock_record']
         mock_etree = mocker.patch('services.sources.dspace_service.etree')
@@ -65,19 +59,13 @@ class TestDSpaceService:
 
         test_instance.get_single_record(1, "oai:directory.doabooks.org")
 
-        mock_get.assert_called_once_with(
+        mock_query.assert_called_once_with(
             f'{test_instance.base_url}verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
             timeout=30
         )
         mock_parse_record.assert_called_once_with('mock_record')
 
-    def test_get_single_record_dspace_error(self, test_instance: DSpaceService, mocker):
-        mock_response = mocker.MagicMock()
-        mock_response.status_code = 200
-        mock_response.content = b'testing'
-        mock_get = mocker.patch.object(requests, 'get')
-        mock_get.return_value = mock_response
-
+    def test_get_single_record_dspace_error(self, test_instance: DSpaceService, mock_query, mocker):
         mock_XML = mocker.MagicMock()
         mock_XML.xpath.return_value = ['mock_record']
         mock_etree = mocker.patch('services.sources.dspace_service.etree')
@@ -88,7 +76,7 @@ class TestDSpaceService:
 
         test_instance.get_single_record(1, "oai:directory.doabooks.org")
 
-        mock_get.assert_called_once_with(
+        mock_query.assert_called_once_with(
             f'{test_instance.base_url}verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
             timeout=30
         )
@@ -122,7 +110,7 @@ class TestDSpaceService:
         assert test_instance.get_resumption_token(end_XML) == None
 
     def test_download_records_complete(self, test_instance: DSpaceService, mock_query):
-        test_records = test_instance.download_records(True, None)
+        test_records = test_instance.download_records(full_import=True, start_timestamp=None)
 
         assert test_records.read() == b'marc'
         mock_query.assert_called_once_with(
