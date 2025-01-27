@@ -1,4 +1,3 @@
-from model import Part
 from processes import METProcess
 from .assert_ingested_records import assert_ingested_records
 from managers.s3 import S3Manager
