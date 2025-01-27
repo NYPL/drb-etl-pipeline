@@ -16,7 +16,7 @@ def test_met_process():
     for record in records:
         parts= record.get_parts()
 
-        manifest_part: Part = next(part for part in parts if part.file_type == 'application/webpub+json')
+        manifest_part = next(part for part in parts if part.file_type == 'application/webpub+json')
 
         manifest_head_response = s3_manager.s3Client.head_object(Key=manifest_part.get_file_key(), Bucket=manifest_part.get_file_bucket())
 
