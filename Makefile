@@ -7,7 +7,7 @@ help:
 	@echo "make help"
 
 unit: 
-	python -m pytest --cov-report term-missing --cov=. tests/unit --env=$(ENV)
+	python -m pytest --cov-report term-missing --cov=. tests/unit
 
 functional:
 	python -m pytest tests/functional --env=$(ENV)
