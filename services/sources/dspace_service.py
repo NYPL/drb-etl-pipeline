@@ -32,7 +32,8 @@ class DSpaceService(SourceService):
         resumption_token = None
 
         records_processed = 0
-        while True:
+        mapped_records = []
+        while resumption_token is not None or records_processed < offset:
             oai_file = self.download_records(
                 full_import, start_timestamp, resumption_token=resumption_token)
 
@@ -43,7 +44,6 @@ class DSpaceService(SourceService):
                 continue
 
             oaidc_records = etree.parse(oai_file)
-            mapped_records = []
 
             for record in oaidc_records.xpath('//oai_dc:dc', namespaces=self.OAI_NAMESPACES):
                 if record is None:
@@ -55,13 +55,12 @@ class DSpaceService(SourceService):
                 except DSpaceError as e:
                     logger.error(f'Error parsing DSpace record {record}')
 
-            records_processed += 1
+                records_processed += 1
 
-            if records_processed >= limit:
-                break
+                if limit is not None and records_processed >= limit:
+                    return mapped_records
 
-            if not resumption_token or records_processed >= limit:
-                return mapped_records
+        return mapped_records
 
     def parse_record(self, record):
         try:
