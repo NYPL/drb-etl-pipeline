@@ -19,6 +19,6 @@ def test_met_process():
 
         manifest_part: Part = next(part for part in parts if part.file_type == 'application/webpub+json')
 
-        manifest = s3_manager.getObjectFromBucket(manifest_part.get_file_key(), manifest_part.get_file_bucket())
+        manifest_head_response = s3_manager.s3Client.head_object(Key=manifest_part.get_file_key(), Bucket=manifest_part.get_file_bucket())
 
-        assert manifest is not None
+        assert manifest_head_response is not None
