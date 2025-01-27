@@ -1,9 +1,37 @@
+from dataclasses import dataclass
 from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
 from model.utilities.extractDailyEdition import extract
+from typing import Optional
+from urllib.parse import urlparse
 
 from .base import Base, Core
+
+
+@dataclass
+class Part:
+    index: int
+    url: str
+    source: str
+    file_type: str
+    flags: dict
+
+    def get_file_bucket(self) -> Optional[str]:
+        parsed_url = urlparse(self.url)
+
+        if 's3' not in parsed_url.hostname:
+            return None
+        
+        return parsed_url.hostname.split('.')[0]
+
+    def get_file_key(self) -> Optional[str]:
+        parsed_url = urlparse(self.url)
+
+        if 's3' not in parsed_url.hostname:
+            return None
+        
+        return parsed_url.path[1:]
 
 
 class Record(Base, Core):
@@ -60,6 +88,17 @@ class Record(Base, Core):
     def __iter__(self):
         for attr in dir(self):
             yield attr, getattr(self, attr)
+
+
+    def get_parts(self) -> list[Part]:
+        parts = []
+
+        for part in self.has_part:
+            index, file_url, source, file_type, flags = part.split('|')
+
+            parts.append(Part(index, file_url, source, file_type, flags))
+
+        return parts
 
     @hybrid_property
     def has_version(self):
