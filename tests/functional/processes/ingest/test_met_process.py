@@ -14,7 +14,7 @@ def test_met_process():
     s3_manager.createS3Client() 
 
     for record in records:
-        parts = record.get_parts()
+        parts= record.get_parts()
 
         manifest_part: Part = next(part for part in parts if part.file_type == 'application/webpub+json')
 

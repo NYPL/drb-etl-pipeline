@@ -90,7 +90,7 @@ class Record(Base, Core):
             yield attr, getattr(self, attr)
 
 
-    def get_parts(self):
+    def get_parts(self) -> list[Part]:
         parts = []
 
         for part in self.has_part:
