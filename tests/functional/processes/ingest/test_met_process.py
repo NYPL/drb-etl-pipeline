@@ -9,7 +9,6 @@ def test_met_process():
 
     met_process.runProcess()
     records = assert_ingested_records(source_name='met')
-
     
     s3_manager = S3Manager()
     s3_manager.createS3Client() 
