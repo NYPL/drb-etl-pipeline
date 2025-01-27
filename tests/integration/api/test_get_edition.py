@@ -4,6 +4,7 @@ import json
 from .constants import API_URL
 from .utils import assert_response_status
 
+@pytest.mark.integration
 @pytest.mark.parametrize("endpoint, expected_status", [
     ("/editions/{seeded_edition_id}", 200),
     ("/editions/00000000-0000-0000-0000-000000000000", 400),

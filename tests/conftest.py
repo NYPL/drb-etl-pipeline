@@ -75,14 +75,19 @@ def seed_test_data(db_manager):
     item = db_manager.session.query(Item).filter_by(record_id=test_record.id).first()
     edition_id = str(item.edition_id) if item else None
 
-    with open('test_data_ids.json', 'w') as f:
-        json.dump({
-            'edition_id': edition_id,
-            'uuid': str(test_data['uuid'])
-        }, f)
-
-    return edition_id
+    return {
+        'edition_id': edition_id,
+        'uuid': str(test_data['uuid'])
+    }
 
 @pytest.fixture(scope='module')
-def seeded_edition_id(seed_test_data):
-    return seed_test_data
+def seeded_edition_id(request, seed_test_data):
+    if 'functional' in request.keywords or 'integration' in request.keywords:
+        return seed_test_data['edition_id']
+    return None
+
+@pytest.fixture(scope='module')
+def seeded_uuid(request, seed_test_data):
+    if 'functional' in request.keywords or 'integration' in request.keywords:
+        return seed_test_data['uuid']
+    return None
