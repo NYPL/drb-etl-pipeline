@@ -8,7 +8,6 @@ def assert_uploaded_manifests(records: list[Record]):
 
     for record in records:
         parts = record.get_parts()
-        print(parts)
 
         manifest_part = next((part for part in parts if part.file_type == 'application/webpub+json'), None)
 
