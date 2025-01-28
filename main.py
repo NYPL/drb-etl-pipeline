@@ -15,10 +15,19 @@ if os.environ.get('NEW_RELIC_LICENSE_KEY', None):
     )
 
 
+
 def main(args):
     logger = create_log(__name__)
 
     environment = args.environment
+
+    if args.script is not None:
+        logger.info(f'Running script {args.script} in {environment}')
+        
+        run_script(args.script)
+        
+        return
+
     process = args.process
     process_type = args.ingestType
     custom_file = args.inputFile
@@ -26,6 +35,7 @@ def main(args):
     single_record = args.singleRecord
     limit = args.limit
     offset = args.offset
+    source = args.source
     options = args.options
 
     logger.info(f'Starting process {process} in {environment}')
@@ -35,7 +45,7 @@ def main(args):
     try:
         process_class = available_processes[process]
         
-        process_instance = process_class(process_type, custom_file, start_date, single_record, limit, offset, options)
+        process_instance = process_class(process_type, custom_file, start_date, single_record, limit, offset, source, options)
     except:
         logger.exception(f'Failed to initialize process {process} in {environment}')
         return
@@ -57,10 +67,28 @@ def register_processes():
     return dict(process_classes)
 
 
+def register_scripts() -> dict:
+    import scripts 
+
+    script_functions = inspect.getmembers(scripts, inspect.isfunction)
+    
+    return dict(script_functions)
+
+
+def run_script(script: str):
+    scripts = register_scripts()
+
+    script = scripts.get(script)
+
+    if script is not None:
+        script()
+
+
 def create_arg_parser():
     parser = argparse.ArgumentParser(description='Run DCDW Data Ingest Jobs')
     
-    parser.add_argument('-p', '--process', required=True, help='The name of the process job to be run')
+    parser.add_argument('-p', '--process', help='The name of the process job to be run')
+    parser.add_argument('-sc', '--script', help='The name of the script to run')
     parser.add_argument('-e', '--environment', required=True, help='Environment for deployment, sets env file to load')
     parser.add_argument('-i', '--ingestType', help='The interval to run the ingest over. Generally daily/complete/custom')
     parser.add_argument('-f', '--inputFile', help='Name of file to ingest. Ignored if -i custom is not set')
@@ -68,6 +96,7 @@ def create_arg_parser():
     parser.add_argument('-l', '--limit', help='Set overall limit for number of records imported in this process')
     parser.add_argument('-o', '--offset', help='Set start offset for current processed (for batched import process)')
     parser.add_argument('-r', '--singleRecord', help='Single record ID for ingesting an individual record')
+    parser.add_argument('-src', '--source', help='Run a process against records from a specified source')
     parser.add_argument('options', nargs='*', help='Additional arguments')
 
     return parser

@@ -176,7 +176,7 @@ class PublisherBacklistService(SourceService):
                 s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
                 
                 if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
-                    logger.error(f'Failed to retrieve upload file for {record_metadata.get("DRB_Record ID")} to S3')
+                    logger.error(f'Failed to upload file for {record_metadata.get("DRB_Record ID")} to S3')
                     continue
 
                 s3_url = f'https://{bucket}.s3.amazonaws.com/{s3_path}'
@@ -184,8 +184,8 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
                 
-                self.add_has_part_mapping(s3_url, publisher_backlist_record.record)
-                self.store_pdf_manifest(publisher_backlist_record.record, requires_login=record_permissions['requires_login'])
+                self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
+                self.store_pdf_manifest(publisher_backlist_record.record, record_permissions['requires_login'])
                 
                 mapped_records.append(publisher_backlist_record)
             except Exception:

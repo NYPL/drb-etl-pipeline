@@ -25,9 +25,6 @@ RABBIT_PORT: xxx
 OCLC_QUEUE: xxx
 FILE_QUEUE: xxx
 
-# OCLC CONFIGURATION
-OCLC_API_KEY: xxx
-
 # AWS CONFIGURATION
 AWS_ACCESS: xxx 
 AWS_SECRET: xxx 
@@ -45,18 +42,10 @@ NYPL_BIB_PSWD: xxx
 NYPL_LOCATIONS_BY_CODE: xxx
 
 # NYPL API Credentials
-NYPL_API_CLIENT_ID: xxx
-NYPL_API_CLIENT_SECRET: xxx
 NYPL_API_CLIENT_TOKEN_URL: xxx
-
-# GITHUB API Credentials
-GITHUB_API_KEY: xxx
 
 # Bardo CCE API URL
 BARDO_CCE_API: xxx
-
-# Project MUSE MARC endpoint
-MUSE_MARC_URL: xxx
 
 # Allowed sources of CORS requests to proxy endpoint
 API_PROXY_CORS_ALLOWED: (?:Source1:Source2)

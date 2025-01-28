@@ -1,3 +1,4 @@
+from datetime import datetime
 from sqlalchemy.exc import DataError
 from processes.cluster import ClusterError
 import pytest
@@ -21,6 +22,10 @@ class TestClusterProcess:
         class TestClusterProcess(ClusterProcess):
             def __init__(self):
                 self.records = []
+                self.ingestPeriod = None
+                self.limit = None
+                self.singleRecord = None
+                self.source = None
                 self.constants = { 'iso639': {} }
                 self.session = mocker.Mock()
                 self.engine = mocker.Mock()
@@ -51,7 +56,11 @@ class TestClusterProcess:
         testInstance.process = 'complete'
         testInstance.runProcess()
 
-        mockCluster.assert_called_once_with(full=True)
+        mockCluster.assert_called_once_with(
+            start_datetime=None,
+            record_uuid=None,
+            source=None
+        )
         mockSave.assert_called_once
         mockCommit.assert_called_once
 
@@ -61,10 +70,14 @@ class TestClusterProcess:
         mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
 
         testInstance.process = 'custom'
-        testInstance.ingestPeriod = 'testDate'
+        testInstance.ingestPeriod = '2020-01-01T00:00:00'
         testInstance.runProcess()
 
-        mockCluster.assert_called_once_with(start_datetime='testDate')
+        mockCluster.assert_called_once_with(
+            start_datetime=datetime.strptime(testInstance.ingestPeriod, '%Y-%m-%dT%H:%M:%S'),
+            record_uuid=None,
+            source=None
+        )
         mockSave.assert_called_once
         mockCommit.assert_called_once
 
@@ -81,7 +94,7 @@ class TestClusterProcess:
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
 
-        mockSession.query().filter().filter.return_value = mockQuery
+        mockSession.query().filter.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
         mockQuery.first.side_effect = ['rec1', 'rec2', None]
 
@@ -116,7 +129,7 @@ class TestClusterProcess:
         testInstance.process = 'custom'
         mocker.patch('processes.cluster.datetime')
 
-        mockSession.query().filter().filter.return_value = mockQuery
+        mockSession.query().filter.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
         mockQuery.first.side_effect = ['rec{}'.format(i) for i in range(50)] + [None]
 
@@ -152,13 +165,13 @@ class TestClusterProcess:
         mockQuery = mocker.MagicMock()
         testInstance.session = mockSession
 
-        mockSession.query().filter().filter().filter().filter().filter.return_value = mockQuery
+        mockSession.query().filter.return_value = mockQuery
         mockQueryResponses = [mocker.MagicMock(id=1), mocker.MagicMock(id=2), None]
         mockQuery.first.side_effect = mockQueryResponses
 
         clusterMocks['cluster_record'].side_effect = [('work1', []), ClusterError]
 
-        testInstance.cluster_records(full=True)
+        testInstance.cluster_records()
 
         assert mockQuery.first.call_count == 3
         clusterMocks['update_cluster_status'].assert_called_once_with([2])

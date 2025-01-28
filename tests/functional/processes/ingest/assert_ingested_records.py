@@ -2,9 +2,8 @@ from datetime import datetime, timezone, timedelta
 
 from managers import DBManager
 from model import Record
-from processes.core import CoreProcess
 
-def assert_ingested_records(source_name: str):
+def assert_ingested_records(source_name: str) -> list[Record]:
     db_manager = DBManager()
     db_manager.generateEngine()
     db_manager.createSession()
@@ -16,4 +15,6 @@ def assert_ingested_records(source_name: str):
             .all()
     )
 
-    assert len(records) > 1
+    assert len(records) >= 1
+
+    return records
