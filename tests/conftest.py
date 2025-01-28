@@ -69,6 +69,11 @@ def seed_test_data(db_manager):
     else:
         test_record = Record(**test_data)
         db_manager.session.add(test_record)
+
+    process_args = ('complete', None, None, str(test_data['uuid']), None)    
+
+    cluster_process = ClusterProcess(*process_args)
+    cluster_process.runProcess()    
     
     db_manager.session.commit()
 

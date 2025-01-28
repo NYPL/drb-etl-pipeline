@@ -1,8 +1,10 @@
 import pytest
+import os
 import requests
 import json
-from .constants import API_URL
 from .utils import assert_response_status
+
+API_URL = os.getenv("DRB_API_URL")
 
 @pytest.mark.integration
 @pytest.mark.parametrize("endpoint, expected_status", [
@@ -12,7 +14,7 @@ from .utils import assert_response_status
     ("/editions/", 404),
     ("/editions/%$@!*", 400)
 ])
-def test_get_edition(endpoint, expected_status, seeded_edition_id):
+def test_get_edition(endpoint, expected_status, seeded_edition_id): 
     url = API_URL + endpoint.format(seeded_edition_id=seeded_edition_id)
     response = requests.get(url)
 
