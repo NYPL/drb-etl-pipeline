@@ -52,7 +52,7 @@ class DSpaceService(SourceService):
                 try:
                     parsed_record = self.parse_record(record)
                     mapped_records.append(parsed_record)
-                except DSpaceError as e:
+                except Exception as e:
                     logger.error(f'Error parsing DSpace record {record}')
 
                 records_processed += 1
@@ -68,7 +68,7 @@ class DSpaceService(SourceService):
             record.applyMapping()
             return record
         except MappingError as e:
-            raise DSpaceError(e.message)
+            raise Exception(e.message)
 
     def get_single_record(self, record_id, source_identifier):
         url = f'{self.base_url}verb=GetRecord&metadataPrefix=oai_dc&identifier={source_identifier}:{record_id}'
@@ -83,7 +83,7 @@ class DSpaceService(SourceService):
             try:
                 parsed_record = self.parse_record(oaidc_record)
                 return parsed_record
-            except DSpaceError as e:
+            except Exception as e:
                 logger.error(f'Error parsing DSpace record {oaidc_record}')
 
     def get_resumption_token(self, oai_file):
@@ -122,10 +122,5 @@ class DSpaceService(SourceService):
 
             return BytesIO(content)
 
-        raise DSpaceError(
+        raise Exception(
             f'Received {response.status_code} status code from {url}')
-
-
-class DSpaceError(Exception):
-    def __init__(self, message):
-        self.message = message

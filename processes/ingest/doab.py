@@ -12,7 +12,7 @@ logger = create_log(__name__)
 
 class DOABProcess(CoreProcess):
     DOAB_BASE_URL = 'https://directory.doabooks.org/oai/request?'
-    DOAB_IDENTIFIER = "oai:directory.doabooks.org"
+    DOAB_IDENTIFIER = 'oai:directory.doabooks.org'
 
     OAI_NAMESPACES = {
         'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
@@ -40,7 +40,7 @@ class DOABProcess(CoreProcess):
         self.offset = int(args[5]) if args[5] else 0
         self.limit = (int(args[4]) + self.offset) if args[4] else 10000
 
-        self.dSpace_service = DSpaceService(base_url=self.DOAB_BASE_URL, source_mapping=DOABMapping)
+        self.dspace_service = DSpaceService(base_url=self.DOAB_BASE_URL, source_mapping=DOABMapping)
 
     def runProcess(self):
         try:
@@ -50,13 +50,13 @@ class DOABProcess(CoreProcess):
             records = []
 
             if self.process == 'daily':
-                records = self.dSpace_service.get_records(offset=self.offset, limit=self.limit)
+                records = self.dspace_service.get_records(offset=self.offset, limit=self.limit)
             elif self.process == 'complete':
-                records = self.dSpace_service.get_records(full_import=True, offset=self.offset, limit=self.limit)
+                records = self.dspace_service.get_records(full_import=True, offset=self.offset, limit=self.limit)
             elif self.process == 'custom':
-                records = self.dSpace_service.get_records(start_timestamp=self.ingestPeriod, offset=self.offset, limit=self.limit)
+                records = self.dspace_service.get_records(start_timestamp=self.ingestPeriod, offset=self.offset, limit=self.limit)
             elif self.singleRecord:
-                record = self.dSpace_service.get_single_record(record_id=self.singleRecord, source_identifier=self.DOAB_IDENTIFIER)
+                record = self.dspace_service.get_single_record(record_id=self.singleRecord, source_identifier=self.DOAB_IDENTIFIER)
                 self.manage_links(record)
 
             if records:

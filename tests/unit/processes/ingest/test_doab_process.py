@@ -26,7 +26,7 @@ class TestDOABProcess:
                 self.limit = 10000
                 self.ingestPeriod = None
                 self.records = []
-                self.dSpace_service = mocker.MagicMock()
+                self.dspace_service = mocker.MagicMock()
 
         return TestDOAB()
     
@@ -57,43 +57,43 @@ class TestDOABProcess:
         mocks['close'].assert_called_once()
 
     def test_runProcess_daily(self, test_instance: DOABProcess, record_mappings, mocks):
-        test_instance.dSpace_service.get_records.return_value = record_mappings
+        test_instance.dspace_service.get_records.return_value = record_mappings
 
         test_instance.process = 'daily'
         test_instance.runProcess()
 
-        test_instance.dSpace_service.get_records.assert_called_once_with(offset=0, limit=10000)
+        test_instance.dspace_service.get_records.assert_called_once_with(offset=0, limit=10000)
         assert mocks['manage_links'].call_count == len(record_mappings)
         self.assert_common_expectations(mocks)
 
     def test_runProcess_complete(self, test_instance: DOABProcess, record_mappings, mocks):
-        test_instance.dSpace_service.get_records.return_value = record_mappings
+        test_instance.dspace_service.get_records.return_value = record_mappings
 
         test_instance.process = 'complete'
         test_instance.runProcess()
 
-        test_instance.dSpace_service.get_records.assert_called_once_with(full_import=True, offset=0, limit=10000)
+        test_instance.dspace_service.get_records.assert_called_once_with(full_import=True, offset=0, limit=10000)
         assert mocks['manage_links'].call_count == len(record_mappings)
         self.assert_common_expectations(mocks)
 
     def test_runProcess_custom(self, test_instance: DOABProcess, record_mappings, mocks):
-        test_instance.dSpace_service.get_records.return_value = record_mappings
+        test_instance.dspace_service.get_records.return_value = record_mappings
         
         test_instance.process = 'custom'
         test_instance.runProcess()
 
-        test_instance.dSpace_service.get_records.assert_called_once_with(start_timestamp=None, offset=0, limit=10000)
+        test_instance.dspace_service.get_records.assert_called_once_with(start_timestamp=None, offset=0, limit=10000)
         assert mocks['manage_links'].call_count == len(record_mappings)
         self.assert_common_expectations(mocks)
 
     def test_runProcess_single(self, test_instance: DOABProcess, single_record_mapping, mocks):
-        test_instance.dSpace_service.get_single_record.return_value = single_record_mapping
+        test_instance.dspace_service.get_single_record.return_value = single_record_mapping
         
         test_instance.process = 'single'
         test_instance.singleRecord = 1
         test_instance.runProcess()
 
-        test_instance.dSpace_service.get_single_record.assert_called_once_with(record_id=1, source_identifier='oai:directory.doabooks.org')
+        test_instance.dspace_service.get_single_record.assert_called_once_with(record_id=1, source_identifier='oai:directory.doabooks.org')
         assert mocks['manage_links'].call_count == 1
         self.assert_common_expectations(mocks)
 

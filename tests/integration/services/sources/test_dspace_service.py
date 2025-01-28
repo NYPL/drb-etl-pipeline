@@ -5,7 +5,6 @@ import requests
 from unittest import mock
 
 from services import DSpaceService
-from services.sources.dspace_service import DSpaceError
 from mappings.base_mapping import MappingError
 from processes.ingest.doab import DOABProcess
 
@@ -72,7 +71,7 @@ class TestDSpaceService:
         mock_etree.parse.return_value = mock_XML
 
         mock_parse_record = mocker.patch.object(DSpaceService, 'parse_record')
-        mock_parse_record.side_effect = DSpaceError('test')
+        mock_parse_record.side_effect = Exception('test')
 
         test_instance.get_single_record(1, "oai:directory.doabooks.org")
 
@@ -150,7 +149,7 @@ class TestDSpaceService:
         error_mock.status_code = 500
         mock_query.return_value = error_mock
 
-        with pytest.raises(DSpaceError):
+        with pytest.raises(Exception):
             test_instance.download_records(False, None)
 
     def test_download_records_resumption(self, test_instance: DSpaceService, mock_query):
@@ -184,5 +183,5 @@ class TestDSpaceService:
         mock_mapper = test_instance.source_mapping
         mock_mapper.return_value = mock_mapping
 
-        with pytest.raises(DSpaceError):
+        with pytest.raises(Exception):
             test_instance.parse_record('test_record')
