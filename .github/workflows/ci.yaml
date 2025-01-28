@@ -18,6 +18,11 @@ jobs:
       AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ENVIRONMENT: qa
+      ELASTICSEARCH_HOST: ${{ secrets.ELASTICSEARCH_HOST }}
+      ELASTICSEARCH_INDEX: ${{ secrets.ELASTICSEARCH_INDEX }}
+      ELASTICSEARCH_PORT: ${{ secrets.ELASTICSEARCH_PORT }}
+      ELASTICSEARCH_SCHEME: ${{ secrets.ELASTICSEARCH_SCHEME }}
+      REDIS_HOST: ${{ secrets.REDIS_HOST }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.9
@@ -39,4 +44,4 @@ jobs:
           pip install -r requirements.txt
       - name: Run API tests
         run: |
-          pytest tests/integration/api
+          pytest tests/integration/api --env=qa
