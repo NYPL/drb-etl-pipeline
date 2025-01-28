@@ -69,13 +69,11 @@ def seed_test_data(db_manager):
     else:
         test_record = Record(**test_data)
         db_manager.session.add(test_record)
-
-    process_args = ('complete', None, None, str(test_data['uuid']), None)    
-
-    cluster_process = ClusterProcess(*process_args)
-    cluster_process.runProcess()    
     
     db_manager.session.commit()
+
+    cluster_process = ClusterProcess('complete', None, None, str(test_data['uuid']), None)
+    cluster_process.runProcess()
 
     item = db_manager.session.query(Item).filter_by(record_id=test_record.id).first()
     edition_id = str(item.edition_id) if item else None
