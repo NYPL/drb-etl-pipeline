@@ -20,6 +20,11 @@ class Part:
     def get_file_bucket(self) -> Optional[str]:
         parsed_url = urlparse(self.url)
 
+        if 'localhost' in parsed_url.hostname:
+            path_parts = parsed_url.path.split('/')
+            
+            return path_parts[1]
+
         if 's3' not in parsed_url.hostname:
             return None
         
@@ -27,6 +32,11 @@ class Part:
 
     def get_file_key(self) -> Optional[str]:
         parsed_url = urlparse(self.url)
+
+        if 'localhost' in parsed_url.hostname:
+            path_parts = parsed_url.path.split('/')
+
+            return '/'.join(path_parts[2:])
 
         if 's3' not in parsed_url.hostname:
             return None

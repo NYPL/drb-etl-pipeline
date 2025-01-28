@@ -1,5 +1,6 @@
 from processes import LOCProcess
 from .assert_ingested_records import assert_ingested_records
+from .assert_uploaded_manifests import assert_uploaded_manifests
 
 
 def test_loc_process():
@@ -7,4 +8,5 @@ def test_loc_process():
 
     loc_process.runProcess()
 
-    assert_ingested_records(source_name='loc')
+    records = assert_ingested_records(source_name='loc')
+    assert_uploaded_manifests(records)

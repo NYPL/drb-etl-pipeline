@@ -1,5 +1,6 @@
 from processes import DOABProcess
 from .assert_ingested_records import assert_ingested_records
+from .assert_uploaded_manifests import assert_uploaded_manifests
 
 
 def test_doab_process():
@@ -7,4 +8,5 @@ def test_doab_process():
 
     doab_process.runProcess()
 
-    assert_ingested_records(source_name='doab')
+    records = assert_ingested_records(source_name='doab')
+    assert_uploaded_manifests(records)
