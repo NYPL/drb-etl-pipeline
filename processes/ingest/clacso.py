@@ -36,7 +36,7 @@ class CLACSOProcess(CoreProcess):
             # self.saveRecords()
             # self.commitChanges()
 
-            logger.info(f'Ingested {len(self.records)} CLACSO records')
+            logger.info(f'Ingested {len(records)} CLACSO records')
 
         except Exception as e:
             logger.exception('Failed to run CLACSO process')

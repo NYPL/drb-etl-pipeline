@@ -9,7 +9,7 @@ from constants.get_constants import get_constants
 from logger import create_log
 from mappings.clacso import CLACSOMapping
 from .source_service import SourceService
-from managers import RabbitMQManager, S3Manager
+from managers import RabbitMQManager, S3Manager, DOABLinkManager
 
 logger = create_log(__name__)
 
@@ -44,8 +44,8 @@ class CLACSOService(SourceService):
         self,
         full_import: bool=False, 
         start_timestamp: datetime=None,
-        offset: Optional[int]=None,
-        limit: Optional[int]=None
+        offset: Optional[int]=0,
+        limit: Optional[int]=100
     ) -> list[CLACSOMapping]:
         
         resumption_token = None
@@ -70,9 +70,10 @@ class CLACSOService(SourceService):
 
                 try:
                     parsed_record = self.parse_clacso_record(record)
-                    records_array.append(parsed_record)
-                    print(f'Record metadata: Title: {parsed_record.record.title}, Authors: {parsed_record.record.authors}, Abstract: {parsed_record.record.abstract}, Dates: {parsed_record.record.dates}, Identifiers: {parsed_record.record.identifiers}, has_part: {parsed_record.record.has_part}')
-                    raise Exception
+                    if self.verify_medium_type(parsed_record.record.medium) == True and self.verify_has_part_url(parsed_record.record.has_part) == True:
+                        records_array.append(parsed_record)
+                    else:
+                        continue
                 except Exception:
                     logger.exception(f'Error parsing CLACSO record {record}')
                     break
@@ -83,17 +84,31 @@ class CLACSOService(SourceService):
                 break
         return records_array
 
+    def verify_medium_type(self, medium):
+        type_list = ['book', 'bookpart', 'part', 'chapter', 'bibliography', 'appendix', 'index',
+                'foreword', 'afterword', 'bibliography', 'review', 'article', 'introduction']
+        if medium in type_list:
+            return True
+        return False
+    
+    def verify_has_part_url(self, has_part):
+        for part in has_part:
+            if '.pdf' in part:
+                return True
+        return False
+    
     def parse_clacso_record(self, oaiRec):
         try:
             clacso_rec = CLACSOMapping(oaiRec, self.OAI_NAMESPACES, self.constants)
             clacso_rec.applyMapping()
+
             return clacso_rec
         except Exception as e:
             logger.exception(f'Error applying mapping to CLACSO Record')
 
     def download_oai_records(self, full_import, start_timestamp, resumption_token=None):
         headers = {
-            # Pass a user-agent header to prevent 403 unauthorized responses from DOAB
+            # Pass a user-agent header to prevent 403 unauthorized responses from CLACSO
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
         }
 
