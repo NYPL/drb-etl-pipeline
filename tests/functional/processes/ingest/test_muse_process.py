@@ -9,4 +9,5 @@ def test_muse_process():
     muse_process.runProcess()
 
     records = assert_ingested_records(source_name='muse')
+
     assert_uploaded_manifests(records)

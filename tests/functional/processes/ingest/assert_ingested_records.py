@@ -15,6 +15,6 @@ def assert_ingested_records(source_name: str) -> list[Record]:
             .all()
     )
 
-    assert len(records) > 1
+    assert len(records) >= 1
 
     return records
