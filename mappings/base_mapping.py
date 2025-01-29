@@ -29,6 +29,21 @@ class BaseMapping(RecordMapping):
 
     def applyFormatting(self):
         return self.record
+    
+    def format_identifiers(self, identifiers):
+        for index, identifier in enumerate(identifiers):
+            count_digits = 0
+            if '/' not in identifier:
+                for char in identifier:
+                    if char.isdigit():
+                        count_digits += 1
+                if count_digits == 8:
+                    identifiers[index] = f'{identifier}|issn'
+                if count_digits == 10 or count_digits == 13:
+                    identifiers[index] = f'{identifier}|isbn'
+            else:
+                identifiers[index] = f'{identifier}|clacso'
+        return identifiers
 
     def updateExisting(self, existing):
         for attr, value in self.record:

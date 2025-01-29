@@ -30,11 +30,11 @@ class CLACSOProcess(CoreProcess):
             else: 
                 logger.warning(f'Unknown CLACSO ingestion process type {self.process}')
                 return
-            # for record in records:
-            #     self.addDCDWToUpdateList(record)
+            for record in records:
+                self.addDCDWToUpdateList(record)
             
-            # self.saveRecords()
-            # self.commitChanges()
+            self.saveRecords()
+            self.commitChanges()
 
             logger.info(f'Ingested {len(records)} CLACSO records')
 
