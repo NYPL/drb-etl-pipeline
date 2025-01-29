@@ -1,17 +1,19 @@
 import pytest
+import os
 import requests
-from .constants import API_URL
 from .utils import assert_response_status
 
+
+@pytest.mark.integration
 @pytest.mark.parametrize("endpoint, expected_status", [
-    ("/editions/1982731", 200),
+    ("/editions/{seeded_edition_id}", 200),
     ("/editions/00000000-0000-0000-0000-000000000000", 400),
     ("/editions/invalid_id_format", 400),
     ("/editions/", 404),
     ("/editions/%$@!*", 400)
 ])
-def test_get_edition(endpoint, expected_status):
-    url = API_URL + endpoint
+def test_get_edition(endpoint, expected_status, seeded_edition_id): 
+    url = os.getenv("DRB_API_URL") + endpoint.format(seeded_edition_id=seeded_edition_id)
     response = requests.get(url)
 
     assert response.status_code is not None
