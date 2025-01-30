@@ -1,7 +1,10 @@
+import os
 import pytest
 import requests
+
 from .constants import API_URL
 from .utils import assert_response_status
+
 
 @pytest.mark.parametrize("endpoint, expected_status", [
     ("/collections/3650664c-c8be-4d07-8d64-2d7003b02048", 200),
@@ -20,3 +23,15 @@ def test_get_collection(endpoint, expected_status):
     if expected_status == 200:
         response_json = response.json()
         assert response_json is not None
+
+
+def test_get_collection():
+    url = os.getenv("DRB_API_URL") + '/collections?sort=title'
+    response = requests.get(url)
+
+    assert response.status_code is not None
+    assert_response_status(url, response, 200)
+
+    response_json = response.json()
+    
+    assert response_json is not None
