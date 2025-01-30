@@ -32,7 +32,7 @@ def setup_env(pytestconfig, request):
         load_env_file(environment, file_string=f'config/{environment}.yaml')
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def db_manager():
     db_manager = DBManager()
     
@@ -47,8 +47,23 @@ def db_manager():
         yield None
 
 
-@pytest.fixture(scope='module')
-def seed_test_data(db_manager):
+@pytest.fixture(scope='session')
+def test_title():
+    return 'Integration Test Book'
+
+
+@pytest.fixture(scope='session')
+def test_subject():
+    return 'Integration Test Subject'
+
+
+@pytest.fixture(scope='session')
+def test_language():
+    return 'Integration Test Language'
+
+
+@pytest.fixture(scope='session')
+def seed_test_data(db_manager, test_title, test_subject, test_language):
     # TODO: find path forward to connect to db in GH actions
     if db_manager is None:
         return {
@@ -59,13 +74,13 @@ def seed_test_data(db_manager):
 
     flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
     test_record_data = {
-        'title': 'test data 1',
+        'title': test_title,
         'uuid': uuid4(),
         'frbr_status': 'complete',
         'cluster_status': False,
         "source": TEST_SOURCE,
         'authors': ['Ayan||true'],
-        'languages': ['Serbian'],
+        'languages': [test_language],
         'dates': ['1907-|publication_date'],
         'publisher': ['Project Gutenberg Literary Archive Foundation||'],
         'identifiers': [],
@@ -74,17 +89,18 @@ def seed_test_data(db_manager):
         'extent': ('11, 164 p. ;'),
         'is_part_of': ['Tauchnitz edition|Vol. 4560|volume'],
         'abstract': ['test abstract 1', 'test abstract 2'],
-        'subjects': ['test subjects 1||'],
+        'subjects': [f'{test_subject}||'],
         'rights': ('hathitrust|public_domain|expiration of copyright term for non-US work with corporate author|Public Domain|2021-10-02 05:25:13'),
         'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}']
     }
 
-    existing_record = db_manager.session.query(Record).filter_by(source_id=test_record_data['source_id']).first()
+    existing_record = db_manager.session.query(Record).filter(Record.source_id == test_record_data['source_id']).first()
 
     if existing_record:
         for key, value in test_record_data.items():
             if key != 'uuid' and hasattr(existing_record, key):
                 setattr(existing_record, key, value)
+        
         existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
         test_record_data['uuid'] = existing_record.uuid
         test_record = existing_record
@@ -121,12 +137,12 @@ def seed_test_data(db_manager):
     }
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def test_edition_id(seed_test_data):
     return seed_test_data['edition_id']
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def test_collection_id(db_manager, test_edition_id):
     if not db_manager:
         return '3650664c-c8be-4d07-8d64-2d7003b02048'
@@ -151,11 +167,11 @@ def test_collection_id(db_manager, test_edition_id):
     db_manager.session.commit()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def test_work_id(seed_test_data):
     return seed_test_data['work_id']
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope='session')
 def test_link_id(seed_test_data):
     return seed_test_data['link_id']
