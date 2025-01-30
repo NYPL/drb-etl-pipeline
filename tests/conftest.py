@@ -2,12 +2,15 @@ import os
 import pytest
 from datetime import datetime, timezone
 import json
+from sqlalchemy import text
 from uuid import uuid4
+
 from processes import ClusterProcess
 from model import Record, Item
 from logger import create_log
 from managers import DBManager
 from load_env import load_env_file
+
 
 logger = create_log(__name__)
 
@@ -27,19 +30,21 @@ def setup_env(pytestconfig, request):
     if not running_unit_tests and environment in ['local', 'local-qa', 'qa']:
         load_env_file(environment, file_string=f'config/{environment}.yaml')
 
+
 @pytest.fixture(scope='module')
 def db_manager():
     db_manager = DBManager()
     
     try:
         db_manager.createSession()
+        db_manager.session.execute(text('SELECT 1')) # Test the db connection
 
         yield db_manager
         
         db_manager.close_connection()
     except:
         yield None
-    
+
 
 @pytest.fixture(scope='module')
 def seed_test_data(db_manager):
