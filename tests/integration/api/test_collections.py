@@ -25,7 +25,7 @@ def test_get_collection(endpoint, expected_status):
         assert response_json is not None
 
 
-def test_get_collection():
+def test_get_collections():
     url = os.getenv("DRB_API_URL") + '/collections?sort=title'
     response = requests.get(url)
 
