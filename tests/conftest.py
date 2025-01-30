@@ -145,7 +145,8 @@ def test_edition_id(seed_test_data):
 @pytest.fixture(scope='session')
 def test_collection_id(db_manager, test_edition_id):
     if not db_manager:
-        return '3650664c-c8be-4d07-8d64-2d7003b02048'
+        yield '3650664c-c8be-4d07-8d64-2d7003b02048'
+        return
 
     edition = db_manager.session.query(Edition).filter(Edition.id == test_edition_id).first()
     test_collection = Collection(
