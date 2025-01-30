@@ -6,7 +6,7 @@ from sqlalchemy import text
 from uuid import uuid4
 
 from processes import ClusterProcess
-from model import Record, Item
+from model import Edition, Item, Record, Work
 from logger import create_log
 from managers import DBManager
 from load_env import load_env_file
@@ -51,7 +51,8 @@ def seed_test_data(db_manager):
     # TODO: find path forward to connect to db in GH actions
     if db_manager is None:
         return {
-            'edition_id': 1982731
+            'edition_id': 1982731,
+            'work_id': '701c5f00-cd7a-4a7d-9ed1-ce41c574ad1d'
         }
 
     flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
@@ -94,11 +95,19 @@ def seed_test_data(db_manager):
     cluster_process = ClusterProcess('complete', None, None, str(test_data['uuid']), None)
     cluster_process.runProcess()
 
-    item = db_manager.session.query(Item).filter_by(record_id=test_record.id).first()
-    edition_id = str(item.edition_id) if item else None
+    frbrized_model = (
+        db_manager.session.query(Item, Edition, Work)
+            .join(Edition, Edition.id == Item.edition_id)
+            .join(Work, Work.id == Edition.work_id)
+            .filter(Item.record_id == test_record.id)
+            .first()
+    )
+
+    item, edition, work = frbrized_model if frbrized_model else (None, None, None)
 
     return {
-        'edition_id': edition_id,
+        'edition_id': str(edition.id) if item else None,
+        'work_id': str(work.uuid) if work else None, 
         'uuid': str(test_data['uuid'])
     }
 
@@ -107,6 +116,13 @@ def seed_test_data(db_manager):
 def seeded_edition_id(request, seed_test_data):
     if 'functional' in request.keywords or 'integration' in request.keywords:
         return seed_test_data['edition_id']
+    
+    return None
+
+@pytest.fixture(scope='module')
+def seeded_work_id(request, seed_test_data):
+    if 'functional' in request.keywords or 'integration' in request.keywords:
+        return seed_test_data['work_id']
     
     return None
 
