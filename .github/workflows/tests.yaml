@@ -31,7 +31,7 @@ jobs:
           make unit
       - name: Start Docker containers
         run: |
-          docker-compose up -d
+          docker compose up -d
       - name: Wait for services to be ready
         run: |
           sleep 10 # Adjust as needed or replace with a health check script
@@ -44,4 +44,4 @@ jobs:
       - name: Stop Docker containers
         if: always()
         run: |
-          docker-compose down
+          docker compose down
