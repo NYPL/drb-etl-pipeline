@@ -30,19 +30,20 @@ class BaseMapping(RecordMapping):
     def applyFormatting(self):
         return self.record
     
-    def format_identifiers(self, identifiers):
+    def format_identifiers(self, identifiers, source):
+        identifier_type_dict = {'8': 'issn', '10': 'isbn', '13': 'isbn'}
         for index, identifier in enumerate(identifiers):
             count_digits = 0
             if '/' not in identifier:
                 for char in identifier:
                     if char.isdigit():
                         count_digits += 1
-                if count_digits == 8:
-                    identifiers[index] = f'{identifier}|issn'
-                if count_digits == 10 or count_digits == 13:
-                    identifiers[index] = f'{identifier}|isbn'
+                if str(count_digits) in identifier_type_dict.keys() :
+                    identifiers[index] = f'{identifier}|{identifier_type_dict[str(count_digits)]}'
+                else:
+                    identifiers[index] = f'{identifier}|{source}'
             else:
-                identifiers[index] = f'{identifier}|clacso'
+                identifiers[index] = f'{identifier}|{source}'
         return identifiers
 
     def updateExisting(self, existing):

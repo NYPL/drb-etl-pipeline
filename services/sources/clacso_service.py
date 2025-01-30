@@ -101,7 +101,6 @@ class CLACSOService(SourceService):
         try:
             clacso_rec = CLACSOMapping(oaiRec, self.OAI_NAMESPACES, self.constants)
             clacso_rec.applyMapping()
-
             return clacso_rec
         except Exception as e:
             logger.exception(f'Error applying mapping to CLACSO Record')

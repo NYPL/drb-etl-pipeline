@@ -41,8 +41,7 @@ class CLACSOMapping(XMLMapping):
     def applyFormatting(self):
         self.record.source = 'clacso'
         if self.record.identifiers:
-            self.format_identifiers(self.record.identifiers)
-        print(self.record.identifiers)
+            self.format_identifiers(self.record.identifiers, self.record.source)
         self.format_source_id()
         self.format_medium()
         self.format_dates()
@@ -53,7 +52,7 @@ class CLACSOMapping(XMLMapping):
             if self.HANDLE_URL in identifier:
                 id = identifier.split('/')[-1]
                 self.record.source_id = f'{self.record.source}|{id}'
-                break
+                return
 
     def format_medium(self):
         if self.record.medium:
@@ -74,12 +73,7 @@ class CLACSOMapping(XMLMapping):
 
     def format_dates(self):
         if self.record.dates:
-            year_list = []
-            for date in self.record.dates:
-                if '-' in date:
-                    year_list.append(date.split('-')[0])
-                else:
-                    year_list.append(date)
+            year_list = [date.split('-')[0] if '-' in date else date for date in self.record.dates]
         self.record.dates = [f'{min(year_list)}|issued']
 
     def format_has_part(self):
