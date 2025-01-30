@@ -34,7 +34,7 @@ def setup_env(pytestconfig, request):
 @pytest.fixture(scope='module')
 def db_manager():
     db_manager = DBManager()
-
+    
     try:
         db_manager.createSession()
         db_manager.session.execute(text('SELECT 1')) # Test the db connection
