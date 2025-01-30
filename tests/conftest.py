@@ -6,7 +6,8 @@ from sqlalchemy import text
 from uuid import uuid4
 
 from processes import ClusterProcess
-from model import Edition, Item, Record, Work
+from model import Edition, Item, Link, Record, Work
+from model.postgres.item import ITEM_LINKS
 from logger import create_log
 from managers import DBManager
 from load_env import load_env_file
@@ -52,11 +53,12 @@ def seed_test_data(db_manager):
     if db_manager is None:
         return {
             'edition_id': 1982731,
-            'work_id': '701c5f00-cd7a-4a7d-9ed1-ce41c574ad1d'
+            'work_id': '701c5f00-cd7a-4a7d-9ed1-ce41c574ad1d',
+            'link_id': 1982731
         }
 
     flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
-    test_data = {
+    test_record_data = {
         'title': 'test data 1',
         'uuid': uuid4(),
         'frbr_status': 'complete',
@@ -77,22 +79,22 @@ def seed_test_data(db_manager):
         'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}']
     }
 
-    existing_record = db_manager.session.query(Record).filter_by(source_id=test_data['source_id']).first()
+    existing_record = db_manager.session.query(Record).filter_by(source_id=test_record_data['source_id']).first()
 
     if existing_record:
-        for key, value in test_data.items():
+        for key, value in test_record_data.items():
             if key != 'uuid' and hasattr(existing_record, key):
                 setattr(existing_record, key, value)
         existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
-        test_data['uuid'] = existing_record.uuid
+        test_record_data['uuid'] = existing_record.uuid
         test_record = existing_record
     else:
-        test_record = Record(**test_data)
+        test_record = Record(**test_record_data)
         db_manager.session.add(test_record)
     
     db_manager.session.commit()
 
-    cluster_process = ClusterProcess('complete', None, None, str(test_data['uuid']), None)
+    cluster_process = ClusterProcess('complete', None, None, str(test_record_data['uuid']), None)
     cluster_process.runProcess()
 
     frbrized_model = (
@@ -105,31 +107,29 @@ def seed_test_data(db_manager):
 
     item, edition, work = frbrized_model if frbrized_model else (None, None, None)
 
+    links = (
+        db_manager.session.query(Link)
+            .join(ITEM_LINKS)
+            .filter(ITEM_LINKS.c.item_id == item.id)
+            .all()
+    )
+
     return {
         'edition_id': str(edition.id) if item else None,
-        'work_id': str(work.uuid) if work else None, 
-        'uuid': str(test_data['uuid'])
+        'work_id': str(work.uuid) if work else None,
+        'link_id': links[0].id if links and len(links) > 0 else None,
     }
 
 
 @pytest.fixture(scope='module')
-def seeded_edition_id(request, seed_test_data):
-    if 'functional' in request.keywords or 'integration' in request.keywords:
-        return seed_test_data['edition_id']
+def test_edition_id(seed_test_data):
+    return seed_test_data['edition_id']
     
-    return None
 
 @pytest.fixture(scope='module')
-def seeded_work_id(request, seed_test_data):
-    if 'functional' in request.keywords or 'integration' in request.keywords:
-        return seed_test_data['work_id']
-    
-    return None
-
+def test_work_id(seed_test_data):
+    return seed_test_data['work_id']
 
 @pytest.fixture(scope='module')
-def seeded_uuid(request, seed_test_data):
-    if 'functional' in request.keywords or 'integration' in request.keywords:
-        return seed_test_data['uuid']
-    
-    return None
+def test_link_id(seed_test_data):
+    return seed_test_data['link_id']
