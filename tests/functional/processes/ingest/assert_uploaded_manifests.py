@@ -1,3 +1,4 @@
+import pytest
 from model import Record
 from managers.s3 import S3Manager
 

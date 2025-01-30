@@ -1,3 +1,4 @@
+import pytest
 from processes import ChicagoISACProcess
 from .assert_ingested_records import assert_ingested_records
 from .assert_uploaded_manifests import assert_uploaded_manifests
