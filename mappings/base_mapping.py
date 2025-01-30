@@ -31,15 +31,15 @@ class BaseMapping(RecordMapping):
         return self.record
     
     def format_identifiers(self, identifiers, source):
-        identifier_type_dict = {'8': 'issn', '10': 'isbn', '13': 'isbn'}
+        identifier_type_dict = {8: 'issn', 10: 'isbn', 13: 'isbn'}
         for index, identifier in enumerate(identifiers):
             count_digits = 0
             if '/' not in identifier:
                 for char in identifier:
                     if char.isdigit():
                         count_digits += 1
-                if str(count_digits) in identifier_type_dict.keys() :
-                    identifiers[index] = f'{identifier}|{identifier_type_dict[str(count_digits)]}'
+                if count_digits in identifier_type_dict.keys() :
+                    identifiers[index] = f'{identifier}|{identifier_type_dict[count_digits]}'
                 else:
                     identifiers[index] = f'{identifier}|{source}'
             else:
