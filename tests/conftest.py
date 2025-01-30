@@ -6,7 +6,7 @@ from sqlalchemy import text
 from uuid import uuid4
 
 from processes import ClusterProcess
-from model import Edition, Item, Link, Record, Work
+from model import Collection, Edition, Item, Link, Record, Work
 from model.postgres.item import ITEM_LINKS
 from logger import create_log
 from managers import DBManager
@@ -54,7 +54,7 @@ def seed_test_data(db_manager):
         return {
             'edition_id': 1982731,
             'work_id': '701c5f00-cd7a-4a7d-9ed1-ce41c574ad1d',
-            'link_id': 1982731
+            'link_id': 1982731,
         }
 
     flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
@@ -124,11 +124,37 @@ def seed_test_data(db_manager):
 @pytest.fixture(scope='module')
 def test_edition_id(seed_test_data):
     return seed_test_data['edition_id']
-    
+
+
+@pytest.fixture(scope='module')
+def test_collection_id(db_manager, test_edition_id):
+    if not db_manager:
+        return '3650664c-c8be-4d07-8d64-2d7003b02048'
+
+    edition = db_manager.session.query(Edition).filter(Edition.id == test_edition_id).first()
+    test_collection = Collection(
+        title='Test Collection',
+        uuid=uuid4(),
+        creator='Integration Tests', 
+        owner='Integration Tests',
+        description='A test collection for integration tests.',
+        type='static',
+        editions=[edition]
+    )
+
+    db_manager.session.add(test_collection)
+    db_manager.session.commit()
+
+    yield test_collection.uuid
+
+    db_manager.session.delete(test_collection)
+    db_manager.session.commit()
+
 
 @pytest.fixture(scope='module')
 def test_work_id(seed_test_data):
     return seed_test_data['work_id']
+
 
 @pytest.fixture(scope='module')
 def test_link_id(seed_test_data):
