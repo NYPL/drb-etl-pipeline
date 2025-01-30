@@ -4,18 +4,18 @@ on:
   pull_request:
     types: [opened, synchronize]
     paths:
-      - 'api/**'
-      - 'managers/**'
-      - 'mappings/**'
-      - 'model/**'
-      - 'processes/**'
-      - 'services/**'
-      - 'tests/**'
-      - 'utils/**'
-      - 'dev-requirements.txt'
-      - 'requirements.txt'
-      - 'main.py'
-      - 'Makefile' 
+      - "api/**"
+      - "managers/**"
+      - "mappings/**"
+      - "model/**"
+      - "processes/**"
+      - "services/**"
+      - "tests/**"
+      - "utils/**"
+      - "dev-requirements.txt"
+      - "requirements.txt"
+      - "main.py"
+      - "Makefile"
 
 jobs:
   test:
@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Cache dependencies
         uses: actions/cache@v2
         with:
@@ -42,3 +42,19 @@ jobs:
       - name: Run unit tests
         run: |
           make unit
+      - name: Start Docker containers
+        run: |
+          docker-compose up -d
+      - name: Wait for services to be ready
+        run: |
+          sleep 10 # Adjust as needed or replace with a health check script
+      - name: Run functional tests
+        run: |
+          make functional
+      - name: Run integration tests
+        run: |
+          make integration
+      - name: Stop Docker containers
+        if: always()
+        run: |
+          docker-compose down
