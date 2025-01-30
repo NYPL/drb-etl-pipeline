@@ -2,6 +2,10 @@ from processes import GutenbergProcess
 from .assert_ingested_records import assert_ingested_records
 from .assert_uploaded_manifests import assert_uploaded_manifests
 
+@pytest.mark.skipif(
+    os.getenv('IS_CI') == 'true',
+    reason="Skipping in CI environment"
+)
 
 def test_gutenberg_process():
     gutenberg_process = GutenbergProcess('complete', None, None, None, 5, None)

@@ -4,6 +4,7 @@ import yaml
 
 from services.ssm_service import SSMService
 
+LOCAL_AWS_FILE = 'config/local-aws.yaml'
 
 ENV_VAR_TO_SSM_NAME = {
     'CONTENT_CAFE_USER': 'contentcafe/user',
@@ -66,7 +67,17 @@ def load_env_file(run_type: str, file_string: Optional[str]=None) -> None:
         for key, value in env_dict.items():
             os.environ[key] = value
 
+    if Path(LOCAL_AWS_FILE).exists():
+        config.update(_load_yaml_config(LOCAL_AWS_FILE))
+
+    _set_env_vars(config)        
+
     load_secrets()
+
+def _set_env_vars(config: dict) -> None:
+    for key, value in config.items():
+        if key not in os.environ:
+            os.environ[key] = str(value)    
             
 def load_secrets():
     ssm_service = SSMService()

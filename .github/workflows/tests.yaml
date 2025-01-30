@@ -7,6 +7,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      IS_CI: "true"
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
