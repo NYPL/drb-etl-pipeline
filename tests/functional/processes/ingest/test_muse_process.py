@@ -1,4 +1,5 @@
 import pytest
+import os
 from processes import MUSEProcess
 from .assert_ingested_records import assert_ingested_records
 from .assert_uploaded_manifests import assert_uploaded_manifests
