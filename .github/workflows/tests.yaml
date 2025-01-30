@@ -8,7 +8,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
+<<<<<<< HEAD
       IS_CI: "true"
+=======
+      AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      ENVIRONMENT: local
+>>>>>>> 3a76dcd268679cae5d1085e8ceea0ec53bce2f23
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python 3.9
