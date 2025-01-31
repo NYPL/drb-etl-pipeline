@@ -69,7 +69,8 @@ def load_env_file(run_type: str, file_string: Optional[str]=None) -> None:
             os.environ[key] = value
 
     if Path(LOCAL_AWS_FILE).exists():
-        config.update(_load_yaml_config(LOCAL_AWS_FILE))
+        aws_config = _load_yaml_config(LOCAL_AWS_FILE)
+        config.update(aws_config)
 
     _set_env_vars(config)        
 
@@ -80,7 +81,7 @@ def _set_env_vars(config: dict) -> None:
         if key not in os.environ:
             os.environ[key] = str(value)    
 
-def _load_yaml_config(file_path):
+def _load_yaml_config(file_path: str) -> None:
     try:
         with open(file_path, "r") as file:
             return yaml.safe_load(file) or {}
