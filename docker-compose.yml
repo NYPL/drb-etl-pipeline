@@ -21,10 +21,6 @@ services:
       - xpack.security.http.ssl.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
       - ELASTIC_PASSWORD=elastic
-    command:
-      - /bin/sh
-      - -c
-      - elasticsearch-plugin install analysis-icu analysis-smartcn analysis-kuromoji analysis-stempel; /usr/local/bin/docker-entrypoint.sh elasticsearch
     volumes:
       - drb_local_esdata:/bitnami/elasticsearch/data
 
