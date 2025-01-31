@@ -41,7 +41,7 @@ class CLACSOMapping(XMLMapping):
     def applyFormatting(self):
         self.record.source = 'clacso'
         if self.record.identifiers:
-            self.record.identifiers = list(map(lambda x: self.format_identifier(x, self.record.source), self.record.identifiers))
+            self.record.identifiers = list(map(lambda id: self.format_identifier(id, self.record.source), self.record.identifiers))
         self.format_source_id()
         self.format_medium()
         self.format_dates()
