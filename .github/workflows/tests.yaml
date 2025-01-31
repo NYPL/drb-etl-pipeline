@@ -36,13 +36,11 @@ jobs:
           make unit
       - name: Start Docker containers
         run: |
-          docker compose up
+          docker compose up -d
       - name: Wait for Elasticsearch to be ready
         run: |
-          until curl --silent --fail http://localhost:9200; do
-            echo "Waiting for Elasticsearch..."
-            sleep 5
-          done
+          echo "Waiting for Elasticsearch..."
+          sleep 30
       - name: Run integration tests
         run: |
           pytest tests/integration/api
