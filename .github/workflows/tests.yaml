@@ -37,9 +37,12 @@ jobs:
       - name: Start Docker containers
         run: |
           docker compose up -d
-      - name: Wait for services to be ready
+      - name: Wait for Elasticsearch to be ready
         run: |
-          sleep 10 # Adjust as needed or replace with a health check script
+          until curl --silent --fail http://localhost:9200; do
+            echo "Waiting for Elasticsearch..."
+            sleep 5
+          done
       - name: Run integration tests
         run: |
           pytest tests/integration/api
