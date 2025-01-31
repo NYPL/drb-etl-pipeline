@@ -43,6 +43,9 @@ jobs:
       - name: Run functional tests
         run: |
           make functional
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/api/test_get_edition.py
       - name: Stop Docker containers
         if: always()
         run: |
