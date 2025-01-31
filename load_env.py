@@ -79,6 +79,17 @@ def _set_env_vars(config: dict) -> None:
     for key, value in config.items():
         if key not in os.environ:
             os.environ[key] = str(value)    
+
+def _load_yaml_config(file_path):
+    try:
+        with open(file_path, "r") as file:
+            return yaml.safe_load(file) or {}
+    except FileNotFoundError:
+        print(f"Warning: Config file {file_path} not found.")
+        return {}
+    except yaml.YAMLError as err:
+        print(f"Error parsing YAML file {file_path}: {err}")
+        return {}            
             
 def load_secrets():
     ssm_service = SSMService()
