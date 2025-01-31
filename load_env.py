@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 import yaml
-
+from pathlib import Path
 from services.ssm_service import SSMService
 
 LOCAL_AWS_FILE = 'config/local-aws.yaml'
