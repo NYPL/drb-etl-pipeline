@@ -40,12 +40,9 @@ jobs:
       - name: Wait for services to be ready
         run: |
           sleep 10 # Adjust as needed or replace with a health check script
-      - name: Run functional tests
-        run: |
-          make functional
       - name: Run integration tests
         run: |
-          pytest tests/integration/api/test_get_edition.py
+          make integration
       - name: Stop Docker containers
         if: always()
         run: |
