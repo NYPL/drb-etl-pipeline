@@ -1,15 +1,8 @@
-import datetime
-from io import BytesIO
 import pytest
-import requests
-from unittest import mock
 
-
-from processes.ingest.doab import DOABProcess, DOABError
-from mappings.base_mapping import MappingError
 from model import get_file_message
+from processes.ingest.doab import DOABProcess
 from tests.helper import TestHelpers
-
 
 class TestDOABProcess:
     @classmethod
@@ -21,287 +14,109 @@ class TestDOABProcess:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testProcess(self, mocker):
+    def test_instance(self, mocker):
         class TestDOAB(DOABProcess):
             def __init__(self):
-                self.s3Bucket = 'test_aws_bucket'
                 self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
-                self.fileQueue = 'test_file_queue'
-                self.fileRoute = 'test_file_key'
-                self.constants = {}
-
-                self.ingestOffset = 0
-                self.ingestLimit = 10000
-                self.records = []
+                self.s3_bucket = 'test_aws_bucket'
+                self.file_queue = 'test_file_queue'
+                self.file_route = 'test_file_key'
                 self.rabbitmq_manager = mocker.MagicMock()
+                self.offset = 0
+                self.limit = 10000
+                self.ingestPeriod = None
+                self.records = []
+                self.dspace_service = mocker.MagicMock()
 
         return TestDOAB()
-
-    @pytest.fixture
-    def testResumptionXML(self):
-        xmlText = b'''<?xml version="1.0"?>
-            <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
-                <ListRecords>
-                    <record/><record/>
-                </ListRecords>
-                <resumptionToken cursor="0">testToken</resumptionToken>
-            </OAI-PMH>
-        '''
-        return BytesIO(xmlText)
-
-    @pytest.fixture
-    def mockOAIQuery(self, mocker):
-        mockGet = mocker.patch.object(requests, 'get')
-        mockResp = mocker.MagicMock()
-        mockResp.status_code = 200
-        mockResp.iter_content.return_value = [b'm', b'a', b'r', b'c']
-        mockGet.return_value = mockResp
-
-        return mockGet
-
-    def test_runProcess_daily(self, testProcess, mocker):
-        mockImport = mocker.patch.object(DOABProcess, 'importOAIRecords')
-        mockSave = mocker.patch.object(DOABProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(DOABProcess, 'commitChanges')
-
-        testProcess.process = 'daily'
-        testProcess.runProcess()
-
-        mockImport.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
-
-    def test_runProcess_complete(self, testProcess, mocker):
-        mockImport = mocker.patch.object(DOABProcess, 'importOAIRecords')
-        mockSave = mocker.patch.object(DOABProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(DOABProcess, 'commitChanges')
-
-        testProcess.process = 'complete'
-        testProcess.runProcess()
-
-        mockImport.assert_called_once_with(fullOrPartial=True)
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
-
-    def test_runProcess_custom(self, testProcess, mocker):
-        mockImport = mocker.patch.object(DOABProcess, 'importOAIRecords')
-        mockSave = mocker.patch.object(DOABProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(DOABProcess, 'commitChanges')
-
-        testProcess.process = 'custom'
-        testProcess.ingestPeriod = 'customTimestamp'
-        testProcess.runProcess()
-
-        mockImport.assert_called_once_with(startTimestamp='customTimestamp')
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
-
-    def test_runProcess_single(self, testProcess, mocker):
-        mockImport = mocker.patch.object(DOABProcess, 'importSingleOAIRecord')
-        mockSave = mocker.patch.object(DOABProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(DOABProcess, 'commitChanges')
-
-        testProcess.process = 'single'
-        testProcess.singleRecord = 1
-        testProcess.runProcess()
-
-        mockImport.assert_called_once_with(1)
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
-
-    def test_importSingleOAIRecord_success(self, testProcess, mocker):
-        mockResponse = mocker.MagicMock()
-        mockResponse.status_code = 200
-        mockResponse.content = b'testing'
-        mockGet = mocker.patch.object(requests, 'get')
-        mockGet.return_value = mockResponse
-
-        mockXML = mocker.MagicMock()
-        mockXML.xpath.return_value = ['mockOAIRecord']
-        mockEtree = mocker.patch('processes.ingest.doab.etree')
-        mockEtree.parse.return_value = mockXML
-
-        mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
-
-        testProcess.importSingleOAIRecord(1)
-
-        mockGet.assert_called_once_with(
-            f'{DOABProcess.DOAB_BASE_URL}verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
-            timeout=30
-        )
-        mockParseRecord.assert_called_once_with('mockOAIRecord')
-
-    def test_importSingleOAIRecord_doab_error(self, testProcess, mocker):
-        mockResponse = mocker.MagicMock()
-        mockResponse.status_code = 200
-        mockResponse.content = b'testing'
-        mockGet = mocker.patch.object(requests, 'get')
-        mockGet.return_value = mockResponse
-
-        mockXML = mocker.MagicMock()
-        mockXML.xpath.return_value = ['mockOAIRecord']
-        mockEtree = mocker.patch('processes.ingest.doab.etree')
-        mockEtree.parse.return_value = mockXML
-
-        mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
-        mockParseRecord.side_effect = DOABError('test')
-
-        testProcess.importSingleOAIRecord(1)
-
-        mockGet.assert_called_once_with(
-            f'{DOABProcess.DOAB_BASE_URL}verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
-            timeout=30
-        )
-        mockParseRecord.assert_called_once_with('mockOAIRecord')
-
-    def test_importSingleOAIRecord_request_error(self, testProcess, mocker):
-        mockResponse = mocker.MagicMock()
-        mockResponse.status_code = 404
-        mockResponse.content = b'testing'
-        mockGet = mocker.patch.object(requests, 'get')
-        mockGet.return_value = mockResponse
-
-        mockEtree = mocker.patch('processes.ingest.doab.etree')
-        mockParseRecord = mocker.patch.object(DOABProcess, 'parseDOABRecord')
-
-        testProcess.importSingleOAIRecord(1)
-
-        mockGet.assert_called_once_with(
-            f'{DOABProcess.DOAB_BASE_URL}verb=GetRecord&metadataPrefix=oai_dc&identifier=oai:directory.doabooks.org:1',
-            timeout=30
-        )
-        mockEtree.parse.assert_not_called()
-        mockParseRecord.assert_not_called()
-
-    def test_importOAIRecords(self, testProcess, mocker):
-        testProcess.ingestOffset = 100
-
-        processMocks = mocker.patch.multiple(DOABProcess,
-            downloadOAIRecords=mocker.DEFAULT,
-            getResumptionToken=mocker.DEFAULT,
-            parseDOABRecord=mocker.DEFAULT
-        )
-        processMocks['downloadOAIRecords'].side_effect = ['mock1', 'mock2', 'mock3']
-        processMocks['getResumptionToken'].side_effect = ['res1', 'res2', None]
-
-        mockElement = mocker.MagicMock(name='etreeElement')
-        mockElement.xpath.side_effect = [['rec1', 'rec2', 'rec3'], ['rec4']]
-        mockEtree = mocker.patch('processes.ingest.doab.etree')
-        mockEtree.parse.return_value = mockElement
-
-        processMocks['parseDOABRecord'].side_effect = [None, DOABError('test'), None, None]
-
-        testProcess.importOAIRecords()
-
-        processMocks['downloadOAIRecords'].assert_has_calls([
-            mocker.call(False, None, resumptionToken=None),
-            mocker.call(False, None, resumptionToken='res1'),
-            mocker.call(False, None, resumptionToken='res2')
-        ])
-        mockEtree.parse.assert_has_calls([mocker.call('mock2'), mocker.call('mock3')])
-        processMocks['parseDOABRecord'].assert_has_calls([
-            mocker.call('rec1'), mocker.call('rec2'), mocker.call('rec3'), mocker.call('rec4')
-        ])
     
-    def test_getResumptionToken_success(self, testProcess, testResumptionXML):
-        assert testProcess.getResumptionToken(testResumptionXML) == 'testToken'
+    @pytest.fixture
+    def single_record_mapping(self, mocker):
+        return mocker.MagicMock()
+    
+    @pytest.fixture
+    def record_mappings(self, mocker):
+        return [mocker.MagicMock()]
+    
+    @pytest.fixture
+    def mocks(self, mocker):
+        return {
+            'generate_engine': mocker.patch.object(DOABProcess, 'generateEngine'),
+            'create_session': mocker.patch.object(DOABProcess, 'createSession'),
+            'save': mocker.patch.object(DOABProcess, 'saveRecords'),
+            'commit': mocker.patch.object(DOABProcess, 'commitChanges'),
+            'close': mocker.patch.object(DOABProcess, 'close_connection'),
+            'manage_links': mocker.patch.object(DOABProcess, 'manage_links'),
+        }
 
-    def test_getResupmtionToken_none(self, testProcess):
-        endXML = BytesIO(b'<?xml version="1.0"?><OAI-PMH><ListRecords><record/></ListRecords></OAI-PMH>')
+    def assert_common_expectations(self, mocks):
+        mocks['generate_engine'].assert_called_once()
+        mocks['create_session'].assert_called_once()
+        mocks['save'].assert_called_once()
+        mocks['commit'].assert_called_once()
+        mocks['close'].assert_called_once()
 
-        assert testProcess.getResumptionToken(endXML) == None
+    def test_runProcess_daily(self, test_instance: DOABProcess, record_mappings, mocks):
+        test_instance.dspace_service.get_records.return_value = record_mappings
 
-    def test_downloadOAIRecords_complete(self, testProcess, mockOAIQuery):
-        testRecords = testProcess.downloadOAIRecords(True, None)
+        test_instance.process = 'daily'
+        test_instance.runProcess()
 
-        assert testRecords.read() == b'marc'
-        mockOAIQuery.assert_called_once_with(
-            f'{DOABProcess.DOAB_BASE_URL}verb=ListRecords&metadataPrefix=oai_dc',
-            stream=True, 
-            timeout=30,
-            headers=mock.ANY
-        )
+        test_instance.dspace_service.get_records.assert_called_once_with(offset=0, limit=10000)
+        assert mocks['manage_links'].call_count == len(record_mappings)
+        self.assert_common_expectations(mocks)
 
-    def test_downloadOAIRecords_daily(self, testProcess, mockOAIQuery, mocker):
-        mockDatetime = mocker.patch('processes.ingest.doab.datetime')
-        mockDatetime.now.return_value.replace.return_value = datetime.datetime(1900, 1, 2)
+    def test_runProcess_complete(self, test_instance: DOABProcess, record_mappings, mocks):
+        test_instance.dspace_service.get_records.return_value = record_mappings
 
-        testRecords = testProcess.downloadOAIRecords(False, None)
+        test_instance.process = 'complete'
+        test_instance.runProcess()
 
-        assert testRecords.read() == b'marc'
-        mockOAIQuery.assert_called_once_with(
-            f'{DOABProcess.DOAB_BASE_URL}verb=ListRecords&metadataPrefix=oai_dc&from=1900-01-01',
-            stream=True, 
-            timeout=30,
-            headers=mock.ANY
-        )
+        test_instance.dspace_service.get_records.assert_called_once_with(full_import=True, offset=0, limit=10000)
+        assert mocks['manage_links'].call_count == len(record_mappings)
+        self.assert_common_expectations(mocks)
 
-    def test_downloadOAIRecords_custom(self, testProcess, mockOAIQuery):
-        testRecords = testProcess.downloadOAIRecords(False, '2020-01-01')
-
-        assert testRecords.read() == b'marc'
-        mockOAIQuery.assert_called_once_with(
-            f'{DOABProcess.DOAB_BASE_URL}verb=ListRecords&metadataPrefix=oai_dc&from=2020-01-01',
-            stream=True, 
-            timeout=30,
-            headers=mock.ANY
-        )
-
-    def test_downloadOAIRecords_error(self, testProcess, mockOAIQuery, mocker):
-        errorMock = mocker.MagicMock()
-        errorMock.status_code = 500
-        mockOAIQuery.return_value = errorMock
-
-        with pytest.raises(DOABError):
-            testProcess.downloadOAIRecords(False, None)
-
-    def test_downloadOAIRecords_resumption(self, testProcess, mockOAIQuery):
-        testRecords = testProcess.downloadOAIRecords(False, None, 'testRes')
-
-        assert testRecords.read() == b'marc'
-        mockOAIQuery.assert_called_once_with(
-            f'{DOABProcess.DOAB_BASE_URL}verb=ListRecords&resumptionToken=testRes',
-            stream=True, 
-            timeout=30,
-            headers=mock.ANY
-        )
-
-    def test_parseDOABRecord_success(self, testProcess, mocker):
-        mockRecord = mocker.MagicMock()
-        mockRecord.source_id = 'doab1'
-
-        mockMapping = mocker.MagicMock()
-        mockMapping.record = mockRecord
-        mockMapper = mocker.patch('processes.ingest.doab.DOABMapping')
-        mockMapper.return_value = mockMapping
-
-        mockManager = mocker.MagicMock()
-        mockManager.manifests = [('pdfPath', 'pdfJSON')]
-        mockManager.ePubLinks = [(['epubPath', 'epubURI'])]
+    def test_runProcess_custom(self, test_instance: DOABProcess, record_mappings, mocks):
+        test_instance.dspace_service.get_records.return_value = record_mappings
         
-        mockLinkManager = mocker.patch('processes.ingest.doab.DOABLinkManager')
-        mockLinkManager.return_value = mockManager
+        test_instance.process = 'custom'
+        test_instance.runProcess()
 
-        processMocks = mocker.patch.multiple(DOABProcess, addDCDWToUpdateList=mocker.DEFAULT)
+        test_instance.dspace_service.get_records.assert_called_once_with(start_timestamp=None, offset=0, limit=10000)
+        assert mocks['manage_links'].call_count == len(record_mappings)
+        self.assert_common_expectations(mocks)
 
-        testProcess.parseDOABRecord('testMARC')
+    def test_runProcess_single(self, test_instance: DOABProcess, single_record_mapping, mocks):
+        test_instance.dspace_service.get_single_record.return_value = single_record_mapping
+        
+        test_instance.process = 'single'
+        test_instance.singleRecord = 1
+        test_instance.runProcess()
 
-        mockMapper.assert_called_once_with('testMARC', testProcess.OAI_NAMESPACES, {})
-        mockMapping.applyMapping.assert_called_once()
-        mockManager.parseLinks.assert_called_once()
-        testProcess.s3_manager.createManifestInS3.assert_called_once_with('pdfPath', 'pdfJSON', testProcess.s3Bucket)
-        testProcess.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
-            testProcess.fileQueue, 
-            testProcess.fileRoute, 
+        test_instance.dspace_service.get_single_record.assert_called_once_with(record_id=1, source_identifier='oai:directory.doabooks.org')
+        assert mocks['manage_links'].call_count == 1
+        self.assert_common_expectations(mocks)
+
+
+    def test_manage_links_success(self, test_instance: DOABProcess, mocker):
+        mock_record = mocker.MagicMock();
+
+        mock_manager = mocker.MagicMock()
+        mock_manager.manifests = [('pdfPath', 'pdfJSON')]
+        mock_manager.ePubLinks = [(['epubPath', 'epubURI'])]
+        
+        mock_link_manager = mocker.patch('processes.ingest.doab.DOABLinkManager')
+        mock_link_manager.return_value = mock_manager
+
+        process_mocks = mocker.patch.multiple(DOABProcess, addDCDWToUpdateList=mocker.DEFAULT)
+
+        test_instance.manage_links(mock_record)
+
+        mock_manager.parseLinks.assert_called_once()
+        test_instance.s3_manager.createManifestInS3.assert_called_once_with('pdfPath', 'pdfJSON', test_instance.s3_bucket)
+        test_instance.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
+            test_instance.file_queue, 
+            test_instance.file_route, 
             get_file_message('epubURI', 'epubPath')
         )
-        processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
-
-    def test_parseDOABRecord_error(self, testProcess, mocker):
-        mockMapping = mocker.MagicMock()
-        mockMapping.applyMapping.side_effect = MappingError('testError')
-        mockMapper = mocker.patch('processes.ingest.doab.DOABMapping')
-        mockMapper.return_value = mockMapping
-
-        with pytest.raises(DOABError):
-            testProcess.parseDOABRecord('testMARC')
+        process_mocks['addDCDWToUpdateList'].assert_called_once()
