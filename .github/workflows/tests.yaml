@@ -36,7 +36,7 @@ jobs:
           make unit
       - name: Start Docker containers
         run: |
-          docker compose up -d
+          docker compose up
       - name: Wait for Elasticsearch to be ready
         run: |
           until curl --silent --fail http://localhost:9200; do
