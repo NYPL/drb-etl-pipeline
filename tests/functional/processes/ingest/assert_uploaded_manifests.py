@@ -3,11 +3,6 @@ import os
 from model import Record
 from managers.s3 import S3Manager
 
-@pytest.mark.skipif(
-    os.getenv('IS_CI') == 'true', 
-    reason="Skipping in CI environment"
-)
-
 def assert_uploaded_manifests(records: list[Record]):
     s3_manager = S3Manager()
     s3_manager.createS3Client() 

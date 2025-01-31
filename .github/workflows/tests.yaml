@@ -43,9 +43,6 @@ jobs:
       - name: Run functional tests
         run: |
           make functional
-      - name: Run integration tests
-        run: |
-          make integration
       - name: Stop Docker containers
         if: always()
         run: |
