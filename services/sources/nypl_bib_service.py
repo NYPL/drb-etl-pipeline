@@ -70,7 +70,7 @@ class NYPLBibService(SourceService):
 
                 if nypl_bib_record:
                     records.append(nypl_bib_record)
-        
+
         return records
 
     def parse_nypl_bib(self, bib) -> Optional[NYPLMapping]:
