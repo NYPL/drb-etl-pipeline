@@ -43,7 +43,7 @@ jobs:
           sleep 90
       - name: Run integration tests
         run: |
-          pytest tests/integration/api/test_get_link.py
+          make integration
       - name: Stop Docker containers
         if: always()
         run: |
