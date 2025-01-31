@@ -45,6 +45,7 @@ def load_env_file(run_type: str, file_string: Optional[str]=None) -> None:
         the specificied yaml file.
     """
     env_dict = None
+    config = {}
 
     if file_string:
         open_file = file_string.format(run_type)
