@@ -8,6 +8,7 @@ from logger import create_log
 from managers.db import DBManager
 from managers.nyplApi import NyplApiManager
 from mappings.nypl import NYPLMapping
+from mappings.nypl_bib import map_nypl_bib_to_record
 from .source_service import SourceService
 from sqlalchemy import text
 
@@ -70,6 +71,7 @@ class NYPLBibService(SourceService):
 
                 if nypl_bib_record:
                     records.append(nypl_bib_record)
+                    break
 
         return records
 
@@ -77,7 +79,9 @@ class NYPLBibService(SourceService):
         try:
             if self.is_pd_research_bib(dict(bib)):
                 bib_items = self.fetch_bib_items(dict(bib))
-                
+
+                map_nypl_bib_to_record(bib)
+
                 nypl_record = NYPLMapping(bib, bib_items, self.constants, self.location_codes)
                 nypl_record.applyMapping()
                 
