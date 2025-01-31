@@ -50,6 +50,8 @@ class APIUtils():
         'nypl': 11
     }
 
+    DEFAULT_PRIORITY = 100
+
     @staticmethod
     def normalizeQueryParams(params):
         paramDict = params.to_dict(flat=False)
@@ -374,13 +376,13 @@ class APIUtils():
         for itemDict in editionDict['items']:
             if itemDict['links'] == []:
                 editionDict['items']\
-                    .sort(key=lambda x: (cls.SOURCE_PRIORITY[x['source']], x['links'] == []))
+                    .sort(key=lambda x: (cls.SOURCE_PRIORITY.get(x['source'], cls.DEFAULT_PRIORITY), x['links'] == []))
                 emptyListFlag = True
                 break
 
         if emptyListFlag == False:
             editionDict['items']\
-                .sort(key=lambda x: (cls.SOURCE_PRIORITY[x['source']], cls.sortByMediaType(x['links'][0])))
+                .sort(key=lambda x: (cls.SOURCE_PRIORITY.get(x['source'], cls.DEFAULT_PRIORITY), cls.sortByMediaType(x['links'][0])))
             
         if records is not None:
             itemsByLink = {}
