@@ -37,10 +37,13 @@ jobs:
       - name: Start Docker containers
         run: |
           docker compose up -d
-      - name: Wait for Elasticsearch to be ready
+      - name: Wait for docker containers to be ready
         run: |
-          echo "Waiting for Elasticsearch..."
+          echo "Waiting for docker container..."
           sleep 90
+      - name: Run functional tests
+        run: |
+          make functional
       - name: Run integration tests
         run: |
           make integration

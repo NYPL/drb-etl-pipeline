@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 from services.ssm_service import SSMService
 
-LOCAL_AWS_FILE = 'config/local-aws.yaml'
+LOCAL_SECRETS_FILE = 'config/local-secrets.yaml'
 
 ENV_VAR_TO_SSM_NAME = {
     'CONTENT_CAFE_USER': 'contentcafe/user',
@@ -45,7 +45,6 @@ def load_env_file(run_type: str, file_string: Optional[str]=None) -> None:
         the specificied yaml file.
     """
     env_dict = None
-    config = {}
 
     if file_string:
         open_file = file_string.format(run_type)
@@ -68,32 +67,27 @@ def load_env_file(run_type: str, file_string: Optional[str]=None) -> None:
         for key, value in env_dict.items():
             os.environ[key] = value
 
-    if Path(LOCAL_AWS_FILE).exists():
-        aws_config = _load_yaml_config(LOCAL_AWS_FILE)
-        config.update(aws_config)
-
-    _set_env_vars(config)        
-
-    load_secrets()
 
 def _set_env_vars(config: dict) -> None:
     for key, value in config.items():
         if key not in os.environ:
             os.environ[key] = str(value)    
 
+
 def _load_yaml_config(file_path: str) -> None:
     try:
         with open(file_path, "r") as file:
             return yaml.safe_load(file) or {}
-    except FileNotFoundError:
-        print(f"Warning: Config file {file_path} not found.")
-        return {}
-    except yaml.YAMLError as err:
-        print(f"Error parsing YAML file {file_path}: {err}")
-        return {}            
-            
+    except:
+        return {}         
+
+
 def load_secrets():
     ssm_service = SSMService()
+
+    if Path(LOCAL_SECRETS_FILE).exists():
+        secrets_config = _load_yaml_config(LOCAL_SECRETS_FILE)
+        _set_env_vars(secrets_config)
 
     for env_var, param_name in ENV_VAR_TO_SSM_NAME.items():
         if os.environ.get(env_var, None) is None:
