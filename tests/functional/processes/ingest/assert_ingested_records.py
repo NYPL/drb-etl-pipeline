@@ -3,6 +3,7 @@ from datetime import datetime, timezone, timedelta
 from managers import DBManager
 from model import Record
 
+
 def assert_ingested_records(source_name: str) -> list[Record]:
     db_manager = DBManager()
     db_manager.generateEngine()
