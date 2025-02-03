@@ -67,6 +67,8 @@ def load_env_file(run_type: str, file_string: Optional[str]=None) -> None:
         for key, value in env_dict.items():
             os.environ[key] = value
 
+    load_secrets()
+
 
 def _set_env_vars(config: dict) -> None:
     for key, value in config.items():
