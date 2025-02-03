@@ -38,10 +38,17 @@ def map_nypl_bib_to_record(bib: dict) -> Record:
                 get_identifier(marc_fields.get('074', {}).get('a'), 'gpoin'),
                 get_identifier(marc_fields.get('086', {}).get('a'), 'gdcn')
             ] if identifier
+        ],
+        publisher=[f"{marc_fields.get('260', {}).get('b')}||"],
+        contributors=[
+            f"{marc_fields.get('260', {}).get('f')}|||manufacturer",
+            f"{marc_fields.get('700', {}).get('a')}|||{marc_fields.get('700', {}).get('e')}",
+            f"{marc_fields.get('710', {}).get('a')} {marc_fields.get('710', {}).get('b')}|||{marc_fields.get('710', {}).get('e')}",
+            f"{marc_fields.get('711', {}).get('a')} {marc_fields.get('711', {}).get('b')}|||{marc_fields.get('711', {}).get('e')}"
         ]
     )
 
-    print(record.identifiers)
+    print(record.contributors)
 
     return record
 
