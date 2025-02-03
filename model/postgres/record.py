@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -15,7 +16,7 @@ class Part:
     url: str
     source: str
     file_type: str
-    flags: dict
+    flags: str
 
     def get_file_bucket(self) -> Optional[str]:
         parsed_url = urlparse(self.url)
@@ -42,6 +43,22 @@ class Part:
             return None
         
         return parsed_url.path[1:]
+    
+    def to_string(self) -> str:
+        return '|'.join([self.index, self.url, self.source, self.file_type, self.flags])
+
+
+class FRBRStatus(Enum):
+    TODO = 'to_do'
+    COMPLETE = 'complete'
+
+
+@dataclass 
+class FileFlags:
+    catalog: bool = False
+    reader: bool = False
+    embed: bool = False
+    download: bool = False
 
 
 class Record(Base, Core):

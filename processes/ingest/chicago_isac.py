@@ -1,22 +1,22 @@
 import json
 import os
 
-from ..core import CoreProcess
-from mappings.chicagoISAC import ChicagoISACMapping
-from managers import S3Manager, WebpubManifest
+from mappings.chicago_isac import map_chicago_isac_record
+from managers import DBManager, S3Manager, WebpubManifest
+from model import Record, Part
 from logger import create_log
+from .record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
-class ChicagoISACProcess(CoreProcess):
-
+class ChicagoISACProcess():
     def __init__(self, *args):
-        super(ChicagoISACProcess, self).__init__(*args[:4])
+        self.db_manager = DBManager()
+        self.db_manager.createSession()
 
-        self.generateEngine()
-        self.createSession()
+        self.record_buffer = RecordBuffer(self.db_manager)
 
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3_bucket = os.environ['FILE_BUCKET']
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
 
@@ -24,73 +24,54 @@ class ChicagoISACProcess(CoreProcess):
         with open('ingestJSONFiles/chicagoISAC_metadata.json') as f:
             chicago_isac_data = json.load(f)
 
-        for meta_dict in chicago_isac_data:
-            self.process_chicago_isac_record(meta_dict)
+        for dcdw_record in self.process_chicago_isac_records(records=chicago_isac_data):
+            self.record_buffer.add(dcdw_record)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} ISAC records')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} ISAC records')
 
-    def process_chicago_isac_record(self, record):
-        try:
-            chicago_isac_rec = ChicagoISACMapping(record)
-            chicago_isac_rec.applyMapping()
-            self.store_pdf_manifest(chicago_isac_rec.record)
-            self.addDCDWToUpdateList(chicago_isac_rec)
-            
-        except Exception:
-            logger.exception(ChicagoISACError('Unable to process ISAC record'))
-            
-
-    def store_pdf_manifest(self, record):
-        for link in record.has_part:
-            item_no, uri, source, media_type, flags = link[0].split('|')
-
-            if media_type == 'application/pdf':
-                record_id = record.identifiers[0].split('|')[0]
-
-                manifest_path = 'manifests/{}/{}.json'.format(source, record_id)
-                manifest_url = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3Bucket, manifest_path
-                )
-
-                manifest_json = self.generate_manifest(record, uri, manifest_url)
-
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3Bucket)
-
-                link_string = '|'.join([
-                    item_no,
-                    manifest_url,
-                    source,
-                    'application/webpub+json',
-                    flags
-                ])
-
-                record.has_part.insert(0, link_string)
-                self.change_has_part_url_array_to_string(record)
-
-                break
+    def process_chicago_isac_records(self, records: list[dict]):
+        print(len(records))
+        for record in records:
+            try:
+                dcdw_record = map_chicago_isac_record(record)
+                self.store_pdf_manifest(dcdw_record)
+                
+                yield dcdw_record
+            except Exception:
+                logger.exception(f"Unable to process ISAC record: {record.get('title')}")
+                pass
     
-    @staticmethod
-    def change_has_part_url_array_to_string(record):
-        for i in range(1, len(record.has_part)):
-            if len(record.has_part[i]) > 1:
-                url_array = record.has_part[i]
-                record.has_part.pop(i)
-                for elem in url_array:
-                    record.has_part.append(elem)
-            else:
-                record.has_part[i] = ''.join(record.has_part[i])
+    def store_pdf_manifest(self, record: Record):
+        pdf_part = next((part for part in record.get_parts() if part.file_type == 'application/pdf'), None)
+
+        if pdf_part:
+            record_id = record.identifiers[0].split('|')[0]
+
+            manifest_path = f'manifests/{pdf_part.source}/{record_id}.json'
+            manifest_url = f'https://{self.s3_bucket}.s3.amazonaws.com/{manifest_path}'
+
+            manifest_json = self.generate_manifest(record, pdf_part.url, manifest_url)
+
+            self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3_bucket)
+
+            manifest_part = Part(
+                index=pdf_part.index, 
+                url=manifest_url, 
+                source=pdf_part.source, 
+                file_type='application/webpub+json', 
+                flags=pdf_part.flags
+            )
+
+            record.has_part.insert(0, manifest_part.to_string())
 
     @staticmethod
-    def generate_manifest(record, source_url, manifest_url):
+    def generate_manifest(record: Record, source_url: str, manifest_url: str):
         manifest = WebpubManifest(source_url, 'application/pdf')
 
         manifest.addMetadata(record)
-        
         manifest.addChapter(source_url, record.title)
-
         manifest.links.append({
             'rel': 'self',
             'href': manifest_url,
@@ -98,7 +79,3 @@ class ChicagoISACProcess(CoreProcess):
         })
 
         return manifest.toJson()
-
-
-class ChicagoISACError(Exception):
-    pass
