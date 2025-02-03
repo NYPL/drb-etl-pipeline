@@ -1,0 +1,66 @@
+name: ETL Pipeline Tests (Pull Request)
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+        - 'api/**'
+        - 'managers/**'
+        - 'mappings/**'
+        - 'model/**'
+        - 'processes/**'
+        - 'services/**'
+        - 'tests/**'
+        - 'utils/**'
+        - 'dev-requirements.txt'
+        - 'requirements.txt'
+        - 'main.py'
+        - 'Makefile' 
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      IS_CI: "true"
+      AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      ENVIRONMENT: local
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.9"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip wheel
+          pip install -r dev-requirements.txt
+          pip install -r requirements.txt
+      - name: Run unit tests
+        run: |
+          make unit
+      - name: Start Docker containers
+        run: |
+          docker compose up -d
+      - name: Wait for docker containers to be ready
+        run: |
+          echo "Waiting for docker container..."
+          sleep 90
+      - name: Run functional tests
+        run: |
+          make functional
+      - name: Run integration tests
+        run: |
+          make integration
+      - name: Stop Docker containers
+        if: always()
+        run: |
+          docker compose down

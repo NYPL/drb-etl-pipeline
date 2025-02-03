@@ -1,0 +1,45 @@
+STAGE: local
+
+LOG_LEVEL: info
+
+POSTGRES_HOST: drb_local_db
+POSTGRES_PORT: '5432'
+POSTGRES_NAME: drb_test_db
+POSTGRES_USER: localuser
+POSTGRES_PSWD: localpsql
+ADMIN_USER: postgres
+ADMIN_PSWD: localpsql
+
+REDIS_HOST: drb_local_rs
+REDIS_PORT: '6379'
+
+ELASTICSEARCH_INDEX: drb_test_index
+ELASTICSEARCH_SCHEME: http
+ELASTICSEARCH_HOST: drb_local_es
+ELASTICSEARCH_PORT: '9200'
+ELASTICSEARCH_TIMEOUT: '30'
+ELASTICSEARCH_USER: elastic
+ELASTICSEARCH_PSWD: elastic
+
+RABBIT_HOST: drb_local_mq
+RABBIT_PORT: '5672'
+RABBIT_USER: guest
+RABBIT_PSWD: guest
+RABBIT_VIRTUAL_HOST: ''
+RABBIT_EXCHANGE: ''
+OCLC_QUEUE: oclc_catalog
+OCLC_ROUTING_KEY: oclc_catalog
+FILE_QUEUE: drb_files
+FILE_ROUTING_KEY: drb_files
+RECORD_QUEUE: records
+RECORD_ROUTING_KEY: records
+
+AWS_REGION: us-east-1
+S3_ENDPOINT_URL: http://drb-local-s3:4566
+
+OCLC_QUERY_LIMIT: '390000'
+
+API_PROXY_CORS_ALLOWED: '*'
+
+READER_VERSION: v2
+DEFAULT_COVER_URL: https://drb-files-qa.s3.amazonaws.com/covers/default/defaultCover.png
