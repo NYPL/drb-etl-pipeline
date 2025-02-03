@@ -8,7 +8,7 @@ class TestSSMService:
         return SSMService()
 
     def test_get_parameter(self, test_instance):
-        TEST_PARAM = 'arn:aws:ssm:us-east-1:946183545209:parameter/drb/qa/nypl-api/public-key'
+        TEST_PARAM = 'nypl-api/public-key'
         value = test_instance.get_parameter(TEST_PARAM)
 
         assert value != None
