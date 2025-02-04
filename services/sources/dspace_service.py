@@ -39,7 +39,7 @@ class DSpaceService(SourceService):
 
             resumption_token = self.get_resumption_token(oai_file)
 
-            if records_processed < offset:
+            if records_processed <= offset:
                 records_processed += 100
                 continue
 
