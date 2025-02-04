@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 
 from mappings.chicago_isac import map_chicago_isac_record
 from managers import DBManager, S3Manager, WebpubManifest
@@ -44,7 +45,7 @@ class ChicagoISACProcess():
                 yield dcdw_record
             except Exception:
                 logger.exception(f"Unable to process ISAC record: {record.get('title')}")
-                pass
+                print(traceback.print_exc())
     
     def store_pdf_manifest(self, record: Record):
         pdf_part = next((part for part in record.get_parts() if part.file_type == 'application/pdf'), None)

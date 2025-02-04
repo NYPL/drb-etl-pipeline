@@ -45,7 +45,7 @@ class Part:
         return parsed_url.path[1:]
     
     def to_string(self) -> str:
-        return '|'.join([self.index, self.url, self.source, self.file_type, self.flags])
+        return '|'.join([str(self.index), self.url, self.source, self.file_type, self.flags])
 
 
 class FRBRStatus(Enum):
@@ -123,7 +123,7 @@ class Record(Base, Core):
         for part in self.has_part:
             index, file_url, source, file_type, flags = part.split('|')
 
-            parts.append(Part(index, file_url, source, file_type, flags))
+            parts.append(Part(int(index), file_url, source, file_type, flags))
 
         return parts
 

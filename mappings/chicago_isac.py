@@ -4,23 +4,30 @@ import json
 from typing import Optional
 from uuid import uuid4
 
-from model import Record, FRBRStatus, FileFlags
+from model import Record, FRBRStatus, FileFlags, Part, Source
 
 
 def map_chicago_isac_record(record: dict) -> Optional[Record]:
-    pdf_flags = FileFlags(download=True)
-
     isbns = get_isbns(record)
+    urls = record.get('url')
 
-    if isbns is None:
+    if isbns is None or urls is None or len(urls) == 0:
         return None
     
+    pdf_part = Part(
+        index=1,
+        url=urls[0],
+        source=Source.CHICACO_ISAC.value,
+        file_type='application/pdf',
+        flags=json.dumps(dataclasses.asdict(FileFlags(download=True)))
+    )
+
     return Record(
         uuid=uuid4(),
         frbr_status=FRBRStatus.TODO.value,
         cluster_status=False,
-        source='isac',
-        source_id=f'isac_{isbns[0]}',
+        source=Source.CHICACO_ISAC.value,
+        source_id=f'{Source.CHICACO_ISAC.value}_{isbns[0]}',
         title=record.get('title'),
         authors=[f'{author}|||true' for author in record.get('authors', []) if author],
         publisher=record.get('publisher'),
@@ -28,7 +35,7 @@ def map_chicago_isac_record(record: dict) -> Optional[Record]:
         is_part_of=f"{record.get('series')}|series" if record.get('series') else None,
         spatial=record.get('publisherLocation'),
         extent=record.get('extent'),
-        has_part=[f"1|{record.get('url')[0]}|isac|application/pdf|{json.dumps(dataclasses.asdict(pdf_flags))}"],
+        has_part=[pdf_part.to_string()],
         date_created=datetime.now(timezone.utc).replace(tzinfo=None),
         date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
     )

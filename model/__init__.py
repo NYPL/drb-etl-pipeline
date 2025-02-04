@@ -20,3 +20,4 @@ from .elasticsearch.work import Work as ESWork
 from .elasticsearch.base import PerLanguageField
 
 from .queue.file_message import get_file_message
+from .source import Source
