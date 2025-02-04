@@ -7,9 +7,9 @@ import requests
 
 from constants.get_constants import get_constants
 from logger import create_log
-from mappings.clacso import CLACSOMapping
+from mappings.clacso import _map_to_record
 from .source_service import SourceService
-from managers import RabbitMQManager, S3Manager, DOABLinkManager
+from managers import RabbitMQManager, S3Manager
 
 logger = create_log(__name__)
 
@@ -46,7 +46,7 @@ class CLACSOService(SourceService):
         start_timestamp: datetime=None,
         offset: Optional[int]=0,
         limit: Optional[int]=100
-    ) -> list[CLACSOMapping]:
+    ) -> list:
         
         resumption_token = None
 
@@ -69,7 +69,10 @@ class CLACSOService(SourceService):
                 if record is None: continue
 
                 try:
-                    parsed_record = self.parse_clacso_record(record)
+                    print(record.xpath('./dc:title/text()', namespaces=self.OAI_NAMESPACES)[0])
+                    parsed_record = self.parse_clacso_record(record, self.OAI_NAMESPACES)
+                    print(f'Title: {parsed_record.title}')
+                    raise Exception 
                     if self.verify_medium_type(parsed_record.record.medium) == True and self.verify_has_part_url(parsed_record.record.has_part) == True:
                         records_array.append(parsed_record)
                     else:
@@ -97,10 +100,9 @@ class CLACSOService(SourceService):
                 return True
         return False
     
-    def parse_clacso_record(self, oaiRec):
+    def parse_clacso_record(self, oaiRec, namespaces):
         try:
-            clacso_rec = CLACSOMapping(oaiRec, self.OAI_NAMESPACES, self.constants)
-            clacso_rec.applyMapping()
+            clacso_rec = _map_to_record(oaiRec, namespaces)
             return clacso_rec
         except Exception as e:
             logger.exception(f'Error applying mapping to CLACSO Record')
