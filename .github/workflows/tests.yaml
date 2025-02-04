@@ -39,6 +39,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
+      - name: Install GCC 12
+        run: |
+          sudo apt update
+          sudo apt install -y gcc-12 g++-12
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 60
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 60
       - name: Install dependencies
         run: |
           gcc --version
