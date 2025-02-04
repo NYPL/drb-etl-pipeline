@@ -32,10 +32,13 @@ class ChicagoISACProcess():
         logger.info(f'Ingested {self.record_buffer.ingest_count} ISAC records')
 
     def process_chicago_isac_records(self, records: list[dict]):
-        print(len(records))
         for record in records:
             try:
                 dcdw_record = map_chicago_isac_record(record)
+
+                if dcdw_record is None:
+                    continue
+
                 self.store_pdf_manifest(dcdw_record)
                 
                 yield dcdw_record

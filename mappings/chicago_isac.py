@@ -7,13 +7,13 @@ from uuid import uuid4
 from model import Record, FRBRStatus, FileFlags
 
 
-def map_chicago_isac_record(record: dict) -> Record:
+def map_chicago_isac_record(record: dict) -> Optional[Record]:
     pdf_flags = FileFlags(download=True)
 
     isbns = get_isbns(record)
 
     if isbns is None:
-        raise Exception(f'Failed to get ISBN')
+        return None
     
     return Record(
         uuid=uuid4(),
