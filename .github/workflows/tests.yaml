@@ -30,7 +30,7 @@ jobs:
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
-          python-version: "3.11"
+          python-version: "3.9"
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -41,7 +41,7 @@ jobs:
             ${{ runner.os }}-
       - name: Install dependencies
         run: |
-          echo "${{ gcc --version }}"
+          gcc --version
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
