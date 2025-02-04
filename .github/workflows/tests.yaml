@@ -30,7 +30,7 @@ jobs:
       - name: Set up Python 3.9
         uses: actions/setup-python@v2
         with:
-          python-version: "3.9"
+          python-version: "3.11"
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -41,10 +41,6 @@ jobs:
             ${{ runner.os }}-
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y build-essential cmake python3-dev gcc make
-          pip install pybind11
-          pip install fasttext-wheel
-          pip install fasttext==0.9.2
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
