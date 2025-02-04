@@ -122,6 +122,9 @@ class Record(Base, Core):
 
         for part in self.has_part:
             index, file_url, source, file_type, flags = part.split('|')
+            
+            if not index:
+                index = 0
 
             parts.append(Part(int(index), file_url, source, file_type, flags))
 
