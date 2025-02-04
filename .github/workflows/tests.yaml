@@ -42,7 +42,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install fasttext-wheel
-          pip install fasttext==0.9.2
+          pip install pybind fasttext==0.9.2
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
