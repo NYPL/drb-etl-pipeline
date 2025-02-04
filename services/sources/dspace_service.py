@@ -33,7 +33,7 @@ class DSpaceService(SourceService):
 
         records_processed = 0
         mapped_records = []
-        while resumption_token is not None or records_processed < offset:
+        while resumption_token is not None or records_processed <= offset:
             oai_file = self.download_records(
                 full_import, start_timestamp, resumption_token=resumption_token)
 
