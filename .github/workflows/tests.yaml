@@ -41,7 +41,6 @@ jobs:
             ${{ runner.os }}-
       - name: Install dependencies
         run: |
-          sudo apt-get install -y gcc-c++
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
