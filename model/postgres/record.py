@@ -12,7 +12,7 @@ from .base import Base, Core
 
 @dataclass
 class Part:
-    index: int
+    index: Optional[int]
     url: str
     source: str
     file_type: str
@@ -45,7 +45,13 @@ class Part:
         return parsed_url.path[1:]
     
     def to_string(self) -> str:
-        return '|'.join([str(self.index), self.url, self.source, self.file_type, self.flags])
+        return '|'.join([
+            str(self.index) if self.index is not None else '', 
+            self.url, 
+            self.source, 
+            self.file_type, 
+            self.flags
+        ])
 
 
 class FRBRStatus(Enum):
@@ -122,11 +128,8 @@ class Record(Base, Core):
 
         for part in self.has_part:
             index, file_url, source, file_type, flags = part.split('|')
-            
-            if not index:
-                index = 0
 
-            parts.append(Part(int(index), file_url, source, file_type, flags))
+            parts.append(Part(None if index is None or index == '' else int(index), file_url, source, file_type, flags))
 
         return parts
 
