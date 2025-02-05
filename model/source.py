@@ -2,3 +2,4 @@ from enum import Enum
 
 class Source(Enum):
     CHICACO_ISAC = 'isac'
+    DOAB = 'doab'

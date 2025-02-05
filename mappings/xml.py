@@ -66,3 +66,17 @@ class XMLMapping(BaseMapping):
         if len(list(filter(lambda x: x != '', fields))) > 0:
             return True
         return False
+
+def _get_field_data_list(element_list):
+    if not element_list: 
+        return None
+
+    components = []
+
+    for element in element_list:
+        if etree.iselement(element):
+            components.append(etree.QName(element).localname)
+        else:
+            components.append(element)
+
+    return list(zip_longest(*element_list, fillvalue=''))
