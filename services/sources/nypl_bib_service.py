@@ -7,7 +7,8 @@ from constants.get_constants import get_constants
 from logger import create_log
 from managers.db import DBManager
 from managers.nyplApi import NyplApiManager
-from mappings.nypl import NYPLMapping
+from mappings.nypl_bib import map_nypl_bib_to_record
+from model import Record
 from .source_service import SourceService
 from sqlalchemy import text
 
@@ -40,7 +41,7 @@ class NYPLBibService(SourceService):
         start_timestamp: datetime=None,
         offset: Optional[int]=None,
         limit: Optional[int]=None
-    ) -> Generator[NYPLMapping, None, None]:
+    ) -> Generator[Record, None, None]:
         nypl_bib_query = 'SELECT * FROM bib WHERE publish_year <= 1965'
 
         if not full_import:
@@ -70,15 +71,12 @@ class NYPLBibService(SourceService):
                 if nypl_bib_record:
                     yield nypl_bib_record
 
-    def parse_nypl_bib(self, bib) -> Optional[NYPLMapping]:
+    def parse_nypl_bib(self, bib) -> Optional[Record]:
         try:
             if self.is_pd_research_bib(dict(bib)):
                 bib_items = self.fetch_bib_items(dict(bib))
                 
-                nypl_record = NYPLMapping(bib, bib_items, self.constants, self.location_codes)
-                nypl_record.applyMapping()
-                
-                return nypl_record
+                return map_nypl_bib_to_record(bib, bib_items, self.location_codes)
             
             return None
         except Exception:

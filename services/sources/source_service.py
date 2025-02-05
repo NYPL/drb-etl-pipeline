@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Generator, Optional, Union
 
 from mappings.record_mapping import RecordMapping
+from model import Record
 
 class SourceService(ABC):
 
@@ -13,5 +14,5 @@ class SourceService(ABC):
         start_timestamp: Optional[datetime]=None,
         offset: Optional[int]=None,
         limit: Optional[int]=None
-    ) -> Union[list[RecordMapping], Generator[RecordMapping, None, None]]:
+    ) -> Union[list[RecordMapping], Generator[Record, None, None]]:
         pass
