@@ -3,14 +3,11 @@ import re
 from mappings.xml import XMLMapping
 
 from datetime import datetime, timezone
-from typing import Optional
 from uuid import uuid4
-from itertools import zip_longest
-from lxml import etree
 import json
 import dataclasses
 
-from model import FileFlags, Part, Record, Source
+from model import FileFlags, FRBRStatus, Part, Record, Source
 from .base_mapping import BaseMapping
 from .xml import _get_field_data_list
 
@@ -23,6 +20,7 @@ def map_doab_record(doab_record, namespaces) -> Record:
         return None
 
     authors = doab_record.xpath('./datacite:creator/text()', namespaces=namespaces)
+    title = doab_record.xpath('./dc:title/text()', namespaces=namespaces)
     relations = doab_record.xpath('./dc:relation/text()', namespaces=namespaces)
     publishers = doab_record.xpath('./dc:publisher/text()', namespaces=namespaces)
     languages = doab_record.xpath('./dc:language/text()', namespaces=namespaces)
@@ -38,12 +36,15 @@ def map_doab_record(doab_record, namespaces) -> Record:
     )
     
     new_record = Record(
+        uuid=uuid4(),
+        frbr_status=FRBRStatus.TODO.value,
+        cluster_status=False,
         source=Source.DOAB.value,
         source_id=source_id,
         identifiers= identifiers,
         authors=[f"{author}|||true" for author in authors],
         contributors=_map_contributors(doab_record, namespaces=namespaces),
-        title=doab_record.xpath('./dc:title/text()', namespaces=namespaces),
+        title=title[0] if len(title) > 0 else None,
         is_part_of=[f"{part}||series" for part in relations],
         publisher=[f"{publisher}||" for publisher in publishers],
         spatial=doab_record.xpath('./oapen:placepublication/text()', namespaces=namespaces),
@@ -80,23 +81,26 @@ def _map_identifers(record, namespaces):
 
     ids = [f"{id}|doab" for id in dc_ids + datacite_ids]
 
+    all_identifiers = dc_ids + datacite_ids
+
     if datacite_alt_ids:
-        ids.extend(datacite_alt_ids)
+        all_identifiers.extend(datacite_alt_ids)
 
     new_ids = []
     source_id = None
 
-    for id in ids:
+    for id in all_identifiers:
         try:
             value, auth = id.split('|')
         except ValueError:
-            continue
+            value = id
+            auth = 'doab'
 
-        if value[:4] == 'http':
+        if value.startswith('http'):
             doab_doi_group = re.search(DOI_REGEX, value)
-
             if doab_doi_group:
-                source_id = doab_doi_group.group(1)
+                value = doab_doi_group.group(1)
+                source_id = value
             else:
                 continue
 
@@ -121,21 +125,21 @@ def _format_rights_data(uri_list, text_list):
 
 def _map_rights(record, namespaces):
     license_condition_uris = record.xpath('./oaire:licenseCondition/@uri', namespaces=namespaces)
-    license_conditions = record.xpath('./oaire:licenseCondition/text()', namespaces=namespaces)
+    license_conditions_text = record.xpath('./oaire:licenseCondition/text()', namespaces=namespaces)
 
     rights_uris = record.xpath('./datacite:rights/@uri', namespaces=namespaces)
-    rights = record.xpath('./datacite:rights/text()', namespaces=namespaces)
+    rights_text = record.xpath('./datacite:rights/text()', namespaces=namespaces)
 
-    if license_condition_uris or rights_uris:
+    if license_condition_uris and rights_uris:
         return None
 
     rights = []
 
     if license_condition_uris:
-        rights.extend(_format_rights_data(license_condition_uris, license_conditions))
+        rights.extend(_format_rights_data(license_condition_uris, license_conditions_text))
 
     if rights_uris:
-        rights.extend(_format_rights_data(rights_uris, rights))
+        rights.extend(_format_rights_data(rights_uris, rights_text))
 
     return rights
 
