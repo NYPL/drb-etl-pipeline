@@ -5,9 +5,9 @@ from typing import Optional
 import os
 import requests
 
+from mappings.clacso import CLACSOMapping
 from constants.get_constants import get_constants
 from logger import create_log
-from mappings.clacso import _map_to_record
 from .source_service import SourceService
 from managers import RabbitMQManager, S3Manager
 
@@ -69,11 +69,8 @@ class CLACSOService(SourceService):
                 if record is None: continue
 
                 try:
-                    print(record.xpath('./dc:title/text()', namespaces=self.OAI_NAMESPACES)[0])
                     parsed_record = self.parse_clacso_record(record, self.OAI_NAMESPACES)
-                    print(f'Title: {parsed_record.title}')
-                    raise Exception 
-                    if self.verify_medium_type(parsed_record.record.medium) == True and self.verify_has_part_url(parsed_record.record.has_part) == True:
+                    if parsed_record and parsed_record.record.medium and parsed_record.record.has_part:
                         records_array.append(parsed_record)
                     else:
                         continue
@@ -86,23 +83,11 @@ class CLACSOService(SourceService):
             if not resumption_token or records_processed >= limit:
                 break
         return records_array
-
-    def verify_medium_type(self, medium):
-        type_list = ['book', 'bookpart', 'part', 'chapter', 'bibliography', 'appendix', 'index',
-                'foreword', 'afterword', 'bibliography', 'review', 'article', 'introduction']
-        if medium in type_list:
-            return True
-        return False
-    
-    def verify_has_part_url(self, has_part):
-        for part in has_part:
-            if '.pdf' in part:
-                return True
-        return False
     
     def parse_clacso_record(self, oaiRec, namespaces):
         try:
-            clacso_rec = _map_to_record(oaiRec, namespaces)
+            clacso_rec = CLACSOMapping(clacso_record=oaiRec, namespaces=namespaces)
+            clacso_rec._map_to_record(oaiRec, namespaces)
             return clacso_rec
         except Exception as e:
             logger.exception(f'Error applying mapping to CLACSO Record')
