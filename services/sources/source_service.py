@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Optional
+from typing import Generator, Optional, Union
 
 from mappings.record_mapping import RecordMapping
 
@@ -13,5 +13,5 @@ class SourceService(ABC):
         start_timestamp: Optional[datetime]=None,
         offset: Optional[int]=None,
         limit: Optional[int]=None
-    ) -> list[RecordMapping]:
+    ) -> Union[list[RecordMapping], Generator[RecordMapping, None, None]]:
         pass

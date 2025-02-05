@@ -50,7 +50,7 @@ class TestNYPLProcess:
     def test_runProcess_daily(self, test_instance: NYPLProcess, record_mappings, mocks):
         test_instance.nypl_bib_service.get_records.return_value = record_mappings
 
-        test_instance.process = 'daily'
+        test_instance.process_type = 'daily'
         test_instance.runProcess()
 
         test_instance.nypl_bib_service.get_records.assert_called_once_with(offset=None, limit=None)
@@ -60,7 +60,7 @@ class TestNYPLProcess:
     def test_runProcess_complete(self, test_instance: NYPLProcess, record_mappings, mocks):
         test_instance.nypl_bib_service.get_records.return_value = record_mappings
 
-        test_instance.process = 'complete'
+        test_instance.process_type = 'complete'
         test_instance.runProcess()
 
         test_instance.nypl_bib_service.get_records.assert_called_once_with(full_import=True)
@@ -70,7 +70,7 @@ class TestNYPLProcess:
     def test_runProcess_custom(self, test_instance: NYPLProcess, record_mappings, mocks):
         test_instance.nypl_bib_service.get_records.return_value = record_mappings
         
-        test_instance.process = 'custom'
+        test_instance.process_type = 'custom'
         test_instance.runProcess()
 
         test_instance.nypl_bib_service.get_records.assert_called_once_with(start_timestamp=None, offset=None, limit=None)
@@ -78,7 +78,7 @@ class TestNYPLProcess:
         assert mocks['add_record'].call_count == len(record_mappings)
 
     def test_runProcess_unknown(self, test_instance: NYPLProcess, mocks):
-        test_instance.process = 'unknown'
+        test_instance.process_type = 'unknown'
         test_instance.runProcess()
         
         test_instance.nypl_bib_service.get_records.assert_not_called()
@@ -93,7 +93,7 @@ class TestNYPLProcess:
     def test_runProcess_error(self, test_instance: NYPLProcess, mocks):
         test_instance.nypl_bib_service.get_records.side_effect = Exception()
 
-        test_instance.process = 'daily'
+        test_instance.process_type = 'daily'
 
         with pytest.raises(Exception):
             test_instance.runProcess()

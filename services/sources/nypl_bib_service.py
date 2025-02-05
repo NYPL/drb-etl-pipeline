@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import os
 import requests
-from typing import Optional
+from typing import Generator, Optional
 
 from constants.get_constants import get_constants
 from logger import create_log
@@ -40,8 +40,7 @@ class NYPLBibService(SourceService):
         start_timestamp: datetime=None,
         offset: Optional[int]=None,
         limit: Optional[int]=None
-    ) -> list[NYPLMapping]:
-        records = []
+    ) -> Generator[NYPLMapping, None, None]:
         nypl_bib_query = 'SELECT * FROM bib WHERE publish_year <= 1965'
 
         if not full_import:
@@ -69,9 +68,7 @@ class NYPLBibService(SourceService):
                 nypl_bib_record = self.parse_nypl_bib(bib_result_mapping)
 
                 if nypl_bib_record:
-                    records.append(nypl_bib_record)
-
-        return records
+                    yield nypl_bib_record
 
     def parse_nypl_bib(self, bib) -> Optional[NYPLMapping]:
         try:
