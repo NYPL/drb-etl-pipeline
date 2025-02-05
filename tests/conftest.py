@@ -16,6 +16,7 @@ from load_env import load_env_file
 logger = create_log(__name__)
 
 TEST_SOURCE = 'test_source'
+OCLC_TEST_SOURCE = "oclc_test_source"
 
 
 def pytest_addoption(parser):
@@ -176,3 +177,53 @@ def test_work_id(seed_test_data):
 @pytest.fixture(scope='session')
 def test_link_id(seed_test_data):
     return seed_test_data['link_id']
+
+@pytest.fixture(scope="session")
+def seed_oclc_test_data(db_manager):
+    oclc_test_record_data = {
+        'title': 'Moby-Dick',
+        'uuid': uuid4(),
+        'frbr_status': 'to_do',
+        'cluster_status': False,
+        "source": OCLC_TEST_SOURCE,
+        'authors': ['Herman Melville||true'],
+        'languages': ['English'],
+        'dates': ['1851-|publication_date'],
+        'publisher': ['Harper & Brothers||'],
+        'identifiers': ['0142437247|isbn'],
+        'source_id': ['0142437247|oclc_test'],
+        'contributors': [],
+        'extent': '635 p.',
+        'is_part_of': [],
+        'abstract': ['A classic novel about a vengeful whale hunt.'],
+        'subjects': ['Whaling||', 'Sea stories||'],
+        'rights': 'public_domain',
+        'has_part': []
+    }
+
+    if db_manager is None:
+        return {
+            'source_id': oclc_test_record_data['source_id'],
+            'uuid': str(oclc_test_record_data['uuid'])
+        }
+
+    existing_record = db_manager.session.query(Record).filter(
+        Record.source_id.contains(oclc_test_record_data['source_id'])
+    ).first()
+
+    if existing_record:
+        for key, value in oclc_test_record_data.items():
+            if key != 'uuid' and hasattr(existing_record, key):
+                setattr(existing_record, key, value)
+        existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
+        test_record = existing_record
+    else:
+        test_record = Record(**oclc_test_record_data)
+        db_manager.session.add(test_record)
+    
+    db_manager.session.commit()
+
+    return {
+        'source_id': oclc_test_record_data['source_id'],
+        'uuid': str(test_record.uuid)
+    }
