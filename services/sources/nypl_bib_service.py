@@ -44,20 +44,15 @@ class NYPLBibService(SourceService):
     ) -> Generator[Record, None, None]:
         nypl_bib_query = 'SELECT * FROM bib WHERE publish_year <= 1965'
 
-        if not full_import:
+        if start_timestamp:
             nypl_bib_query += ' and updated_date > '
-            
-            if start_timestamp:
-                nypl_bib_query += "'{}'".format(start_timestamp)
-            else:
-                start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-                nypl_bib_query += "'{}'".format(start_date_time.strftime('%Y-%m-%dT%H:%M:%S%z'))
+            nypl_bib_query += "'{}'".format(start_timestamp.strftime('%Y-%m-%dT%H:%M:%S%z'))
 
         if offset:
-            nypl_bib_query += ' OFFSET {}'.format(offset)
+            nypl_bib_query += f' OFFSET {offset}'
 
         if limit:
-            nypl_bib_query += ' LIMIT {}'.format(limit)
+            nypl_bib_query += f' LIMIT {limit}'
 
         with self.bib_db_connection.engine.connect() as db_connection:
             bib_results = db_connection.execution_options(stream_results=True).execute(text(nypl_bib_query))
