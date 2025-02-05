@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import os
 import requests
-from typing import Optional
+from typing import Generator, Optional
 
 from constants.get_constants import get_constants
 from logger import create_log
@@ -40,24 +40,18 @@ class NYPLBibService(SourceService):
         start_timestamp: datetime=None,
         offset: Optional[int]=None,
         limit: Optional[int]=None
-    ) -> list[NYPLMapping]:
-        records = []
+    ) -> Generator[NYPLMapping, None, None]:
         nypl_bib_query = 'SELECT * FROM bib WHERE publish_year <= 1965'
 
-        if not full_import:
+        if start_timestamp:
             nypl_bib_query += ' and updated_date > '
-            
-            if start_timestamp:
-                nypl_bib_query += "'{}'".format(start_timestamp)
-            else:
-                start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-                nypl_bib_query += "'{}'".format(start_date_time.strftime('%Y-%m-%dT%H:%M:%S%z'))
+            nypl_bib_query += "'{}'".format(start_timestamp.strftime('%Y-%m-%dT%H:%M:%S%z'))
 
         if offset:
-            nypl_bib_query += ' OFFSET {}'.format(offset)
+            nypl_bib_query += f' OFFSET {offset}'
 
         if limit:
-            nypl_bib_query += ' LIMIT {}'.format(limit)
+            nypl_bib_query += f' LIMIT {limit}'
 
         with self.bib_db_connection.engine.connect() as db_connection:
             bib_results = db_connection.execution_options(stream_results=True).execute(text(nypl_bib_query))
@@ -69,9 +63,7 @@ class NYPLBibService(SourceService):
                 nypl_bib_record = self.parse_nypl_bib(bib_result_mapping)
 
                 if nypl_bib_record:
-                    records.append(nypl_bib_record)
-
-        return records
+                    yield nypl_bib_record
 
     def parse_nypl_bib(self, bib) -> Optional[NYPLMapping]:
         try:
