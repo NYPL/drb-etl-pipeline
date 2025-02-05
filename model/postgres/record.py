@@ -61,10 +61,12 @@ class FRBRStatus(Enum):
 
 @dataclass 
 class FileFlags:
+    edd: bool = False
     catalog: bool = False
     reader: bool = False
     embed: bool = False
     download: bool = False
+    nypl_login: bool = False
 
 
 class Record(Base, Core):
