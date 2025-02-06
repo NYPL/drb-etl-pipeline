@@ -72,6 +72,7 @@ class CLACSOService(SourceService):
                     parsed_record = self.parse_clacso_record(record, self.OAI_NAMESPACES)
                     if parsed_record and parsed_record.record.medium and parsed_record.record.has_part:
                         records_array.append(parsed_record)
+                        return records_array
                     else:
                         continue
                 except Exception:
@@ -84,10 +85,10 @@ class CLACSOService(SourceService):
                 break
         return records_array
     
-    def parse_clacso_record(self, oaiRec, namespaces):
+    def parse_clacso_record(self, oai_rec, namespaces):
         try:
-            clacso_rec = CLACSOMapping(clacso_record=oaiRec, namespaces=namespaces)
-            clacso_rec._map_to_record(oaiRec, namespaces)
+            clacso_rec = CLACSOMapping(clacso_record=oai_rec, namespaces=namespaces)
+            clacso_rec._map_to_record(oai_rec, namespaces)
             return clacso_rec
         except Exception as e:
             logger.exception(f'Error applying mapping to CLACSO Record')

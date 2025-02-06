@@ -1,11 +1,12 @@
 import re
+import dataclasses
 import requests
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 from uuid import uuid4
-from lxml import etree
+import json
 
-from model import Record
+from model import Record, FRBRStatus, FileFlags, Part, Source
 from .base_mapping import BaseMapping
 
 HANDLE_URL = "https://biblioteca-repositorio.clacso.edu.ar/handle/CLACSO"
@@ -19,11 +20,11 @@ class CLACSOMapping(BaseMapping):
     def _map_to_record(self, clacso_record, namespaces):
         return Record(
             uuid=uuid4(),
-            frbr_status='to_do',
+            frbr_status=FRBRStatus.TODO.value,
             cluster_status=False,
-            source='clacso',
+            source=Source.CLACSO.value,
             source_id=self.create_source_id(clacso_record, namespaces),
-            title=clacso_record.xpath('./dc:title/text()', namespaces=namespaces,)[0],
+            title=clacso_record.xpath('./dc:title/text()', namespaces=namespaces)[0],
             authors=self.create_authors(clacso_record, namespaces),
             medium=self.create_medium(clacso_record, namespaces),
             identifiers=self.create_identifiers(clacso_record, namespaces),
@@ -34,16 +35,13 @@ class CLACSOMapping(BaseMapping):
         )
 
     def create_authors(self, record, namespaces):
-        author_list = []
-        for author in record.xpath('./dc:creator/text()', namespaces=namespaces):
-            author_list.append(f'{author}|||true')
-        return author_list
+         return [f'{author}|||true' for author in record.xpath('./dc:creator/text()', namespaces=namespaces)]
 
     def create_source_id(self, record, namespaces):
         for identifier in record.xpath('./dc:identifier/text()', namespaces=namespaces):
             if HANDLE_URL in identifier:
                 id = identifier.split('/')[-1]
-                source_id = f'{identifier}|{id}'
+                source_id = f'{Source.CLACSO.value}|{id}'
                 return source_id
 
     def create_medium(self, record, namespaces):
@@ -89,8 +87,12 @@ class CLACSOMapping(BaseMapping):
                             else:
                                 response = requests.get(link.get('href'))
                             if response.status_code == 200:
-                                has_part_format = (f'1|{PDF_PART_URL}{pdf_link}|clacso|application/pdf|{{"reader": false, "download": true, "catalog": false, "embed": true}}')
-                                has_part_array.append(has_part_format)
+                                pdf_part = Part(index=1, 
+                                                url=f'{PDF_PART_URL}{pdf_link}',
+                                                source=Source.CLACSO.value,
+                                                file_type='application/pdf',
+                                                flags=json.dumps(dataclasses.asdict(FileFlags(download=True))))
+                                has_part_array.append(pdf_part.to_string())
                                 return has_part_array
                             
     def createMapping(self):
