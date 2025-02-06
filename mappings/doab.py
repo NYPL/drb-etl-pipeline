@@ -1,7 +1,5 @@
 import re
 
-from mappings.xml import XMLMapping
-
 from datetime import datetime, timezone
 from uuid import uuid4
 import json
@@ -9,7 +7,6 @@ import dataclasses
 
 from model import FileFlags, FRBRStatus, Part, Record, Source
 from .base_mapping import BaseMapping
-
 
 class DOABMapping(BaseMapping):
     DOI_REGEX = r'doabooks.org\/handle\/([0-9]+\.[0-9]+\.[0-9]+\/[0-9]+)'
@@ -19,11 +16,11 @@ class DOABMapping(BaseMapping):
     
     def map_doab_record(self, doab_record, namespaces) -> Record:
         identifiers, source_id = self._get_identifers(doab_record, namespaces=namespaces)
+        title = doab_record.xpath('./dc:title/text()', namespaces=namespaces) + doab_record.xpath('./datacite:creator/text()', namespaces=namespaces)
 
-        if identifiers is None or len(identifiers) == 0:
+        if identifiers is None or len(identifiers) == 0 or title is None or len(title) == 0:
             return None
 
-        title = doab_record.xpath('./dc:title/text()', namespaces=namespaces) + doab_record.xpath('./datacite:creator/text()', namespaces=namespaces)
         relations = doab_record.xpath('./dc:relation/text()', namespaces=namespaces)
         publishers = doab_record.xpath('./dc:publisher/text()', namespaces=namespaces)
         languages = doab_record.xpath('./dc:language/text()', namespaces=namespaces)
@@ -38,13 +35,13 @@ class DOABMapping(BaseMapping):
             identifiers= identifiers,
             authors=self._get_authors(doab_record, namespaces=namespaces),
             contributors=self._get_contributors(doab_record, namespaces=namespaces),
-            title=title[0] if len(title) > 0 else None,
-            is_part_of=[f'{part}||series' for part in relations],
-            publisher=[f'{publisher}||' for publisher in publishers],
+            title=title[0],
+            is_part_of=[f'{part}||series' for part in relations if part is not None or part == ''],
+            publisher=[f'{publisher}||' for publisher in publishers if publisher is not None or publisher == ''],
             spatial=doab_record.xpath('./oapen:placepublication/text()', namespaces=namespaces),
             dates=self._get_dates(doab_record, namespaces=namespaces),
-            languages=[f'||{language}' for language in languages],
-            extent=[f'{extent} pages' for extent in extents],
+            languages=[f'||{language}' for language in languages if language is not None or language == ''],
+            extent=[f'{extent} pages' for extent in extents if extent is not None or extent == ''],
             abstract=doab_record.xpath('./dc:description/text()', namespaces=namespaces),
             subjects=self._get_subjects(doab_record, namespaces=namespaces),
             has_part=self._get_has_part(doab_record, namespaces),
@@ -53,7 +50,7 @@ class DOABMapping(BaseMapping):
             date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
         )
 
-    def _get_text_type_data(self,record, namespaces, field_xpath, format_string):
+    def _get_text_type_data(self, record, namespaces, field_xpath, format_string):
         field_data = record.xpath(field_xpath, namespaces=namespaces)
 
         if not field_data:
@@ -72,7 +69,7 @@ class DOABMapping(BaseMapping):
 
         authors = datacite_authors or dc_authors
 
-        return [f'{author}|||true' for author in authors]
+        return [f'{author}|||true' for author in authors if author is not None or author == '']
 
     def _get_identifers(self, record, namespaces):
         dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
