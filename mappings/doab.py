@@ -9,7 +9,6 @@ import dataclasses
 
 from model import FileFlags, FRBRStatus, Part, Record, Source
 from .base_mapping import BaseMapping
-from .xml import _get_field_data_list
 
 DOI_REGEX = r'doabooks.org\/handle\/([0-9]+\.[0-9]+\.[0-9]+\/[0-9]+)'
     
@@ -19,22 +18,20 @@ def map_doab_record(doab_record, namespaces) -> Record:
     if identifiers is None or len(identifiers) == 0:
         return None
 
-    authors = doab_record.xpath('./datacite:creator/text()', namespaces=namespaces)
-    title = doab_record.xpath('./dc:title/text()', namespaces=namespaces)
+    title = doab_record.xpath('./dc:title/text()', namespaces=namespaces) + doab_record.xpath('./datacite:creator/text()', namespaces=namespaces)
     relations = doab_record.xpath('./dc:relation/text()', namespaces=namespaces)
     publishers = doab_record.xpath('./dc:publisher/text()', namespaces=namespaces)
     languages = doab_record.xpath('./dc:language/text()', namespaces=namespaces)
     extents = doab_record.xpath('./oapen:pages/text()', namespaces=namespaces)
-    subjects = doab_record.xpath('./datacite:subject/text()', namespaces=namespaces)
     
-    return Record(
+    new_record= Record(
         uuid=uuid4(),
         frbr_status=FRBRStatus.TODO.value,
         cluster_status=False,
         source=Source.DOAB.value,
         source_id=source_id,
         identifiers= identifiers,
-        authors=[f"{author}|||true" for author in authors],
+        authors=_get_authors(doab_record, namespaces=namespaces),
         contributors=_get_contributors(doab_record, namespaces=namespaces),
         title=title[0] if len(title) > 0 else None,
         is_part_of=[f"{part}||series" for part in relations],
@@ -44,40 +41,57 @@ def map_doab_record(doab_record, namespaces) -> Record:
         languages=[f"||{language}" for language in languages],
         extent=[f"{extent} pages" for extent in extents],
         abstract=doab_record.xpath('./dc:description/text()', namespaces=namespaces),
-        subjects=[f"{subject}||" for subject in subjects],
+        subjects=_get_subjects(doab_record, namespaces=namespaces),
         has_part=_get_has_part(doab_record, namespaces),
         rights=_get_rights(doab_record, namespaces=namespaces),
         date_created=datetime.now(timezone.utc).replace(tzinfo=None),
         date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
     )
+    for attr in dir(new_record):
+        print("obj.%s = %r" % (attr, getattr(new_record, attr)))
 
-def _get_datacite_data(record, namespaces, text_xpath, type_xpath, format_string):
-    text_data = record.xpath(text_xpath, namespaces=namespaces)
-    type_data = record.xpath(type_xpath, namespaces=namespaces)
+    return new_record
 
-    if not text_data or not type_data:
+def _get_text_type_data(record, namespaces, field_xpath, format_string):
+    field_data = record.xpath(field_xpath, namespaces=namespaces)
+
+    if not field_data:
         return None
 
-    data_tuples = _get_field_data_list([text_data, type_data])
-
+    data_tuples = [
+        (item.text, item.get("type") or '')
+        for item in field_data
+    ]
+    
     return [format_string.format(item[0], item[1]) for item in data_tuples]
+
+def _get_authors(record, namespaces):
+    datacite_authors = record.xpath('./datacite:creator/text()', namespaces=namespaces)
+    dc_authors = record.xpath('./dc:creator/text()', namespaces=namespaces)
+
+    authors = datacite_authors or dc_authors
+
+    return [f"{author}|||true" for author in authors]
 
 def _get_identifers(record, namespaces):
     dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
     datacite_ids = record.xpath('./datacite:identifier/text()', namespaces=namespaces)
-    datacite_alt_ids = _get_datacite_data(record, namespaces, './datacite:alternateIdentifier/text()', './datacite:alternateIdentifier/@type', "{}|{}")
+    
+    datacite_alt_ids = _get_text_type_data(record, namespaces, './datacite:alternateIdentifier', "{}|{}")
+    dc_alt_ids = _get_text_type_data(record, namespaces, './dc:alternateIdentifier', "{}|{}")
 
     ids = [f"{id}|doab" for id in dc_ids + datacite_ids]
 
-    all_identifiers = ids + datacite_ids
-
     if datacite_alt_ids:
-        all_identifiers.extend(datacite_alt_ids)
+        ids.extend(datacite_alt_ids)
+
+    if dc_alt_ids:
+        ids.extend(dc_alt_ids)
 
     new_ids = []
     source_id = None
 
-    for id in all_identifiers:
+    for id in ids:
         try:
             value, auth = id.split('|')
         except ValueError:
@@ -96,10 +110,21 @@ def _get_identifers(record, namespaces):
     return new_ids, source_id
 
 def _get_contributors(record, namespaces):
-    return _get_datacite_data(record, namespaces, './datacite:contributor/text()', './datacite:contributor/@type', "{}|||{}")
+    return _get_text_type_data(record, namespaces, './datacite:contributor', "{}|||{}")
 
 def _get_dates(record, namespaces):
-    return _get_datacite_data(record, namespaces, './datacite:date/text()', './datacite:date/@type', "{}|||{}")
+    datacite_dates = _get_text_type_data(record, namespaces, './datacite:date', "{}|||{}")
+    dc_dates = _get_text_type_data(record, namespaces, './dc:date', "{}|||{}")
+
+    return datacite_dates or dc_dates
+
+def _get_subjects(record, namespaces):
+    datacite_subjects = record.xpath('./datacite:subject/text()', namespaces=namespaces)
+    dc_subjects = record.xpath('./dc:subject/text()', namespaces=namespaces)
+    
+    subjects = datacite_subjects or dc_subjects
+
+    return [f"{subject}||" for subject in subjects]
 
 def _get_has_part(record, namespaces):
     dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
@@ -119,34 +144,30 @@ def _get_has_part(record, namespaces):
     
     return html_parts 
 
-def _format_rights_data(uri_list, text_list):
-    rights = []
-    rights_tuple_list = _get_field_data_list([uri_list, text_list])
-    for item in rights_tuple_list:
-        right_str = f"doab|{item[0]}||{item[1]}"
-        formatted_right = [d.strip() for d in right_str.split('|')]
-        rights.append('|'.join(formatted_right))
-    return rights
+def _get_uri_text_data(record, namespaces, field_xpath, format_string):
+    field_data = record.xpath(field_xpath, namespaces=namespaces)
+
+    if not field_data:
+        return []
+
+    data_tuples = [
+        (item.get("uri") or '', item.text.strip())
+        for item in field_data
+    ]
+    
+    return [format_string.format(item[0], item[1]) for item in data_tuples]
 
 def _get_rights(record, namespaces):
-    license_condition_uris = record.xpath('./oaire:licenseCondition/@uri', namespaces=namespaces)
-    license_conditions_text = record.xpath('./oaire:licenseCondition/text()', namespaces=namespaces)
+    license_conditions = _get_uri_text_data(record, namespaces, './oaire:licenseCondition', "doab|{}||{}")
+    
+    datacite_rights = _get_uri_text_data(record, namespaces, './datacite:rights', "doab|{}||{}")
 
-    rights_uris = record.xpath('./datacite:rights/@uri', namespaces=namespaces)
-    rights_text = record.xpath('./datacite:rights/text()', namespaces=namespaces)
+    dc_rights = _get_uri_text_data(record, namespaces, './dc:rights', "doab|{}||{}")
 
-    if license_condition_uris and rights_uris:
+    if not license_conditions and not datacite_rights and not dc_rights:
         return None
 
-    rights = []
-
-    if license_condition_uris:
-        rights.extend(_format_rights_data(license_condition_uris, license_conditions_text))
-
-    if rights_uris:
-        rights.extend(_format_rights_data(rights_uris, rights_text))
-
-    return rights
+    return license_conditions + datacite_rights + dc_rights
 
 class DOABMapping(XMLMapping):
     DOI_REGEX = r'doabooks.org\/handle\/([0-9]+\.[0-9]+\.[0-9]+\/[0-9]+)'
