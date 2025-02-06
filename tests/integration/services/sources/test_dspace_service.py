@@ -174,13 +174,12 @@ class TestDSpaceService:
 
         test_instance.parse_record('test_record')
 
-        mock_mapper.assert_called_once_with('test_record', test_instance.OAI_NAMESPACES, test_instance.constants)
-        mock_mapping.applyMapping.assert_called_once()
+        mock_mapper.assert_called_once_with('test_record', test_instance.OAI_NAMESPACES)
 
     def test_parse_record_error(self, test_instance: DSpaceService, mocker):
         mock_mapping = mocker.MagicMock()
-        mock_mapping.applyMapping.side_effect = MappingError('test_error')
         mock_mapper = test_instance.source_mapping
+        mock_mapper.side_effect = MappingError('test_error')
         mock_mapper.return_value = mock_mapping
 
         with pytest.raises(Exception):
