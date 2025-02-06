@@ -46,13 +46,10 @@ class CLACSOService(SourceService):
         start_timestamp: datetime=None,
         offset: Optional[int]=0,
         limit: Optional[int]=100
-    ) -> list:
-        
+    ) -> list[CLACSOMapping]:
         resumption_token = None
-
         records_processed = 0
-
-        records_array = []
+        records = []
 
         while True:
             oai_file = self.download_oai_records(full_import, start_timestamp, resumption_token=resumption_token)
@@ -69,20 +66,21 @@ class CLACSOService(SourceService):
                 if record is None: continue
 
                 try:
-                    #parsed_record = self.parse_clacso_record(record, self.OAI_NAMESPACES)
                     parsed_record = CLACSOMapping(clacso_record=record, namespaces=self.OAI_NAMESPACES)
-                    if parsed_record.record and parsed_record.record.medium and parsed_record.record.has_part:
-                        records_array.append(parsed_record)
-                    else:
-                        continue
+                    
+                    if parsed_record.record:
+                        records.append(parsed_record)
+                        records_processed += 1
+
+                    if limit is not None and records_processed >= limit:
+                        return records
                 except Exception:
                     logger.exception(f'Error parsing CLACSO record {record}')
-                
-            records_processed += 100
-
-            if not resumption_token or records_processed >= limit:
+            
+            if not resumption_token:
                 break
-        return records_array
+        
+        return records
     
     def parse_clacso_record(self, oai_rec, namespaces):
         try:
@@ -107,7 +105,7 @@ class CLACSOService(SourceService):
         else:
             url_params = '{}&metadataPrefix=oai_dc'.format(url_params)
 
-        clacso_url = '{}{}'.format(self.CLACSO_BASE_URL, url_params)
+        clacso_url = '{}{}&set=books'.format(self.CLACSO_BASE_URL, url_params)
 
         clacso_response = requests.get(clacso_url, stream=True, timeout=30, headers=headers)
 
