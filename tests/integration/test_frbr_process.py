@@ -1,22 +1,24 @@
 import pytest
-from model import Record
+from datetime import datetime, timedelta, timezone
+from sqlalchemy import text
 from processes import ClassifyProcess
+from model import Record
+from managers import OCLCCatalogManager
+from mappings.oclc_bib import OCLCBibMapping
 
-@pytest.mark.integration
-def test_classify_process_updates_frbr_status(db_manager, seed_oclc_test_data):
-    test_source_id = seed_oclc_test_data['source_id'][0]
-    pre_record = db_manager.session.query(Record).filter(
-        Record.source_id.contains([test_source_id])
-    ).first()
+def test_classify_and_catalog(db_manager, seed_unclassified_record):
+    record_uuid = seed_unclassified_record['record_uuid']
     
-    assert pre_record is not None, "Test record not found in database"
-    assert pre_record.frbr_status == 'to_do'
-    
-    classify_process = ClassifyProcess('complete', None, None, None)
+    classify_process = ClassifyProcess(
+        'custom',
+        None,
+        None,
+        record_uuid,
+        int((datetime.now(timezone.utc) - timedelta(minutes=5)).timestamp())
+    )
     classify_process.runProcess()
-    
-    post_record = db_manager.session.query(Record).filter(
-        Record.source_id.contains([test_source_id])
+
+    original_record = db_manager.session.query(Record).filter(
+        Record.uuid == record_uuid
     ).first()
-    
-    assert post_record.frbr_status == 'complete'
+    assert original_record.frbr_status == 'complete', "FRBRization failed"

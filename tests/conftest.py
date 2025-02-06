@@ -178,52 +178,37 @@ def test_work_id(seed_test_data):
 def test_link_id(seed_test_data):
     return seed_test_data['link_id']
 
-@pytest.fixture(scope="session")
-def seed_oclc_test_data(db_manager):
-    oclc_test_record_data = {
+@pytest.fixture(scope='session')
+def seed_unclassified_record(db_manager):
+    if db_manager is None:
+        return {'record_uuid': '7bd4a8c0-9b3a-487b-9c7c-1dd6890a5c7a'}
+
+    test_record_data = {
         'title': 'Moby-Dick',
         'uuid': uuid4(),
         'frbr_status': 'to_do',
         'cluster_status': False,
-        "source": OCLC_TEST_SOURCE,
+        "source": TEST_SOURCE,
         'authors': ['Herman Melville||true'],
-        'languages': ['English'],
-        'dates': ['1851-|publication_date'],
-        'publisher': ['Harper & Brothers||'],
-        'identifiers': ['0142437247|isbn'],
-        'source_id': ['0142437247|oclc_test'],
-        'contributors': [],
-        'extent': '635 p.',
-        'is_part_of': [],
-        'abstract': ['A classic novel about a vengeful whale hunt.'],
-        'subjects': ['Whaling||', 'Sea stories||'],
-        'rights': 'public_domain',
-        'has_part': []
+        'identifiers': ['9780142437247|isbn'],
+        'source_id': 'moby-dick-123|test',
+        'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
     }
 
-    if db_manager is None:
-        return {
-            'source_id': oclc_test_record_data['source_id'],
-            'uuid': str(oclc_test_record_data['uuid'])
-        }
-
-    existing_record = db_manager.session.query(Record).filter(
-        Record.source_id.contains(oclc_test_record_data['source_id'])
-    ).first()
+    existing_record = db_manager.session.query(Record).filter(Record.source_id == test_record_data['source_id']).first()
 
     if existing_record:
-        for key, value in oclc_test_record_data.items():
+        for key, value in test_record_data.items():
             if key != 'uuid' and hasattr(existing_record, key):
                 setattr(existing_record, key, value)
+
         existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
+        test_record_data['uuid'] = existing_record.uuid
         test_record = existing_record
     else:
-        test_record = Record(**oclc_test_record_data)
+        test_record = Record(**test_record_data)
         db_manager.session.add(test_record)
-    
+
     db_manager.session.commit()
 
-    return {
-        'source_id': oclc_test_record_data['source_id'],
-        'uuid': str(test_record.uuid)
-    }
+    return {'record_uuid': str(test_record.uuid)}
