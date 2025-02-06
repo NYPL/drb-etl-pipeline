@@ -1,10 +1,8 @@
 import pytest
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import text
 from processes import ClassifyProcess
 from model import Record
-from managers import OCLCCatalogManager
-from mappings.oclc_bib import OCLCBibMapping
+
 
 def test_frbr_process(db_manager, seed_unclassified_record):
     record_uuid = seed_unclassified_record
