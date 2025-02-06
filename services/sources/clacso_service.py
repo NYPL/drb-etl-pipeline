@@ -50,7 +50,7 @@ class CLACSOService(SourceService):
         resumption_token = None
         records_processed = 0
         records = []
-
+        print('HI')
         while True:
             oai_file = self.download_oai_records(full_import, start_timestamp, resumption_token=resumption_token)
 
@@ -105,7 +105,7 @@ class CLACSOService(SourceService):
         else:
             url_params = '{}&metadataPrefix=oai_dc'.format(url_params)
 
-        clacso_url = '{}{}&set=books'.format(self.CLACSO_BASE_URL, url_params)
+        clacso_url = '{}{}'.format(self.CLACSO_BASE_URL, url_params)
 
         clacso_response = requests.get(clacso_url, stream=True, timeout=30, headers=headers)
 
