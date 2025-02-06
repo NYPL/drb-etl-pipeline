@@ -8,7 +8,6 @@ class TestGoogleDriveService:
     def test_instance(self):
         return GoogleDriveService()
 
-    @pytest.mark.skipif(os.getenv('IS_CI') == 'true', reason="Skipping in CI environment")
     def test_get_drive_file(self, test_instance: GoogleDriveService):
         TEST_FILE_ID = '1GBskazIv6j2BjOolNYqJKKIJC8iYhTcs'
         file = test_instance.get_drive_file(TEST_FILE_ID)
