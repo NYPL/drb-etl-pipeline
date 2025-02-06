@@ -71,6 +71,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
             'edition_id': 1982731,
             'work_id': '701c5f00-cd7a-4a7d-9ed1-ce41c574ad1d',
             'link_id': 1982731,
+            'unclassified_record_uuid': '7bd4a8c0-9b3a-487b-9c7c-1dd6890a5c7a'
         }
 
     flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
@@ -95,6 +96,18 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}']
     }
 
+    test_unclassified_record_data = {
+        'title': 'Moby-Dick',
+        'uuid': uuid4(),
+        'frbr_status': 'to_do',
+        'cluster_status': False,
+        "source": TEST_SOURCE,
+        'authors': ['Herman Melville||true'],
+        'identifiers': ['9780142437247|isbn'],
+        'source_id': 'moby-dick-123|test',
+        'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
+    }
+
     existing_record = db_manager.session.query(Record).filter(Record.source_id == test_record_data['source_id']).first()
 
     if existing_record:
@@ -109,6 +122,19 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         test_record = Record(**test_record_data)
         db_manager.session.add(test_record)
     
+    existing_unclassified_record = db_manager.session.query(Record).filter(Record.source_id == test_unclassified_record_data['source_id']).first()
+    
+    if existing_unclassified_record:
+        for key, value in test_unclassified_record_data.items():
+            if key != 'uuid' and hasattr(existing_unclassified_record, key):
+                setattr(existing_unclassified_record, key, value)
+        existing_unclassified_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
+        test_unclassified_record_data['uuid'] = existing_unclassified_record.uuid
+        unclassified_record = existing_unclassified_record
+    else:
+        unclassified_record = Record(**test_unclassified_record_data)
+        db_manager.session.add(unclassified_record)
+
     db_manager.session.commit()
 
     cluster_process = ClusterProcess('complete', None, None, str(test_record_data['uuid']), None)
@@ -135,6 +161,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'edition_id': str(edition.id) if item else None,
         'work_id': str(work.uuid) if work else None,
         'link_id': links[0].id if links and len(links) > 0 else None,
+        'unclassified_record_uuid': str(unclassified_record.uuid)
     }
 
 
@@ -179,36 +206,5 @@ def test_link_id(seed_test_data):
     return seed_test_data['link_id']
 
 @pytest.fixture(scope='session')
-def seed_unclassified_record(db_manager):
-    if db_manager is None:
-        return {'record_uuid': '7bd4a8c0-9b3a-487b-9c7c-1dd6890a5c7a'}
-
-    test_record_data = {
-        'title': 'Moby-Dick',
-        'uuid': uuid4(),
-        'frbr_status': 'to_do',
-        'cluster_status': False,
-        "source": TEST_SOURCE,
-        'authors': ['Herman Melville||true'],
-        'identifiers': ['9780142437247|isbn'],
-        'source_id': 'moby-dick-123|test',
-        'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
-    }
-
-    existing_record = db_manager.session.query(Record).filter(Record.source_id == test_record_data['source_id']).first()
-
-    if existing_record:
-        for key, value in test_record_data.items():
-            if key != 'uuid' and hasattr(existing_record, key):
-                setattr(existing_record, key, value)
-
-        existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
-        test_record_data['uuid'] = existing_record.uuid
-        test_record = existing_record
-    else:
-        test_record = Record(**test_record_data)
-        db_manager.session.add(test_record)
-
-    db_manager.session.commit()
-
-    return {'record_uuid': str(test_record.uuid)}
+def seed_unclassified_record(seed_test_data):
+    return seed_test_data['unclassified_record_uuid']
