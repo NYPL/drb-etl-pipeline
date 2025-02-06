@@ -1,5 +1,5 @@
 from .postgres.base import Base, Core
-from .postgres.record import Record, Part
+from .postgres.record import Record, Part, FRBRStatus, FileFlags
 from .postgres.work import Work
 from .postgres.edition import Edition
 from .postgres.item import Item
@@ -20,3 +20,4 @@ from .elasticsearch.work import Work as ESWork
 from .elasticsearch.base import PerLanguageField
 
 from .queue.file_message import get_file_message
+from .source import Source
