@@ -3,9 +3,7 @@
 .coverage
 /.vscode/*
 *.pyc
-launcher manifest.xml
-nosetests.xml
-coverage.xml
+*.xml
 *.code-workspace
 config/local*
 !config/local.yaml
@@ -21,3 +19,6 @@ tags
 analytics/upress_reporting/log_files
 
 service-account.json
+
+# functional test files
+!test-doab.xml
