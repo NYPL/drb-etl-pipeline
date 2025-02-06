@@ -85,11 +85,11 @@ def _load_yaml_config(file_path: str) -> None:
 
 
 def load_secrets():
-    ssm_service = SSMService()
-
     if Path(LOCAL_SECRETS_FILE).exists():
         secrets_config = _load_yaml_config(LOCAL_SECRETS_FILE)
         _set_env_vars(secrets_config)
+
+    ssm_service = SSMService()
 
     for env_var, param_name in ENV_VAR_TO_SSM_NAME.items():
         if os.environ.get(env_var, None) is None:
