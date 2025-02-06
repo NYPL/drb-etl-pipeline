@@ -16,7 +16,6 @@ from load_env import load_env_file
 logger = create_log(__name__)
 
 TEST_SOURCE = 'test_source'
-OCLC_TEST_SOURCE = "oclc_test_source"
 
 
 def pytest_addoption(parser):
@@ -39,7 +38,7 @@ def db_manager():
     
     try:
         db_manager.createSession()
-        db_manager.session.execute(text('SELECT 1')) # Test the db connection
+        db_manager.session.execute(text('SELECT 1'))
 
         yield db_manager
         
@@ -71,8 +70,23 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
             'edition_id': 1982731,
             'work_id': '701c5f00-cd7a-4a7d-9ed1-ce41c574ad1d',
             'link_id': 1982731,
-            'unclassified_record_uuid': '7bd4a8c0-9b3a-487b-9c7c-1dd6890a5c7a'
+            'unfrbrized_record_uuid': '7bd4a8c0-9b3a-487b-9c7c-1dd6890a5c7a'
         }
+
+    def create_or_update_record(record_data):
+        """Helper to create/update test records"""
+        existing_record = db_manager.session.query(Record).filter(
+            Record.source_id == record_data['source_id']
+        ).first()
+
+        if existing_record:
+            for key, value in record_data.items():
+                if key != 'uuid' and hasattr(existing_record, key):
+                    setattr(existing_record, key, value)
+            existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
+            record_data['uuid'] = existing_record.uuid
+            return existing_record
+        return Record(**record_data)    
 
     flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
     test_record_data = {
@@ -96,7 +110,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}']
     }
 
-    test_unclassified_record_data = {
+    test_unfrbrized_record_data = {
         'title': 'Moby-Dick',
         'uuid': uuid4(),
         'frbr_status': 'to_do',
@@ -108,32 +122,13 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
     }
 
-    existing_record = db_manager.session.query(Record).filter(Record.source_id == test_record_data['source_id']).first()
-
-    if existing_record:
-        for key, value in test_record_data.items():
-            if key != 'uuid' and hasattr(existing_record, key):
-                setattr(existing_record, key, value)
-        
-        existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
-        test_record_data['uuid'] = existing_record.uuid
-        test_record = existing_record
-    else:
-        test_record = Record(**test_record_data)
-        db_manager.session.add(test_record)
+    frbrized_record = create_or_update_record(test_record_data)
+    unfrbrized_record = create_or_update_record(test_unfrbrized_record_data)
     
-    existing_unclassified_record = db_manager.session.query(Record).filter(Record.source_id == test_unclassified_record_data['source_id']).first()
-    
-    if existing_unclassified_record:
-        for key, value in test_unclassified_record_data.items():
-            if key != 'uuid' and hasattr(existing_unclassified_record, key):
-                setattr(existing_unclassified_record, key, value)
-        existing_unclassified_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
-        test_unclassified_record_data['uuid'] = existing_unclassified_record.uuid
-        unclassified_record = existing_unclassified_record
-    else:
-        unclassified_record = Record(**test_unclassified_record_data)
-        db_manager.session.add(unclassified_record)
+    if not frbrized_record.id:
+        db_manager.session.add(frbrized_record)
+    if not unfrbrized_record.id:
+        db_manager.session.add(unfrbrized_record)
 
     db_manager.session.commit()
 
@@ -144,7 +139,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         db_manager.session.query(Item, Edition, Work)
             .join(Edition, Edition.id == Item.edition_id)
             .join(Work, Work.id == Edition.work_id)
-            .filter(Item.record_id == test_record.id)
+            .filter(Item.record_id == frbrized_record.id)
             .first()
     )
 
@@ -161,7 +156,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'edition_id': str(edition.id) if item else None,
         'work_id': str(work.uuid) if work else None,
         'link_id': links[0].id if links and len(links) > 0 else None,
-        'unclassified_record_uuid': str(unclassified_record.uuid)
+        'unfrbrized_record_uuid': str(unfrbrized_record.uuid)
     }
 
 
@@ -206,5 +201,5 @@ def test_link_id(seed_test_data):
     return seed_test_data['link_id']
 
 @pytest.fixture(scope='session')
-def seed_unclassified_record(seed_test_data):
-    return seed_test_data['unclassified_record_uuid']
+def seed_unfrbrized_record(seed_test_data):
+    return seed_test_data['unfrbrized_record_uuid']
