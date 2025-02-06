@@ -64,8 +64,7 @@ class DSpaceService(SourceService):
 
     def parse_record(self, record):
         try:
-            record = self.source_mapping(record, self.OAI_NAMESPACES, self.constants)
-            record.applyMapping()
+            record = self.source_mapping(record, self.OAI_NAMESPACES)
             return record
         except MappingError as e:
             raise Exception(e.message)

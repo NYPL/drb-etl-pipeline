@@ -10,288 +10,171 @@ import dataclasses
 from model import FileFlags, FRBRStatus, Part, Record, Source
 from .base_mapping import BaseMapping
 
-DOI_REGEX = r'doabooks.org\/handle\/([0-9]+\.[0-9]+\.[0-9]+\/[0-9]+)'
-    
-def map_doab_record(doab_record, namespaces) -> Record:
-    identifiers, source_id = _get_identifers(doab_record, namespaces=namespaces)
 
-    if identifiers is None or len(identifiers) == 0:
-        return None
-
-    title = doab_record.xpath('./dc:title/text()', namespaces=namespaces) + doab_record.xpath('./datacite:creator/text()', namespaces=namespaces)
-    relations = doab_record.xpath('./dc:relation/text()', namespaces=namespaces)
-    publishers = doab_record.xpath('./dc:publisher/text()', namespaces=namespaces)
-    languages = doab_record.xpath('./dc:language/text()', namespaces=namespaces)
-    extents = doab_record.xpath('./oapen:pages/text()', namespaces=namespaces)
-    
-    new_record= Record(
-        uuid=uuid4(),
-        frbr_status=FRBRStatus.TODO.value,
-        cluster_status=False,
-        source=Source.DOAB.value,
-        source_id=source_id,
-        identifiers= identifiers,
-        authors=_get_authors(doab_record, namespaces=namespaces),
-        contributors=_get_contributors(doab_record, namespaces=namespaces),
-        title=title[0] if len(title) > 0 else None,
-        is_part_of=[f"{part}||series" for part in relations],
-        publisher=[f"{publisher}||" for publisher in publishers],
-        spatial=doab_record.xpath('./oapen:placepublication/text()', namespaces=namespaces),
-        dates=_get_dates(doab_record, namespaces=namespaces),
-        languages=[f"||{language}" for language in languages],
-        extent=[f"{extent} pages" for extent in extents],
-        abstract=doab_record.xpath('./dc:description/text()', namespaces=namespaces),
-        subjects=_get_subjects(doab_record, namespaces=namespaces),
-        has_part=_get_has_part(doab_record, namespaces),
-        rights=_get_rights(doab_record, namespaces=namespaces),
-        date_created=datetime.now(timezone.utc).replace(tzinfo=None),
-        date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
-    )
-    for attr in dir(new_record):
-        print("obj.%s = %r" % (attr, getattr(new_record, attr)))
-
-    return new_record
-
-def _get_text_type_data(record, namespaces, field_xpath, format_string):
-    field_data = record.xpath(field_xpath, namespaces=namespaces)
-
-    if not field_data:
-        return None
-
-    data_tuples = [
-        (item.text, item.get("type") or '')
-        for item in field_data
-    ]
-    
-    return [format_string.format(item[0], item[1]) for item in data_tuples]
-
-def _get_authors(record, namespaces):
-    datacite_authors = record.xpath('./datacite:creator/text()', namespaces=namespaces)
-    dc_authors = record.xpath('./dc:creator/text()', namespaces=namespaces)
-
-    authors = datacite_authors or dc_authors
-
-    return [f"{author}|||true" for author in authors]
-
-def _get_identifers(record, namespaces):
-    dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
-    datacite_ids = record.xpath('./datacite:identifier/text()', namespaces=namespaces)
-    
-    datacite_alt_ids = _get_text_type_data(record, namespaces, './datacite:alternateIdentifier', "{}|{}")
-    dc_alt_ids = _get_text_type_data(record, namespaces, './dc:alternateIdentifier', "{}|{}")
-
-    ids = [f"{id}|doab" for id in dc_ids + datacite_ids]
-
-    if datacite_alt_ids:
-        ids.extend(datacite_alt_ids)
-
-    if dc_alt_ids:
-        ids.extend(dc_alt_ids)
-
-    new_ids = []
-    source_id = None
-
-    for id in ids:
-        try:
-            value, auth = id.split('|')
-        except ValueError:
-            continue
-
-        if value.startswith('http'):
-            doab_doi_group = re.search(DOI_REGEX, value)
-            if doab_doi_group:
-                value = doab_doi_group.group(1)
-                source_id = value
-            else:
-                continue
-
-        new_ids.append(f"{value}|{auth.lower()}")
-
-    return new_ids, source_id
-
-def _get_contributors(record, namespaces):
-    return _get_text_type_data(record, namespaces, './datacite:contributor', "{}|||{}")
-
-def _get_dates(record, namespaces):
-    datacite_dates = _get_text_type_data(record, namespaces, './datacite:date', "{}|||{}")
-    dc_dates = _get_text_type_data(record, namespaces, './dc:date', "{}|||{}")
-
-    return datacite_dates or dc_dates
-
-def _get_subjects(record, namespaces):
-    datacite_subjects = record.xpath('./datacite:subject/text()', namespaces=namespaces)
-    dc_subjects = record.xpath('./dc:subject/text()', namespaces=namespaces)
-    
-    subjects = datacite_subjects or dc_subjects
-
-    return [f"{subject}||" for subject in subjects]
-
-def _get_has_part(record, namespaces):
-    dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
-    if not dc_ids:
-        return None
-
-    html_parts = [
-        Part(
-            index=1,
-            url=dc_id,
-            source=Source.DOAB.value,
-            file_type='text/html',
-            flags=json.dumps(dataclasses.asdict(FileFlags(embed=True)))
-        ).to_string()
-        for dc_id in dc_ids if "http" in dc_id
-    ]
-    
-    return html_parts 
-
-def _get_uri_text_data(record, namespaces, field_xpath, format_string):
-    field_data = record.xpath(field_xpath, namespaces=namespaces)
-
-    if not field_data:
-        return []
-
-    data_tuples = [
-        (item.get("uri") or '', item.text.strip())
-        for item in field_data
-    ]
-    
-    return [format_string.format(item[0], item[1]) for item in data_tuples]
-
-def _get_rights(record, namespaces):
-    license_conditions = _get_uri_text_data(record, namespaces, './oaire:licenseCondition', "doab|{}||{}")
-    
-    datacite_rights = _get_uri_text_data(record, namespaces, './datacite:rights', "doab|{}||{}")
-
-    dc_rights = _get_uri_text_data(record, namespaces, './dc:rights', "doab|{}||{}")
-
-    if not license_conditions and not datacite_rights and not dc_rights:
-        return None
-
-    return license_conditions + datacite_rights + dc_rights
-
-class DOABMapping(XMLMapping):
+class DOABMapping(BaseMapping):
     DOI_REGEX = r'doabooks.org\/handle\/([0-9]+\.[0-9]+\.[0-9]+\/[0-9]+)'
 
-    def __init__(self, source, namespace, constants):
-        super(DOABMapping, self).__init__(source, namespace, constants)
-        self.mapping = self.createMapping()
+    def __init__(self, doab_record, namespaces):
+        self.record = self.map_doab_record(doab_record, namespaces)
     
-    def createMapping(self):
-        return {
-            'identifiers': [
-                ('./dc:identifier/text()', '{0}|doab'),
-                ('./datacite:identifier/text()', '{0}|doab'),
-                (
-                    [
-                        './datacite:alternateIdentifier/text()',
-                        './datacite:alternateIdentifier/@type'
-                    ],
-                    '{0}|{1}'
-                )
-            ],
-            'authors': [('./datacite:creator/text()', '{0}|||true')],
-            'contributors': [(
-                [
-                    './datacite:contributor/text()',
-                    './datacite:contributor/@type'
-                ],
-                '{0}|||{1}'
-            )],
-            'title': ('./datacite:title/text()', '{0}'),
-            'is_part_of': [('./dc:relation/text()', '{0}||series')],
-            'publisher': [('./dc:publisher/text()', '{0}||')],
-            'spatial': ('./oapen:placepublication/text()', '{0}'),
-            'dates': [
-                (
-                    [
-                        './datacite:date/text()',
-                        './datacite:date/@type'
-                    ],
-                    '{0}|{1}'
-                )
-            ],
-            'languages': [('./dc:language/text()', '||{0}')],
-            'extent': ('./oapen:pages/text()', '{0} pages'),
-            'abstract': ('./dc:description/text()', '{0}'),
-            'subjects': [('./datacite:subject/text()', '{0}||')],
-            'has_part': [(
-                './dc:identifier/text()',
-                '1|{0}|doab|text/html|{{"reader": false, "download": false, "catalog": false, "embed": true}}'
-            )],
-            'rights': [
-                (
-                    [
-                        './oaire:licenseCondition/@uri',
-                        './oaire:licenseCondition/text()'
-                    ],
-                    'doab|{0}||{1}|'
-                ),
-                (
-                    [
-                        './datacite:rights/@uri',
-                        './datacite:rights/text()'
-                    ],
-                    'doab|{0}||{1}|'
-                )
-            ]
-        }
+    def map_doab_record(self, doab_record, namespaces) -> Record:
+        identifiers, source_id = self._get_identifers(doab_record, namespaces=namespaces)
 
-    def applyFormatting(self):
-        # Set Identifiers
-        self.record.source = 'doab'
-        self.record.identifiers = self.parseIdentifiers()
+        if identifiers is None or len(identifiers) == 0:
+            return None
 
-        # Clean up subjects
-        self.record.subjects = list(filter(lambda x: x[:3] != 'bic', self.record.subjects))
+        title = doab_record.xpath('./dc:title/text()', namespaces=namespaces) + doab_record.xpath('./datacite:creator/text()', namespaces=namespaces)
+        relations = doab_record.xpath('./dc:relation/text()', namespaces=namespaces)
+        publishers = doab_record.xpath('./dc:publisher/text()', namespaces=namespaces)
+        languages = doab_record.xpath('./dc:language/text()', namespaces=namespaces)
+        extents = doab_record.xpath('./oapen:pages/text()', namespaces=namespaces)
+        
+        return Record(
+            uuid=uuid4(),
+            frbr_status=FRBRStatus.TODO.value,
+            cluster_status=False,
+            source=Source.DOAB.value,
+            source_id=source_id,
+            identifiers= identifiers,
+            authors=self._get_authors(doab_record, namespaces=namespaces),
+            contributors=self._get_contributors(doab_record, namespaces=namespaces),
+            title=title[0] if len(title) > 0 else None,
+            is_part_of=[f"{part}||series" for part in relations],
+            publisher=[f"{publisher}||" for publisher in publishers],
+            spatial=doab_record.xpath('./oapen:placepublication/text()', namespaces=namespaces),
+            dates=self._get_dates(doab_record, namespaces=namespaces),
+            languages=[f"||{language}" for language in languages],
+            extent=[f"{extent} pages" for extent in extents],
+            abstract=doab_record.xpath('./dc:description/text()', namespaces=namespaces),
+            subjects=self._get_subjects(doab_record, namespaces=namespaces),
+            has_part=self._get_has_part(doab_record, namespaces),
+            rights=self._get_rights(doab_record, namespaces=namespaces),
+            date_created=datetime.now(timezone.utc).replace(tzinfo=None),
+            date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
+        )
 
-        # Clean up rights statements
-        self.record.rights = self.parseRights()
+    def _get_text_type_data(self,record, namespaces, field_xpath, format_string):
+        field_data = record.xpath(field_xpath, namespaces=namespaces)
 
-        # Clean up links
-        self.record.has_part = self.parseLinks()
+        if not field_data:
+            return None
 
-        if self.record.source_id is None or len(self.record.identifiers) < 1:
-            self.raiseMappingError('Malformed DOAB record')
+        data_tuples = [
+            (item.text, item.get("type") or '')
+            for item in field_data
+        ]
+        
+        return [format_string.format(item[0], item[1]) for item in data_tuples]
 
-    def parseIdentifiers(self):
-        outIDs = []
+    def _get_authors(self, record, namespaces):
+        datacite_authors = record.xpath('./datacite:creator/text()', namespaces=namespaces)
+        dc_authors = record.xpath('./dc:creator/text()', namespaces=namespaces)
 
-        for iden in self.record.identifiers:
+        authors = datacite_authors or dc_authors
+
+        return [f"{author}|||true" for author in authors]
+
+    def _get_identifers(self, record, namespaces):
+        dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
+        datacite_ids = record.xpath('./datacite:identifier/text()', namespaces=namespaces)
+        
+        datacite_alt_ids = self._get_text_type_data(record, namespaces, './datacite:alternateIdentifier', "{}|{}")
+        dc_alt_ids = self._get_text_type_data(record, namespaces, './dc:alternateIdentifier', "{}|{}")
+
+        ids = [f"{id}|doab" for id in dc_ids + datacite_ids]
+
+        if datacite_alt_ids:
+            ids.extend(datacite_alt_ids)
+
+        if dc_alt_ids:
+            ids.extend(dc_alt_ids)
+
+        new_ids = []
+        source_id = None
+
+        for id in ids:
             try:
-                value, auth = iden.split('|')
+                value, auth = id.split('|')
             except ValueError:
                 continue
 
-            if value[:4] == 'http':
-                doabDOIGroup = re.search(self.DOI_REGEX, value)
-
-                if doabDOIGroup:
-                    value = doabDOIGroup.group(1)
-                    self.record.source_id = value
+            if value.startswith('http'):
+                doab_doi_group = re.search(self.DOI_REGEX, value)
+                if doab_doi_group:
+                    value = doab_doi_group.group(1)
+                    source_id = value
                 else:
                     continue
 
-            outIDs.append('{}|{}'.format(value, auth.lower()))
+            new_ids.append(f"{value}|{auth.lower()}")
 
-        return outIDs
+        return new_ids, source_id
 
-    def parseRights(self):
-        for rightsObj in self.record.rights:
-            rightsData = [d.strip() for d in list(rightsObj.split('|'))]
-            if rightsData[1] == '': continue
+    def _get_contributors(self, record, namespaces):
+        return self._get_text_type_data(record, namespaces, './datacite:contributor', "{}|||{}")
 
-            return '|'.join(rightsData)
+    def _get_dates(self, record, namespaces):
+        datacite_dates = self._get_text_type_data(record, namespaces, './datacite:date', "{}|||{}")
+        dc_dates = self._get_text_type_data(record, namespaces, './dc:date', "{}|||{}")
 
-        return None
+        return datacite_dates or dc_dates
 
-    def parseLinks(self):
-        outLinks = []
+    def _get_subjects(self, record, namespaces):
+        datacite_subjects = record.xpath('./datacite:subject/text()', namespaces=namespaces)
+        dc_subjects = record.xpath('./dc:subject/text()', namespaces=namespaces)
         
-        for link in self.record.has_part:
-            _, uri, *_ = link.split('|')
+        subjects = datacite_subjects or dc_subjects
 
-            if uri[:4] != 'http': continue
+        return [f"{subject}||" for subject in subjects if subject[:3] != 'bic']
 
-            outLinks.append(link)
+    def _get_has_part(self, record, namespaces):
+        dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
+        if not dc_ids:
+            return None
+
+        html_parts = [
+            Part(
+                index=1,
+                url=dc_id,
+                source=Source.DOAB.value,
+                file_type='text/html',
+                flags=json.dumps(dataclasses.asdict(FileFlags(embed=True)))
+            ).to_string()
+            for dc_id in dc_ids if "http" in dc_id
+        ]
         
-        return outLinks
+        return html_parts 
+
+    def _get_uri_text_data(self, record, namespaces, field_xpath, format_string):
+        field_data = record.xpath(field_xpath, namespaces=namespaces)
+
+        if not field_data:
+            return []
+
+        data_tuples = [
+            (item.get("uri") or '', item.text.strip())
+            for item in field_data
+        ]
+        
+        return [format_string.format(item[0], item[1]) for item in data_tuples]
+
+    def _get_rights(self, record, namespaces):
+        license_conditions = self._get_uri_text_data(record, namespaces, './oaire:licenseCondition', "doab|{}||{}")
+        
+        datacite_rights = self._get_uri_text_data(record, namespaces, './datacite:rights', "doab|{}||{}")
+
+        dc_rights = self._get_uri_text_data(record, namespaces, './dc:rights', "doab|{}||{}")
+
+        if not license_conditions and not datacite_rights and not dc_rights:
+            return None
+
+        return license_conditions + datacite_rights + dc_rights
+
+    def createMapping(self):
+        pass
+
+    def applyFormatting(self):
+        pass
+
+    def applyMapping(self):
+        pass
