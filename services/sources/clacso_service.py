@@ -50,7 +50,7 @@ class CLACSOService(SourceService):
         resumption_token = None
         records_processed = 0
         records = []
-        print('HI')
+        
         while True:
             oai_file = self.download_oai_records(full_import, start_timestamp, resumption_token=resumption_token)
 
