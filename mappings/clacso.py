@@ -18,6 +18,9 @@ class CLACSOMapping(BaseMapping):
         self.record = self._map_to_record(clacso_record, namespaces)
 
     def _map_to_record(self, clacso_record, namespaces):
+        medium=self.create_medium(clacso_record, namespaces)
+        if medium is None:
+            return None
         return Record(
             uuid=uuid4(),
             frbr_status=FRBRStatus.TODO.value,
@@ -26,7 +29,7 @@ class CLACSOMapping(BaseMapping):
             source_id=self.create_source_id(clacso_record, namespaces),
             title=clacso_record.xpath('./dc:title/text()', namespaces=namespaces)[0],
             authors=self.create_authors(clacso_record, namespaces),
-            medium=self.create_medium(clacso_record, namespaces),
+            medium=medium,
             identifiers=self.create_identifiers(clacso_record, namespaces),
             has_part=self.create_has_part(clacso_record, namespaces),
             dates=self.create_dates(clacso_record, namespaces),
@@ -73,27 +76,35 @@ class CLACSOMapping(BaseMapping):
             has_part_urls = [has_part for has_part in record.xpath('./dc:identifier/text()', namespaces=namespaces) if 'http' in has_part]
             for url in has_part_urls:
                 if HANDLE_URL in url or ("view" in url):
-                    response = requests.get(url)
+                    response = requests.get(url, timeout=10)
                     
                     clacso_page = BeautifulSoup(response.text, 'html.parser')
                     
                     links = clacso_page.find_all('a')
                     
                     for link in links:
-                        if ('.pdf' in link.get('href', [])):
+                        if '.pdf' in link.get('href', []) or 'pdf' in link.get('class', []) or 'pdf' in link.text.lower():
                             pdf_link = link.get('href')
                             if 'bitstream/CLACSO' in pdf_link:
-                                response = requests.get(f'{PDF_PART_URL}{pdf_link}')
+                                response = requests.head(f'{PDF_PART_URL}{pdf_link}')
+                                if response.status_code == 200:
+                                    pdf_part = Part(index=1, 
+                                                    url=f'{PDF_PART_URL}{pdf_link}',
+                                                    source=Source.CLACSO.value,
+                                                    file_type='application/pdf',
+                                                    flags=json.dumps(dataclasses.asdict(FileFlags(download=True))))
+                                    has_part_array.append(pdf_part.to_string())
+                                    return has_part_array
                             else:
-                                response = requests.get(link.get('href'))
-                            if response.status_code == 200:
-                                pdf_part = Part(index=1, 
-                                                url=f'{PDF_PART_URL}{pdf_link}',
-                                                source=Source.CLACSO.value,
-                                                file_type='application/pdf',
-                                                flags=json.dumps(dataclasses.asdict(FileFlags(download=True))))
-                                has_part_array.append(pdf_part.to_string())
-                                return has_part_array
+                                response = requests.head(link.get('href'))
+                                if response.status_code == 200:
+                                    pdf_part = Part(index=1, 
+                                                    url=f'{pdf_link}',
+                                                    source=Source.CLACSO.value,
+                                                    file_type='application/pdf',
+                                                    flags=json.dumps(dataclasses.asdict(FileFlags(download=True))))
+                                    has_part_array.append(pdf_part.to_string())
+                                    return has_part_array
                             
     def createMapping(self):
         pass

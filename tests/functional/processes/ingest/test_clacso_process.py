@@ -8,5 +8,6 @@ def test_clacso_process():
 
     clacso_process.runProcess()
 
-    #records = assert_ingested_records(source_name='clacso')
+    records = assert_ingested_records(source_name='clacso')
+    assert records != None
     #assert_uploaded_manifests(records)
