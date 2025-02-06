@@ -74,7 +74,6 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         }
 
     def create_or_update_record(record_data):
-        """Helper to create/update test records"""
         existing_record = db_manager.session.query(Record).filter(
             Record.source_id == record_data['source_id']
         ).first()
@@ -89,7 +88,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         return Record(**record_data)    
 
     flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
-    test_record_data = {
+    test_frbrized_record_data = {
         'title': test_title,
         'uuid': uuid4(),
         'frbr_status': 'complete',
@@ -122,7 +121,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
     }
 
-    frbrized_record = create_or_update_record(test_record_data)
+    frbrized_record = create_or_update_record(test_frbrized_record_data)
     unfrbrized_record = create_or_update_record(test_unfrbrized_record_data)
     
     if not frbrized_record.id:
@@ -132,7 +131,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
 
     db_manager.session.commit()
 
-    cluster_process = ClusterProcess('complete', None, None, str(test_record_data['uuid']), None)
+    cluster_process = ClusterProcess('complete', None, None, str(test_frbrized_record_data['uuid']), None)
     cluster_process.runProcess()
 
     frbrized_model = (
