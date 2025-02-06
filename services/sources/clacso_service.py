@@ -5,11 +5,11 @@ from typing import Optional
 import os
 import requests
 
+from mappings.clacso import CLACSOMapping
 from constants.get_constants import get_constants
 from logger import create_log
-from mappings.clacso import CLACSOMapping
 from .source_service import SourceService
-from managers import RabbitMQManager, S3Manager, DOABLinkManager
+from managers import RabbitMQManager, S3Manager
 
 logger = create_log(__name__)
 
@@ -47,13 +47,10 @@ class CLACSOService(SourceService):
         offset: Optional[int]=0,
         limit: Optional[int]=100
     ) -> list[CLACSOMapping]:
-        
         resumption_token = None
-
         records_processed = 0
-
-        records_array = []
-
+        records = []
+        
         while True:
             oai_file = self.download_oai_records(full_import, start_timestamp, resumption_token=resumption_token)
 
@@ -69,38 +66,25 @@ class CLACSOService(SourceService):
                 if record is None: continue
 
                 try:
-                    parsed_record = self.parse_clacso_record(record)
-                    if self.verify_medium_type(parsed_record.record.medium) == True and self.verify_has_part_url(parsed_record.record.has_part) == True:
-                        records_array.append(parsed_record)
-                    else:
-                        continue
+                    parsed_record = CLACSOMapping(clacso_record=record, namespaces=self.OAI_NAMESPACES)
+                    
+                    if parsed_record.record:
+                        records.append(parsed_record)
+                        records_processed += 1
+
+                    if limit is not None and records_processed >= limit:
+                        return records
                 except Exception:
                     logger.exception(f'Error parsing CLACSO record {record}')
-                    break
-                
-            records_processed += 100
-
-            if not resumption_token or records_processed >= limit:
+            
+            if not resumption_token:
                 break
-        return records_array
-
-    def verify_medium_type(self, medium):
-        type_list = ['book', 'bookpart', 'part', 'chapter', 'bibliography', 'appendix', 'index',
-                'foreword', 'afterword', 'bibliography', 'review', 'article', 'introduction']
-        if medium in type_list:
-            return True
-        return False
+        
+        return records
     
-    def verify_has_part_url(self, has_part):
-        for part in has_part:
-            if '.pdf' in part:
-                return True
-        return False
-    
-    def parse_clacso_record(self, oaiRec):
+    def parse_clacso_record(self, oai_rec, namespaces):
         try:
-            clacso_rec = CLACSOMapping(oaiRec, self.OAI_NAMESPACES, self.constants)
-            clacso_rec.applyMapping()
+            clacso_rec = CLACSOMapping(clacso_record=oai_rec, namespaces=namespaces)
             return clacso_rec
         except Exception as e:
             logger.exception(f'Error applying mapping to CLACSO Record')

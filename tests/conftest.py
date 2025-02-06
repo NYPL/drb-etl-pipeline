@@ -82,9 +82,12 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
             for key, value in record_data.items():
                 if key != 'uuid' and hasattr(existing_record, key):
                     setattr(existing_record, key, value)
+            
             existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
             record_data['uuid'] = existing_record.uuid
+            
             return existing_record
+        
         return Record(**record_data)    
 
     flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
@@ -200,5 +203,5 @@ def test_link_id(seed_test_data):
     return seed_test_data['link_id']
 
 @pytest.fixture(scope='session')
-def seed_unfrbrized_record(seed_test_data):
+def unfrbrized_record_uuid(seed_test_data):
     return seed_test_data['unfrbrized_record_uuid']
