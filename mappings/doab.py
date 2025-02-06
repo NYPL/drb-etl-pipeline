@@ -39,12 +39,12 @@ class DOABMapping(BaseMapping):
             authors=self._get_authors(doab_record, namespaces=namespaces),
             contributors=self._get_contributors(doab_record, namespaces=namespaces),
             title=title[0] if len(title) > 0 else None,
-            is_part_of=[f"{part}||series" for part in relations],
-            publisher=[f"{publisher}||" for publisher in publishers],
+            is_part_of=[f'{part}||series' for part in relations],
+            publisher=[f'{publisher}||' for publisher in publishers],
             spatial=doab_record.xpath('./oapen:placepublication/text()', namespaces=namespaces),
             dates=self._get_dates(doab_record, namespaces=namespaces),
-            languages=[f"||{language}" for language in languages],
-            extent=[f"{extent} pages" for extent in extents],
+            languages=[f'||{language}' for language in languages],
+            extent=[f'{extent} pages' for extent in extents],
             abstract=doab_record.xpath('./dc:description/text()', namespaces=namespaces),
             subjects=self._get_subjects(doab_record, namespaces=namespaces),
             has_part=self._get_has_part(doab_record, namespaces),
@@ -60,7 +60,7 @@ class DOABMapping(BaseMapping):
             return None
 
         data_tuples = [
-            (item.text, item.get("type") or '')
+            (item.text, item.get('type') or '')
             for item in field_data
         ]
         
@@ -72,16 +72,16 @@ class DOABMapping(BaseMapping):
 
         authors = datacite_authors or dc_authors
 
-        return [f"{author}|||true" for author in authors]
+        return [f'{author}|||true' for author in authors]
 
     def _get_identifers(self, record, namespaces):
         dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
         datacite_ids = record.xpath('./datacite:identifier/text()', namespaces=namespaces)
         
-        datacite_alt_ids = self._get_text_type_data(record, namespaces, './datacite:alternateIdentifier', "{}|{}")
-        dc_alt_ids = self._get_text_type_data(record, namespaces, './dc:alternateIdentifier', "{}|{}")
+        datacite_alt_ids = self._get_text_type_data(record, namespaces, './datacite:alternateIdentifier', '{}|{}')
+        dc_alt_ids = self._get_text_type_data(record, namespaces, './dc:alternateIdentifier', '{}|{}')
 
-        ids = [f"{id}|doab" for id in dc_ids + datacite_ids]
+        ids = [f'{id}|doab' for id in dc_ids + datacite_ids]
 
         if datacite_alt_ids:
             ids.extend(datacite_alt_ids)
@@ -106,16 +106,16 @@ class DOABMapping(BaseMapping):
                 else:
                     continue
 
-            new_ids.append(f"{value}|{auth.lower()}")
+            new_ids.append(f'{value}|{auth.lower()}')
 
         return new_ids, source_id
 
     def _get_contributors(self, record, namespaces):
-        return self._get_text_type_data(record, namespaces, './datacite:contributor', "{}|||{}")
+        return self._get_text_type_data(record, namespaces, './datacite:contributor', '{}|||{}')
 
     def _get_dates(self, record, namespaces):
-        datacite_dates = self._get_text_type_data(record, namespaces, './datacite:date', "{}|||{}")
-        dc_dates = self._get_text_type_data(record, namespaces, './dc:date', "{}|||{}")
+        datacite_dates = self._get_text_type_data(record, namespaces, './datacite:date', '{}|||{}')
+        dc_dates = self._get_text_type_data(record, namespaces, './dc:date', '{}|||{}')
 
         return datacite_dates or dc_dates
 
@@ -125,7 +125,7 @@ class DOABMapping(BaseMapping):
         
         subjects = datacite_subjects or dc_subjects
 
-        return [f"{subject}||" for subject in subjects if subject[:3] != 'bic']
+        return [f'{subject}||' for subject in subjects if subject[:3] != 'bic']
 
     def _get_has_part(self, record, namespaces):
         dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
@@ -140,7 +140,7 @@ class DOABMapping(BaseMapping):
                 file_type='text/html',
                 flags=json.dumps(dataclasses.asdict(FileFlags(embed=True)))
             ).to_string()
-            for dc_id in dc_ids if "http" in dc_id
+            for dc_id in dc_ids if 'http' in dc_id
         ]
         
         return html_parts 
@@ -152,18 +152,18 @@ class DOABMapping(BaseMapping):
             return []
 
         data_tuples = [
-            (item.get("uri") or '', item.text.strip())
+            (item.get('uri') or '', item.text.strip())
             for item in field_data
         ]
         
         return [format_string.format(item[0], item[1]) for item in data_tuples]
 
     def _get_rights(self, record, namespaces):
-        license_conditions = self._get_uri_text_data(record, namespaces, './oaire:licenseCondition', "doab|{}||{}")
+        license_conditions = self._get_uri_text_data(record, namespaces, './oaire:licenseCondition', 'doab|{}||{}')
         
-        datacite_rights = self._get_uri_text_data(record, namespaces, './datacite:rights', "doab|{}||{}")
+        datacite_rights = self._get_uri_text_data(record, namespaces, './datacite:rights', 'doab|{}||{}')
 
-        dc_rights = self._get_uri_text_data(record, namespaces, './dc:rights', "doab|{}||{}")
+        dc_rights = self._get_uri_text_data(record, namespaces, './dc:rights', 'doab|{}||{}')
 
         if not license_conditions and not datacite_rights and not dc_rights:
             return None
