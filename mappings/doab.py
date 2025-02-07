@@ -24,7 +24,8 @@ class DOABMapping(BaseMapping):
         relations = doab_record.xpath('./dc:relation/text()', namespaces=namespaces)
         publishers = doab_record.xpath('./dc:publisher/text()', namespaces=namespaces)
         languages = doab_record.xpath('./dc:language/text()', namespaces=namespaces)
-        extents = doab_record.xpath('./oapen:pages/text()', namespaces=namespaces)
+        extent = doab_record.xpath('./oapen:pages/text()', namespaces=namespaces)
+        abstract = doab_record.xpath('./dc:description/text()', namespaces=namespaces)
         
         return Record(
             uuid=uuid4(),
@@ -36,13 +37,13 @@ class DOABMapping(BaseMapping):
             authors=self._get_authors(doab_record, namespaces=namespaces),
             contributors=self._get_contributors(doab_record, namespaces=namespaces),
             title=title[0],
-            is_part_of=[f'{part}||series' for part in relations if part is not None or part == ''],
-            publisher=[f'{publisher}||' for publisher in publishers if publisher is not None or publisher == ''],
+            is_part_of=[f'{part}||series' for part in relations if part],
+            publisher=[f'{publisher}||' for publisher in publishers if publisher],
             spatial=doab_record.xpath('./oapen:placepublication/text()', namespaces=namespaces),
             dates=self._get_dates(doab_record, namespaces=namespaces),
-            languages=[f'||{language}' for language in languages if language is not None or language == ''],
-            extent=[f'{extent} pages' for extent in extents if extent is not None or extent == ''],
-            abstract=doab_record.xpath('./dc:description/text()', namespaces=namespaces),
+            languages=[f'||{language}' for language in languages if language],
+            extent=f'{extent[0]} pages' if extent else None,
+            abstract=abstract[0] if abstract else None,
             subjects=self._get_subjects(doab_record, namespaces=namespaces),
             has_part=self._get_has_part(doab_record, namespaces),
             rights=self._get_rights(doab_record, namespaces=namespaces),
@@ -57,8 +58,8 @@ class DOABMapping(BaseMapping):
             return None
 
         data_tuples = [
-            (item.text, item.get('type') or '')
-            for item in field_data
+            (item.text, item.get('type'))
+            for item in field_data if item.get('type')
         ]
         
         return [format_string.format(item[0], item[1]) for item in data_tuples]
@@ -69,7 +70,7 @@ class DOABMapping(BaseMapping):
 
         authors = datacite_authors or dc_authors
 
-        return [f'{author}|||true' for author in authors if author is not None or author == '']
+        return [f'{author}|||true' for author in authors if author]
 
     def _get_identifers(self, record, namespaces):
         dc_ids = record.xpath('./dc:identifier/text()', namespaces=namespaces)
@@ -149,8 +150,8 @@ class DOABMapping(BaseMapping):
             return []
 
         data_tuples = [
-            (item.get('uri') or '', item.text.strip())
-            for item in field_data
+            (item.get('uri'), item.text.strip())
+            for item in field_data if item.get('uri')
         ]
         
         return [format_string.format(item[0], item[1]) for item in data_tuples]
