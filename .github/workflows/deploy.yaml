@@ -36,6 +36,25 @@ jobs:
       - name: Force ECS Update
         run: |
           aws ecs update-service --cluster sfr-pipeline-qa-tf --service sfr-pipeline-qa-tf --force-new-deployment
+
+  trigger-prod-deployment:
+    needs: [publish_qa]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get short SHA
+        run: echo "SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: prod-${{ env.SHA_SHORT }}
+          release_name: Production Release ${{ env.SHA_SHORT }}
+          draft: false
+          prerelease: false
+
   run_ci:
     needs: publish_qa
     uses: NYPL/drb-etl-pipeline/.github/workflows/ci.yaml@main
