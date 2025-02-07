@@ -1,4 +1,4 @@
-name: 'Continuous Integration'
+name: "Continuous Integration"
 
 on:
   workflow_call:
@@ -12,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  integration-tests:
+  run-tests:
     runs-on: ubuntu-latest
     env:
       AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -25,10 +25,12 @@ jobs:
       REDIS_HOST: ${{ secrets.REDIS_HOST }}
     steps:
       - uses: actions/checkout@v4
+      - name: Get short SHA
+        run: echo "SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -48,6 +50,26 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
-      - name: Run API tests
+      - name: Run integration tests
         run: |
-          pytest tests/integration/api --env=qa
+          python -m pytest tests/integration --env=qa
+      - name: Run functional tests
+        run: |
+          python -m pytest tests/functional --env=qa
+
+  trigger-prod-deployment:
+    needs: [run-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get short SHA
+        run: echo "SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: prod-${{ env.SHA_SHORT }}
+          release_name: Production Release ${{ env.SHA_SHORT }}
+          draft: false
+          prerelease: false
