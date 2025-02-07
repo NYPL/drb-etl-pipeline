@@ -6,15 +6,15 @@ on:
 
 jobs:
   deploy_to_qa:
-    uses: NYPL/drb-etl-pipeline/.github/workflows/deploy.yml@main
+    uses: NYPL/drb-etl-pipeline/.github/workflows/build-qa.yml@main
     secrets: inherit
 
-  run_api_tests:
+  run_ci:
     needs: deploy_to_qa
     uses: NYPL/drb-etl-pipeline/.github/workflows/ci.yaml@main
     secrets: inherit
 
   deploy_to_production:
-    needs: run_api_tests
+    needs: run_ci
     uses: NYPL/drb-etl-pipeline/.github/workflows/build-production.yaml@main
     secrets: inherit
