@@ -1,102 +1,123 @@
-import re
+import dataclasses
 import requests
+from datetime import datetime, timezone
 from bs4 import BeautifulSoup
+from uuid import uuid4
+import json
+from typing import Optional
 
-from mappings.xml import XMLMapping
+from model import Record, FRBRStatus, FileFlags, Part, Source
+from .base_mapping import BaseMapping
 
-class CLACSOMapping(XMLMapping):
+HANDLE_URL = 'biblioteca-repositorio.clacso.edu.ar/handle/CLACSO'
+PDF_PART_URL = "https://biblioteca-repositorio.clacso.edu.ar"
 
-    HANDLE_URL = "https://biblioteca-repositorio.clacso.edu.ar/handle/CLACSO"
+class CLACSOMapping(BaseMapping):
 
+    def __init__(self, clacso_record, namespaces):
+        self.record = self._map_to_record(clacso_record, namespaces)
+
+    def _map_to_record(self, clacso_record, namespaces):
+        medium = self._get_medium(clacso_record, namespaces)
+        
+        if medium is None:
+            return None
+        
+        has_part = self._get_part(clacso_record, namespaces)
+
+        if has_part is None:
+            return None
+        
+        return Record(
+            uuid=uuid4(),
+            frbr_status=FRBRStatus.TODO.value,
+            cluster_status=False,
+            source=Source.CLACSO.value,
+            source_id=self._get_source_id(clacso_record, namespaces),
+            title=clacso_record.xpath('./dc:title/text()', namespaces=namespaces)[0],
+            authors=self._get_authors(clacso_record, namespaces),
+            medium=medium,
+            identifiers=self._get_identifiers(clacso_record, namespaces),
+            has_part=has_part,
+            dates=self._get_dates(clacso_record, namespaces),
+            date_created=datetime.now(timezone.utc).replace(tzinfo=None),
+            date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
+        )
+
+    def _get_authors(self, record, namespaces):
+         return [f'{author}|||true' for author in record.xpath('./dc:creator/text()', namespaces=namespaces)]
+
+    def _get_source_id(self, record, namespaces):
+        for identifier in record.xpath('./dc:identifier/text()', namespaces=namespaces):
+            if HANDLE_URL in identifier:
+                id = identifier.split('/')[-1]
+                
+                return f'{id}|{Source.CLACSO.value}'
     
-    def __init__(self, source, namespace, constants):
-        super(CLACSOMapping, self).__init__(source, namespace, constants)
-        self.mapping = self.createMapping()
+    def _get_medium(self, record, namespaces):
+        for medium in record.xpath('./dc:type/text()', namespaces=namespaces):
+            medium_value = medium.split('/')[-1].lower()
+            
+            if medium_value == 'book':
+                return medium_value
+
+    def _get_identifiers(self, record, namespaces):
+        return [self.format_identifier(id, 'clacso') for id in record.xpath('./dc:identifier/text()', namespaces=namespaces)]
+
+    def _get_dates(self, record, namespaces):
+        years_issued = [date.split('-')[0] if '-' in date else date for date in record.xpath('./dc:date/text()', namespaces=namespaces)]
+        
+        return [f'{min(years_issued)}|issued']
+
+    def _get_part(self, record, namespaces):
+        record_urls = [has_part for has_part in record.xpath('./dc:identifier/text()', namespaces=namespaces) if 'http' in has_part]
+        
+        for record_url in record_urls:
+            if HANDLE_URL in record_url or ('view' in record_url):
+                links = self._get_links(url=record_url)
+                
+                for link in links:
+                    if '.pdf' in link.get('href', []) or 'pdf' in link.get('class', []) or 'pdf' in link.text.lower():
+                        pdf_part = self._get_pdf_part(link=link)
+
+                        if pdf_part:
+                            return [pdf_part.to_string()]
     
+    def _get_links(self, url: str) -> list:
+        try:
+            response = requests.get(url, timeout=10)
+        except Exception:
+            return []
+
+        clacso_page = BeautifulSoup(response.text, 'html.parser')
+        
+        return clacso_page.find_all('a')
+
+    def _get_pdf_part(self, link: str) -> Optional[Part]:
+        pdf_link = link.get('href')
+        pdf_url = f'{PDF_PART_URL}{pdf_link}' if 'bitstream/CLACSO' in pdf_link else pdf_link
+
+        try:
+            response = requests.head(pdf_url)
+        except Exception:
+            return None
+        
+        if response.status_code != 200:
+            return None
+        
+        return Part(
+            index=1, 
+            url=pdf_url,
+            source=Source.CLACSO.value,
+            file_type='application/pdf',
+            flags=json.dumps(dataclasses.asdict(FileFlags(download=True)))
+        )
+                            
     def createMapping(self):
-        return {
-            'title': ('./dc:title/text()', '{0}'),
-            'authors': [('./dc:creator/text()', '{0}|||true')],
-            'abstract': ('./dc:description/text()', '{0}'),
-            'dates': [
-                (
-                    [
-                        './dc:date/text()',
-                    ],
-                    '{0}'
-                )
-            ],
-            'identifiers': [
-                ('./dc:identifier/text()', '{0}'),
-            ],
-            'medium' : [
-                ('./dc:type/text()', '{0}')
-            ],
-            'has_part': [(
-                './dc:identifier/text()',
-                '1|{0}|clacso|text/html|{{"reader": false, "download": false, "catalog": false, "embed": true}}'
-            )]
-        }
+        pass
 
     def applyFormatting(self):
-        self.record.source = 'clacso'
-        if self.record.identifiers:
-            self.record.identifiers = list(map(lambda id: self.format_identifier(id, self.record.source), self.record.identifiers))
-        self.format_source_id()
-        self.format_medium()
-        self.format_dates()
-        self.format_has_part()
+        pass
 
-    def format_source_id(self):
-        for identifier in self.record.identifiers:
-            if self.HANDLE_URL in identifier:
-                id = identifier.split('/')[-1]
-                self.record.source_id = f'{self.record.source}|{id}'
-                return
-
-    def format_medium(self):
-        if self.record.medium:
-            type_list = ['book', 'bookpart', 'part', 'chapter', 'bibliography', 'appendix', 'index',
-                    'foreword', 'afterword', 'review', 'article', 'introduction']
-            for medium in self.record.medium:
-                if '/' in medium:
-                    medium_value = medium.split('/')[-1]
-                    if medium_value.lower() in type_list:
-                        self.record.medium = medium_value.lower()
-                        break
-                elif '/' not in medium and medium.lower() in type_list:
-                    medium_value = medium
-                    self.record.medium = medium_value.lower()
-                    break
-        else:
-            self.record.medium = ''
-
-    def format_dates(self):
-        if self.record.dates:
-            year_list = [date.split('-')[0] if '-' in date else date for date in self.record.dates]
-        self.record.dates = [f'{min(year_list)}|issued']
-
-    def format_has_part(self):
-        if self.record.has_part:
-            clean_has_part = [has_part for has_part in self.record.has_part if 'http' in has_part]
-            for has_part in clean_has_part:
-                has_part_url = has_part.split('|')[1]
-                if self.HANDLE_URL in has_part_url or ("view" in has_part_url):
-                    response = requests.get(has_part_url)
-                    
-                    clacso_page = BeautifulSoup(response.text, 'html.parser')
-                    
-                    links = clacso_page.find_all('a')
-                    
-                    for link in links:
-                        if ('.pdf' in link.get('href', [])):
-                            pdf_link = link.get('href')
-                            if 'bitstream/CLACSO' in pdf_link:
-                                response = requests.get(f'{self.HANDLE_URL}{pdf_link}')
-                            else:
-                                response = requests.get(link.get('href'))
-                            if response.status_code == 200:
-                                has_part = (f'1|{self.HANDLE_URL}{pdf_link}|clacso|application/pdf|{{"reader": false, "download": true, "catalog": false, "embed": true}}')
-                                clean_has_part.append(has_part)
-                                self.record.has_part = clean_has_part
-                                break
+    def applyMapping(self):
+        pass

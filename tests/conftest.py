@@ -38,7 +38,7 @@ def db_manager():
     
     try:
         db_manager.createSession()
-        db_manager.session.execute(text('SELECT 1')) # Test the db connection
+        db_manager.session.execute(text('SELECT 1'))
 
         yield db_manager
         
@@ -70,10 +70,28 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
             'edition_id': 1982731,
             'work_id': '701c5f00-cd7a-4a7d-9ed1-ce41c574ad1d',
             'link_id': 1982731,
+            'unfrbrized_record_uuid': '7bd4a8c0-9b3a-487b-9c7c-1dd6890a5c7a'
         }
 
+    def create_or_update_record(record_data):
+        existing_record = db_manager.session.query(Record).filter(
+            Record.source_id == record_data['source_id']
+        ).first()
+
+        if existing_record:
+            for key, value in record_data.items():
+                if key != 'uuid' and hasattr(existing_record, key):
+                    setattr(existing_record, key, value)
+            
+            existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
+            record_data['uuid'] = existing_record.uuid
+            
+            return existing_record
+        
+        return Record(**record_data)    
+
     flags = { 'catalog': False, 'download': False, 'reader': False, 'embed': True }
-    test_record_data = {
+    test_frbrized_record_data = {
         'title': test_title,
         'uuid': uuid4(),
         'frbr_status': 'complete',
@@ -94,30 +112,36 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}']
     }
 
-    existing_record = db_manager.session.query(Record).filter(Record.source_id == test_record_data['source_id']).first()
+    test_unfrbrized_record_data = {
+        'title': 'Moby-Dick',
+        'uuid': uuid4(),
+        'frbr_status': 'to_do',
+        'cluster_status': False,
+        "source": TEST_SOURCE,
+        'authors': ['Herman Melville||true'],
+        'identifiers': ['9780142437247|isbn'],
+        'source_id': 'moby-dick-123|test',
+        'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
+    }
 
-    if existing_record:
-        for key, value in test_record_data.items():
-            if key != 'uuid' and hasattr(existing_record, key):
-                setattr(existing_record, key, value)
-        
-        existing_record.date_modified = datetime.now(timezone.utc).replace(tzinfo=None)
-        test_record_data['uuid'] = existing_record.uuid
-        test_record = existing_record
-    else:
-        test_record = Record(**test_record_data)
-        db_manager.session.add(test_record)
+    frbrized_record = create_or_update_record(test_frbrized_record_data)
+    unfrbrized_record = create_or_update_record(test_unfrbrized_record_data)
     
+    if not frbrized_record.id:
+        db_manager.session.add(frbrized_record)
+    if not unfrbrized_record.id:
+        db_manager.session.add(unfrbrized_record)
+
     db_manager.session.commit()
 
-    cluster_process = ClusterProcess('complete', None, None, str(test_record_data['uuid']), None)
+    cluster_process = ClusterProcess('complete', None, None, str(test_frbrized_record_data['uuid']), None)
     cluster_process.runProcess()
 
     frbrized_model = (
         db_manager.session.query(Item, Edition, Work)
             .join(Edition, Edition.id == Item.edition_id)
             .join(Work, Work.id == Edition.work_id)
-            .filter(Item.record_id == test_record.id)
+            .filter(Item.record_id == frbrized_record.id)
             .first()
     )
 
@@ -134,6 +158,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'edition_id': str(edition.id) if item else None,
         'work_id': str(work.uuid) if work else None,
         'link_id': links[0].id if links and len(links) > 0 else None,
+        'unfrbrized_record_uuid': str(unfrbrized_record.uuid)
     }
 
 
@@ -176,3 +201,7 @@ def test_work_id(seed_test_data):
 @pytest.fixture(scope='session')
 def test_link_id(seed_test_data):
     return seed_test_data['link_id']
+
+@pytest.fixture(scope='session')
+def unfrbrized_record_uuid(seed_test_data):
+    return seed_test_data['unfrbrized_record_uuid']
