@@ -6,21 +6,11 @@ from mappings.doab import DOABMapping
 from managers import DOABLinkManager, S3Manager, RabbitMQManager
 from model import get_file_message
 
-
 logger = create_log(__name__)
-
 
 class DOABProcess(CoreProcess):
     DOAB_BASE_URL = 'https://directory.doabooks.org/oai/request?'
     DOAB_IDENTIFIER = 'oai:directory.doabooks.org'
-
-    OAI_NAMESPACES = {
-        'oai_dc': 'http://www.openarchives.org/OAI/2.0/oai_dc/',
-        'dc': 'http://purl.org/dc/elements/1.1/',
-        'datacite': 'https://schema.datacite.org/meta/kernel-4.1/metadata.xsd',
-        'oapen': 'http://purl.org/dc/elements/1.1/',
-        'oaire': 'https://raw.githubusercontent.com/rcic/openaire4/master/schemas/4.0/oaire.xsd'
-    }
 
     def __init__(self, *args):
         super(DOABProcess, self).__init__(*args[:4])
