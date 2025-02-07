@@ -25,12 +25,10 @@ jobs:
       REDIS_HOST: ${{ secrets.REDIS_HOST }}
     steps:
       - uses: actions/checkout@v4
-      - name: Get short SHA
-        run: echo "SHA_SHORT=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_ENV
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: '3.9'
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
