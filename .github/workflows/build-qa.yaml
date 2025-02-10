@@ -1,7 +1,7 @@
 name: Publish qa
+
 on:
-  push:
-    branches: [main]
+  workflow_call:
 
 jobs:
   publish_qa:
@@ -36,7 +36,3 @@ jobs:
       - name: Force ECS Update
         run: |
           aws ecs update-service --cluster sfr-pipeline-qa-tf --service sfr-pipeline-qa-tf --force-new-deployment
-  run_ci:
-    needs: publish_qa
-    uses: NYPL/drb-etl-pipeline/.github/workflows/ci.yaml@main
-    secrets: inherit
