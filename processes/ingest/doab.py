@@ -66,6 +66,8 @@ class DOABProcess():
         except Exception as e:
             logger.exception('Failed to run DOAB process')
             raise e
+        finally:
+            self.db_manager.close_connection()
 
     def manage_links(self, record):
         linkManager = DOABLinkManager(record.record)
