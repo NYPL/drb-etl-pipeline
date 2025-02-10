@@ -6,7 +6,7 @@ on:
 
 jobs:
   deploy_to_qa:
-    uses: NYPL/drb-etl-pipeline/.github/workflows/build-qa.yml@main
+    uses: NYPL/drb-etl-pipeline/.github/workflows/build-qa.yaml@main
     secrets: inherit
 
   run_ci:
