@@ -56,7 +56,7 @@ class DOABProcess(CoreProcess):
             self.saveRecords()
             self.commitChanges()
 
-            logger.info(f'Ingested {len(self.records) if records else 0} DOAB records')
+            logger.info(f'Ingested {len(self.records) if records else (1 if record else 0)} DOAB records')
 
         except Exception as e:
             logger.exception('Failed to run DOAB process')

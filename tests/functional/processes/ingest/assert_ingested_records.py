@@ -12,7 +12,7 @@ def assert_ingested_records(source_name: str) -> list[Record]:
     records = (
         db_manager.session.query(Record)
             .filter(Record.source == source_name)
-            .filter(Record.date_modified > datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=10))
+            .filter(Record.date_modified > datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(minutes=5))
             .all()
     )
 
