@@ -33,7 +33,7 @@ class DOABMapping(BaseMapping):
             cluster_status=False,
             source=Source.DOAB.value,
             source_id=source_id,
-            identifiers= identifiers,
+            identifiers=identifiers,
             authors=self._get_authors(doab_record, namespaces=namespaces),
             contributors=self._get_contributors(doab_record, namespaces=namespaces),
             title=title[0],

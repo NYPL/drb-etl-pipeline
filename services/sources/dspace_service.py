@@ -51,7 +51,10 @@ class DSpaceService(SourceService):
 
                 try:
                     parsed_record = self.parse_record(record)
-                    mapped_records.append(parsed_record)
+                    if parsed_record.record:
+                        mapped_records.append(parsed_record)
+                    else:
+                        continue
                 except Exception as e:
                     logger.error(f'Error parsing DSpace record {record}')
 
