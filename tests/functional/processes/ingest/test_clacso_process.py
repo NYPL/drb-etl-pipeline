@@ -4,7 +4,7 @@ from .assert_uploaded_manifests import assert_uploaded_manifests
 
 
 def test_clacso_process():
-    clacso_process = CLACSOProcess('complete', None, None, None, 1, None)
+    clacso_process = CLACSOProcess('complete', None, None, None, 5, None)
 
     clacso_process.runProcess()
 

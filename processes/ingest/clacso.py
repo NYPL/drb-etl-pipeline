@@ -42,18 +42,12 @@ class CLACSOProcess():
 
             records = []
 
-            start_datetime = (
-                datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-                if self.process_type == 'daily'
-                else self.ingest_period and datetime.strptime(self.ingest_period, '%Y-%m-%dT%H:%M:%S')
-            )
-
-            records = self.dspace_service.get_records(
-                full_import=True,
-                start_timestamp=start_datetime,
-                offset=self.offset,
-                limit=self.limit
-            )
+            if self.process_type == 'daily':
+                records = self.dspace_service.get_records(offset=self.offset, limit=self.limit)
+            elif self.process_type == 'complete':
+                records = self.dspace_service.get_records(full_import=True, offset=self.offset, limit=self.limit)
+            elif self.process_type == 'custom':
+                records = self.dspace_service.get_records(start_timestamp=self.ingest_period, offset=self.offset, limit=self.limit)
             
             if records:
                 for record_mapping in records:
@@ -62,7 +56,7 @@ class CLACSOProcess():
 
             self.record_buffer.flush()
 
-            logger.info(f'Ingested {self.record_buffer.ingest_count if records else 0} CLACSO records')
+            logger.info(f'Ingested {self.record_buffer.ingest_count} CLACSO records')
 
         except Exception as e:
             logger.exception('Failed to run CLACSO process')
@@ -93,11 +87,12 @@ class CLACSOProcess():
                     file_type='application/pdf',
                     flags=json.dumps(dataclasses.asdict(FileFlags()))
                 ).to_string()
+
                 record.has_part.insert(0, link_string)
                 break
 
     @staticmethod
-    def generate_manifest(record, source_uri, manifest_urI):
+    def generate_manifest(record, source_uri, manifest_uri):
         manifest = WebpubManifest(source_uri, 'application/pdf')
 
         manifest.addMetadata(record)
@@ -106,7 +101,7 @@ class CLACSOProcess():
 
         manifest.links.append({
             'rel': 'self',
-            'href': manifest_urI,
+            'href': manifest_uri,
             'type': 'application/webpub+json'
         })
 
