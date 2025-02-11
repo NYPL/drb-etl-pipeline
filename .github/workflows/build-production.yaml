@@ -1,9 +1,7 @@
-# On release,
-# build a container and deploy to ECR
 name: Publish to Production
+
 on:
-  release:
-    types: [released]
+  workflow_call:
 
 jobs:
   publish_production:

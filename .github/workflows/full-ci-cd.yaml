@@ -1,0 +1,20 @@
+name: Full CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy_to_qa:
+    uses: NYPL/drb-etl-pipeline/.github/workflows/build-qa.yaml@main
+    secrets: inherit
+
+  run_ci:
+    needs: deploy_to_qa
+    uses: NYPL/drb-etl-pipeline/.github/workflows/ci.yaml@main
+    secrets: inherit
+
+  deploy_to_production:
+    needs: run_ci
+    uses: NYPL/drb-etl-pipeline/.github/workflows/build-production.yaml@main
+    secrets: inherit
