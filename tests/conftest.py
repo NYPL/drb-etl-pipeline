@@ -120,8 +120,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'cluster_status': False,
         "source": OCLC_SOURCE,
         'authors': ['Herman Melville||true'],
-        'identifiers': ['9780142437247|isbn'],
-        'source_id': 'moby-dick-123|test',
+        'identifiers': ['51669461|oclc'],
+        'source_id': '51669461|oclc',
         'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
     }
 

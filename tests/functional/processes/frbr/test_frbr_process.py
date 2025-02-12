@@ -18,6 +18,10 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid):
 
     db_manager.session.commit()
     db_manager.session.expire_all()
+    db_manager.session.refresh(frbrized_record)
+
+    assert any(id.endswith('|owi') for id in frbrized_record.identifiers), \
+        f"Missing OWI identifier after classification. Current IDs: {frbrized_record.identifiers}" #test is failing because indentifier field is not getting updated after classifying
 
     current_time = datetime.utcnow()
     time_window = current_time - timedelta(minutes=2)
