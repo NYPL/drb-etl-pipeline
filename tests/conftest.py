@@ -16,6 +16,7 @@ from load_env import load_env_file
 logger = create_log(__name__)
 
 TEST_SOURCE = 'test_source'
+OCLC_SOURCE = 'oclcClassify'
 
 
 def pytest_addoption(parser):
@@ -117,7 +118,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'uuid': uuid4(),
         'frbr_status': 'to_do',
         'cluster_status': False,
-        "source": TEST_SOURCE,
+        "source": OCLC_SOURCE,
         'authors': ['Herman Melville||true'],
         'identifiers': ['9780142437247|isbn'],
         'source_id': 'moby-dick-123|test',

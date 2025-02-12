@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 from processes import ClassifyProcess
 from model import Record
 
-
 def test_frbr_process(db_manager, unfrbrized_record_uuid):
     classify_process = ClassifyProcess(
         'custom',
@@ -16,3 +15,13 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid):
     frbrized_record = db_manager.session.query(Record).filter(Record.uuid == unfrbrized_record_uuid).first()
     
     assert frbrized_record.frbr_status == 'complete'
+
+    db_manager.session.commit()
+    db_manager.session.expire_all()
+
+    current_time = datetime.utcnow()
+    time_window = current_time - timedelta(minutes=2)
+
+    classify_count = db_manager.session.query(Record).filter(Record.source == 'oclcClassify', Record.date_modified >= time_window).count()
+
+    assert classify_count >= 1, f"Expected oclcClassify records. Found: {classify_count}"
