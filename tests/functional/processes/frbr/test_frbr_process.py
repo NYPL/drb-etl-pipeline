@@ -19,8 +19,6 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid):
     db_manager.session.commit()
     db_manager.session.expire_all()
 
-    test_records = db_manager.session.query(Record).filter(Record.source == 'oclcClassify').all()
-
     current_time = datetime.utcnow()
     time_window = current_time - timedelta(minutes=2)
 
