@@ -62,7 +62,9 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
     ]
     
     assert len(matching_records) > 0, (
+        f"No catalog records matched expected OCLC identifiers. "
         f"No catalog records matched OCLC identifiers: {oclc_identifiers}"
+        f"Found in catalog records: {[r.identifiers for r in new_catalog_records]}"
     )
 
     db_manager.session.close()
