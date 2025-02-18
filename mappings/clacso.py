@@ -5,7 +5,6 @@ from bs4 import BeautifulSoup
 from uuid import uuid4
 import json
 from typing import Optional
-
 from model import Record, FRBRStatus, FileFlags, Part, Source
 from .base_mapping import BaseMapping
 
@@ -24,7 +23,6 @@ class CLACSOMapping(BaseMapping):
             return None
         
         has_part = self._get_part(clacso_record, namespaces)
-
         if has_part is None:
             return None
         
@@ -37,6 +35,7 @@ class CLACSOMapping(BaseMapping):
             title=clacso_record.xpath('./dc:title/text()', namespaces=namespaces)[0],
             authors=self._get_authors(clacso_record, namespaces),
             medium=medium,
+            publisher=self._get_publishers(clacso_record, namespaces),
             identifiers=self._get_identifiers(clacso_record, namespaces),
             has_part=has_part,
             dates=self._get_dates(clacso_record, namespaces),
@@ -46,6 +45,9 @@ class CLACSOMapping(BaseMapping):
 
     def _get_authors(self, record, namespaces):
          return [f'{author}|||true' for author in record.xpath('./dc:creator/text()', namespaces=namespaces)]
+    
+    def _get_publishers(self, record, namespaces):
+         return [f'{publisher}||' for publisher in record.xpath('./dc:publisher/text()', namespaces=namespaces)]
 
     def _get_source_id(self, record, namespaces):
         for identifier in record.xpath('./dc:identifier/text()', namespaces=namespaces):
@@ -67,7 +69,7 @@ class CLACSOMapping(BaseMapping):
     def _get_dates(self, record, namespaces):
         years_issued = [date.split('-')[0] if '-' in date else date for date in record.xpath('./dc:date/text()', namespaces=namespaces)]
         
-        return [f'{min(years_issued)}|issued']
+        return [f'{min(years_issued)}|publisher_date']
 
     def _get_part(self, record, namespaces):
         record_urls = [has_part for has_part in record.xpath('./dc:identifier/text()', namespaces=namespaces) if 'http' in has_part]
