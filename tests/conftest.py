@@ -125,13 +125,37 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
     }
 
+    test_unclustered_record_data = {
+        'title': 'unclustered record',
+        'uuid': uuid4(),
+        'frbr_status': 'complete',
+        'cluster_status': False,
+        "source": TEST_SOURCE,
+        'authors': ['Unclustered Author||true'],
+        'languages': [test_language],
+        'dates': ['1907|publication_date'],
+        'publisher': ['unclustered publisher||'],
+        'identifiers': [],
+        'source_id': 'unclustered|test',
+        'contributors': ['unclustered contributor|||contributor',],
+        'extent': ('11, 164 p. ;'),
+        'is_part_of': ['Tauchnitz edition|Vol. 4560|volume'],
+        'abstract': ['test abstract 1', 'test abstract 2'],
+        'subjects': [f'{test_subject}||'],
+        'rights': ('unclustered source|public_domain|expiration of copyright term for non-US work with corporate author|Public Domain|2021-10-02 05:25:13'),
+        'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}'],
+    }
+
     frbrized_record = create_or_update_record(test_frbrized_record_data)
     unfrbrized_record = create_or_update_record(test_unfrbrized_record_data)
+    unclustered_record = create_or_update_record(test_unclustered_record_data)
     
     if not frbrized_record.id:
         db_manager.session.add(frbrized_record)
     if not unfrbrized_record.id:
         db_manager.session.add(unfrbrized_record)
+    if not unclustered_record.id:
+        db_manager.session.add(unclustered_record)
 
     db_manager.session.commit()
 
@@ -159,7 +183,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'edition_id': str(edition.id) if item else None,
         'work_id': str(work.uuid) if work else None,
         'link_id': links[0].id if links and len(links) > 0 else None,
-        'unfrbrized_record_uuid': str(unfrbrized_record.uuid)
+        'unfrbrized_record_uuid': str(unfrbrized_record.uuid),
+        'unclustered_record_uuid': str(unclustered_record.uuid)
     }
 
 
@@ -206,3 +231,7 @@ def test_link_id(seed_test_data):
 @pytest.fixture(scope='session')
 def unfrbrized_record_uuid(seed_test_data):
     return seed_test_data['unfrbrized_record_uuid']
+
+@pytest.fixture(scope='session')
+def unclustered_record_uuid(seed_test_data):
+    return seed_test_data['unclustered_record_uuid']
