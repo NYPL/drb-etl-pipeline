@@ -29,7 +29,9 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
 
     new_record = (
         db_manager.session.query(Record)
-        .filter(Record.title.ilike(f"%{unfrbrized_title}%"))
+        .filter(
+            Record.source == 'oclcClassify',
+            Record.title.ilike(f"%{unfrbrized_title}%"))
         .order_by(Record.date_created.desc())
         .first())
     
@@ -37,7 +39,6 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
 
     assert new_record.source_id.endswith('|owi'), \
         f"Expected OWI source ID, got: {new_record.source_id}"
-
 
     oclc_identifiers = [id.split('|')[0] for id in new_record.identifiers if id.endswith('|oclc')]
     assert len(oclc_identifiers) > 0, f"No OCLC numbers found in: {new_record.identifiers}"
