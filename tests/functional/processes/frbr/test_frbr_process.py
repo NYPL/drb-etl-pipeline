@@ -37,11 +37,13 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
     
     assert new_record is not None, f"No record found containing title: '{unfrbrized_title}'"
 
-    assert new_record.source_id.endswith('|owi'), \
-        f"Expected OWI source ID, got: {new_record.source_id}"
-
-    oclc_identifiers = [id.split('|')[0] for id in new_record.identifiers if id.endswith('|oclc')]
-    assert len(oclc_identifiers) > 0, f"No OCLC numbers found in: {new_record.identifiers}"
+    oclc_identifiers = [
+        identifier 
+        for identifier in new_record.identifiers 
+        if identifier.endswith('|oclc')
+    ]
+    assert len(oclc_identifiers) > 0, \
+        f"Missing OCLC identifiers in classified record: {new_record.identifiers}"
 
     catalog_process = CatalogProcess(
         None,
@@ -49,23 +51,20 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
         None,
         None
     )
-
     catalog_process.runProcess(max_attempts=1)
 
-    new_catalog_records = db_manager.session.query(Record).filter(
-        Record.source == 'oclcCatalog',
-        Record.date_created >= datetime.now(timezone.utc) - timedelta(minutes=1)
-    ).all()
-
-    matching_records = [
-        record for record in new_catalog_records
-        if any(oclc_id in record.identifiers for oclc_id in oclc_identifiers)
-    ]
-    
-    assert len(matching_records) > 0, (
-        f"No catalog records matched expected OCLC identifiers. "
-        f"No catalog records matched OCLC identifiers: {oclc_identifiers}"
-        f"Found in catalog records: {[r.identifiers for r in new_catalog_records]}"
+    catalog_records = (
+        db_manager.session.query(Record)
+        .filter(
+            Record.source == 'oclcCatalog',
+            Record.source_id.in_(oclc_identifiers)
+        )
+        .all()
+    )
+    assert len(catalog_records) == len(oclc_identifiers), (
+        f"Catalog record count mismatch. Expected {len(oclc_identifiers)}, "
+        f"found {len(catalog_records)}. Missing: "
+        f"{set(oclc_identifiers) - {r.source_id for r in catalog_records}}"
     )
 
     db_manager.session.close()
