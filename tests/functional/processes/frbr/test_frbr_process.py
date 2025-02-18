@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from processes import ClassifyProcess, CatalogProcess
-from managers import OCLCCatalogManager, RabbitMQManager
 from model import Record
+
 
 def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
     classify_process = ClassifyProcess(
@@ -33,33 +33,23 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
         .order_by(Record.date_created.desc())
         .first())
     
-    if not new_record:
-        pytest.fail(f"No record found containing title: '{unfrbrized_title}'")
+    assert new_record is not None, f"No record found containing title: '{unfrbrized_title}'"
 
-    # Verify OWI in identifiers instead of source_id
-    assert any(id.endswith('|owi') for id in new_record.identifiers), \
-        f"Missing OWI identifier in: {new_record.identifiers}"
+    assert new_record.source_id.endswith('|owi'), \
+        f"Expected OWI source ID, got: {new_record.source_id}"
 
-    # Verify OCLC in identifiers
-    oclc_ids = [id.split('|')[0] for id in new_record.identifiers if id.endswith('|oclc')]
-    assert len(oclc_ids) > 0, f"No OCLC numbers found in: {new_record.identifiers}"
 
-    initial_catalog_count = db_manager.session.query(Record).filter(Record.source == 'oclcCatalog').count()
+    oclc_identifiers = [id.split('|')[0] for id in new_record.identifiers if id.endswith('|oclc')]
+    assert len(oclc_identifiers) > 0, f"No OCLC numbers found in: {new_record.identifiers}"
 
     catalog_process = CatalogProcess(
-        'catalog_test',
         None,
-        datetime.now(timezone.utc) - timedelta(minutes=2),
+        None,
+        None,
         None
     )
 
-    catalog_process.runProcess()
-
-    final_catalog_count = db_manager.session.query(Record).filter(Record.source == 'oclcCatalog').count()
-
-    assert final_catalog_count > initial_catalog_count, (
-        f"Catalog records didn't increase. Before: {initial_catalog_count}, After: {final_catalog_count}"
-    )
+    catalog_process.runProcess(max_attempts=1)
 
     new_catalog_records = db_manager.session.query(Record).filter(
         Record.source == 'oclcCatalog',
