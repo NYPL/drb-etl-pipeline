@@ -20,7 +20,7 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
     classify_process.runProcess()
 
     frbrized_record = db_manager.session.query(Record).filter(Record.uuid == unfrbrized_record_uuid).first()
-        
+    
     assert frbrized_record.frbr_status == 'complete'
 
     classify_record = (
