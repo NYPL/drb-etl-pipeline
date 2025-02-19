@@ -25,7 +25,7 @@ class S3Process():
             file_processes = []
 
             for _ in range(number_of_processes):
-                file_process = Process(target=S3Process.process_files, args=(max_poll_attempts))
+                file_process = Process(target=S3Process.process_files, args=(max_poll_attempts,))
                 file_process.start()
 
                 file_processes.append(file_process)
@@ -55,7 +55,7 @@ class S3Process():
             message_props, _, message_body = rabbit_mq_manager.getMessageFromQueue(file_queue)
 
             if not message_props:
-                if attempts_to_poll <= max_poll_attempts:
+                if attempts_to_poll < max_poll_attempts:
                     wait_time = attempts_to_poll * 30
 
                     logger.info(f'Waiting {wait_time}s for S3 file messages')
