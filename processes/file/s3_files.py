@@ -5,7 +5,6 @@ import requests
 from time import sleep
 from urllib.parse import quote_plus
 
-from ..core import CoreProcess
 from managers import S3Manager, RabbitMQManager
 from logger import create_log
 from utils import retry_request
@@ -14,19 +13,19 @@ from utils import retry_request
 logger = create_log(__name__)
 
 
-class S3Process(CoreProcess):
+class S3Process():
     WEBPUB_CONVERSION_BASE_URL = 'https://epub-to-webpub.vercel.app'
 
     def __init__(self, *args):
-        super(S3Process, self).__init__(*args[:4])
+        pass
 
-    def runProcess(self):
+    def runProcess(self, max_poll_attempts: int=3):
         try:
             number_of_processes = 4
             file_processes = []
 
             for _ in range(number_of_processes):
-                file_process = Process(target=S3Process.process_files)
+                file_process = Process(target=S3Process.process_files, args=(max_poll_attempts))
                 file_process.start()
 
                 file_processes.append(file_process)
@@ -37,7 +36,7 @@ class S3Process(CoreProcess):
             logger.exception('Failed to run S3 Process')
 
     @staticmethod
-    def process_files():
+    def process_files(max_poll_attempts: int):
         storage_manager = S3Manager()
         storage_manager.createS3Client()
 
@@ -51,7 +50,6 @@ class S3Process(CoreProcess):
         s3_file_bucket = os.environ['FILE_BUCKET']
 
         attempts_to_poll = 1
-        max_poll_attempts = 3
 
         while attempts_to_poll <= max_poll_attempts:
             message_props, _, message_body = rabbit_mq_manager.getMessageFromQueue(file_queue)
