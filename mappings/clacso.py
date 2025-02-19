@@ -69,7 +69,7 @@ class CLACSOMapping(BaseMapping):
     def _get_dates(self, record, namespaces):
         years_issued = [date.split('-')[0] if '-' in date else date for date in record.xpath('./dc:date/text()', namespaces=namespaces)]
         
-        return [f'{min(years_issued)}|publisher_date']
+        return [f'{min(years_issued)}|publication_date']
 
     def _get_part(self, record, namespaces):
         record_urls = [has_part for has_part in record.xpath('./dc:identifier/text()', namespaces=namespaces) if 'http' in has_part]
