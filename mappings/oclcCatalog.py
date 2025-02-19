@@ -167,7 +167,12 @@ class CatalogMapping(XMLMapping):
     def applyFormatting(self):
         self.record.source = 'oclcCatalog'
         self.record.identifiers[0] = self.remove_oclc_prefixes(self.record.identifiers[0])
-        self.record.source_id = self.record.identifiers[0]
+
+        oclc_number = int(self.record.identifiers[0].split('|')[0])
+
+        self.record.source_id = f'{oclc_number}|oclc'
+        self.record.identifiers[0] = self.record.source_id
+
         self.record.frbr_status = 'complete'
 
         _, _, lang_3, *_ = tuple(self.record.languages[0].split('|'))
@@ -184,7 +189,7 @@ class CatalogMapping(XMLMapping):
 
         partDict = json.loads(partFlags)
 
-        if partDict['marcInd1'] != '4' or partLink == '':
+        if partDict.get('marcInd1') != '4' or partLink == '':
             return None
 
         for source, sourceRegex in self.EBOOK_REGEX.items():
@@ -221,7 +226,7 @@ class CatalogMapping(XMLMapping):
         try:
             metadataResp = requests.get(metadataURL, timeout=5)
             metadataResp.raise_for_status()
-        except (ReadTimeout, HTTPError):
+        except Exception:
             logger.exception(f'Failed to check Internet Archive readability for {iaURL}')
             return False
 
