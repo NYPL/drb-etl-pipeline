@@ -226,7 +226,7 @@ class CatalogMapping(XMLMapping):
         try:
             metadataResp = requests.get(metadataURL, timeout=5)
             metadataResp.raise_for_status()
-        except (ReadTimeout, HTTPError):
+        except Exception:
             logger.exception(f'Failed to check Internet Archive readability for {iaURL}')
             return False
 
