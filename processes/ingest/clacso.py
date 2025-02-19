@@ -10,7 +10,6 @@ from mappings.clacso import CLACSOMapping
 from model import Part, FileFlags
 from .record_buffer import RecordBuffer
 
-
 logger = create_log(__name__)
 
 class CLACSOProcess():
