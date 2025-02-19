@@ -28,7 +28,6 @@ class OCLCBibMapping(BaseMapping):
             contributors=self._map_contributors(contributors),
             identifiers=(
                 [f"{oclc_bib.get('work', {}).get('id')}|owi"] +
-                [f"{identifiers.get('oclcNumber')}|oclc"] +
                 [f"{oclc_number}|oclc" for oclc_number in related_oclc_numbers]
             ),
             date_created=datetime.now(timezone.utc).replace(tzinfo=None),

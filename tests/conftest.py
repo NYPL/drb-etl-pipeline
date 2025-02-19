@@ -9,7 +9,7 @@ from processes import ClusterProcess
 from model import Collection, Edition, Item, Link, Record, Work
 from model.postgres.item import ITEM_LINKS
 from logger import create_log
-from managers import DBManager
+from managers import DBManager, RabbitMQManager, S3Manager
 from load_env import load_env_file
 
 
@@ -44,6 +44,32 @@ def db_manager():
         yield db_manager
         
         db_manager.close_connection()
+    except:
+        yield None
+
+
+@pytest.fixture(scope='session')
+def rabbitmq_manager():
+    rabbitmq_manager = RabbitMQManager()
+
+    try: 
+        rabbitmq_manager.createRabbitConnection()
+
+        yield rabbitmq_manager
+
+        rabbitmq_manager.closeRabbitConnection()
+    except:
+        yield None
+
+
+@pytest.fixture(scope='session')
+def s3_manager():
+    s3_manager = S3Manager()
+
+    try:
+        s3_manager.createS3Client()
+
+        yield s3_manager
     except:
         yield None
 
@@ -114,14 +140,14 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
     }
 
     test_unfrbrized_record_data = {
-        'title': 'Moby-Dick',
+        'title': 'Emma',
         'uuid': uuid4(),
         'frbr_status': 'to_do',
         'cluster_status': False,
         "source": OCLC_SOURCE,
-        'authors': ['Herman Melville||true'],
-        'identifiers': ['9780142437247|isbn'],
-        'source_id': 'moby-dick-123|test',
+        'authors': ['Jane, Austen||true'],
+        'identifiers': ['0198837755|isbn'],
+        'source_id': '0198837755|isbn',
         'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
     }
 
@@ -184,7 +210,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'work_id': str(work.uuid) if work else None,
         'link_id': links[0].id if links and len(links) > 0 else None,
         'unfrbrized_record_uuid': str(unfrbrized_record.uuid),
-        'unclustered_record_uuid': str(unclustered_record.uuid)
+        'unclustered_record_uuid': str(unclustered_record.uuid),
+        'unfrbrized_title': str(unfrbrized_record.title)
     }
 
 
@@ -235,3 +262,6 @@ def unfrbrized_record_uuid(seed_test_data):
 @pytest.fixture(scope='session')
 def unclustered_record_uuid(seed_test_data):
     return seed_test_data['unclustered_record_uuid']
+
+def unfrbrized_title(seed_test_data):
+    return seed_test_data['unfrbrized_title']
