@@ -29,4 +29,3 @@ def test_cluster_process(db_manager, unclustered_record_uuid):
     assert item is not None
     assert edition is not None
     assert work is not None
-    
