@@ -19,7 +19,7 @@ class S3Process():
     def __init__(self, *args):
         pass
 
-    def runProcess(self, max_poll_attempts: int=3):
+    def runProcess(self, max_poll_attempts: int=4):
         try:
             number_of_processes = 4
             file_processes = []
@@ -47,53 +47,54 @@ class S3Process():
         rabbit_mq_manager.createRabbitConnection()
         rabbit_mq_manager.createOrConnectQueue(file_queue, file_route)
 
-        s3_file_bucket = os.environ['FILE_BUCKET']
+        for poll_attempt in range(0, max_poll_attempts):
+            wait_time = 30 * poll_attempt
 
-        attempts_to_poll = 1
+            if wait_time:
+                logger.info(f'Waiting {wait_time}s for S3 file messages')
+                sleep(wait_time)
 
-        while attempts_to_poll <= max_poll_attempts:
-            message_props, _, message_body = rabbit_mq_manager.getMessageFromQueue(file_queue)
+            while message := rabbit_mq_manager.getMessageFromQueue(file_queue):
+                message_props, _, message_body = message
 
-            if not message_props:
-                if attempts_to_poll < max_poll_attempts:
-                    wait_time = attempts_to_poll * 30
-
-                    logger.info(f'Waiting {wait_time}s for S3 file messages')
-                    sleep(wait_time)
-                    
-                    attempts_to_poll += 1
-                else:
-                    logger.info('Exiting S3 process - no more messages.')
+                if not message_props or not message_body:
                     break
 
-                continue
+                S3Process.process_message(
+                    message=message, 
+                    storage_manager=storage_manager, 
+                    rabbit_mq_manager=rabbit_mq_manager
+                )
+
+    @staticmethod
+    def process_message(message, storage_manager: S3Manager, rabbit_mq_manager: RabbitMQManager):
+        message_props, _, message_body = message
+
+        s3_file_bucket = os.environ['FILE_BUCKET']
+        file_data = json.loads(message_body)['fileData']
+        file_url = file_data['fileURL']
+        file_path = file_data['bucketPath']
+
+        try:
+            file_contents = S3Process.get_file_contents(file_url)
+
+            storage_manager.putObjectInBucket(file_contents, file_path, s3_file_bucket)
             
-            attempts_to_poll = 1
+            del file_contents
 
-            file_data = json.loads(message_body)['fileData']
-            file_url = file_data['fileURL']
-            file_path = file_data['bucketPath']
+            if '.epub' in file_path:
+                file_root = '.'.join(file_path.split('.')[:-1])
 
-            try:
-                file_contents = S3Process.get_file_contents(file_url)
+                web_pub_manifest = S3Process.generate_webpub(file_root, s3_file_bucket)
 
-                storage_manager.putObjectInBucket(file_contents, file_path, s3_file_bucket)
-                
-                del file_contents
+                storage_manager.putObjectInBucket(web_pub_manifest, f'{file_root}/manifest.json', s3_file_bucket)
 
-                if '.epub' in file_path:
-                    file_root = '.'.join(file_path.split('.')[:-1])
+            rabbit_mq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
 
-                    web_pub_manifest = S3Process.generate_webpub(file_root, s3_file_bucket)
-
-                    storage_manager.putObjectInBucket(web_pub_manifest, f'{file_root}/manifest.json', s3_file_bucket)
-
-                rabbit_mq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
-
-                logger.info(f'Stored file in S3 for {file_url}')
-            except Exception:
-                logger.exception(f'Failed to store file for file url: {file_url}')
-                rabbit_mq_manager.reject_message(delivery_tag=message_props.delivery_tag)
+            logger.info(f'Stored file in S3 for {file_url}')
+        except Exception:
+            logger.exception(f'Failed to store file for file url: {file_url}')
+            rabbit_mq_manager.reject_message(delivery_tag=message_props.delivery_tag)
 
     @staticmethod
     @retry_request()
