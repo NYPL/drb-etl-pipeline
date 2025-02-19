@@ -263,5 +263,6 @@ def unfrbrized_record_uuid(seed_test_data):
 def unclustered_record_uuid(seed_test_data):
     return seed_test_data['unclustered_record_uuid']
 
+@pytest.fixture(scope='session')
 def unfrbrized_title(seed_test_data):
     return seed_test_data['unfrbrized_title']
