@@ -9,7 +9,7 @@ from processes import ClusterProcess
 from model import Collection, Edition, Item, Link, Record, Work
 from model.postgres.item import ITEM_LINKS
 from logger import create_log
-from managers import DBManager
+from managers import DBManager, RabbitMQManager, S3Manager
 from load_env import load_env_file
 
 
@@ -44,6 +44,32 @@ def db_manager():
         yield db_manager
         
         db_manager.close_connection()
+    except:
+        yield None
+
+
+@pytest.fixture(scope='session')
+def rabbitmq_manager():
+    rabbitmq_manager = RabbitMQManager()
+
+    try: 
+        rabbitmq_manager.createRabbitConnection()
+
+        yield rabbitmq_manager
+
+        rabbitmq_manager.closeRabbitConnection()
+    except:
+        yield None
+
+
+@pytest.fixture(scope='session')
+def s3_manager():
+    s3_manager = S3Manager()
+
+    try:
+        s3_manager.createS3Client()
+
+        yield s3_manager
     except:
         yield None
 
