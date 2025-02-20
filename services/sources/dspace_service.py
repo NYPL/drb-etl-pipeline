@@ -8,6 +8,7 @@ from logger import create_log
 from mappings.base_mapping import MappingError
 from mappings.xml import XMLMapping
 from .source_service import SourceService
+import traceback
 
 logger = create_log(__name__)
 
@@ -58,7 +59,8 @@ class DSpaceService(SourceService):
 
                     if limit is not None and len(mapped_records) >= limit:
                         return mapped_records
-                except Exception as e:
+                except Exception:
+                    print(traceback.print_exc())
                     logger.error(f'Error parsing DSpace record {record}')
 
         return mapped_records
