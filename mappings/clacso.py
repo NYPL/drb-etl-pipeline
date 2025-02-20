@@ -36,6 +36,8 @@ class CLACSOMapping(BaseMapping):
             authors=self._get_authors(clacso_record, namespaces),
             medium=medium,
             publisher=self._get_publishers(clacso_record, namespaces),
+            subjects=self._get_subjects(clacso_record, namespaces),
+            languages=self._get_languages(clacso_record, namespaces),
             identifiers=self._get_identifiers(clacso_record, namespaces),
             has_part=has_part,
             dates=self._get_dates(clacso_record, namespaces),
@@ -48,6 +50,12 @@ class CLACSOMapping(BaseMapping):
     
     def _get_publishers(self, record, namespaces):
          return [f'{publisher}||' for publisher in record.xpath('./dc:publisher/text()', namespaces=namespaces)]
+    
+    def _get_subjects(self, record, namespaces):
+         return [f'{subject}||' for subject in record.xpath('./dc:subject/text()', namespaces=namespaces)]
+    
+    def _get_languages(self, record, namespaces):
+         return [f'||{language}' for language in record.xpath('./dc:language/text()', namespaces=namespaces)]
 
     def _get_source_id(self, record, namespaces):
         for identifier in record.xpath('./dc:identifier/text()', namespaces=namespaces):

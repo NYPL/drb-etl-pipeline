@@ -31,16 +31,16 @@ class DSpaceService(SourceService):
     def get_records(self, full_import=False, start_timestamp=None, offset: Optional[int]=None, limit: Optional[int]=None):
         resumption_token = None
 
-        records_processed = 0
+        record_index = 0
+        records_ingested = 0
         mapped_records = []
-        while resumption_token is not None or records_processed <= offset:
-            oai_file = self.download_records(
-                full_import, start_timestamp, resumption_token=resumption_token)
 
+        while resumption_token is not None or record_index <= offset:
+            oai_file = self.download_records(full_import, start_timestamp, resumption_token=resumption_token)
             resumption_token = self.get_resumption_token(oai_file)
 
-            if records_processed <= offset:
-                records_processed += 100
+            if offset is not None and record_index <= offset:
+                record_index += 100
                 continue
 
             oaidc_records = etree.parse(oai_file)
@@ -51,17 +51,17 @@ class DSpaceService(SourceService):
 
                 try:
                     parsed_record = self.parse_record(record)
-                    if parsed_record.record:
-                        mapped_records.append(parsed_record)
-                    else:
+
+                    if parsed_record.record is None:
                         continue
+                    
+                    mapped_records.append(parsed_record)
+                    records_ingested += 1
+
+                    if limit is not None and records_ingested >= limit:
+                        return mapped_records
                 except Exception as e:
                     logger.error(f'Error parsing DSpace record {record}')
-
-                records_processed += 1
-
-                if limit is not None and records_processed >= limit:
-                    return mapped_records
 
         return mapped_records
 
