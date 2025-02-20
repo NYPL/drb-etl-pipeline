@@ -16,6 +16,7 @@ RIGHTS_STATEMENTS_TO_LICENSES = {
     'Attribution-NonCommercial 3.0 Unported': 'https://creativecommons.org/licenses/by-nc/3.0/',
     'Attribution-NonCommercial-ShareAlike 3.0 Unported': 'https://creativecommons.org/licenses/by-nc-sa/3.0/',
     'Attribution-NonCommercial-NoDerivatives 3.0 Unported': 'https://creativecommons.org/licenses/by-nc-nd/3.0/',
+    'Attribution-NonCommercial-NoDerivs 3.0 Unported': 'https://creativecommons.org/licenses/by-nc-nd/3.0/',
 }
 
 RIGHTS_LICENSES_TO_STATEMENTS = {license: rights_statement for rights_statement, license in RIGHTS_STATEMENTS_TO_LICENSES.items()}
