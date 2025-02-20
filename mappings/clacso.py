@@ -93,7 +93,7 @@ class CLACSOMapping(BaseMapping):
         for medium in record.xpath('./dc:type/text()', namespaces=namespaces):
             medium_value = medium.split('/')[-1].lower()
             
-            if medium_value == 'book':
+            if medium_value == 'book' or medium_value == 'libro' or medium_value == 'livro':
                 return medium_value
 
     def _get_identifiers(self, record, namespaces):
