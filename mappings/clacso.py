@@ -7,6 +7,7 @@ import json
 from typing import Optional
 from model import Record, FRBRStatus, FileFlags, Part, Source
 from .base_mapping import BaseMapping
+from .rights import get_rights_string, RIGHTS_STATEMENTS_TO_LICENSES, RIGHTS_LICENSES_TO_STATEMENTS
 
 HANDLE_URL = 'biblioteca-repositorio.clacso.edu.ar/handle/CLACSO'
 PDF_PART_URL = "https://biblioteca-repositorio.clacso.edu.ar"
@@ -39,6 +40,7 @@ class CLACSOMapping(BaseMapping):
             subjects=self._get_subjects(clacso_record, namespaces),
             languages=self._get_languages(clacso_record, namespaces),
             identifiers=self._get_identifiers(clacso_record, namespaces),
+            rights=[right for right in self._get_rights(clacso_record, namespaces) if right is not None],
             has_part=has_part,
             dates=self._get_dates(clacso_record, namespaces),
             date_created=datetime.now(timezone.utc).replace(tzinfo=None),
@@ -55,7 +57,30 @@ class CLACSOMapping(BaseMapping):
          return [f'{subject}||' for subject in record.xpath('./dc:subject/text()', namespaces=namespaces)]
     
     def _get_languages(self, record, namespaces):
-         return [f'||{language}' for language in record.xpath('./dc:language/text()', namespaces=namespaces)]
+         return [f'||{language_code}' for language_code in record.xpath('./dc:language/text()', namespaces=namespaces)]
+    
+    def _get_rights(self, record, namespaces):
+        rights = [right for right in record.xpath('./dc:rights/text()', namespaces=namespaces)]
+        licenses = [right for right in rights if right.startswith('http')]
+        rights_statements = [right for right in rights if not right.startswith('http') and not right.startswith('info:eu-repo')]
+
+        return list(set(
+            [
+                get_rights_string(
+                    rights_source=Source.CLACSO.value,
+                    license=RIGHTS_STATEMENTS_TO_LICENSES.get(rights_statement),
+                    rights_statement=rights_statement
+                )
+                for rights_statement in rights_statements
+            ] + [
+                get_rights_string(
+                    rights_source=Source.CLACSO.value,
+                    license=license,
+                    rights_statement=RIGHTS_LICENSES_TO_STATEMENTS.get(license)
+                )
+                for license in licenses
+            ]
+        ))
 
     def _get_source_id(self, record, namespaces):
         for identifier in record.xpath('./dc:identifier/text()', namespaces=namespaces):

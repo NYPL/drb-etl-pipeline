@@ -58,7 +58,7 @@ class DSpaceService(SourceService):
 
                     if limit is not None and len(mapped_records) >= limit:
                         return mapped_records
-                except Exception as e:
+                except Exception:
                     logger.error(f'Error parsing DSpace record {record}')
 
         return mapped_records
