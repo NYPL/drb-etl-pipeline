@@ -32,7 +32,6 @@ class DSpaceService(SourceService):
         resumption_token = None
 
         record_index = 0
-        records_ingested = 0
         mapped_records = []
 
         while resumption_token is not None or record_index <= offset:
@@ -56,9 +55,8 @@ class DSpaceService(SourceService):
                         continue
                     
                     mapped_records.append(parsed_record)
-                    records_ingested += 1
 
-                    if limit is not None and records_ingested >= limit:
+                    if limit is not None and len(mapped_records) >= limit:
                         return mapped_records
                 except Exception as e:
                     logger.error(f'Error parsing DSpace record {record}')
