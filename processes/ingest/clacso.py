@@ -1,9 +1,9 @@
 import os
 import json
 import dataclasses
-from datetime import datetime, timezone, timedelta
 from services import DSpaceService
 
+from digital_assets import get_stored_file_url
 from logger import create_log
 from managers import S3Manager, WebpubManifest, DBManager
 from mappings.clacso import CLACSOMapping
@@ -65,15 +65,13 @@ class CLACSOProcess():
 
     def store_pdf_manifest(self, record):
         for link in record.has_part:
-            item_no, uri, source, media_type, flags = link.split('|')
+            item_no, uri, source, media_type, _ = link.split('|')
 
             if media_type == 'application/pdf':
                 record_id = record.identifiers[0].split('|')[0]
 
                 manifest_path = 'manifests/{}/{}.json'.format(source, record_id)
-                manifest_uri = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3_bucket, manifest_path
-                )
+                manifest_uri = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
 
                 manifest_json = self.generate_manifest(record, uri, manifest_uri)
 
@@ -83,8 +81,8 @@ class CLACSOProcess():
                     index=item_no, 
                     url=manifest_uri,
                     source=source,
-                    file_type='application/pdf',
-                    flags=json.dumps(dataclasses.asdict(FileFlags()))
+                    file_type='application/webpub+json',
+                    flags=json.dumps(dataclasses.asdict(FileFlags(reader=True)))
                 ).to_string()
 
                 record.has_part.insert(0, link_string)
