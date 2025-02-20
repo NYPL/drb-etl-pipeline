@@ -40,7 +40,7 @@ class CLACSOMapping(BaseMapping):
             subjects=self._get_subjects(clacso_record, namespaces),
             languages=self._get_languages(clacso_record, namespaces),
             identifiers=self._get_identifiers(clacso_record, namespaces),
-            rights=self._get_rights(clacso_record, namespaces),
+            rights=[right for right in self._get_rights(clacso_record, namespaces) if right is not None],
             has_part=has_part,
             dates=self._get_dates(clacso_record, namespaces),
             date_created=datetime.now(timezone.utc).replace(tzinfo=None),
