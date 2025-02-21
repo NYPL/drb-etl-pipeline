@@ -28,7 +28,7 @@ class GutenbergProcess(CoreProcess):
         super(GutenbergProcess, self).__init__(*args[:4])
 
         self.ingestOffset = int(args[5] or 0)
-        self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
+        self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else None
 
         self.generateEngine()
         self.createSession()
@@ -85,7 +85,8 @@ class GutenbergProcess(CoreProcess):
 
             manager.resetBatch()
 
-            if not continuation or currentPosition >= self.ingestLimit: break
+            if not continuation or (self.ingestLimit is not None and currentPosition >= self.ingestLimit): 
+                break
 
     def processGutenbergBatch(self, dataFiles):
         for (gutenbergRDF, gutenbergYAML) in dataFiles:
