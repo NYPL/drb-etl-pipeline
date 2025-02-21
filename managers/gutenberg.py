@@ -87,7 +87,7 @@ class GutenbergManager:
                 self.parseRDF(rdfResponse['data']['repository']['rdf']['text']),
                 self.parseYAML(rdfResponse['data']['repository']['yaml']['text'])
             ))
-        except (TypeError, etree.XMLSyntaxError):
+        except (KeyError, TypeError, etree.XMLSyntaxError):
             logger.error(f'Unable to load metadata files for work {workID}')
 
     def parseRDF(self, rdfText):
