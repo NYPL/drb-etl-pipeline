@@ -29,3 +29,36 @@ def test_cluster_process(db_manager, unclustered_record_uuid):
     assert item is not None
     assert edition is not None
     assert work is not None
+
+def test_cluster_multi_edition(db_manager, unclustered_multi_edition_uuid):
+    cluster_process = ClusterProcess('complete', None, None, unclustered_multi_edition_uuid, None)
+
+    cluster_process.runProcess()
+    
+    db_manager.session.commit()
+
+    clustered_record = db_manager.session.query(Record).filter(Record.uuid == unclustered_multi_edition_uuid).first()
+
+    assert clustered_record.cluster_status == True
+    
+    work = (
+        db_manager.session.query(Work)
+            .join(Edition, Work.id == Edition.work_id)
+            .join(Item, Edition.id == Item.edition_id)
+            .filter(Item.record_id == clustered_record.id)
+            .first()
+    )
+
+    editions = (
+        db_manager.session.query(Edition)
+            .join(Item, Edition.id == Item.edition_id)
+            .filter(Edition.work_id == work.id)
+            .all()
+    )
+    
+    assert work is not None
+
+    assert len(editions) == 2
+
+    for edition in editions:
+        assert edition.work_id == work.id
