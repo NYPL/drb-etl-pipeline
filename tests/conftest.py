@@ -172,9 +172,30 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}'],
     }
 
+    test_fullfill_manifest_record_data = {
+        'title': 'Bluets',
+        'uuid': uuid4(),
+        'frbr_status': 'complete',
+        'cluster_status': False,
+        'authors': ['Nelson, Maggie||true'],
+        'dates': ['2009|publication_date'],
+        'publisher': ['Wave Books||'],
+        'identifiers': ['1933517409|isbn'],
+        'rights':'in_copyright|cc-by|Public Domain|expired_copyright|2024-01-01',
+        'contributors': ['qaContributor|||contributor'],
+        'subjects': ['poetry||'],
+        'source': TEST_SOURCE,
+        'source_id': 'pbtestSourceID',
+        'publisher_project_source': ['University of Michigan Press'],
+        'has_part': [f'1|https://example.com/manifest.json|{TEST_SOURCE}|application/webpub+json|{json.dumps({"catalog": True})}',f'2|https://example.com/content.pdf|{TEST_SOURCE}|application/pdf|{json.dumps({"download": True})}'
+]
+    }
+
     frbrized_record = create_or_update_record(test_frbrized_record_data)
     unfrbrized_record = create_or_update_record(test_unfrbrized_record_data)
     unclustered_record = create_or_update_record(test_unclustered_record_data)
+    manifest_record = create_or_update_record(test_fullfill_manifest_record_data)
+
     
     if not frbrized_record.id:
         db_manager.session.add(frbrized_record)
@@ -182,6 +203,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         db_manager.session.add(unfrbrized_record)
     if not unclustered_record.id:
         db_manager.session.add(unclustered_record)
+    if not manifest_record.id:
+        db_manager.session.add(manifest_record)
 
     db_manager.session.commit()
 
@@ -211,7 +234,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'link_id': links[0].id if links and len(links) > 0 else None,
         'unfrbrized_record_uuid': str(unfrbrized_record.uuid),
         'unclustered_record_uuid': str(unclustered_record.uuid),
-        'unfrbrized_title': str(unfrbrized_record.title)
+        'unfrbrized_title': str(unfrbrized_record.title),
+        'manifest_record_uuid': str(manifest_record.uuid)
     }
 
 
@@ -266,3 +290,7 @@ def unclustered_record_uuid(seed_test_data):
 @pytest.fixture(scope='session')
 def unfrbrized_title(seed_test_data):
     return seed_test_data['unfrbrized_title']
+
+@pytest.fixture(scope='session')
+def unfrbrized_title(seed_test_data):
+    return seed_test_data['manifest_record_uuid']
