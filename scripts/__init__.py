@@ -15,3 +15,4 @@ from .countCABooks import main as countCA
 from .nyplLoginFlags import main as nyplFlags
 from .deleteUMPManifestLinks import main as deleteUMPManifests
 from .deleteProblemWorks import main as deleteWorks
+from .check_queue_size import main as checkQueueSize
