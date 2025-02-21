@@ -40,7 +40,7 @@ class CLACSOMapping(BaseMapping):
             subjects=self._get_subjects(clacso_record, namespaces),
             languages=self._get_languages(clacso_record, namespaces),
             identifiers=self._get_identifiers(clacso_record, namespaces),
-            rights=[right for right in self._get_rights(clacso_record, namespaces) if right is not None],
+            rights=self._get_rights(clacso_record, namespaces),
             has_part=has_part,
             dates=self._get_dates(clacso_record, namespaces),
             date_created=datetime.now(timezone.utc).replace(tzinfo=None),
@@ -59,12 +59,12 @@ class CLACSOMapping(BaseMapping):
     def _get_languages(self, record, namespaces):
          return [f'||{language_code}' for language_code in record.xpath('./dc:language/text()', namespaces=namespaces)]
     
-    def _get_rights(self, record, namespaces):
+    def _get_rights(self, record, namespaces) -> Optional[str]:
         rights = [right for right in record.xpath('./dc:rights/text()', namespaces=namespaces)]
         licenses = [right for right in rights if right.startswith('http')]
         rights_statements = [right for right in rights if not right.startswith('http') and not right.startswith('info:eu-repo')]
 
-        return list(set(
+        rights = list(set(
             [
                 get_rights_string(
                     rights_source=Source.CLACSO.value,
@@ -81,6 +81,8 @@ class CLACSOMapping(BaseMapping):
                 for license in licenses
             ]
         ))
+
+        return next(filter(lambda right: right is not None, rights), None)
 
     def _get_source_id(self, record, namespaces):
         for identifier in record.xpath('./dc:identifier/text()', namespaces=namespaces):
