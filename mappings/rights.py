@@ -29,7 +29,7 @@ def get_rights_string(
     rights_statement: Optional[str]=None,
     rights_date: Optional[datetime]=None
 ) -> Optional[str]:
-    if license is None and rights_statement is None:
+    if license is None:
         return None
 
     return f"{rights_source}|{license or ''}|{rights_reason or ''}|{rights_statement or ''}|{rights_date or ''}"
