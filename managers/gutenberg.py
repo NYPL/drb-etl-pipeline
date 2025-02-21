@@ -46,20 +46,23 @@ class GutenbergManager:
 
         repositoryResponse = self.queryGraphQL(githubQuery)
 
-        nextPage = repositoryResponse['data']['organization']['repositories']['pageInfo']['hasNextPage'] 
-        self.cursor = repositoryResponse['data']['organization']['repositories']['pageInfo'].get('endCursor', None)
+        repositories = repositoryResponse.get('data', {}).get('organization', {}).get('repositories', {})
+        page_info = repositories.get('pageInfo', {})
+        nodes = repositories.get('nodes', [])
+        next_page = page_info.get('hasNextPage', False)
+        self.cursor = page_info.get('endCursor', None)
 
         if self.startTime:
             self.repos = list(filter(
                 lambda x: datetime.strptime(x['pushedAt'], '%Y-%m-%dT%H:%M:%SZ') > self.startTime,
-                repositoryResponse['data']['organization']['repositories']['nodes']
+                nodes
             ))
         else:
-            self.repos = [r for r in repositoryResponse['data']['organization']['repositories']['nodes']]
+            self.repos = [r for r in nodes]
         
-        if len(self.repos) == 0: nextPage = False
+        if len(self.repos) == 0: next_page = False
 
-        return nextPage
+        return next_page
 
     def fetchMetadataFilesForBatch(self):
         for repo in self.repos:
@@ -81,12 +84,13 @@ class GutenbergManager:
         """.format(name=repo['name'], master='master:pg{}.rdf'.format(workID))
 
         rdfResponse = self.queryGraphQL(rdfQuery)
+        repository = rdfResponse.get('data', {}).get('repository', {})
+        rdf_text = repository.get('rdf', {}).get('text')
+        yaml_text = repository.get('yaml', {}).get('text')
 
         try:
-            self.dataFiles.append((
-                self.parseRDF(rdfResponse['data']['repository']['rdf']['text']),
-                self.parseYAML(rdfResponse['data']['repository']['yaml']['text'])
-            ))
+            if rdf_text is not None and yaml_text is not None:
+                self.dataFiles.append((self.parseRDF(rdfText=rdf_text), self.parseYAML(yamlText=yaml_text)))
         except (TypeError, etree.XMLSyntaxError):
             logger.error(f'Unable to load metadata files for work {workID}')
 
