@@ -73,14 +73,13 @@ def test_fulfillment_process(db_manager, s3_manager, seed_test_data):
 
     fulfill_process = FulfillURLManifestProcess(
         'complete',
-        session=db_manager.session,  # Now properly scoped
+        session=db_manager.session,
         record_uuid=None,
         start_date=None,
         end_date=None
     )
     fulfill_process.runProcess()
 
-# Verify S3 updates
     response = s3_manager.s3Client.get_object(
         Bucket=os.environ['FILE_BUCKET'],
         Key=s3_key
@@ -90,15 +89,11 @@ def test_fulfillment_process(db_manager, s3_manager, seed_test_data):
     expected_pdf_url = f"https://{os.environ['DRB_API_HOST']}/fulfill/{pdf_link.id}"
     expected_webpub_url = f"https://{os.environ['DRB_API_HOST']}/fulfill/{webpub_link.id}"
 
-    # Verify PDF URL replacements
     assert updated_manifest['readingOrder'][0]['href'] == expected_pdf_url
     assert updated_manifest['resources'][0]['href'] == expected_pdf_url
     assert updated_manifest['toc'][0]['href'] == expected_pdf_url
-
-    # Verify webpub link remains but gets flag
     assert updated_manifest['links'][0]['href'] == expected_webpub_url
 
-    # Verify link flags
     with db_manager.session.begin():
         db_manager.session.refresh(webpub_link)
         assert 'fulfill_limited_access' in webpub_link.flags
