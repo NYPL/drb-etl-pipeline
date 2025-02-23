@@ -187,8 +187,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'source': TEST_SOURCE,
         'source_id': 'pbtestSourceID',
         'publisher_project_source': ['University of Michigan Press'],
-        'has_part': [f'1|https://example.com/manifest.json|{TEST_SOURCE}|application/webpub+json|{json.dumps({"catalog": True})}',f'2|https://example.com/content.pdf|{TEST_SOURCE}|application/pdf|{json.dumps({"download": True})}'
-]
+        'has_part': [f'1|https://example.com/book.epub|{TEST_SOURCE}|application/epub+zip|{json.dumps({"reader": True})}']
+
     }
 
     frbrized_record = create_or_update_record(test_frbrized_record_data)
