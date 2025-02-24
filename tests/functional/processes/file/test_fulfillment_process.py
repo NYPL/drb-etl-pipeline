@@ -5,13 +5,9 @@ import os
 from sqlalchemy.orm import joinedload
 import pytest
 
-def test_fulfillment_process(db_manager, s3_manager, seed_test_data):
-
-    limited_access_record_uuid = seed_test_data['manifest_record_uuid']
-
+def test_fulfillment_process(db_manager, s3_manager, limited_access_record_uuid):
     cluster_process = ClusterProcess('complete', None, None, limited_access_record_uuid, None)
     cluster_process.runProcess()
-    db_manager.session.commit()
 
     record = db_manager.session.query(Record).filter_by(uuid=limited_access_record_uuid).first()
     item = db_manager.session.query(Item)\
@@ -52,20 +48,19 @@ def test_fulfillment_process(db_manager, s3_manager, seed_test_data):
 
     expected_url = f"https://{os.environ['DRB_API_HOST']}/fulfill/{epub_link.id}"
 
-    assert updated_manifest['readingOrder'][0]['href'] == expected_url, (
-        f"Expected readingOrder URL: {expected_url}\n"
-        f"Actual: {updated_manifest['readingOrder'][0]['href']}"
-    )
-    
-    assert updated_manifest['resources'][0]['href'] == expected_url, (
-        f"Expected resources URL: {expected_url}\n"
-        f"Actual: {updated_manifest['resources'][0]['href']}"
-    )
-    
-    assert updated_manifest['toc'][0]['href'] == expected_url, (
-        f"Expected toc URL: {expected_url}\n"
-        f"Actual: {updated_manifest['toc'][0]['href']}"
-    )
+    manifest_sections = [
+        ('readingOrder', 0),
+        ('resources', 0),
+        ('toc', 0)
+    ]
+
+    for section, index in manifest_sections:
+        actual_url = updated_manifest[section][index]['href']
+        assert actual_url == expected_url, (
+            f"Manifest section {section} mismatch\n"
+            f"Expected: {expected_url}\n"
+            f"Actual:   {actual_url}"
+        )
 
     s3_manager.s3Client.delete_object(
         Bucket=os.environ['FILE_BUCKET'],

@@ -172,7 +172,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}'],
     }
 
-    test_fullfill_manifest_record_data = {
+    test_limited_access_record_data = {
         'title': 'Bluets',
         'uuid': uuid4(),
         'frbr_status': 'complete',
@@ -194,7 +194,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
     frbrized_record = create_or_update_record(test_frbrized_record_data)
     unfrbrized_record = create_or_update_record(test_unfrbrized_record_data)
     unclustered_record = create_or_update_record(test_unclustered_record_data)
-    manifest_record = create_or_update_record(test_fullfill_manifest_record_data)
+    limited_access_record = create_or_update_record(test_limited_access_record_data)
 
     
     if not frbrized_record.id:
@@ -203,8 +203,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         db_manager.session.add(unfrbrized_record)
     if not unclustered_record.id:
         db_manager.session.add(unclustered_record)
-    if not manifest_record.id:
-        db_manager.session.add(manifest_record)
+    if not limited_access_record.id:
+        db_manager.session.add(limited_access_record)
 
     db_manager.session.commit()
 
@@ -235,7 +235,7 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'unfrbrized_record_uuid': str(unfrbrized_record.uuid),
         'unclustered_record_uuid': str(unclustered_record.uuid),
         'unfrbrized_title': str(unfrbrized_record.title),
-        'manifest_record_uuid': str(manifest_record.uuid)
+        'limited_access_record_uuid': str(limited_access_record.uuid)
     }
 
 
@@ -291,5 +291,5 @@ def unfrbrized_title(seed_test_data):
     return seed_test_data['unfrbrized_title']
 
 @pytest.fixture(scope='session')
-def manifest_record_uuid(seed_test_data):
-    return seed_test_data['manifest_record_uuid']
+def limited_access_record_uuid(seed_test_data):
+    return seed_test_data['limited_access_record_uuid']
