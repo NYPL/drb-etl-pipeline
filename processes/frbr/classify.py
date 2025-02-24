@@ -18,6 +18,7 @@ class ClassifyProcess(CoreProcess):
         super(ClassifyProcess, self).__init__(*args[:4], batchSize=50)
 
         self.ingest_limit = int(args[4]) if len(args) >= 5 and args[4] else None
+        self.source = args[6] if len(args) >= 7 and args[6] else None
 
         self.generateEngine()
         self.createSession()
@@ -68,6 +69,9 @@ class ClassifyProcess(CoreProcess):
                 start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
             
             get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.date_modified > start_date_time)
+
+        if self.source:
+            get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.source == self.source)
 
         while unfrbrized_record := get_unfrbrized_records_query.first():
             self.frbrize_record(unfrbrized_record)
