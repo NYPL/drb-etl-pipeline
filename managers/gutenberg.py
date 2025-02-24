@@ -85,12 +85,20 @@ class GutenbergManager:
 
         rdfResponse = self.queryGraphQL(rdfQuery)
         repository = rdfResponse.get('data', {}).get('repository', {})
-        rdf_text = repository.get('rdf', {}).get('text')
-        yaml_text = repository.get('yaml', {}).get('text')
+        rdf_data = repository.get('rdf', {})
+        yaml_data = repository.get('yaml', {})
 
+        if rdf_data is None or yaml_data is None:
+            return
+        
+        rdf_text = rdf_data.get('text') if rdf_data else None
+        yaml_text = yaml_data.get('text') if yaml_data else None
+
+        if rdf_text is None or yaml_data is None:
+            return
+        
         try:
-            if rdf_text is not None and yaml_text is not None:
-                self.dataFiles.append((self.parseRDF(rdfText=rdf_text), self.parseYAML(yamlText=yaml_text)))
+            self.dataFiles.append((self.parseRDF(rdfText=rdf_text), self.parseYAML(yamlText=yaml_text)))
         except (TypeError, etree.XMLSyntaxError):
             logger.error(f'Unable to load metadata files for work {workID}')
 
