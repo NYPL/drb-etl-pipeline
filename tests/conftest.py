@@ -155,6 +155,13 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
     test_unclustered_record_data = generate_test_data(title='unclustered record', uuid=uuid4(), source_id='unclustered|test')
     test_unclustered_edition_data = generate_test_data(title='multi edition record', uuid=uuid4(), source_id='unclustered_edition|test', dates=['1988|publication_date'], identifiers=['1234567891011|isbn'])
     test_unclustered_edition_data2 = generate_test_data(title='the multi edition record', uuid=uuid4(), source_id='unclustered_edition2|test', dates=['1977|publication_date'], identifiers=['1234567891011|isbn'])
+    test_unclustered_item_data = generate_test_data(title='multi item record', uuid=uuid4(), source_id='unclustered_item|test', dates=['1966|publication_date'], identifiers=['2341317561|isbn'])
+    test_unclustered_item_data2 = generate_test_data(
+        title='multi item record', uuid=uuid4(), 
+        source_id='unclustered_item2|test', 
+        dates=['1966|publication_date'],
+        identifiers=['2341317561|isbn'],
+        has_part=[f'1|example.com/2.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}'])
 
     test_limited_access_record_data = {
         'title': 'Bluets',
@@ -177,9 +184,13 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
 
     frbrized_record = create_or_update_record(test_frbrized_record_data)
     unfrbrized_record = create_or_update_record(test_unfrbrized_record_data)
+
     unclustered_record = create_or_update_record(test_unclustered_record_data)
     unclustered_multi_edition = create_or_update_record(test_unclustered_edition_data)
     unclustered_multi_edition2 = create_or_update_record(test_unclustered_edition_data2)
+    unclustered_multi_item = create_or_update_record(test_unclustered_item_data)
+    unclustered_multi_item2 = create_or_update_record(test_unclustered_item_data2)
+
     limited_access_record = create_or_update_record(test_limited_access_record_data)
 
     
@@ -193,6 +204,10 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         db_manager.session.add(unclustered_multi_edition)
     if not unclustered_multi_edition2.id:
         db_manager.session.add(unclustered_multi_edition2)
+    if not unclustered_multi_item.id:
+        db_manager.session.add(unclustered_multi_item)
+    if not unclustered_multi_item2.id:
+        db_manager.session.add(unclustered_multi_item2)
     if not limited_access_record.id:
         db_manager.session.add(limited_access_record)
 
@@ -225,6 +240,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'unfrbrized_record_uuid': str(unfrbrized_record.uuid),
         'unclustered_record_uuid': str(unclustered_record.uuid),
         'unclustered_multi_edition_uuid': str(unclustered_multi_edition.uuid),
+        'unclustered_multi_item_uuid': str(unclustered_multi_item.uuid),
+        'unclustered_multi_item2_uuid': str(unclustered_multi_item2.uuid),
         'unfrbrized_title': str(unfrbrized_record.title),
         'limited_access_record_uuid': str(limited_access_record.uuid)
     }
@@ -280,6 +297,10 @@ def unclustered_record_uuid(seed_test_data):
 @pytest.fixture(scope='session')
 def unclustered_multi_edition_uuid(seed_test_data):
     return seed_test_data['unclustered_multi_edition_uuid']
+
+@pytest.fixture(scope='session')
+def unclustered_multi_item_uuid(seed_test_data):
+    return seed_test_data['unclustered_multi_item_uuid']
 
 @pytest.fixture(scope='session')
 def unfrbrized_title(seed_test_data):
