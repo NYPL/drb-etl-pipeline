@@ -82,7 +82,7 @@ class CLACSOProcess():
                     url=manifest_uri,
                     source=source,
                     file_type='application/webpub+json',
-                    flags=json.dumps(dataclasses.asdict(FileFlags(reader=True)))
+                    flags=json.dumps(dataclasses.asdict(FileFlags()))
                 ).to_string()
 
                 record.has_part.insert(0, link_string)
