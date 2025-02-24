@@ -156,11 +156,32 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
     test_unclustered_edition_data = generate_test_data(title='multi edition record', uuid=uuid4(), source_id='unclustered_edition|test', dates=['1988|publication_date'], identifiers=['1234567891011|isbn'])
     test_unclustered_edition_data2 = generate_test_data(title='the multi edition record', uuid=uuid4(), source_id='unclustered_edition2|test', dates=['1977|publication_date'], identifiers=['1234567891011|isbn'])
 
+    test_limited_access_record_data = {
+        'title': 'Bluets',
+        'uuid': uuid4(),
+        'frbr_status': 'complete',
+        'cluster_status': False,
+        'authors': ['Nelson, Maggie||true'],
+        'dates': ['2009|publication_date'],
+        'publisher': ['Wave Books||'],
+        'identifiers': ['1933517409|isbn'],
+        'rights':'in_copyright|cc-by|Public Domain|expired_copyright|2024-01-01',
+        'contributors': ['qaContributor|||contributor'],
+        'subjects': ['poetry||'],
+        'source': TEST_SOURCE,
+        'source_id': 'pbtestSourceID',
+        'publisher_project_source': ['University of Michigan Press'],
+        'has_part': [f'1|https://example.com/book.epub|{TEST_SOURCE}|application/epub+zip|{json.dumps({"reader": True})}']
+
+    }
+
     frbrized_record = create_or_update_record(test_frbrized_record_data)
     unfrbrized_record = create_or_update_record(test_unfrbrized_record_data)
     unclustered_record = create_or_update_record(test_unclustered_record_data)
     unclustered_multi_edition = create_or_update_record(test_unclustered_edition_data)
     unclustered_multi_edition2 = create_or_update_record(test_unclustered_edition_data2)
+    limited_access_record = create_or_update_record(test_limited_access_record_data)
+
     
     if not frbrized_record.id:
         db_manager.session.add(frbrized_record)
@@ -172,6 +193,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         db_manager.session.add(unclustered_multi_edition)
     if not unclustered_multi_edition2.id:
         db_manager.session.add(unclustered_multi_edition2)
+    if not limited_access_record.id:
+        db_manager.session.add(limited_access_record)
 
     db_manager.session.commit()
 
@@ -202,7 +225,8 @@ def seed_test_data(db_manager, test_title, test_subject, test_language):
         'unfrbrized_record_uuid': str(unfrbrized_record.uuid),
         'unclustered_record_uuid': str(unclustered_record.uuid),
         'unclustered_multi_edition_uuid': str(unclustered_multi_edition.uuid),
-        'unfrbrized_title': str(unfrbrized_record.title)
+        'unfrbrized_title': str(unfrbrized_record.title),
+        'limited_access_record_uuid': str(limited_access_record.uuid)
     }
 
 
@@ -241,7 +265,6 @@ def test_collection_id(db_manager, test_edition_id):
 def test_work_id(seed_test_data):
     return seed_test_data['work_id']
 
-
 @pytest.fixture(scope='session')
 def test_link_id(seed_test_data):
     return seed_test_data['link_id']
@@ -261,3 +284,7 @@ def unclustered_multi_edition_uuid(seed_test_data):
 @pytest.fixture(scope='session')
 def unfrbrized_title(seed_test_data):
     return seed_test_data['unfrbrized_title']
+
+@pytest.fixture(scope='session')
+def limited_access_record_uuid(seed_test_data):
+    return seed_test_data['limited_access_record_uuid']

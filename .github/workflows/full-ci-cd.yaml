@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: continuous-deployment
+  cancel-in-progress: false
+
 jobs:
   deploy_to_qa:
     uses: NYPL/drb-etl-pipeline/.github/workflows/build-qa.yaml@main

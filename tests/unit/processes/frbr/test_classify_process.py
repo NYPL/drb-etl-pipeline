@@ -20,6 +20,7 @@ class TestOCLCClassifyProcess:
             def __init__(self, *args):
                 self.records = set()
                 self.ingest_limit = None
+                self.source = None
                 self.records = []
                 self.catalog_queue = os.environ['OCLC_QUEUE']
                 self.catalog_route = os.environ['OCLC_ROUTING_KEY']
