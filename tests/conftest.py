@@ -274,7 +274,6 @@ def test_collection_id(db_manager, test_edition_id):
 def test_work_id(seed_test_data):
     return seed_test_data['work_id']
 
-
 @pytest.fixture(scope='session')
 def test_link_id(seed_test_data):
     return seed_test_data['link_id']
@@ -292,5 +291,5 @@ def unfrbrized_title(seed_test_data):
     return seed_test_data['unfrbrized_title']
 
 @pytest.fixture(scope='session')
-def unfrbrized_title(seed_test_data):
+def manifest_record_uuid(seed_test_data):
     return seed_test_data['manifest_record_uuid']
