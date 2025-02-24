@@ -26,6 +26,7 @@ class GutenbergProcess():
 
     def __init__(self, *args):
         self.process = args[0]
+        self.ingest_period = args[2]
 
         self.ingestOffset = int(args[5] or 0)
         self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
@@ -52,7 +53,7 @@ class GutenbergProcess():
         elif self.process == 'complete':
             self.importRDFRecords(fullImport=True)
         elif self.process == 'custom':
-            self.importRDFRecords(startTimestamp=self.ingestPeriod)
+            self.importRDFRecords(startTimestamp=self.ingest_period)
 
         self.record_buffer.flush()
 

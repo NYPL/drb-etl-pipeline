@@ -21,6 +21,7 @@ class TestGutenbergProcess:
         class TestGutenbergProcess(GutenbergProcess):
             def __init__(self, process, customFile, ingestPeriod):
                 self.constants = {}
+                self.ingest_period = None
                 self.ingestOffset = 0
                 self.ingestLimit = 5000
                 self.db_manager = mocker.MagicMock()
@@ -66,7 +67,7 @@ class TestGutenbergProcess:
         mockImport = mocker.patch.object(GutenbergProcess, 'importRDFRecords')
 
         testInstance.process = 'custom'
-        testInstance.ingestPeriod = 'testPeriod'
+        testInstance.ingest_period = 'testPeriod'
         testInstance.runProcess()
 
         mockImport.assert_called_once_with(startTimestamp='testPeriod')
