@@ -21,8 +21,11 @@ class TestGutenbergProcess:
         class TestGutenbergProcess(GutenbergProcess):
             def __init__(self, process, customFile, ingestPeriod):
                 self.constants = {}
+                self.ingest_period = None
                 self.ingestOffset = 0
                 self.ingestLimit = 5000
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock()
                 self.s3Bucket = os.environ['FILE_BUCKET']
                 self.fileQueue = os.environ['FILE_QUEUE']
                 self.fileRoute = os.environ['FILE_ROUTING_KEY']
@@ -44,40 +47,31 @@ class TestGutenbergProcess:
     
     def test_runProcess_daily(self, testInstance, mocker):
         mockImport = mocker.patch.object(GutenbergProcess, 'importRDFRecords')
-        mockSave = mocker.patch.object(GutenbergProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(GutenbergProcess, 'commitChanges')
 
         testInstance.process = 'daily'
         testInstance.runProcess()
 
         mockImport.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testInstance.record_buffer.flush.assert_called_once()
 
     def test_runProcess_complete(self, testInstance, mocker):
         mockImport = mocker.patch.object(GutenbergProcess, 'importRDFRecords')
-        mockSave = mocker.patch.object(GutenbergProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(GutenbergProcess, 'commitChanges')
 
         testInstance.process = 'complete'
         testInstance.runProcess()
 
         mockImport.assert_called_once_with(fullImport=True)
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testInstance.record_buffer.flush.assert_called_once()
 
     def test_runProcess_custom(self, testInstance, mocker):
         mockImport = mocker.patch.object(GutenbergProcess, 'importRDFRecords')
-        mockSave = mocker.patch.object(GutenbergProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(GutenbergProcess, 'commitChanges')
 
         testInstance.process = 'custom'
-        testInstance.ingestPeriod = 'testPeriod'
+        testInstance.ingest_period = 'testPeriod'
         testInstance.runProcess()
 
         mockImport.assert_called_once_with(startTimestamp='testPeriod')
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
+        testInstance.record_buffer.flush.assert_called_once()
 
     def test_importRDFRecords_partial(self, testInstance, mocker):
         mockProcess = mocker.patch.object(GutenbergProcess, 'processGutenbergBatch')
@@ -139,7 +133,6 @@ class TestGutenbergProcess:
             GutenbergProcess,
             storeEpubsInS3=mocker.DEFAULT,
             addCoverAndStoreInS3=mocker.DEFAULT,
-            addDCDWToUpdateList=mocker.DEFAULT
         )
 
         processMocks['addCoverAndStoreInS3'].side_effect = [None, KeyError]
@@ -157,8 +150,8 @@ class TestGutenbergProcess:
         processMocks['addCoverAndStoreInS3'].assert_has_calls([
             mocker.call(mockGutenbergRec, 'yaml1'), mocker.call(mockGutenbergRec, 'yaml2')
         ])
-        processMocks['addDCDWToUpdateList'].assert_has_calls([
-            mocker.call(mockGutenbergRec), mocker.call(mockGutenbergRec)
+        testInstance.record_buffer.add.assert_has_calls([
+            mocker.call(mockGutenbergRec.record), mocker.call(mockGutenbergRec.record)
         ])
 
     def test_storeEpubsInS3(self, testInstance, mocker):
