@@ -195,4 +195,3 @@ class TestGutenbergProcess:
             source=Source.GUTENBERG.value,
             flags=json.dumps(dataclasses.asdict(FileFlags(cover=True)))
         ).to_string()]
-        
