@@ -129,7 +129,7 @@ class GutenbergProcess():
                     url=get_stored_file_url(self.file_bucket, container_path),
                     file_type='application/epub+xml',
                     flags=part.flags
-                ))
+                ).to_string())
 
                 epub_parts.append(Part(
                     index=part.index,
