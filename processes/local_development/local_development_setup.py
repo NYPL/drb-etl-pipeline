@@ -25,11 +25,7 @@ class LocalDevelopmentSetupProcess(CoreProcess):
             self.generateEngine()
             self.createSession()
             
-            try:
-                self.initializeDatabase()
-            except Exception as e:
-                logger.error(e)
-                raise e
+            self.initializeDatabase()
 
             self.elastic_search_manager.createElasticConnection()
             self.wait_for_elastic_search()
