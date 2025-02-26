@@ -58,7 +58,7 @@ class ChicagoISACProcess():
 
             manifest_json = self.generate_manifest(record, pdf_part.url, manifest_url)
 
-            self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3_bucket)
+            self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3_bucket)
 
             manifest_part = Part(
                 index=pdf_part.index, 

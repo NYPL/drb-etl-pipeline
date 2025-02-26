@@ -75,7 +75,7 @@ class CLACSOProcess():
 
                 manifest_json = self.generate_manifest(record, uri, manifest_uri)
 
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.s3_bucket)
+                self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3_bucket)
 
                 link_string = Part(
                     index=item_no, 

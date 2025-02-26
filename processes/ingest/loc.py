@@ -225,9 +225,9 @@ class LOCProcess(CoreProcess):
                     self.s3Bucket, manifestPath
                 )
 
-                manifestJSON = self.generateManifest(record, uri, manifestURI)
+                manifestJSON = self.s3_manager.generate_manifest(record, uri, manifestURI)
 
-                self.s3_manager.createManifestInS3(manifestPath, manifestJSON, self.s3Bucket)
+                self.s3_manager.create_manifest_in_s3(manifestPath, manifestJSON, self.s3Bucket)
 
                 linkString = '|'.join([
                     itemNo,

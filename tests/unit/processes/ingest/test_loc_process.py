@@ -90,16 +90,15 @@ class TestLOCProcess:
             '1|testURIOther|loc|application/epub+zip|{}',
         ]
 
-        mockGenerateMan = mocker.patch.object(LOCProcess, 'generateManifest')
-        mockGenerateMan.return_value = 'testJSON'
-
         testProcess.storePDFManifest(mockRecord)
 
         testManifestURI = 'https://test_aws_bucket.s3.amazonaws.com/manifests/loc/1.json'
         assert mockRecord.has_part[0] == '1|{}|loc|application/webpub+json|{{"catalog": false, "download": false, "reader": true, "embed": false}}'.format(testManifestURI)
 
-        mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
-        testProcess.s3_manager.createManifestInS3.assert_called_once_with('manifests/loc/1.json', 'testJSON', testProcess.s3Bucket)
+        testProcess.s3_manager.generate_manifest.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
+
+        testManifest = testProcess.s3_manager.generate_manifest(mockRecord, 'testURI', testManifestURI)
+        testProcess.s3_manager.create_manifest_in_s3.assert_called_once_with('manifests/loc/1.json', testManifest, testProcess.s3Bucket)
 
     def test_storeEpubsInS3(self, testProcess, mocker):
         mockRecord = mocker.MagicMock(identifiers=['1|loc'])
