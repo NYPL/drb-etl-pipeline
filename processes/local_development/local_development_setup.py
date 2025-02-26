@@ -71,7 +71,7 @@ class LocalDevelopmentSetupProcess(CoreProcess):
         database = os.environ.get('POSTGRES_NAME')
 
         try:
-            db_connection.execute(sa.text(f'CREATE USER {postgres_user} WITH PASSWORD {postgres_pswd}'))            
+            db_connection.execute(sa.text(f"CREATE USER {postgres_user} WITH PASSWORD '{postgres_pswd}'"))            
         except ProgrammingError:
             pass
         except Exception as e:

@@ -55,7 +55,7 @@ jobs:
           make unit
       - name: Start Docker containers
         run: |
-          docker compose up
+          docker compose up -d
       - name: Wait for docker containers to be ready
         run: |
           echo "Waiting for docker container..."
