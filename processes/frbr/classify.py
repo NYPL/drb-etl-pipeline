@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 import os
 import newrelic.agent
 import re
+from typing import Optional
 
 from ..core import CoreProcess
 from managers import OCLCCatalogManager, RabbitMQManager, RedisManager
@@ -39,15 +40,17 @@ class ClassifyProcess(CoreProcess):
 
     def runProcess(self):
         try:
-            if self.process == 'daily':
-                self.classify_records()
-            elif self.process == 'complete':
-                self.classify_records(full=True)
-            elif self.process == 'custom':
-                self.classify_records(start_date_time=self.ingestPeriod)
-            else:
-                logger.warning(f'Unknown classify process type: {self.process}')
-                return
+            start_datetime = (
+                datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+                if self.process == 'daily'
+                else self.ingestPeriod and datetime.strptime(self.ingestPeriod, '%Y-%m-%dT%H:%M:%S')
+            )
+            
+            self.classify_records(
+                start_datetime=start_datetime,
+                record_uuid=self.singleRecord,
+                source=self.source, 
+            )
             
             self.saveRecords()
             self.commitChanges()
@@ -57,20 +60,20 @@ class ClassifyProcess(CoreProcess):
             logger.exception(f'Failed to run classify process')
             raise e
 
-    def classify_records(self, full=False, start_date_time=None):
+    def classify_records(self, start_datetime: Optional[datetime]=None, record_uuid: Optional[str]=None, source: Optional[str]=None):
         get_unfrbrized_records_query = (
             self.session.query(Record)
                 .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')
                 .filter(Record.frbr_status == 'to_do')
         )
 
-        if not full:
-            if not start_date_time:
-                start_date_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-            
-            get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.date_modified > start_date_time)
+        if start_datetime:
+            get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.date_modified > start_datetime)
 
-        if self.source:
+        if record_uuid:
+            get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.uuid == record_uuid)
+
+        if source:
             get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.source == self.source)
 
         while unfrbrized_record := get_unfrbrized_records_query.first():

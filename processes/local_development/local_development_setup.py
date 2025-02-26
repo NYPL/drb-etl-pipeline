@@ -24,8 +24,12 @@ class LocalDevelopmentSetupProcess(CoreProcess):
 
             self.generateEngine()
             self.createSession()
-
-            self.initializeDatabase()
+            
+            try:
+                self.initializeDatabase()
+            except Exception as e:
+                logger.error(e)
+                raise e
 
             self.elastic_search_manager.createElasticConnection()
             self.wait_for_elastic_search()
@@ -66,24 +70,20 @@ class LocalDevelopmentSetupProcess(CoreProcess):
             raise e
 
     def create_database_user(self, db_connection):
+        postgres_user = os.environ.get('POSTGRES_USER')
+        postgres_pswd = os.environ.get('POSTGRES_PSWD')
+        database = os.environ.get('POSTGRES_NAME')
+
         try:
-            db_connection.execute(
-                sa.text(
-                    f"CREATE USER {os.environ['POSTGRES_USER']} "
-                    f"WITH PASSWORD '{os.environ['POSTGRES_PSWD']}'",
-                ),
-            )
-            db_connection.execute(
-                sa.text(
-                    f"GRANT ALL PRIVILEGES ON DATABASE {os.environ['POSTGRES_NAME']} "
-                    f"TO {os.environ['POSTGRES_USER']}",
-                ),
-            )
+            db_connection.execute(sa.text(f'CREATE USER {postgres_user} WITH PASSWORD {postgres_pswd}'))            
         except ProgrammingError:
             pass
         except Exception as e:
             logger.exception('Failed to create database user')
             raise e
+        
+        db_connection.execute(sa.text(f'GRANT ALL ON DATABASE {database} TO {postgres_user}'))
+        db_connection.execute(sa.text(f'ALTER DATABASE {database} OWNER TO {postgres_user}'))
         
     def wait_for_elastic_search(self):
         increment = 5
