@@ -70,7 +70,9 @@ class GutenbergProcess():
 
         manager = GutenbergManager(order_direction, order_by, start_timestamp, page_size)
 
-        while True:
+        has_next_page = True
+
+        while has_next_page:
             has_next_page = manager.fetchGithubRepoBatch()
 
             current_position += page_size
@@ -81,7 +83,7 @@ class GutenbergProcess():
             self.process_gutenberg_files(manager.dataFiles)
             manager.resetBatch()
 
-            if not has_next_page or current_position >= self.limit: 
+            if current_position >= self.limit: 
                 break
 
     def process_gutenberg_files(self, date_files: tuple):
