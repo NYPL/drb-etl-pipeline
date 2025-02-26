@@ -17,7 +17,6 @@ class OCLCCatalogManager:
     LIMIT = 50
     MAX_NUMBER_OF_RECORDS = 100
     BEST_MATCH = 'bestMatch'
-    OK_STATUS_CODES = [200, 206]
 
     def query_catalog(self, oclc_no):
         catalog_query = self.METADATA_BIB_URL.format(oclc_no)
@@ -101,11 +100,9 @@ class OCLCCatalogManager:
                 }
             )
 
-            status_code = other_editions_response.status_code
-
-            if other_editions_response.status_code not in self.OK_STATUS_CODES:
+            if not other_editions_response.ok:
                 logger.warning(
-                    f'OCLC other editions request for OCLC number {oclc_number} failed with status: {status_code} '
+                    f'OCLC other editions request for OCLC number {oclc_number} failed with status: {other_editions_response.status_code} '
                     f'due to: {self._get_error_detail(other_editions_response)}'
                 )
 
@@ -166,11 +163,9 @@ class OCLCCatalogManager:
                 }
             )
 
-            status_code = bibs_response.status_code
-
-            if status_code not in self.OK_STATUS_CODES:
+            if not bibs_response.ok:
                 logger.warning(
-                    f'OCLC search bibs request for query {query} failed with status: {status_code} '
+                    f'OCLC search bibs request for query {query} failed with status: {bibs_response.status_code} '
                     f'due to: {self._get_error_detail(bibs_response)}'
                 )
                 
