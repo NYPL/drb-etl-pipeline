@@ -9,7 +9,7 @@ from managers import DBManager, GutenbergManager, RabbitMQManager
 from mappings.gutenberg import GutenbergMapping
 from model import get_file_message
 from logger import create_log
-from .record_buffer import RecordBuffer
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 

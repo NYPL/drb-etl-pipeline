@@ -4,7 +4,7 @@ from logger import create_log
 from mappings.doab import DOABMapping
 from managers import DBManager, DOABLinkManager, S3Manager, RabbitMQManager
 from model import get_file_message
-from .record_buffer import RecordBuffer
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 
