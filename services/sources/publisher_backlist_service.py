@@ -158,36 +158,37 @@ class PublisherBacklistService(SourceService):
         for record in records:
             try:
                 record_metadata = record.get('fields')
-                try:
-                    file_id = f'{self.drive_service.id_from_url(record_metadata.get("DRB_File Location"))}'
-                except Exception:
-                    logger.error(f'Could not extract a Drive identifier from {record_metadata.get("DRB_Record ID")}')
-                    continue
-                file_name = self.drive_service.get_file_metadata(file_id).get('name')
-                file = self.drive_service.get_drive_file(file_id)
+                # try:
+                #     file_id = f'{self.drive_service.id_from_url(record_metadata.get("DRB_File Location"))}'
+                # except Exception:
+                #     logger.error(f'Could not extract a Drive identifier from {record_metadata.get("DRB_Record ID")}')
+                #     continue
+                # file_name = self.drive_service.get_file_metadata(file_id).get('name')
+                # file = self.drive_service.get_drive_file(file_id)
                 
-                if not file:
-                    logger.error(f'Failed to retrieve file for {record_metadata.get("DRB_Record ID")} from Google Drive')
-                    continue
+                # if not file:
+                #     logger.error(f'Failed to retrieve file for {record_metadata.get("DRB_Record ID")} from Google Drive')
+                #     continue
 
-                record_permissions = self.parse_permissions(record_metadata.get('Access type in DRB (from Access types)')[0])
-                bucket = self.file_bucket if not record_permissions['requires_login'] else self.limited_file_bucket
-                s3_path = f'{self.title_prefix}/{record_metadata[SOURCE_FIELD][0]}/{file_name}'
-                s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
+                # record_permissions = self.parse_permissions(record_metadata.get('Access type in DRB (from Access types)')[0])
+                # bucket = self.file_bucket if not record_permissions['requires_login'] else self.limited_file_bucket
+                # s3_path = f'{self.title_prefix}/{record_metadata[SOURCE_FIELD][0]}/{file_name}'
+                # s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
                 
-                if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
-                    logger.error(f'Failed to upload file for {record_metadata.get("DRB_Record ID")} to S3')
-                    continue
+                # if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
+                #     logger.error(f'Failed to upload file for {record_metadata.get("DRB_Record ID")} to S3')
+                #     continue
 
-                s3_url = f'https://{bucket}.s3.amazonaws.com/{s3_path}'
+                # s3_url = f'https://{bucket}.s3.amazonaws.com/{s3_path}'
                 
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
                 
-                self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
-                self.store_pdf_manifest(publisher_backlist_record.record, record_permissions['requires_login'])
+                # self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
+                # self.store_pdf_manifest(publisher_backlist_record.record, record_permissions['requires_login'])
                 
                 mapped_records.append(publisher_backlist_record)
+                return mapped_records
             except Exception:
                 logger.exception(f'Failed to process Publisher Backlist record: {record_metadata}')
         
@@ -203,8 +204,8 @@ class PublisherBacklistService(SourceService):
         ready_to_ingest_filter = urllib.parse.quote("{DRB_Ready to ingest} = TRUE()")
 
         if full_import:
-            return f'&filterByFormula=AND({ready_to_ingest_filter},{is_not_deleted_filter})'
-        
+            #return f'&filterByFormula=AND({ready_to_ingest_filter},{is_not_deleted_filter})'
+            return f"&filterByFormula=AND(%7BProject%7D%20%3D%20%22SCH%20Collection%2FHathi%20files%22,%20%7BDRB%20Rights%20Classification%7D%20!%3D%20'in%20copyright')"
         if not start_timestamp:
             start_timestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
         
@@ -224,9 +225,13 @@ class PublisherBacklistService(SourceService):
         filter_by_formula = self.build_filter_by_formula_parameter(deleted=deleted, full_import=full_import, start_timestamp=start_timestamp)
         url = f'{BASE_URL}&pageSize={limit}{filter_by_formula}'
         headers = {"Authorization": f"Bearer {self.airtable_auth_token}"}
+        print(self.airtable_auth_token)
         publisher_backlist_records = []
 
+        print(url)
+
         records_response = requests.get(url, headers=headers)
+        print(records_response.status_code)
         records_response_json = records_response.json()
 
         publisher_backlist_records.extend(records_response_json.get('records', []))

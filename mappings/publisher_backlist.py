@@ -15,6 +15,7 @@ class PublisherBacklistMapping(JSONMapping):
                 ('ISBN', '{0}|isbn'),
                 ('OCLC', '{0}|oclc')
             ],
+            'abstract': ('Content Provider', 'Book digitized by library {0}'),
             'rights': ('DRB Rights Classification', '{0}||||'),
             'contributors': [('Contributors', '{0}|||contributor')],
             'subjects': ('Subject 1', '{0}'),
