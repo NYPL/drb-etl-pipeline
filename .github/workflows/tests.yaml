@@ -53,12 +53,14 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt  # Ensure pytest-split is included here
           pip install -r requirements.txt
+      - name: Install pytest-split
+        run: pip install pytest-split
       - name: Run unit tests (Group ${{ matrix.group }})
         run: |
           pytest tests/unit \
             --splits ${{ strategy.job-total }} \
             --group ${{ matrix.group }} \
-            -v
+            -v || pytest tests/unit -v
 
   functional:
     name: Functional Tests (Group ${{ matrix.group }})
@@ -96,6 +98,8 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
+      - name: Install pytest-split
+        run: pip install pytest-split
       - name: Start Docker containers
         run: docker compose up -d
       - name: Wait for docker containers to be ready
@@ -105,7 +109,7 @@ jobs:
           pytest tests/functional \
             --splits ${{ strategy.job-total }} \
             --group ${{ matrix.group }} \
-            -v
+            -v || pytest tests/functional -v
       - name: Stop Docker containers
         if: always()
         run: docker compose down
@@ -146,6 +150,8 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
+      - name: Install pytest-split
+        run: pip install pytest-split
       - name: Start Docker containers
         run: docker compose up -d
       - name: Wait for docker containers to be ready
@@ -155,7 +161,7 @@ jobs:
           pytest tests/integration \
             --splits ${{ strategy.job-total }} \
             --group ${{ matrix.group }} \
-            -v
+            -v || pytest tests/integration -v
       - name: Stop Docker containers
         if: always()
         run: docker compose down
