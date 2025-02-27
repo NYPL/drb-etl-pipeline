@@ -7,6 +7,7 @@ from managers import DBManager, S3Manager, WebpubManifest
 from model import Record, Part
 from logger import create_log
 from .record_buffer import RecordBuffer
+from digital_assets import get_stored_file_url
 
 logger = create_log(__name__)
 
@@ -54,15 +55,15 @@ class ChicagoISACProcess():
             record_id = record.identifiers[0].split('|')[0]
 
             manifest_path = f'manifests/{pdf_part.source}/{record_id}.json'
-            manifest_url = f'https://{self.s3_bucket}.s3.amazonaws.com/{manifest_path}'
+            manifest_uri = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
 
-            manifest_json = self.generate_manifest(record, pdf_part.url, manifest_url)
+            manifest_json = self.generate_manifest(record, pdf_part.url, manifest_uri)
 
             self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3_bucket)
 
             manifest_part = Part(
                 index=pdf_part.index, 
-                url=manifest_url, 
+                url=manifest_uri, 
                 source=pdf_part.source, 
                 file_type='application/webpub+json', 
                 flags=pdf_part.flags

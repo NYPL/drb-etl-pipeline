@@ -126,18 +126,3 @@ class TestLOCProcess:
         testProcess.addEPUBManifest(mockRecord, '1', 'loc', '{}', 'application/test', 'epubs/loc/1.epub')
 
         assert mockRecord.has_part[0] == '1|https://test_aws_bucket.s3.amazonaws.com/epubs/loc/1.epub|loc|application/test|{}'
-
-    def test_generateManifest(self, mocker):
-        mockManifest = mocker.MagicMock(links=[])
-        mockManifest.toJson.return_value = 'testJSON'
-        mockManifestConstructor = mocker.patch('processes.ingest.loc.WebpubManifest')
-        mockManifestConstructor.return_value = mockManifest
-
-        mockRecord = mocker.MagicMock(title='testTitle')
-        testManifest = LOCProcess.generateManifest(mockRecord, 'sourceURI', 'manifestURI')
-
-        assert testManifest == 'testJSON'
-        assert mockManifest.links[0] == {'rel': 'self', 'href': 'manifestURI', 'type': 'application/webpub+json'}
-
-        mockManifest.addMetadata.assert_called_once_with(mockRecord)
-        mockManifest.addChapter.assert_called_once_with('sourceURI', 'testTitle')

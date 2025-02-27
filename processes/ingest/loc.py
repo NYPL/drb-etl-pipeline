@@ -9,6 +9,7 @@ from managers import RabbitMQManager, S3Manager, WebpubManifest
 from model import get_file_message
 from logger import create_log
 from datetime import datetime, timedelta, timezone
+from digital_assets import get_stored_file_url
 
 logger = create_log(__name__)
 
@@ -215,28 +216,26 @@ class LOCProcess(CoreProcess):
 
     def storePDFManifest(self, record):
         for link in record.has_part:
-            itemNo, uri, source, mediaType, flags = link.split('|')
+            item_no, uri, source, media_type, flags = link.split('|')
 
-            if mediaType == 'application/pdf':
-                recordID = record.identifiers[0].split('|')[0]
+            if media_type == 'application/pdf':
+                record_id = record.identifiers[0].split('|')[0]
 
-                manifestPath = 'manifests/{}/{}.json'.format(source, recordID)
-                manifestURI = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3Bucket, manifestPath
-                )
+                manifest_path = 'manifests/{}/{}.json'.format(source, record_id)
+                manifest_uri = get_stored_file_url(storage_name=self.s3Bucket, file_path=manifest_path)
 
-                manifestJSON = self.s3_manager.generate_manifest(record, uri, manifestURI)
+                manifest_json = self.s3_manager.generate_manifest(record, uri, manifest_uri)
 
-                self.s3_manager.create_manifest_in_s3(manifestPath, manifestJSON, self.s3Bucket)
+                self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3Bucket)
 
-                linkString = '|'.join([
-                    itemNo,
-                    manifestURI,
+                link_string = '|'.join([
+                    item_no,
+                    manifest_uri,
                     source,
                     'application/webpub+json',
                     '{"catalog": false, "download": false, "reader": true, "embed": false}'
                 ])
-                record.has_part.insert(0, linkString)
+                record.has_part.insert(0, link_string)
                 break
 
     def storeEpubsInS3(self, record):
@@ -256,27 +255,11 @@ class LOCProcess(CoreProcess):
                 break
 
     def addEPUBManifest(self, record, itemNo, source, flagStr, mediaType, location):
-            s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, location)
+            s3_url = get_stored_file_url(storage_name=self.s3Bucket, file_path=location)
 
-            linkString = '|'.join([itemNo, s3URL, source, mediaType, flagStr])
+            link_string = '|'.join([itemNo, s3_url, source, mediaType, flagStr])
 
-            record.has_part.insert(0, linkString)
-
-    @staticmethod
-    def generateManifest(record, sourceURI, manifestURI):
-        manifest = WebpubManifest(sourceURI, 'application/pdf')
-
-        manifest.addMetadata(record)
-        
-        manifest.addChapter(sourceURI, record.title)
-
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifestURI,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()
+            record.has_part.insert(0, link_string)
     
     @staticmethod
     def fetchPageJSON(url):

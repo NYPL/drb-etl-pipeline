@@ -10,6 +10,7 @@ from mappings.met import METMapping
 from managers import RabbitMQManager, S3Manager, WebpubManifest
 from model import get_file_message
 from logger import create_log
+from digital_assets import get_stored_file_url
 
 logger = create_log(__name__)
 
@@ -162,23 +163,21 @@ class METProcess(CoreProcess):
 
     def storePDFManifest(self, record):
         for link in record.has_part:
-            itemNo, uri, source, mediaType, flags = link.split('|')
+            item_no, uri, source, media_type, flags = link.split('|')
 
-            if mediaType == 'application/pdf':
-                recordID = record.identifiers[0].split('|')[0]
+            if media_type == 'application/pdf':
+                record_id = record.identifiers[0].split('|')[0]
 
-                manifestPath = 'manifests/{}/{}.json'.format(source, recordID)
-                manifestURI = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3Bucket, manifestPath
-                )
+                manifest_path = 'manifests/{}/{}.json'.format(source, record_id)     
+                manifest_uri = get_stored_file_url(storage_name=self.s3Bucket, file_path=manifest_path)
 
-                manifestJSON = self.s3_manager.generate_manifest(record, uri, manifestURI)
+                manifest_json = self.s3_manager.generate_manifest(record, uri, manifest_uri)
 
-                self.s3_manager.create_manifest_in_s3(manifestPath, manifestJSON, self.s3Bucket)
+                self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3Bucket)
 
                 linkString = '|'.join([
-                    itemNo,
-                    manifestURI,
+                    item_no,
+                    manifest_uri,
                     source,
                     'application/webpub+json',
                     flags
@@ -186,22 +185,6 @@ class METProcess(CoreProcess):
                 record.has_part.insert(0, linkString)
 
                 break
-
-    @staticmethod
-    def generateManifest(record, sourceURI, manifestURI):
-        manifest = WebpubManifest(sourceURI, 'application/pdf')
-
-        manifest.addMetadata(record)
-
-        manifest.addChapter(sourceURI, record.title)
-
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifestURI,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()
 
     @staticmethod
     def queryMetAPI(query, method='GET'):
