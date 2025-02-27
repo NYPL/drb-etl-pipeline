@@ -3,7 +3,7 @@ services:
     container_name: drb_local_db
     volumes:
       - drb_local_dbdata:/var/lib/postgresql/data
-    image: postgres:13.8
+    image: postgres:16.3
     ports:
       - 5432:5432
     environment:
