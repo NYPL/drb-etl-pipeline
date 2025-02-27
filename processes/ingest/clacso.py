@@ -8,7 +8,7 @@ from logger import create_log
 from managers import S3Manager, WebpubManifest, DBManager
 from mappings.clacso import CLACSOMapping
 from model import Part, FileFlags
-from .record_buffer import RecordBuffer
+from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
 

@@ -2,7 +2,7 @@ from datetime import datetime, timezone, timedelta
 
 from logger import create_log
 from managers import DBManager
-from .record_buffer import RecordBuffer
+from ..record_buffer import RecordBuffer
 from services import NYPLBibService
 
 logger = create_log(__name__)

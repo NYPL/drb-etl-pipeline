@@ -19,6 +19,8 @@ class TestOCLCCatalogProcess:
         class TestCatalogProcess(CatalogProcess):
             def __init__(self):
                 self.constants = {}
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock()
                 self.oclc_catalog_manager = mocker.MagicMock()
                 self.records = []
                 self.rabbitmq_manager = mocker.MagicMock()
@@ -27,14 +29,11 @@ class TestOCLCCatalogProcess:
     
     def test_run_process(self, test_instance, mocker):
         mock_process_catalog_messages = mocker.patch.object(CatalogProcess, 'process_catalog_messages')
-        mock_save = mocker.patch.object(CatalogProcess, 'saveRecords')
-        mock_commit = mocker.patch.object(CatalogProcess, 'commitChanges')
 
         test_instance.runProcess()
 
         mock_process_catalog_messages.assert_called_once
-        mock_save.assert_called_once
-        mock_commit.assert_called_once
+        test_instance.record_buffer.flush.assert_called_once()
 
     def test_process_catalog_messages(self, test_instance, mocker):
         mock_sleep = mocker.patch('processes.frbr.catalog.sleep')
@@ -87,7 +86,6 @@ class TestOCLCCatalogProcess:
         mock_catalog_mapping = mocker.patch('processes.frbr.catalog.CatalogMapping')
         mock_catalog_mapping.return_value = mock_catalog_record
 
-        mock_add_to_update_list = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
 
         test_instance.parse_catalog_record('rawXML', 1, 1)
 
@@ -97,7 +95,7 @@ class TestOCLCCatalogProcess:
         )
         mock_catalog_record.applyMapping.assert_called_once()
         assert mock_catalog_record.record.identifiers[0] == '1|owi'
-        mock_add_to_update_list.assert_called_once_with(mock_catalog_record)
+        test_instance.record_buffer.add.assert_called_once_with(mock_catalog_record.record)
 
     def test_parse_catalog_record_mapping_failure(self, test_instance, mocker):
         mock_etree_from_string = mocker.patch.object(etree, 'fromstring')
@@ -108,8 +106,6 @@ class TestOCLCCatalogProcess:
         mock_catalog_mapping = mocker.patch('processes.frbr.catalog.CatalogMapping')
         mock_catalog_mapping.return_value = mock_catalog_record
 
-        mock_add_to_update_list = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
-
         test_instance.parse_catalog_record('rawXML', 1, 1)
 
         mock_etree_from_string.assert_called_once_with(b'rawXML')
@@ -117,17 +113,15 @@ class TestOCLCCatalogProcess:
             'testMARC', {'oclc': 'http://www.loc.gov/MARC21/slim'}, {}
         )
         mock_catalog_record.applyMapping.assert_called_once()
-        mock_add_to_update_list.assert_not_called()
+        test_instance.record_buffer.add.assert_not_called()
 
     def test_parse_catalog_record_parsing_failure(self, test_instance, mocker):
         mock_catalog_record = mocker.MagicMock()
         mock_catalog_mapping = mocker.patch('processes.frbr.catalog.CatalogMapping')
         mock_catalog_mapping.return_value = mock_catalog_record
 
-        mock_add_to_update_list = mocker.patch.object(CatalogProcess, 'addDCDWToUpdateList')
-
         test_instance.parse_catalog_record('rawXML', 1, 1)
 
         mock_catalog_mapping.assert_not_called()
         mock_catalog_record.applyMapping.assert_not_called()
-        mock_add_to_update_list.assert_not_called()
+        test_instance.record_buffer.add.assert_not_called()
