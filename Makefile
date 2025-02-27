@@ -10,10 +10,10 @@ unit:
 	python -m pytest --cov-report term-missing --cov=. tests/unit
 
 functional:
-	python -m pytest tests/functional --env=$(ENV)
+	python -m pytest tests/functional --env=$(ENV) -n auto
 
 integration: 
-	python -m pytest tests/integration --env=$(ENV)
+	python -m pytest tests/integration --env=$(ENV) -n auto
 
 up:
 	$(compose_command) up -d
