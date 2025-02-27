@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta, timezone
 from processes import ClassifyProcess, CatalogProcess
 from managers import RedisManager
 from model import Record
@@ -10,12 +9,7 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
     redis_manager.createRedisClient()
     redis_manager.clear_cache()
 
-    classify_process = ClassifyProcess(
-        'custom',
-        None,
-        datetime.now(timezone.utc) - timedelta(minutes=5),
-        None
-    )
+    classify_process = ClassifyProcess(None, None, None, unfrbrized_record_uuid)
 
     classify_process.runProcess()
 
