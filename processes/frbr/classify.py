@@ -138,7 +138,7 @@ class ClassifyProcess(CoreProcess):
 
             oclc_record = OCLCBibMapping(
                 oclc_bib=related_oclc_bib,
-                related_oclc_numbers=related_oclc_numbers
+                related_oclc_numbers=list(set(related_oclc_numbers))
             )
 
             self.addDCDWToUpdateList(oclc_record)
