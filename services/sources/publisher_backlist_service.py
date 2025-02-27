@@ -15,6 +15,7 @@ from services.ssm_service import SSMService
 from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
+from digital_assets import get_stored_file_url
 
 logger = create_log(__name__)
 
@@ -259,11 +260,11 @@ class PublisherBacklistService(SourceService):
 
             if media_type == 'application/pdf':
                 manifest_path = f'manifests/publisher_backlist/{source}/{record.source_id}.json'
-                manifest_url = f'https://{self.file_bucket}.s3.amazonaws.com/{manifest_path}'
+                manifest_uri = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
 
-                manifest_json = self.generate_manifest(record, url, manifest_url)
+                manifest_json = self.s3_manager.generate_manifest(record, url, manifest_uri)
 
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.file_bucket)
+                self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.file_bucket)
 
                 manifest_flags = {
                     'catalog': False,
@@ -273,25 +274,9 @@ class PublisherBacklistService(SourceService):
                     **({'fulfill_limited_access': False} if requires_login else {})
                 }
 
-                record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', json.dumps(manifest_flags)]))
+                record.has_part.insert(0, '|'.join([item_no, manifest_uri, source, 'application/webpub+json', json.dumps(manifest_flags)]))
                 
                 break
-
-    @staticmethod
-    def generate_manifest(record, source_url, manifest_url):
-        manifest = WebpubManifest(source_url, 'application/pdf')
-
-        manifest.addMetadata(record)
-        
-        manifest.addChapter(source_url, record.title)
-
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifest_url,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()
 
     @staticmethod
     def parse_permissions(permissions: str) -> dict:

@@ -142,7 +142,7 @@ class TestMUSEManager:
 
     def test_addReadableLinks_manifest(self, testManager, mocker):
         mockConstruct = mocker.patch.object(MUSEManager, 'constructWebpubManifest')
-        mockS3 = mocker.patch.object(MUSEManager, 'createManifestInS3')
+        mockS3 = mocker.patch.object(MUSEManager, 'create_manifest_in_s3')
         mockS3.return_value = 'webpubReadURL'
 
         testManager.pdfWebpubManifest = 'testManifestURL'
@@ -217,14 +217,14 @@ class TestMUSEManager:
         assert testManager.constructS3Link('testLocation')\
             == 'https://test_aws_bucket.s3.amazonaws.com/testLocation'
 
-    def test_createManifestInS3(self, testManager, mocker):
+    def test_create_manifest_in_s3(self, testManager, mocker):
         mockConstruct = mocker.patch.object(MUSEManager, 'constructS3Link')
         mockConstruct.return_value = 'testS3URL'
 
         testManager.pdfWebpubManifest = mocker.MagicMock()
         testManager.pdfWebpubManifest.links = []
 
-        testURL = testManager.createManifestInS3('testPath')
+        testURL = testManager.create_manifest_in_s3('testPath')
 
         assert testURL == 'testS3URL'
         assert testManager.pdfWebpubManifest.links[0]\

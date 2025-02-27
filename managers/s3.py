@@ -6,6 +6,7 @@ from io import BytesIO
 import mimetypes
 import os
 from zipfile import ZipFile
+from managers import WebpubManifest
 
 from logger import create_log
 
@@ -37,10 +38,25 @@ class S3Manager:
         raise S3Error('Unable to create bucket in s3')
 
 
-    def createManifestInS3(self, manifestPath, manifestJSON, s3_bucket: str):
+    def create_manifest_in_s3(self, manifestPath, manifestJSON, s3_bucket: str):
         self.putObjectInBucket(
             manifestJSON.encode('utf-8'), manifestPath, s3_bucket
         )
+
+    def generate_manifest(self, record, source_url, manifest_url):
+        manifest = WebpubManifest(source_url, 'application/pdf')
+
+        manifest.addMetadata(record)
+        
+        manifest.addChapter(source_url, record.title)
+
+        manifest.links.append({
+            'rel': 'self',
+            'href': manifest_url,
+            'type': 'application/webpub+json'
+        })
+
+        return manifest.toJson()
 
     def putObjectInBucket(
         self, obj, objKey, bucket, bucketPermissions='public-read'
