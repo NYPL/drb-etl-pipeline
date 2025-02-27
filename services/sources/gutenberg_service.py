@@ -54,8 +54,6 @@ class GutenbergService(SourceService):
                 cursor=cursor
             )
 
-            print(has_next_page, cursor)
-
             current_position += page_size
             if current_position <= offset: 
                 continue
