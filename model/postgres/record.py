@@ -65,6 +65,7 @@ class FileFlags:
     reader: bool = False
     embed: bool = False
     download: bool = False
+    cover: bool = False
 
 
 class Record(Base, Core):

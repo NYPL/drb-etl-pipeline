@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import os
 import pytest
 
@@ -20,6 +20,8 @@ class TestOCLCClassifyProcess:
             def __init__(self, *args):
                 self.records = set()
                 self.ingest_limit = None
+                self.ingestPeriod = None
+                self.singleRecord = None
                 self.source = None
                 self.records = []
                 self.catalog_queue = os.environ['OCLC_QUEUE']
@@ -60,16 +62,16 @@ class TestOCLCClassifyProcess:
         test_instance.process = 'complete'
         test_instance.runProcess()
 
-        run_process_mocks['classify_records'].assert_called_once_with(full=True)
+        run_process_mocks['classify_records'].assert_called_once_with(start_datetime=None, record_uuid=None, source=None)
         for _, mocked_method in run_process_mocks.items():
             mocked_method.assert_called_once()
 
     def test_runProcess_custom(self, test_instance, run_process_mocks):
         test_instance.process = 'custom'
-        test_instance.ingestPeriod = 'testDate'
+        test_instance.ingestPeriod = '2022-01-01T00:00:00'
         test_instance.runProcess()
 
-        run_process_mocks['classify_records'].assert_called_once_with(start_date_time='testDate')
+        run_process_mocks['classify_records'].assert_called_once_with(start_datetime=datetime.strptime(test_instance.ingestPeriod, '%Y-%m-%dT%H:%M:%S'), record_uuid=None, source=None)
         
         for _, mocked_method in run_process_mocks.items():
             mocked_method.assert_called_once()
@@ -97,7 +99,6 @@ class TestOCLCClassifyProcess:
         mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
         test_instance.session = mock_session
-        mock_start_time = mocker.spy(datetime, 'datetime')
 
         mock_session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
@@ -107,10 +108,8 @@ class TestOCLCClassifyProcess:
 
         test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 100
 
-        test_instance.classify_records(start_date_time='testDate')
+        test_instance.classify_records(start_datetime=datetime.now())
 
-        mock_start_time.now.assert_not_called()
-        mock_start_time.timedelta.assert_not_called()
         mock_frbrize.assert_has_calls([mocker.call(record) for record in mock_records])
 
     def test_classify_records_full(self, test_instance, mocker):
@@ -118,7 +117,6 @@ class TestOCLCClassifyProcess:
         mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
         test_instance.session = mock_session
-        mock_start_time = mocker.spy(datetime, 'datetime')
 
         mock_session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
@@ -127,10 +125,8 @@ class TestOCLCClassifyProcess:
 
         test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 50 + [True]
 
-        test_instance.classify_records(full=True)
+        test_instance.classify_records()
 
-        mock_start_time.now.assert_not_called()
-        mock_start_time.timedelta.assert_not_called()
         mock_frbrize_record.assert_has_calls([mocker.call(record) for record in mock_records[:50]])
 
     def test_classify_records_full_batch(self, test_instance, mocker):
@@ -138,7 +134,6 @@ class TestOCLCClassifyProcess:
         mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
         test_instance.session = mock_session
-        mock_start_time = mocker.spy(datetime, 'datetime')
 
         mock_session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
@@ -148,10 +143,8 @@ class TestOCLCClassifyProcess:
         test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 100
 
         test_instance.ingest_limit = 100
-        test_instance.classify_records(full=True)
+        test_instance.classify_records()
 
-        mock_start_time.now.assert_not_called()
-        mock_start_time.timedelta.assert_not_called()
         mock_frbrize_record.assert_has_calls([mocker.call(record) for record in mock_records])
 
     def test_frbrize_record_success_valid_author(self, test_instance, test_record, mocker):

@@ -13,7 +13,7 @@ logger = create_log(__name__)
 class OCLCCatalogManager:
     METADATA_BIB_URL = 'https://metadata.api.oclc.org/worldcat/manage/bibs/{}'
     OCLC_SEARCH_URL = 'https://americas.discovery.api.oclc.org/worldcat/search/v2/'
-    ITEM_TYPES = ['archv', 'audiobook', 'book', 'encyc', 'jrnl']
+    ITEM_SUB_TYPE = ['book-digital']
     LIMIT = 50
     MAX_NUMBER_OF_RECORDS = 100
     BEST_MATCH = 'bestMatch'
@@ -96,15 +96,13 @@ class OCLCCatalogManager:
                     'offset': offset or None,
                     'limit': self.LIMIT,
                     'orderBy': self.BEST_MATCH,
-                    'itemTypes': self.ITEM_TYPES
+                    'itemSubType': self.ITEM_SUB_TYPE
                 }
             )
 
-            status_code = other_editions_response.status_code
-
-            if other_editions_response.status_code != 200:
+            if not other_editions_response.ok:
                 logger.warning(
-                    f'OCLC other editions request for OCLC number {oclc_number} failed with status: {status_code} '
+                    f'OCLC other editions request for OCLC number {oclc_number} failed with status: {other_editions_response.status_code} '
                     f'due to: {self._get_error_detail(other_editions_response)}'
                 )
 
@@ -161,15 +159,13 @@ class OCLCCatalogManager:
                     'offset': offset or None,
                     'limit': self.LIMIT,
                     'orderBy': self.BEST_MATCH,
-                    'itemType': self.ITEM_TYPES
+                    'itemSubType': self.ITEM_SUB_TYPE
                 }
             )
 
-            status_code = bibs_response.status_code
-
-            if status_code != 200:
+            if not bibs_response.ok:
                 logger.warning(
-                    f'OCLC search bibs request for query {query} failed with status: {status_code} '
+                    f'OCLC search bibs request for query {query} failed with status: {bibs_response.status_code} '
                     f'due to: {self._get_error_detail(bibs_response)}'
                 )
                 
