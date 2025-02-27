@@ -23,11 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Start Docker containers
-        run: docker-compose -f docker-compose.yml up -d
+        run: docker compose up -d
       - name: Wait for services to be ready
         run: sleep 90
-      - name: Verify running containers
-        run: docker ps
 
   unit-tests:
     name: Unit Tests (Group ${{ matrix.group }})
