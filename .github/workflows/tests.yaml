@@ -54,9 +54,9 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
-          pip install pytest-parallel
+          pip install pytest-xdist
       - name: Run Unit Tests
-        run: pytest tests/unit --workers 4 -v
+        run: pytest tests/unit -n 4 -v
 
   functional-tests:
     name: Functional Tests
@@ -86,9 +86,9 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
-          pip install pytest-parallel
+          pip install pytest-xdist
       - name: Run Functional Tests
-        run: pytest tests/functional --workers 2 -v
+        run: pytest tests/functional -n 2 -v
 
   integration-tests:
     name: Integration Tests
@@ -118,9 +118,9 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
-          pip install pytest-parallel
+          pip install pytest-xdist
       - name: Run Integration Tests
-        run: pytest tests/integration --workers 2 -v
+        run: pytest tests/integration -n 2 -v
 
   docker-cleanup:
     name: Stop Docker Containers
