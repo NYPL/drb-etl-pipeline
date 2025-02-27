@@ -17,12 +17,25 @@ on:
       - "Makefile"
 
 jobs:
-  unit:
+  docker-setup:
+    name: Start Docker Containers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start Docker containers
+        run: docker-compose -f docker-compose.yml up -d
+      - name: Wait for services to be ready
+        run: sleep 90
+      - name: Verify running containers
+        run: docker ps
+
+  unit-tests:
     name: Unit Tests (Group ${{ matrix.group }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        groups: [1, 2]
+        group: [1, 2]
     env:
       IS_CI: "true"
       AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -42,32 +55,28 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
-      - name: Install GCC 12
-        run: |
-          sudo apt update
-          sudo apt install -y gcc-12 g++-12
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 60
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 60
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel
-          pip install -r dev-requirements.txt  # Ensure pytest-split is included here
+          pip install -r dev-requirements.txt
           pip install -r requirements.txt
       - name: Install pytest-split
         run: pip install pytest-split
-      - name: Run unit tests (Group ${{ matrix.group }})
+      - name: Run Unit Tests (Group ${{ matrix.group }})
         run: |
           pytest tests/unit \
             --splits ${{ strategy.job-total }} \
             --group ${{ matrix.group }} \
             -v || pytest tests/unit -v
 
-  functional:
+  functional-tests:
     name: Functional Tests (Group ${{ matrix.group }})
+    needs: docker-setup
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        groups: [1, 2]
+        group: [1, 2]
     env:
       IS_CI: "true"
       AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -87,12 +96,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
-      - name: Install GCC 12
-        run: |
-          sudo apt update
-          sudo apt install -y gcc-12 g++-12
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 60
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 60
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel
@@ -100,26 +103,21 @@ jobs:
           pip install -r requirements.txt
       - name: Install pytest-split
         run: pip install pytest-split
-      - name: Start Docker containers
-        run: docker compose up -d
-      - name: Wait for docker containers to be ready
-        run: sleep 90
-      - name: Run functional tests (Group ${{ matrix.group }})
+      - name: Run Functional Tests (Group ${{ matrix.group }})
         run: |
           pytest tests/functional \
             --splits ${{ strategy.job-total }} \
             --group ${{ matrix.group }} \
             -v || pytest tests/functional -v
-      - name: Stop Docker containers
-        if: always()
-        run: docker compose down
 
-  integration:
+  integration-tests:
     name: Integration Tests (Group ${{ matrix.group }})
+    needs: docker-setup
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        groups: [1, 2]
+        group: [1, 2]
     env:
       IS_CI: "true"
       AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -139,12 +137,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
-      - name: Install GCC 12
-        run: |
-          sudo apt update
-          sudo apt install -y gcc-12 g++-12
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 60
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 60
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip wheel
@@ -152,16 +144,18 @@ jobs:
           pip install -r requirements.txt
       - name: Install pytest-split
         run: pip install pytest-split
-      - name: Start Docker containers
-        run: docker compose up -d
-      - name: Wait for docker containers to be ready
-        run: sleep 90
-      - name: Run integration tests (Group ${{ matrix.group }})
+      - name: Run Integration Tests (Group ${{ matrix.group }})
         run: |
           pytest tests/integration \
             --splits ${{ strategy.job-total }} \
             --group ${{ matrix.group }} \
             -v || pytest tests/integration -v
+
+  docker-cleanup:
+    name: Stop Docker Containers
+    needs: [functional-tests, integration-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
       - name: Stop Docker containers
-        if: always()
-        run: docker compose down
+        run: docker-compose -f docker-compose.yml down
