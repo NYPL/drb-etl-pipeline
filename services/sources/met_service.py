@@ -1,5 +1,4 @@
 from datetime import datetime
-import json
 import requests
 from typing import Generator, Optional, Union
 
@@ -60,8 +59,6 @@ class METService(SourceService):
     def _map_met_record(self, record: dict) -> Optional[METMapping]:
         try:            
             met_record = METService.query_met_api(query=self.ITEM_INFO_QUERY.format(record.get('pointer')))
-
-            print(json.dumps(met_record))
 
             return METMapping(met_record)
         except Exception:
