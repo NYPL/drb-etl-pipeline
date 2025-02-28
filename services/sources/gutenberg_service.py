@@ -93,6 +93,10 @@ class GutenbergService(SourceService):
         """.format(clauses=query_clauses)
 
         repository_response = self.query_graphql(repository_query)
+        
+        if repository_response.get('errors') is not None:
+            logger.error(f"Failed to get Gutenberg repositories due to: {repository_response.get('errors')}")
+            return ([], False, None)
 
         repositories = repository_response.get('data', {}).get('organization', {}).get('repositories', {})
         page_info = repositories.get('pageInfo', {})
@@ -136,19 +140,23 @@ class GutenbergService(SourceService):
         """.format(name=repo.get('name'), master=f'master:pg{work_id}.rdf')
 
         rdf_response = self.query_graphql(rdf_query)
+
+        if rdf_response.get('errors') is not None:
+            logger.error(f"Failed to get Gutenberg RDF file for {work_id} due to: {rdf_query.get('errors')}")
+            return (None, None)
         
         repository = rdf_response.get('data', {}).get('repository', {})
         rdf_data = repository.get('rdf', {})
         yaml_data = repository.get('yaml', {})
 
         if rdf_data is None or yaml_data is None:
-            return None
+            return (None, None)
         
         rdf_text = rdf_data.get('text') if rdf_data else None
         yaml_text = yaml_data.get('text') if yaml_data else None
 
         if rdf_text is None or yaml_data is None:
-            return None
+            return (None, None)
         
         try:
             return (self.parse_rdf(rdfText=rdf_text), self.parse_yaml(yamlText=yaml_text))
