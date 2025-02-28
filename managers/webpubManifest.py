@@ -20,7 +20,7 @@ class WebpubManifest:
     def addMetadata(self, dcdwRecord: object, conformsTo: str=WEBPUB_PDF_PROFILE) -> None:
         self.metadata['title'] = dcdwRecord.title
 
-        if len(dcdwRecord.authors) > 0:
+        if dcdwRecord.authors and len(dcdwRecord.authors) > 0:
             self.metadata['author'] = list(dcdwRecord.authors[0].split('|'))[0]
 
         isbns = list(filter(
