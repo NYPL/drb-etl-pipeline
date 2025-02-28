@@ -175,7 +175,7 @@ class KMeansManager:
             except (ValueError, AttributeError, IndexError) as e:
                 logger.warning('Unable to parse date {}'.format(d))
 
-        for datePref in ['copyright_date', 'publication_date']:
+        for datePref in ['copyright_date', 'publication_date', 'issued']:
             if datePref in pubYears.keys():
                 return pubYears[datePref]
         
