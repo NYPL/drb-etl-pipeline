@@ -64,13 +64,14 @@ class METProcess():
         logger.info(f'Ingested {self.record_buffer.ingest_count} MET records')
 
     def add_cover(self, record: Record, file_type: Optional[str]=None):
-        cover_path = self.get_cover_path(file_type, record.source_id)
+        record_id = record.source_id.split('|')[0]
+        cover_path = self.get_cover_path(file_type=file_type, record_id=record_id)
 
         if cover_path is None:
             return
 
         cover_source_url = f'{self.MET_ROOT_URL}/{cover_path}'
-        file_path = f'covers/met/{record.source_id}.{cover_source_url[-3:]}'
+        file_path = f'covers/met/{record_id}.{cover_source_url[-3:]}'
         file_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=file_path)
         file_type = 'image/jpeg' if cover_source_url[-3:] == 'jpg' else 'image/png'
 
@@ -100,10 +101,11 @@ class METProcess():
         return f'api/singleitem/image/pdf/p15324coll10/{record_id}/default.png'
 
     def store_pdf_manifest(self, record: Record):
+        record_id = record.source_id.split('|')[0]
         pdf_part = next(filter(lambda part: part.file_type == 'application/pdf', record.get_parts()), None)
 
         if pdf_part is not None:
-            manifest_path = f'manifests/{record.source}/{record.source_id}'
+            manifest_path = f'manifests/{record.source}/{record_id}'
             manifest_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
             manifest_json = self.generate_manifest(record=record, source_uri=pdf_part.url, manifest_uri=manifest_url)
 
