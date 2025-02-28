@@ -55,7 +55,7 @@ class GutenbergService(SourceService):
             )
 
             current_position += page_size
-            if current_position <= offset: 
+            if offset and current_position <= offset: 
                 continue
 
             data_files = self.get_data_files_for_respositories(respository_data=repository_data)
