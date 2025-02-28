@@ -4,6 +4,7 @@ import os
 import re
 import requests
 import yaml
+import time
 from typing import Optional, Generator
 
 from constants.get_constants import get_constants
@@ -94,10 +95,6 @@ class GutenbergService(SourceService):
 
         repository_response = self.query_graphql(repository_query)
         
-        if repository_response.get('errors') is not None:
-            logger.error(f"Failed to get Gutenberg repositories due to: {repository_response.get('errors')}")
-            return ([], False, None)
-
         repositories = repository_response.get('data', {}).get('organization', {}).get('repositories', {})
         page_info = repositories.get('pageInfo', {})
         nodes = repositories.get('nodes', [])
@@ -140,10 +137,6 @@ class GutenbergService(SourceService):
         """.format(name=repo.get('name'), master=f'master:pg{work_id}.rdf')
 
         rdf_response = self.query_graphql(rdf_query)
-
-        if rdf_response.get('errors') is not None:
-            logger.error(f"Failed to get Gutenberg RDF file for {work_id} due to: {rdf_query.get('errors')}")
-            return (None, None)
         
         repository = rdf_response.get('data', {}).get('repository', {})
         rdf_data = repository.get('rdf', {})
@@ -175,6 +168,8 @@ class GutenbergService(SourceService):
             header = { 'Authorization': f'bearer {self.github_api_key}' }
             
             graphql_response = requests.post(self.github_api_root, json={'query': query}, headers=header)
+
+            self.check_rate_limit(graphql_response=graphql_response)
             
             if graphql_response.status_code == 200:
                 return graphql_response.json()
@@ -183,6 +178,17 @@ class GutenbergService(SourceService):
         except Exception as e:
             logger.exception(f'Failed to query Gutenberg GraphQL API with query {query}')
             raise e
+        
+    def check_rate_limit(self, graphql_response):
+        if int(graphql_response.headers.get('X-RateLimit-Remaining')) == 0:
+            reset_at = int(graphql_response.headers.get('X-RateLimit-Reset'))
+            wait_duration = max(0, reset_at - int(time.time()))
+
+            if os.environ.get('ENVIRONMENT') in ['qa', 'production']:
+                logger.info(f'Waiting {wait_duration} seconds to continue Gutenberg ingest')
+                time.sleep(wait_duration)
+            else:
+                raise Exception('Exceeded GraphQL request limit')
 
     @staticmethod
     def default_ctor(loader, tag_suffix, node):
