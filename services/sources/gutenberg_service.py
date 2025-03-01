@@ -30,6 +30,9 @@ class GutenbergService(SourceService):
         self.github_api_root = 'https://api.github.com/graphql'
 
         self.constants = get_constants()
+        
+        self.requests_remaining = None
+        self.request_limit_reset = None
 
         yaml.add_multi_constructor('!', GutenbergService.default_ctor)
 
@@ -164,12 +167,15 @@ class GutenbergService(SourceService):
         return yaml.full_load(yamlText)
 
     def query_graphql(self, query):
+        if self.requests_remaining == 0:
+            self.wait_until_request_limit_reset()
+
         try:
             header = { 'Authorization': f'bearer {self.github_api_key}' }
             
             graphql_response = requests.post(self.github_api_root, json={'query': query}, headers=header)
 
-            self.check_rate_limit(graphql_response=graphql_response)
+            self.set_rate_limit_fields(graphql_response=graphql_response)
             
             if graphql_response.status_code == 200:
                 return graphql_response.json()
@@ -179,16 +185,18 @@ class GutenbergService(SourceService):
             logger.exception(f'Failed to query Gutenberg GraphQL API with query {query}')
             raise e
         
-    def check_rate_limit(self, graphql_response):
-        if int(graphql_response.headers.get('X-RateLimit-Remaining')) == 0:
-            reset_at = int(graphql_response.headers.get('X-RateLimit-Reset'))
-            wait_duration = max(0, reset_at - int(time.time()))
+    def set_rate_limit_fields(self, graphql_response):
+        self.requests_remaining = int(graphql_response.headers.get('X-RateLimit-Remaining'))
+        self.request_limit_reset = int(graphql_response.headers.get('X-RateLimit-Reset'))
 
-            if os.environ.get('ENVIRONMENT') in ['qa', 'production']:
-                logger.info(f'Waiting {wait_duration} seconds to continue Gutenberg ingest')
-                time.sleep(wait_duration)
-            else:
-                raise Exception('Exceeded GraphQL request limit')
+    def wait_until_request_limit_reset(self):
+        wait_duration = max(0, self.request_limit_reset - int(time.time()))
+
+        if os.environ.get('ENVIRONMENT') in [ 'qa', 'production']:
+            logger.info(f'Waiting {wait_duration} seconds to continue Gutenberg ingest')
+            time.sleep(wait_duration)
+        else:
+            raise Exception('Exceeded GraphQL request limit')
 
     @staticmethod
     def default_ctor(loader, tag_suffix, node):
