@@ -146,13 +146,13 @@ class GutenbergService(SourceService):
         yaml_data = repository.get('yaml', {})
 
         if rdf_data is None or yaml_data is None:
-            return (None, None)
+            return None
         
         rdf_text = rdf_data.get('text') if rdf_data else None
         yaml_text = yaml_data.get('text') if yaml_data else None
 
         if rdf_text is None or yaml_data is None:
-            return (None, None)
+            return None
         
         try:
             return (self.parse_rdf(rdfText=rdf_text), self.parse_yaml(yamlText=yaml_text))
