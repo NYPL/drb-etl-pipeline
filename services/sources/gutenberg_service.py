@@ -4,6 +4,7 @@ import os
 import re
 import requests
 import yaml
+import time
 from typing import Optional, Generator
 
 from constants.get_constants import get_constants
@@ -29,6 +30,9 @@ class GutenbergService(SourceService):
         self.github_api_root = 'https://api.github.com/graphql'
 
         self.constants = get_constants()
+        
+        self.requests_remaining = None
+        self.request_limit_reset = None
 
         yaml.add_multi_constructor('!', GutenbergService.default_ctor)
 
@@ -93,7 +97,7 @@ class GutenbergService(SourceService):
         """.format(clauses=query_clauses)
 
         repository_response = self.query_graphql(repository_query)
-
+        
         repositories = repository_response.get('data', {}).get('organization', {}).get('repositories', {})
         page_info = repositories.get('pageInfo', {})
         nodes = repositories.get('nodes', [])
@@ -142,13 +146,13 @@ class GutenbergService(SourceService):
         yaml_data = repository.get('yaml', {})
 
         if rdf_data is None or yaml_data is None:
-            return None
+            return (None, None)
         
         rdf_text = rdf_data.get('text') if rdf_data else None
         yaml_text = yaml_data.get('text') if yaml_data else None
 
         if rdf_text is None or yaml_data is None:
-            return None
+            return (None, None)
         
         try:
             return (self.parse_rdf(rdfText=rdf_text), self.parse_yaml(yamlText=yaml_text))
@@ -163,10 +167,15 @@ class GutenbergService(SourceService):
         return yaml.full_load(yamlText)
 
     def query_graphql(self, query):
+        if self.requests_remaining == 0:
+            self.wait_until_request_limit_reset()
+
         try:
             header = { 'Authorization': f'bearer {self.github_api_key}' }
             
             graphql_response = requests.post(self.github_api_root, json={'query': query}, headers=header)
+
+            self.set_rate_limit_fields(graphql_response=graphql_response)
             
             if graphql_response.status_code == 200:
                 return graphql_response.json()
@@ -175,6 +184,19 @@ class GutenbergService(SourceService):
         except Exception as e:
             logger.exception(f'Failed to query Gutenberg GraphQL API with query {query}')
             raise e
+        
+    def set_rate_limit_fields(self, graphql_response):
+        self.requests_remaining = int(graphql_response.headers.get('X-RateLimit-Remaining'))
+        self.request_limit_reset = int(graphql_response.headers.get('X-RateLimit-Reset'))
+
+    def wait_until_request_limit_reset(self):
+        wait_duration = max(0, self.request_limit_reset - int(time.time()))
+
+        if os.environ.get('ENVIRONMENT') in [ 'qa', 'production']:
+            logger.info(f'Waiting {wait_duration} seconds to continue Gutenberg ingest')
+            time.sleep(wait_duration)
+        else:
+            raise Exception('Exceeded GraphQL request limit')
 
     @staticmethod
     def default_ctor(loader, tag_suffix, node):
