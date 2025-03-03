@@ -145,26 +145,29 @@ class GutenbergService(SourceService):
         rdf_data = repository.get('rdf', {})
         yaml_data = repository.get('yaml', {})
 
-        if rdf_data is None or yaml_data is None:
+        if rdf_data is None:
             return None
         
         rdf_text = rdf_data.get('text') if rdf_data else None
         yaml_text = yaml_data.get('text') if yaml_data else None
 
-        if rdf_text is None or yaml_data is None:
+        if rdf_text is None:
             return None
         
         try:
-            return (self.parse_rdf(rdfText=rdf_text), self.parse_yaml(yamlText=yaml_text))
+            return (self.parse_rdf(rdf_text=rdf_text), self.parse_yaml(yaml_text=yaml_text))
         except (TypeError, etree.XMLSyntaxError):
             logger.error(f'Unable to load metadata files for work {work_id}')
             return None
 
-    def parse_rdf(self, rdfText):
-        return etree.fromstring(rdfText.encode('utf-8'))
+    def parse_rdf(self, rdf_text: str):
+        return etree.fromstring(rdf_text.encode('utf-8'))
 
-    def parse_yaml(self, yamlText):
-        return yaml.full_load(yamlText)
+    def parse_yaml(self, yaml_text: Optional[str]):
+        if yaml_text is None:
+            return None
+
+        return yaml.full_load(yaml_text)
 
     def query_graphql(self, query):
         if self.requests_remaining == 0:
@@ -186,13 +189,13 @@ class GutenbergService(SourceService):
             raise e
         
     def set_rate_limit_fields(self, graphql_response):
-        self.requests_remaining = int(graphql_response.headers.get('X-RateLimit-Remaining'))
-        self.request_limit_reset = int(graphql_response.headers.get('X-RateLimit-Reset'))
+        self.requests_remaining = int(graphql_response.headers.get('X-RateLimit-Remaining', 1))
+        self.request_limit_reset = int(graphql_response.headers.get('X-RateLimit-Reset', time.time() + 3600))
 
     def wait_until_request_limit_reset(self):
         wait_duration = max(0, self.request_limit_reset - int(time.time()))
 
-        if os.environ.get('ENVIRONMENT') in [ 'qa', 'production']:
+        if os.environ.get('ENVIRONMENT') in ['qa', 'production']:
             logger.info(f'Waiting {wait_duration} seconds to continue Gutenberg ingest')
             time.sleep(wait_duration)
         else:

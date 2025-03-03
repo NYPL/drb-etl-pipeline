@@ -57,7 +57,7 @@ class GutenbergProcess():
             self.store_epubs(record_mapping)
 
             try:
-                self.add_cover(record_mapping, record_mapping.yaml_file)
+                self.add_cover(record_mapping)
             except Exception:
                 logger.warning(f'Unable to store cover for {record_mapping.record.source_id}')
 
@@ -110,7 +110,12 @@ class GutenbergProcess():
 
         gutenberg_record.record.has_part = epub_parts
 
-    def add_cover(self, gutenberg_record: GutenbergMapping, yaml_file):
+    def add_cover(self, gutenberg_record: GutenbergMapping):
+        yaml_file = gutenberg_record.yaml_file
+
+        if yaml_file is None:
+            return
+
         for cover_data in yaml_file.get('covers', []):
             if cover_data.get('cover_type') == 'generated': 
                 continue
