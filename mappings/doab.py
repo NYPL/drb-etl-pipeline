@@ -165,8 +165,10 @@ class DOABMapping(BaseMapping):
 
         if not license_conditions and not datacite_rights and not dc_rights:
             return None
-
-        return license_conditions + datacite_rights + dc_rights
+        
+        rights = license_conditions + datacite_rights + dc_rights
+        
+        return rights[0]
 
     def createMapping(self):
         pass
