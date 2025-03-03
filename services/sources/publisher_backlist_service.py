@@ -186,7 +186,7 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record.applyMapping()
                 
                 self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
-                self.store_pdf_manifest(publisher_backlist_record.record, record_permissions['requires_login'])
+                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, self.record_permissions['requires_login'])
                 
                 mapped_records.append(publisher_backlist_record)
             except Exception:
@@ -253,30 +253,6 @@ class PublisherBacklistService(SourceService):
         }
 
         record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
-
-    def store_pdf_manifest(self, record: Record, requires_login: bool):
-        for link in record.has_part:
-            item_no, url, source, media_type, _ = link.split('|')
-
-            if media_type == 'application/pdf':
-                manifest_path = f'manifests/publisher_backlist/{source}/{record.source_id}.json'
-                manifest_uri = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
-
-                manifest_json = self.s3_manager.generate_manifest(record, url, manifest_uri)
-
-                self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.file_bucket)
-
-                manifest_flags = {
-                    'catalog': False,
-                    'download': False,
-                    'reader': True,
-                    'embed': False,
-                    **({'fulfill_limited_access': False} if requires_login else {})
-                }
-
-                record.has_part.insert(0, '|'.join([item_no, manifest_uri, source, 'application/webpub+json', json.dumps(manifest_flags)]))
-                
-                break
 
     @staticmethod
     def parse_permissions(permissions: str) -> dict:

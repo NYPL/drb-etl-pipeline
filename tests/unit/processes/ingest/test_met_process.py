@@ -114,7 +114,6 @@ class TestMetProcess:
     def test_processMetRecord_success(self, testProcess, mocker):
         processMocks = mocker.patch.multiple(METProcess,
             queryMetAPI=mocker.DEFAULT,
-            storePDFManifest=mocker.DEFAULT,
             addCoverAndStoreInS3=mocker.DEFAULT,
             addDCDWToUpdateList=mocker.DEFAULT
         )
@@ -133,7 +132,7 @@ class TestMetProcess:
         mockMapper.assert_called_once_with('testDetail')
         mockMapping.applyMapping.assert_called_once()
 
-        processMocks['storePDFManifest'].assert_called_once_with('testRecord')
+        testProcess.s3_manager.store_pdf_manifest.assert_called_once_with('testRecord', 'test_aws_bucket', None)
         processMocks['addCoverAndStoreInS3'].assert_called_once_with('testRecord', 'tst')
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
 
@@ -174,24 +173,6 @@ class TestMetProcess:
 
     def test_setCoverPath(self, testProcess):
         assert testProcess.setCoverPath('pdf', 1) == 'api/singleitem/image/pdf/p15324coll10/1/default.png'
-
-    def test_storePDFManifest(self, testProcess, mocker):
-        mockRecord = mocker.MagicMock(identifiers=['1|met'])
-        mockRecord.has_part = [
-            '1|testURI|met|text/html|{}',
-            '1|testURI|met|application/pdf|{}',
-            '2|testURIOther|met|application/pdf|{}',
-        ]
-
-        testProcess.storePDFManifest(mockRecord)
-
-        testManifestURI = 'https://test_aws_bucket.s3.amazonaws.com/manifests/met/1.json'
-        assert mockRecord.has_part[0] == '1|{}|met|application/webpub+json|{{}}'.format(testManifestURI)
-
-        testProcess.s3_manager.generate_manifest.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
-
-        testManifest = testProcess.s3_manager.generate_manifest(mockRecord, 'testURI', testManifestURI)
-        testProcess.s3_manager.create_manifest_in_s3.assert_called_once_with('manifests/met/1.json', testManifest, testProcess.s3Bucket)
 
     def test_queryMetAPI_success_non_head(self, mocker):
         mockResponse = mocker.MagicMock()

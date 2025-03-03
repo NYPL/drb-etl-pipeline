@@ -109,7 +109,7 @@ class METProcess(CoreProcess):
             logger.debug(e)
             raise METError('Unable to process MET record')
 
-        self.storePDFManifest(metRec.record)
+        self.s3_manager.store_pdf_manifest(metRec.record, self.s3Bucket, None)
 
         try:
             self.addCoverAndStoreInS3(metRec.record, record['filetype'])
@@ -160,31 +160,6 @@ class METProcess(CoreProcess):
             return imageObject['imageUri']
         else:
             return 'api/singleitem/image/pdf/p15324coll10/{}/default.png'.format(recordID)
-
-    def storePDFManifest(self, record):
-        for link in record.has_part:
-            item_no, uri, source, media_type, flags = link.split('|')
-
-            if media_type == 'application/pdf':
-                record_id = record.identifiers[0].split('|')[0]
-
-                manifest_path = 'manifests/{}/{}.json'.format(source, record_id)     
-                manifest_uri = get_stored_file_url(storage_name=self.s3Bucket, file_path=manifest_path)
-
-                manifest_json = self.s3_manager.generate_manifest(record, uri, manifest_uri)
-
-                self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3Bucket)
-
-                linkString = '|'.join([
-                    item_no,
-                    manifest_uri,
-                    source,
-                    'application/webpub+json',
-                    flags
-                ])
-                record.has_part.insert(0, linkString)
-
-                break
 
     @staticmethod
     def queryMetAPI(query, method='GET'):

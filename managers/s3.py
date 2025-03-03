@@ -2,11 +2,15 @@ import base64
 import boto3
 from botocore.exceptions import ClientError
 import hashlib
+import json
+import dataclasses
 from io import BytesIO
 import mimetypes
 import os
 from zipfile import ZipFile
 from managers import WebpubManifest
+from digital_assets import get_stored_file_url
+from model import Part, FileFlags\
 
 from logger import create_log
 
@@ -37,6 +41,59 @@ class S3Manager:
 
         raise S3Error('Unable to create bucket in s3')
 
+
+    def store_pdf_manifest(self, record, bucket_name, requires_login: bool):
+        for link in record.has_part:
+            item_no, uri, source, media_type, _ = link.split('|')
+
+            if media_type == 'application/pdf':
+                record_id = record.identifiers[0].split('|')[0]
+
+                if requires_login:
+                    manifest_path = f'manifests/publisher_backlist/{source}/{record_id}.json'
+                else:
+                    manifest_path = f'manifests/{source}/{record_id}.json''manifests/{}/{}.json'
+
+                manifest_uri = get_stored_file_url(storage_name=bucket_name, file_path=manifest_path)
+
+                manifest_json = self.generate_manifest(record, uri, manifest_uri)
+
+                self.create_manifest_in_s3(manifest_path, manifest_json, bucket_name)
+
+                if source == 'clacso':
+                    link_string = Part(
+                        index=item_no, 
+                        url=manifest_uri,
+                        source=source,
+                        file_type='application/webpub+json',
+                        flags=json.dumps(dataclasses.asdict(FileFlags()))
+                    ).to_string()
+                elif requires_login:
+                    manifest_flags = {
+                    'catalog': False,
+                    'download': False,
+                    'reader': True,
+                    'embed': False,
+                    **({'fulfill_limited_access': False} if requires_login else {})
+                    }
+                    link_string = Part(
+                        index=item_no, 
+                        url=manifest_uri,
+                        source=source,
+                        file_type='application/webpub+json',
+                        flags=json.dumps(manifest_flags)
+                    ).to_string()
+                else:
+                    link_string = Part(
+                        index=item_no, 
+                        url=manifest_uri,
+                        source=source,
+                        file_type='application/webpub+json',
+                        flags=json.dumps(dataclasses.asdict(FileFlags(reader=True)))
+                    ).to_string()
+
+                record.has_part.insert(0, link_string)
+                break
 
     def create_manifest_in_s3(self, manifestPath, manifestJSON, s3_bucket: str):
         self.putObjectInBucket(

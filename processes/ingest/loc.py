@@ -186,7 +186,7 @@ class LOCProcess(CoreProcess):
                 return
             
             self.addHasPartMapping(record, LOCRec.record)
-            self.storePDFManifest(LOCRec.record)
+            self.s3_manager.store_pdf_manifest(LOCRec.record, self.s3Bucket, None)
             self.storeEpubsInS3(LOCRec.record)
             self.addDCDWToUpdateList(LOCRec)
         except Exception:
@@ -212,31 +212,6 @@ class LOCProcess(CoreProcess):
                 '{"reader": false, "catalog": false, "download": true}'
             ])
             record.has_part.append(linkString2)
-
-
-    def storePDFManifest(self, record):
-        for link in record.has_part:
-            item_no, uri, source, media_type, flags = link.split('|')
-
-            if media_type == 'application/pdf':
-                record_id = record.identifiers[0].split('|')[0]
-
-                manifest_path = 'manifests/{}/{}.json'.format(source, record_id)
-                manifest_uri = get_stored_file_url(storage_name=self.s3Bucket, file_path=manifest_path)
-
-                manifest_json = self.s3_manager.generate_manifest(record, uri, manifest_uri)
-
-                self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3Bucket)
-
-                link_string = '|'.join([
-                    item_no,
-                    manifest_uri,
-                    source,
-                    'application/webpub+json',
-                    '{"catalog": false, "download": false, "reader": true, "embed": false}'
-                ])
-                record.has_part.insert(0, link_string)
-                break
 
     def storeEpubsInS3(self, record):
         for epubItem in record.has_part:

@@ -57,7 +57,7 @@ class ChicagoISACProcess():
             manifest_path = f'manifests/{pdf_part.source}/{record_id}.json'
             manifest_uri = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
 
-            manifest_json = self.generate_manifest(record, pdf_part.url, manifest_uri)
+            manifest_json = self.s3_manager.generate_manifest(record, pdf_part.url, manifest_uri)
 
             self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3_bucket)
 
@@ -70,17 +70,3 @@ class ChicagoISACProcess():
             )
 
             record.has_part.insert(0, manifest_part.to_string())
-
-    @staticmethod
-    def generate_manifest(record: Record, source_url: str, manifest_url: str):
-        manifest = WebpubManifest(source_url, 'application/pdf')
-
-        manifest.addMetadata(record)
-        manifest.addChapter(source_url, record.title)
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifest_url,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()
