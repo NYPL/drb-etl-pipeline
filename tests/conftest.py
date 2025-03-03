@@ -2,7 +2,7 @@ import os
 import pytest
 from datetime import datetime, timezone
 import json
-from sqlalchemy import text
+from sqlalchemy import text, delete
 from uuid import uuid4
 
 from processes import ClusterProcess
@@ -274,8 +274,9 @@ def test_collection_id(db_manager, test_edition_id):
 
     yield test_collection.uuid
 
-    db_manager.session.delete(test_collection)
-    db_manager.session.commit()
+    with db_manager.engine.connect() as connection:
+        with connection.begin():
+            connection.execute(delete(Collection).where(Collection.uuid == test_collection.uuid))
 
 
 @pytest.fixture(scope='session')
