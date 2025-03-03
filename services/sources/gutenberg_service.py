@@ -195,7 +195,7 @@ class GutenbergService(SourceService):
     def wait_until_request_limit_reset(self):
         wait_duration = max(0, self.request_limit_reset - int(time.time()))
 
-        if os.environ.get('ENVIRONMENT') in [ 'qa', 'production']:
+        if os.environ.get('ENVIRONMENT') in ['qa', 'production']:
             logger.info(f'Waiting {wait_duration} seconds to continue Gutenberg ingest')
             time.sleep(wait_duration)
         else:
