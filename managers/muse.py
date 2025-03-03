@@ -93,7 +93,7 @@ class MUSEManager:
         if self.pdfWebpubManifest:
             self.s3PDFReadPath = 'manifests/muse/{}.json'.format(self.museID)
             self.record.add_has_part_link(
-                self.createManifestInS3(self.s3PDFReadPath),
+                self.create_manifest_in_s3(self.s3PDFReadPath),
                 'application/webpub+json',
                 json.dumps({'reader': True, 'download': False, 'catalog': False})
             )
@@ -151,7 +151,7 @@ class MUSEManager:
             self.s3Bucket, bucketLocation
         )
 
-    def createManifestInS3(self, bucketLocation):
+    def create_manifest_in_s3(self, bucketLocation):
         s3URL = self.constructS3Link(bucketLocation)
 
         self.pdfWebpubManifest.links.append(
@@ -159,7 +159,6 @@ class MUSEManager:
         )
 
         return s3URL
-
 
 class MUSEError(Exception):
     def __init__(self, message):

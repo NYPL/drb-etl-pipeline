@@ -183,31 +183,15 @@ class TestMetProcess:
             '2|testURIOther|met|application/pdf|{}',
         ]
 
-        mockGenerateMan = mocker.patch.object(METProcess, 'generateManifest')
-        mockGenerateMan.return_value = 'testJSON'
-
         testProcess.storePDFManifest(mockRecord)
 
         testManifestURI = 'https://test_aws_bucket.s3.amazonaws.com/manifests/met/1.json'
         assert mockRecord.has_part[0] == '1|{}|met|application/webpub+json|{{}}'.format(testManifestURI)
 
-        mockGenerateMan.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
-        testProcess.s3_manager.createManifestInS3.assert_called_once_with('manifests/met/1.json', 'testJSON', testProcess.s3Bucket)
+        testProcess.s3_manager.generate_manifest.assert_called_once_with(mockRecord, 'testURI', testManifestURI)
 
-    def test_generateManifest(self, mocker):
-        mockManifest = mocker.MagicMock(links=[])
-        mockManifest.toJson.return_value = 'testJSON'
-        mockManifestConstructor = mocker.patch('processes.ingest.met.WebpubManifest')
-        mockManifestConstructor.return_value = mockManifest
-
-        mockRecord = mocker.MagicMock(title='Test')
-        testManifest = METProcess.generateManifest(mockRecord, 'sourceURI', 'manifestURI')
-
-        assert testManifest == 'testJSON'
-        assert mockManifest.links[0] == {'rel': 'self', 'href': 'manifestURI', 'type': 'application/webpub+json'}
-
-        mockManifest.addMetadata.assert_called_once_with(mockRecord)
-        mockManifest.addChapter.assert_called_once_with('sourceURI', 'Test')
+        testManifest = testProcess.s3_manager.generate_manifest(mockRecord, 'testURI', testManifestURI)
+        testProcess.s3_manager.create_manifest_in_s3.assert_called_once_with('manifests/met/1.json', testManifest, testProcess.s3Bucket)
 
     def test_queryMetAPI_success_non_head(self, mocker):
         mockResponse = mocker.MagicMock()
