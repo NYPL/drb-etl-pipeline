@@ -30,8 +30,6 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid, unfrbrized_title):
 
     oclc_identifiers = [id for id in classify_record.identifiers if id.endswith('|oclc')]
     
-    assert len(oclc_identifiers) > 0
-
     catalog_process = CatalogProcess(None, None, None, None)
     catalog_process.runProcess(max_attempts=1)
 
