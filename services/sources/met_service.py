@@ -47,6 +47,18 @@ class METService(SourceService):
 
             current_position += page_size
 
+    def query_met_api(query: str, method: str='GET') -> Union[str, dict]:
+        method = method.upper()
+
+        response = requests.request(method, query, timeout=30)
+
+        response.raise_for_status()
+
+        if method == 'HEAD':
+            return response.status_code
+        else:
+            return response.json()
+
     def _get_met_records(self, page_size: int=50, current_position: int=0) -> list:
         try:
             records_response = self.query_met_api(query=self.LIST_QUERY.format(page_size, current_position))
@@ -64,15 +76,3 @@ class METService(SourceService):
         except Exception:
             logger.exception('Failed to process MET record')
             return None
-
-    def query_met_api(query: str, method: str='GET') -> Union[str, dict]:
-        method = method.upper()
-
-        response = requests.request(method, query, timeout=30)
-
-        response.raise_for_status()
-
-        if method == 'HEAD':
-            return response.status_code
-        else:
-            return response.json()
