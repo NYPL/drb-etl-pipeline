@@ -7,7 +7,7 @@ from digital_assets import get_stored_file_url
 from managers import DBManager, RabbitMQManager, S3Manager, WebpubManifest
 from model import get_file_message, Record, Part, FileFlags, Source
 from logger import create_log
-from .record_buffer import RecordBuffer
+from ..record_buffer import RecordBuffer
 from services import METService
 from .. import utils
 
