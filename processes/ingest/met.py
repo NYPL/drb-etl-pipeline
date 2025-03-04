@@ -107,7 +107,7 @@ class METProcess():
         if pdf_part is not None:
             manifest_path = f'manifests/{record.source}/{record_id}'
             manifest_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
-            manifest_json = self.s3_manager.generate_manifest(record=record, source_url=pdf_part.url, manifest_uri=manifest_url)
+            manifest_json = self.s3_manager.generate_manifest(record=record, source_url=pdf_part.url, manifest_url=manifest_url)
 
             self.s3_manager.create_manifest_in_s3(manifestPath=manifest_path, manifestJSON=manifest_json, s3_bucket=self.s3_bucket)
 
