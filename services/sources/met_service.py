@@ -47,7 +47,7 @@ class METService(SourceService):
 
             current_position += page_size
 
-    def query_met_api(query: str, method: str='GET') -> Union[str, dict]:
+    def query_met_api(self, query: str, method: str='GET') -> Union[str, dict]:
         method = method.upper()
 
         response = requests.request(method, query, timeout=30)
