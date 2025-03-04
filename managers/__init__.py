@@ -1,7 +1,6 @@
 from .coverManager import CoverManager
 from .db import DBManager
 from .doabParser import DOABLinkManager
-from .gutenberg import GutenbergManager
 from .kMeans import KMeansManager
 from .oclc_auth import OCLCAuthManager
 from .oclc_catalog import OCLCCatalogManager

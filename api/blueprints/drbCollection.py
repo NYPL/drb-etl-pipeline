@@ -414,6 +414,7 @@ def get_collections():
             opds_feed.addGroup(group)
 
         db_client.closeSession()
+        logger.info('Closed db session when querying collections')
 
         return APIUtils.formatOPDS2Object(200, opds_feed)
     except Exception:

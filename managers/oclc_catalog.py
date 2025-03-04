@@ -18,6 +18,9 @@ class OCLCCatalogManager:
     MAX_NUMBER_OF_RECORDS = 100
     BEST_MATCH = 'bestMatch'
 
+    def __init__(self):
+        self.rate_limited = False
+
     def query_catalog(self, oclc_no):
         catalog_query = self.METADATA_BIB_URL.format(oclc_no)
 
@@ -106,6 +109,9 @@ class OCLCCatalogManager:
                     f'due to: {self._get_error_detail(other_editions_response)}'
                 )
 
+                if other_editions_response.status_code == 429:
+                    self.rate_limited = True
+
                 return None
 
             return other_editions_response.json()
@@ -168,6 +174,9 @@ class OCLCCatalogManager:
                     f'OCLC search bibs request for query {query} failed with status: {bibs_response.status_code} '
                     f'due to: {self._get_error_detail(bibs_response)}'
                 )
+
+                if bibs_response.status_code == 429:
+                    self.rate_limited = True
                 
                 return None
             
