@@ -148,7 +148,7 @@ def frbrized_record_data(db_manager, test_title, test_subject, test_language):
         'has_part': [f'1|example.com/1.pdf|{TEST_SOURCE}|text/html|{json.dumps(flags)}']
     }
 
-    frbrized_record = create_or_update_record(record_data=test_frbrized_record_data)
+    frbrized_record = create_or_update_record(record_data=test_frbrized_record_data, db_manager=db_manager)
 
     cluster_process = ClusterProcess('complete', None, None, str(test_frbrized_record_data['uuid']), None)
     cluster_process.runProcess()
