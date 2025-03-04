@@ -1,62 +1,76 @@
-from .json import JSONMapping
+import dataclasses
+import json
+from uuid import uuid4
 
-class METMapping(JSONMapping):
+from .base_mapping import BaseMapping
+from model import FRBRStatus, FileFlags, Part, Record, Source
+from .rights import get_rights_string
+
+
+class METMapping(BaseMapping):
     PDF_LINK = 'https://libmma.contentdm.oclc.org/digital/api/collection/p15324coll10/id/{}/download'
-    def __init__(self, source):
-        super().__init__(source, {})
-        self.mapping = self.createMapping()
+
+    def __init__(self, source: dict):
+        self.record = self.map_met_record(source)
+        self.file_type = source.get('filetype')
+
+    def map_met_record(self, met_record: dict) -> Record:
+        return Record(
+            uuid=uuid4(),
+            frbr_status=FRBRStatus.TODO.value,
+            cluster_status=False,
+            title=met_record.get('title'),
+            alternative=[met_record.get('titlea')] if met_record.get('titlea') else None,
+            source_id=f"{met_record.get('dmrecord')}|{Source.MET.value}",
+            source=Source.MET.value,
+            authors=[f"{met_record.get('creato')}|||true"] if met_record.get('creato') else None,
+            languages=[f"{met_record.get('langua')}||"] if met_record.get('langua') else None,
+            dates=[f"{met_record.get('date')}|publication_date"] if met_record.get('date') else None,
+            publisher=[f"{met_record.get('publis')}"] if met_record.get('publis') else None,
+            identifiers=[identifier for identifier in [
+                f"{met_record.get('dmrecord')}|{Source.MET.value}" if met_record.get('dmrecord') else None,
+                f"{met_record.get('identi')}|{Source.MET.value}" if met_record.get('identi') else None,
+                f"{met_record.get('digiti')}|{Source.MET.value}" if met_record.get('digiti') else None,
+                f"{met_record.get('dmcoclcno')}|oclc" if met_record.get('dmcoclcno') else None,
+            ] if identifier],
+            contributors=[contributor for contributor in [
+                f"{met_record.get('contri')}|||contributor" if met_record.get('contri') else None,
+                f"{met_record.get('physic')}|||repository" if met_record.get('physic') else None,
+                f"{met_record.get('source')}|||provider" if met_record.get('source') else None,
+            ] if contributor],
+            extent=met_record.get('extent'),
+            is_part_of=f"{met_record.get('relatig')}|collection" if met_record.get('relatig') else None,
+            abstract=met_record.get('transc') or met_record.get('descri') or None,
+            subjects=[f"{subject.strip()}||" for subject in met_record.get('subjec').split(';')] if met_record.get('subjec') else None,
+            rights=get_rights_string(
+                rights_source=Source.MET.value, 
+                license=met_record.get('rights'),
+                rights_reason=met_record.get('copyra'),
+                rights_date=met_record.get('copyri')
+            ),
+            has_part=met_record.get('link') and [
+                Part(
+                    index=1,
+                    url=met_record.get('link'),
+                    source=Source.MET.value,
+                    file_type='text/html',
+                    flags=json.dumps(dataclasses.asdict(FileFlags(embed=True)))
+                ).to_string(),
+                Part(
+                    index=1,
+                    url=self.PDF_LINK.format(met_record.get('dmrecord')),
+                    source=Source.MET.value,
+                    file_type='application/pdf',
+                    flags=json.dumps(dataclasses.asdict(FileFlags(download=True)))
+                ).to_string()
+            ]
+        )
     
     def createMapping(self):
-        return {
-            'title': ('title', '{0}'),
-            'alternate': [('titlea', '{0}')],
-            'authors': [('creato', '{0}|||true')],
-            'languages': [('langua', '{0}||')],
-            'dates': [('date', '{0}|publication_date')],
-            'publisher': [('publis', '{0}')],
-            'identifiers': [
-                ('dmrecord', '{0}|met'),
-                ('identi', '{0}|met'),
-                ('digiti', '{0}|met'),
-                ('dmcoclcno', '{0}|oclc')
-            ],
-            'contributors': [
-                ('contri', '{0}|||contributor'),
-                ('physic', '{0}|||repository'),
-                ('source', '{0}|||provider')
-            ],
-            'extent': ('format', '{0}'),
-            'is_part_of': [('relatig', '{0}|collection')],
-            'abstract': [
-                ('transc', '{0}'),
-                ('descri', '{0}')
-            ],
-            'subjects': [('subjec', '{0}||')],
-            'rights': (['rights', 'copyra', 'copyri'], 'met|{0}|{1}|{2}|'),
-            'has_part': [('link', '1|{0}|met|text/html|{{"catalog": false, "download": false, "reader": false, "embed": true}}')]
-        }
+        pass
 
     def applyFormatting(self):
-        self.record.source = 'met'
-        self.record.source_id = self.record.identifiers[0]
+        pass
 
-        # Clean up subjects
-        try:
-            subjString = self.record.subjects[0].split('|')[0]
-            subjects = subjString.split(';')
-            self.record.subjects = ['{}||'.format(s.strip()) for s in subjects]
-        except IndexError:
-            self.record.subjects = None
-
-        # Select best abstract
-        try:
-            abstracts = self.record.abstract
-            self.record.abstract = list(filter(lambda x: x != '', abstracts))[0]
-        except IndexError:
-            self.record.abstract = None
-
-        # Set PDF download link
-        pdfURL = self.PDF_LINK.format(self.source['dmrecord'])
-        self.record.has_part.append(
-            '|'.join(['1', pdfURL, 'met', 'application/pdf', '{}'])
-        )
+    def applyMapping(self):
+        pass
