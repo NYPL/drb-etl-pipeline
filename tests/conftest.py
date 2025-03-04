@@ -45,7 +45,7 @@ def create_or_update_record(record_data: dict, db_manager: DBManager) -> Record:
     new_record = Record(**record_data)
     
     db_manager.session.add(new_record)
-    db_manager.commit()
+    db_manager.session.commit()
     
     return new_record
 

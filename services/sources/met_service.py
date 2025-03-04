@@ -23,10 +23,10 @@ class METService(SourceService):
         self,
         full_import: bool=False,
         start_timestamp: Optional[datetime]=None,
-        offset: Optional[int]=None,
+        offset: int=0,
         limit: Optional[int]=None
     ) -> Generator[METMapping, None, None]:
-        current_position = offset if offset is not None else 0
+        current_position = offset
         page_size = 50
 
         while met_records := self._get_met_records(page_size=page_size, current_position=current_position):
