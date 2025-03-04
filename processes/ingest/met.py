@@ -4,13 +4,12 @@ import os
 from typing import Optional
 
 from digital_assets import get_stored_file_url
-from managers import DBManager, RabbitMQManager, S3Manager, WebpubManifest
+from managers import DBManager, RabbitMQManager, S3Manager
 from model import get_file_message, Record, Part, FileFlags, Source
 from logger import create_log
 from ..record_buffer import RecordBuffer
 from services import METService
 from .. import utils
-from digital_assets import get_stored_file_url
 
 logger = create_log(__name__)
 
@@ -108,9 +107,9 @@ class METProcess():
         if pdf_part is not None:
             manifest_path = f'manifests/{record.source}/{record_id}'
             manifest_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
-            manifest_json = self.generate_manifest(record=record, source_uri=pdf_part.url, manifest_uri=manifest_url)
+            manifest_json = self.s3_manager.generate_manifest(record=record, source_uri=pdf_part.url, manifest_uri=manifest_url)
 
-            self.s3_manager.createManifestInS3(manifestPath=manifest_path, manifestJSON=manifest_json, s3_bucket=self.s3_bucket)
+            self.s3_manager.create_manifest_in_s3(manifestPath=manifest_path, manifestJSON=manifest_json, s3_bucket=self.s3_bucket)
 
             record.has_part.insert(0, Part(
                 index=pdf_part.index,
@@ -119,19 +118,3 @@ class METProcess():
                 file_type='application/webpub+json',
                 flags=pdf_part.flags
             ).to_string())
-
-    @staticmethod
-    def generate_manifest(record: Record, source_uri: str, manifest_uri: str):
-        manifest = WebpubManifest(source_uri, 'application/pdf')
-
-        manifest.addMetadata(record)
-
-        manifest.addChapter(source_uri, record.title)
-
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifest_uri,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()
