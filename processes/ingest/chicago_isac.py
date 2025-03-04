@@ -6,7 +6,7 @@ from mappings.chicago_isac import map_chicago_isac_record
 from managers import DBManager, S3Manager, WebpubManifest
 from model import Record, Part
 from logger import create_log
-from .record_buffer import RecordBuffer
+from ..record_buffer import RecordBuffer
 from digital_assets import get_stored_file_url
 
 logger = create_log(__name__)

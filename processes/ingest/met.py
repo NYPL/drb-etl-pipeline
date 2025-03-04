@@ -1,179 +1,137 @@
-from datetime import datetime, timedelta, timezone
+import dataclasses
 import json
 import os
-import requests
-from requests.exceptions import HTTPError, ConnectionError
+from typing import Optional
 
-from ..core import CoreProcess
-from mappings.base_mapping import MappingError
-from mappings.met import METMapping
-from managers import RabbitMQManager, S3Manager, WebpubManifest
-from model import get_file_message
+from digital_assets import get_stored_file_url
+from managers import DBManager, RabbitMQManager, S3Manager, WebpubManifest
+from model import get_file_message, Record, Part, FileFlags, Source
 from logger import create_log
+from ..record_buffer import RecordBuffer
+from services import METService
+from .. import utils
 from digital_assets import get_stored_file_url
 
 logger = create_log(__name__)
 
 
-class METProcess(CoreProcess):
+class METProcess():
     MET_ROOT_URL = 'https://libmma.contentdm.oclc.org/digital'
 
-    # The documentation for these API queries is here: https://help.oclc.org/Metadata_Services/CONTENTdm/Advanced_website_customization/API_Reference/CONTENTdm_API/CONTENTdm_Server_API_Functions_-_dmwebservices
-    LIST_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmQuery/p15324coll10/CISOSEARCHALL/title!dmmodified!dmcreated!rights/dmmodified/{}/{}/1/0/0/00/0/json'
-    DETAIL_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmGetItemInfo/p15324coll10/{}/json'
-    COMPOUND_QUERY = 'https://libmma.contentdm.oclc.org/digital/bl/dmwebservices/index.php?q=dmGetCompoundObjectInfo/p15324coll10/{}/json'
-    IMAGE_QUERY = 'https://libmma.contentdm.oclc.org/digital/api/singleitem/collection/p15324coll10/id/{}'
-
     def __init__(self, *args):
-        super(METProcess, self).__init__(*args[:4])
+        self.process = args[0]
+        self.ingest_period = args[2]
 
-        self.ingestOffset = int(args[5] or 0)
-        self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
-        self.fullImport = self.process == 'complete'
-        self.startTimestamp = None
+        self.offset = int(args[5] or 0)
+        self.limit = (int(args[4]) + self.offset) if args[4] else 5000
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+        self.db_manager.createSession()
 
-        self.fileQueue = os.environ['FILE_QUEUE']
-        self.fileRoute = os.environ['FILE_ROUTING_KEY']
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
+
+        self.met_service = METService()
+
+        self.file_queue = os.environ['FILE_QUEUE']
+        self.file_route = os.environ['FILE_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
         self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
+        self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
 
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3_bucket = os.environ['FILE_BUCKET']
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
 
     def runProcess(self):
-        self.setStartTime()
-        self.importDCRecords()
-
-        self.saveRecords()
-        self.commitChanges()
-
-        logger.info(f'Ingested {len(self.records)} MET records')
-
-    def setStartTime(self):
-        if not self.fullImport:
-            if not self.ingestPeriod:
-                self.startTimestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=1)
-            else:
-                self.startTimestamp = datetime.strptime(
-                    self.ingestPeriod, '%Y-%m-%dT%H:%M:%S'
-                )
-
-    def importDCRecords(self):
-        currentPosition = self.ingestOffset
-        pageSize = 50
-
-        while True:
-            batchQuery = self.LIST_QUERY.format(pageSize, currentPosition)
-
-            batchResponse = self.queryMetAPI(batchQuery)
-
-            batchRecords = batchResponse['records']
-
-            self.processMetBatch(batchRecords)
-
-            if len(batchRecords) < 1 or currentPosition >= self.ingestLimit:
-                break
-
-            currentPosition += pageSize
-
-    def processMetBatch(self, metRecords):
-        for record in metRecords:
-            if (
-                self.startTimestamp
-                and datetime.strptime(record['dmmodified'], '%Y-%m-%d')
-                >= self.startTimestamp
-            ) or record['rights'] == 'copyrighted':
-                continue
-
-            try:
-                self.processMetRecord(record)
-            except METError:
-                logger.warning('Unable to process MET record {}'.format(
-                    record['pointer'])
-                )
-
-    def processMetRecord(self, record):
-        try:
-            detailQuery = self.DETAIL_QUERY.format(record['pointer'])
-            metDetail = self.queryMetAPI(detailQuery)
-
-            metRec = METMapping(metDetail)
-            metRec.applyMapping()
-        except (MappingError, HTTPError, ConnectionError) as e:
-            logger.debug(e)
-            raise METError('Unable to process MET record')
-
-        self.s3_manager.store_pdf_manifest(metRec.record, self.s3Bucket, None)
-
-        try:
-            self.addCoverAndStoreInS3(metRec.record, record['filetype'])
-        except METError as e:
-            logger.warning('Unable to fetch cover ({})'.format(e))
-
-        self.addDCDWToUpdateList(metRec)
-
-    def addCoverAndStoreInS3(self, record, filetype):
-        recordID = record.identifiers[0].split('|')[0]
-
-        coverPath = self.setCoverPath(filetype, recordID)
-
-        sourceURL = '{}/{}'.format(self.MET_ROOT_URL, coverPath)
-
-        bucketLocation = 'covers/met/{}.{}'.format(recordID, sourceURL[-3:])
-
-        s3URL = 'https://{}.s3.amazonaws.com/{}'.format(
-            self.s3Bucket, bucketLocation
+        record_mappings = self.met_service.get_records(
+            start_timestamp=utils.get_start_datetime(process_type=self.process, ingest_period=self.ingest_period),
+            limit=self.limit,
+            offset=self.offset
         )
 
-        fileType = 'image/jpeg' if sourceURL[-3:] == 'jpg' else 'image/png'
+        for record_mapping in record_mappings:
+            self.store_pdf_manifest(record=record_mapping.record)
 
-        record.has_part.append(
-            '|'.join(['', s3URL, 'met', fileType, json.dumps({'cover': True})])
-        )
-
-        self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(sourceURL, bucketLocation))
-
-    def setCoverPath(self, filetype, recordID):
-        if filetype == 'cpd':
             try:
-                compoundQuery = self.COMPOUND_QUERY.format(recordID)
-                compoundObject = self.queryMetAPI(compoundQuery)
+                self.add_cover(record=record_mapping.record, file_type=record_mapping.file_type)
+            except Exception:
+                pass
 
-                coverID = compoundObject['page'][0]['pageptr']
+            self.record_buffer.add(record=record_mapping.record)
 
-                imageQuery = self.IMAGE_QUERY.format(coverID)
-                imageObject = self.queryMetAPI(imageQuery)
-            except (KeyError, HTTPError):
-                logger.debug(
-                    'Unable to parse compound structure for {}'.format(
-                        recordID
-                    )
-                )
-                raise METError('Unable to fetch page structure for record')
+        self.record_buffer.flush()
 
-            return imageObject['imageUri']
-        else:
-            return 'api/singleitem/image/pdf/p15324coll10/{}/default.png'.format(recordID)
+        logger.info(f'Ingested {self.record_buffer.ingest_count} MET records')
+
+    def add_cover(self, record: Record, file_type: Optional[str]=None):
+        record_id = record.source_id.split('|')[0]
+        cover_path = self.get_cover_path(file_type=file_type, record_id=record_id)
+
+        if cover_path is None:
+            return
+
+        cover_source_url = f'{self.MET_ROOT_URL}/{cover_path}'
+        file_path = f'covers/met/{record_id}.{cover_source_url[-3:]}'
+        file_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=file_path)
+        file_type = 'image/jpeg' if cover_source_url[-3:] == 'jpg' else 'image/png'
+
+        record.has_part.append(Part(
+            url=file_url,
+            source=Source.MET.value,
+            file_type=file_type,
+            flags=json.dumps(dataclasses.asdict(FileFlags(cover=True)))
+        ).to_string())
+
+        self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(cover_source_url, file_path))
+
+    def get_cover_path(self, file_type: Optional[str], record_id: str) -> Optional[str]:
+        if file_type == 'cpd':
+            try:
+                compound_record_object = self.met_service.query_met_api(query=METService.COMPOUND_QUERY.format(record_id))
+
+                cover_id = compound_record_object['page'][0]['pageptr']
+
+                image_object = self.met_service.query_met_api(query=METService.IMAGE_QUERY.format(cover_id))
+
+                return image_object.get('imageUri')
+            except Exception:
+                logger.exception(f'Unable to get cover path for record: {record_id}')
+                return None
+        
+        return f'api/singleitem/image/pdf/p15324coll10/{record_id}/default.png'
+
+    def store_pdf_manifest(self, record: Record):
+        record_id = record.source_id.split('|')[0]
+        pdf_part = next(filter(lambda part: part.file_type == 'application/pdf', record.get_parts()), None)
+
+        if pdf_part is not None:
+            manifest_path = f'manifests/{record.source}/{record_id}'
+            manifest_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
+            manifest_json = self.generate_manifest(record=record, source_uri=pdf_part.url, manifest_uri=manifest_url)
+
+            self.s3_manager.createManifestInS3(manifestPath=manifest_path, manifestJSON=manifest_json, s3_bucket=self.s3_bucket)
+
+            record.has_part.insert(0, Part(
+                index=pdf_part.index,
+                url=manifest_url,
+                source=record.source,
+                file_type='application/webpub+json',
+                flags=pdf_part.flags
+            ).to_string())
 
     @staticmethod
-    def queryMetAPI(query, method='GET'):
-        method = method.upper()
+    def generate_manifest(record: Record, source_uri: str, manifest_uri: str):
+        manifest = WebpubManifest(source_uri, 'application/pdf')
 
-        response = requests.request(method, query, timeout=30)
+        manifest.addMetadata(record)
 
-        response.raise_for_status()
+        manifest.addChapter(source_uri, record.title)
 
-        if method == 'HEAD':
-            return response.status_code
-        else:
-            return response.json()
+        manifest.links.append({
+            'rel': 'self',
+            'href': manifest_uri,
+            'type': 'application/webpub+json'
+        })
 
-
-class METError(Exception):
-    pass
+        return manifest.toJson()

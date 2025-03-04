@@ -4,9 +4,10 @@ import re
 from mappings.xml import XMLMapping
 
 class GutenbergMapping(XMLMapping):
-    def __init__(self, source, namespace, constants):
+    def __init__(self, source, namespace, constants, yaml_file):
         super(GutenbergMapping, self).__init__(source, namespace, constants)
         self.mapping = self.createMapping()
+        self.yaml_file = yaml_file
     
     def createMapping(self):
         return {
