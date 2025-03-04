@@ -87,11 +87,11 @@ class METProcess():
     def get_cover_path(self, file_type: Optional[str], record_id: str) -> Optional[str]:
         if file_type == 'cpd':
             try:
-                compound_record_object = METService.query_met_api(query=METService.COMPOUND_QUERY.format(record_id))
+                compound_record_object = self.met_service.query_met_api(query=METService.COMPOUND_QUERY.format(record_id))
 
                 cover_id = compound_record_object['page'][0]['pageptr']
 
-                image_object = METService.query_met_api(query=METService.IMAGE_QUERY.format(cover_id))
+                image_object = self.met_service.query_met_api(query=METService.IMAGE_QUERY.format(cover_id))
 
                 return image_object.get('imageUri')
             except Exception:

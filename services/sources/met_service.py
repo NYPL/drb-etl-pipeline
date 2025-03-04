@@ -49,7 +49,7 @@ class METService(SourceService):
 
     def _get_met_records(self, page_size: int=50, current_position: int=0) -> list:
         try:
-            records_response = METService.query_met_api(query=self.LIST_QUERY.format(page_size, current_position))
+            records_response = self.query_met_api(query=self.LIST_QUERY.format(page_size, current_position))
 
             return records_response.get('records', [])     
         except Exception:
@@ -58,7 +58,7 @@ class METService(SourceService):
 
     def _map_met_record(self, record: dict) -> Optional[METMapping]:
         try:            
-            met_record = METService.query_met_api(query=self.ITEM_INFO_QUERY.format(record.get('pointer')))
+            met_record = self.query_met_api(query=self.ITEM_INFO_QUERY.format(record.get('pointer')))
 
             return METMapping(met_record)
         except Exception:
