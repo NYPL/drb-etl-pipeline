@@ -26,7 +26,7 @@ class METService(SourceService):
         offset: Optional[int]=None,
         limit: Optional[int]=None
     ) -> Generator[METMapping, None, None]:
-        current_position = offset
+        current_position = offset if offset is not None else 0
         page_size = 50
 
         while met_records := self._get_met_records(page_size=page_size, current_position=current_position):
