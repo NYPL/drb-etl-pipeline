@@ -49,8 +49,10 @@ class METProcess():
             offset=self.offset
         )
 
+        webpub_flags = json.dumps(dataclasses.asdict(FileFlags(reader=True)))
+
         for record_mapping in record_mappings:
-            self.s3_manager.store_pdf_manifest(record=record_mapping.record)
+            self.s3_manager.store_pdf_manifest(record=record_mapping.record, bucket_name=self.s3_bucket, flags=webpub_flags)
 
             try:
                 self.add_cover(record=record_mapping.record, file_type=record_mapping.file_type)

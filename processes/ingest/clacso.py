@@ -48,10 +48,11 @@ class CLACSOProcess():
             elif self.process_type == 'custom':
                 records = self.dspace_service.get_records(start_timestamp=self.ingest_period, offset=self.offset, limit=self.limit)
             
+            webpub_flags = json.dumps(dataclasses.asdict(FileFlags()))
             if records:
                 for record_mapping in records:
                     self.record_buffer.add(record_mapping.record)
-                    self.s3_manager.store_pdf_manifest(record_mapping.record, self.s3_bucket)
+                    self.s3_manager.store_pdf_manifest(record_mapping.record, self.s3_bucket, flags=webpub_flags)
 
             self.record_buffer.flush()
 

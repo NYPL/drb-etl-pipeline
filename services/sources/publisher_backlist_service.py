@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import urllib.parse
+import dataclasses
 from enum import Enum
 from typing import Optional
 from model import Record, Work, Edition, Item
@@ -16,6 +17,7 @@ from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
 from digital_assets import get_stored_file_url
+from model import Part, FileFlags
 
 logger = create_log(__name__)
 
@@ -185,8 +187,9 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
                 
+                webpub_flags=json.dumps(dataclasses.asdict(FileFlags(reader=True, fulfill_limited_access=False)))
                 self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
-                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, requires_login=record_permissions['requires_login'])
+                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, flags = webpub_flags, requires_login=record_permissions['requires_login'])
                 
                 mapped_records.append(publisher_backlist_record)
             except Exception:

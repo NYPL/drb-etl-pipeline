@@ -1,12 +1,14 @@
 import time
 import os, requests
+import json
+import dataclasses
 from requests.exceptions import HTTPError, ConnectionError
 
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.loc import LOCMapping
 from managers import RabbitMQManager, S3Manager, WebpubManifest
-from model import get_file_message
+from model import get_file_message, FileFlags
 from logger import create_log
 from datetime import datetime, timedelta, timezone
 from digital_assets import get_stored_file_url
@@ -185,8 +187,9 @@ class LOCProcess(CoreProcess):
                 logger.warning(f'Unable to map author in LOC record {LOCRec.record} ')
                 return
             
+            webpub_flags = json.dumps(dataclasses.asdict(FileFlags(reader=True)))
             self.addHasPartMapping(record, LOCRec.record)
-            self.s3_manager.store_pdf_manifest(LOCRec.record, self.s3Bucket)
+            self.s3_manager.store_pdf_manifest(LOCRec.record, self.s3Bucket, flags=webpub_flags)
             self.storeEpubsInS3(LOCRec.record)
             self.addDCDWToUpdateList(LOCRec)
         except Exception:
