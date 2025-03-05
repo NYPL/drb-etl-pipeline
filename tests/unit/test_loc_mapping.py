@@ -8,6 +8,7 @@ class TestLOCMapping:
     def testMapping(self):
         class TestLOC(LOCMapping):
             def __init__(self):
+                self.source = {}
                 self.mapping = None
 
         return TestLOC()

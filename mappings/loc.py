@@ -142,6 +142,9 @@ class LOCMapping(JSONMapping):
         return languageArray
     
     def add_has_part_mapping(self):
+        if not self.source.get('resources'):
+            return
+
         if 'pdf' in self.source['resources'][0].keys():
             self.record.has_part.append(Part(
                 index=1,
