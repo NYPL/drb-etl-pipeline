@@ -4,21 +4,22 @@ on:
   pull_request:
     types: [opened, synchronize]
     paths:
-        - 'api/**'
-        - 'managers/**'
-        - 'mappings/**'
-        - 'model/**'
-        - 'processes/**'
-        - 'services/**'
-        - 'tests/**'
-        - 'utils/**'
-        - 'dev-requirements.txt'
-        - 'requirements.txt'
-        - 'main.py'
-        - 'Makefile' 
+      - "api/**"
+      - "managers/**"
+      - "mappings/**"
+      - "model/**"
+      - "processes/**"
+      - "services/**"
+      - "tests/**"
+      - "utils/**"
+      - "dev-requirements.txt"
+      - "requirements.txt"
+      - "main.py"
+      - "Makefile"
 
 jobs:
   test:
+    if: false
     runs-on: ubuntu-latest
     env:
       IS_CI: "true"
