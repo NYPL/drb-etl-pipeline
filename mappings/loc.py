@@ -2,6 +2,8 @@ from .json import JSONMapping
 import ast
 import json
 
+from model import Part, FileFlags, Source
+
 class LOCMapping(JSONMapping):
     def __init__(self, source):
         super().__init__(source, {})
@@ -30,6 +32,8 @@ class LOCMapping(JSONMapping):
 
     def applyFormatting(self):       
         self.record.has_part = []
+        self.add_has_part_mapping()
+
         self.record.source = 'loc'
         if self.record.medium:
             self.record.medium = self.record.medium[0]
@@ -136,5 +140,22 @@ class LOCMapping(JSONMapping):
                 languageArray.append(f'||{elem}')
 
         return languageArray
+    
+    def add_has_part_mapping(self):
+        if 'pdf' in self.source['resources'][0].keys():
+            self.record.has_part.append(Part(
+                index=1,
+                url=self.source['resources'][0]['pdf'],
+                source=Source.LOC.value,
+                file_type='application/pdf',
+                flags=FileFlags(download=True).to_string()
+            ).to_string())
 
-        
+        if 'epub_file' in self.source['resources'][0].keys():
+            self.record.has_part.append(Part(
+                index=1,
+                url=self.source['resources'][0]['epub_file'],
+                source=Source.LOC.value,
+                file_type='application/pdf',
+                flags=FileFlags(download=True).to_string()
+            ).to_string())
