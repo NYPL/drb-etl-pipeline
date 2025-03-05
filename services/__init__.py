@@ -4,3 +4,4 @@ from .google_drive_service import GoogleDriveService
 from .sources.dspace_service import DSpaceService
 from .sources.gutenberg_service import GutenbergService
 from .sources.met_service import METService
+from .sources.loc_service import LOCService

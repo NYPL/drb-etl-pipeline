@@ -6,3 +6,4 @@ class Source(Enum):
     DOAB = 'doab'
     GUTENBERG = 'gutenberg'
     MET = 'met'
+    LOC = 'loc'
