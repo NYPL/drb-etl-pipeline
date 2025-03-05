@@ -50,7 +50,7 @@ class METProcess():
         )
 
         for record_mapping in record_mappings:
-            self.store_pdf_manifest(record=record_mapping.record)
+            self.s3_manager.store_pdf_manifest(record=record_mapping.record)
 
             try:
                 self.add_cover(record=record_mapping.record, file_type=record_mapping.file_type)
@@ -99,22 +99,3 @@ class METProcess():
                 return None
         
         return f'api/singleitem/image/pdf/p15324coll10/{record_id}/default.png'
-
-    def store_pdf_manifest(self, record: Record):
-        record_id = record.source_id.split('|')[0]
-        pdf_part = next(filter(lambda part: part.file_type == 'application/pdf', record.get_parts()), None)
-
-        if pdf_part is not None:
-            manifest_path = f'manifests/{record.source}/{record_id}'
-            manifest_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
-            manifest_json = self.s3_manager.generate_manifest(record=record, source_url=pdf_part.url, manifest_url=manifest_url)
-
-            self.s3_manager.create_manifest_in_s3(manifestPath=manifest_path, manifestJSON=manifest_json, s3_bucket=self.s3_bucket)
-
-            record.has_part.insert(0, Part(
-                index=pdf_part.index,
-                url=manifest_url,
-                source=record.source,
-                file_type='application/webpub+json',
-                flags=pdf_part.flags
-            ).to_string())

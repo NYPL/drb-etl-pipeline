@@ -42,62 +42,40 @@ class S3Manager:
         raise S3Error('Unable to create bucket in s3')
 
 
-    def store_pdf_manifest(self, record, bucket_name, requires_login: bool):
-        for link in record.has_part:
-            item_no, uri, source, media_type, _ = link.split('|')
+    def store_pdf_manifest(self, record, bucket_name, requires_login: bool=False):
+        record_id = record.source_id.split('|')[0]
+        pdf_part = next(filter(lambda part: part.file_type == 'application/pdf', record.get_parts()), None)
 
-            if media_type == 'application/pdf':
-                record_id = record.identifiers[0].split('|')[0]
+        if pdf_part is not None:
+            if requires_login:
+                manifest_path = f'manifests/publisher_backlist/{record.source}/{record_id}.json'
+            else:
+                manifest_path = f'manifests/{record.source}/{record_id}'
+            manifest_url = get_stored_file_url(storage_name=bucket_name, file_path=manifest_path)
+            manifest_json = self.generate_manifest(record=record, source_url=pdf_part.url, manifest_url=manifest_url)
 
-                if requires_login:
-                    manifest_path = f'manifests/publisher_backlist/{source}/{record_id}.json'
-                else:
-                    manifest_path = f'manifests/{source}/{record_id}.json''manifests/{}/{}.json'
+            self.create_manifest_in_s3(manifest_path=manifest_path, manifest_json=manifest_json, s3_bucket=bucket_name)
 
-                manifest_uri = get_stored_file_url(storage_name=bucket_name, file_path=manifest_path)
+            if requires_login:
+                record.has_part.insert(0, Part(
+                    index=pdf_part.index,
+                    url=manifest_url,
+                    source=record.source,
+                    file_type='application/webpub+json',
+                    flags=json.dumps(dataclasses.asdict(FileFlags(reader=True)))
+                ).to_string())
+            else:
+                record.has_part.insert(0, Part(
+                    index=pdf_part.index,
+                    url=manifest_url,
+                    source=record.source,
+                    file_type='application/webpub+json',
+                    flags=json.dumps(dataclasses.asdict(FileFlags(reader=True, fulfill_limited_access=None)))
+                ).to_string())
 
-                manifest_json = self.generate_manifest(record, uri, manifest_uri)
-
-                self.create_manifest_in_s3(manifest_path, manifest_json, bucket_name)
-
-                if source == 'clacso':
-                    link_string = Part(
-                        index=item_no, 
-                        url=manifest_uri,
-                        source=source,
-                        file_type='application/webpub+json',
-                        flags=json.dumps(dataclasses.asdict(FileFlags()))
-                    ).to_string()
-                elif requires_login:
-                    manifest_flags = {
-                    'catalog': False,
-                    'download': False,
-                    'reader': True,
-                    'embed': False,
-                    **({'fulfill_limited_access': False} if requires_login else {})
-                    }
-                    link_string = Part(
-                        index=item_no, 
-                        url=manifest_uri,
-                        source=source,
-                        file_type='application/webpub+json',
-                        flags=json.dumps(manifest_flags)
-                    ).to_string()
-                else:
-                    link_string = Part(
-                        index=item_no, 
-                        url=manifest_uri,
-                        source=source,
-                        file_type='application/webpub+json',
-                        flags=json.dumps(dataclasses.asdict(FileFlags(reader=True)))
-                    ).to_string()
-
-                record.has_part.insert(0, link_string)
-                break
-
-    def create_manifest_in_s3(self, manifestPath, manifestJSON, s3_bucket: str):
+    def create_manifest_in_s3(self, manifest_path, manifest_json, s3_bucket: str):
         self.putObjectInBucket(
-            manifestJSON.encode('utf-8'), manifestPath, s3_bucket
+            manifest_json.encode('utf-8'), manifest_path, s3_bucket
         )
 
     def generate_manifest(self, record, source_url, manifest_url):

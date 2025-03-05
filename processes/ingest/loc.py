@@ -186,7 +186,7 @@ class LOCProcess(CoreProcess):
                 return
             
             self.addHasPartMapping(record, LOCRec.record)
-            self.s3_manager.store_pdf_manifest(LOCRec.record, self.s3Bucket, None)
+            self.s3_manager.store_pdf_manifest(LOCRec.record, self.s3Bucket)
             self.storeEpubsInS3(LOCRec.record)
             self.addDCDWToUpdateList(LOCRec)
         except Exception:

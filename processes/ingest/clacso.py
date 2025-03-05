@@ -51,7 +51,7 @@ class CLACSOProcess():
             if records:
                 for record_mapping in records:
                     self.record_buffer.add(record_mapping.record)
-                    self.s3_manager.store_pdf_manifest(record_mapping.record, self.s3_bucket, None)
+                    self.s3_manager.store_pdf_manifest(record_mapping.record, self.s3_bucket)
 
             self.record_buffer.flush()
 
@@ -62,28 +62,3 @@ class CLACSOProcess():
             raise e   
         finally:
             self.db_manager.close_connection()
-
-    # def store_pdf_manifest(self, record):
-    #     for link in record.has_part:
-    #         item_no, uri, source, media_type, _ = link.split('|')
-
-    #         if media_type == 'application/pdf':
-    #             record_id = record.identifiers[0].split('|')[0]
-
-    #             manifest_path = 'manifests/{}/{}.json'.format(source, record_id)
-    #             manifest_uri = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
-
-    #             manifest_json = self.s3_manager.generate_manifest(record, uri, manifest_uri)
-
-    #             self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3_bucket)
-
-    #             link_string = Part(
-    #                 index=item_no, 
-    #                 url=manifest_uri,
-    #                 source=source,
-    #                 file_type='application/webpub+json',
-    #                 flags=json.dumps(dataclasses.asdict(FileFlags()))
-    #             ).to_string()
-
-    #             record.has_part.insert(0, link_string)
-    #             break

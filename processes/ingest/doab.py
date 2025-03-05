@@ -75,9 +75,9 @@ class DOABProcess():
         linkManager.parseLinks()
 
         for manifest in linkManager.manifests:
-            manifestPath, manifestJSON = manifest
+            manifest_path, manifest_json = manifest
             self.s3_manager.create_manifest_in_s3(
-                manifestPath, manifestJSON, self.s3_bucket)
+                manifest_path, manifest_json, self.s3_bucket)
 
         for epubLink in linkManager.ePubLinks:
             ePubPath, ePubURI = epubLink

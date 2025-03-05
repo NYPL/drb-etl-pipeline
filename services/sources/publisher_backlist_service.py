@@ -186,7 +186,7 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record.applyMapping()
                 
                 self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
-                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, self.record_permissions['requires_login'])
+                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, requires_login=record_permissions['requires_login'])
                 
                 mapped_records.append(publisher_backlist_record)
             except Exception:
