@@ -1,5 +1,6 @@
 import time
 import os, requests
+import json
 from requests.exceptions import HTTPError, ConnectionError
 
 from ..core import CoreProcess
@@ -106,6 +107,9 @@ class LOCProcess(CoreProcess):
                         if metaDict['resources']:
                             resources = metaDict['resources'][0]
                             if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
+                                for created_published in metaDict.get('item').get('created_published'):
+                                    if ':' not in created_published:
+                                        print(created_published)
                                 logger.debug(f'OPEN ACCESS URL: {openAccessURL}')
                                 logger.debug(f"TITLE: {metaDict['title']}")
 

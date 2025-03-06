@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import Enum
+import json
 from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -66,6 +67,9 @@ class FileFlags:
     embed: bool = False
     download: bool = False
     cover: bool = False
+
+    def to_string(self) -> str:
+        return json.dumps(asdict(self))
 
 
 class Record(Base, Core):
