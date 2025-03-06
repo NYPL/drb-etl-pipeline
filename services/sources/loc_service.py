@@ -4,7 +4,7 @@ import time
 from typing import Generator, Optional
 import requests
 
-from mappings.loc import LOCMapping
+from mappings.loc import map_loc_record
 from model import Record
 from .source_service import SourceService
 from logger import create_log
@@ -47,16 +47,11 @@ class LOCService(SourceService):
                             completed_import = True
                             break
 
-                    if record_data.get('resources'):
-                        resources = record_data['resources'][0]
-                        
-                        if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
-                            record_mapping = LOCMapping(source=record_data)
-                            record_mapping.applyMapping()
+                    loc_record = map_loc_record(source_record=record_data)
 
-                            yield record_mapping.record
-
-                            record_count += 1
+                    if loc_record is not None:
+                        yield loc_record
+                        record_count += 1
 
                     if limit and record_count >= limit:
                         completed_import = True

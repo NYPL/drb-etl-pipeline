@@ -1,164 +1,98 @@
-from .json import JSONMapping
-import ast
-import json
+from typing import Optional
+from uuid import uuid4
 
-from model import Part, FileFlags, Source
+from model import FileFlags, FRBRStatus, Part, Record, Source
+from .rights import get_rights_string
 
-class LOCMapping(JSONMapping):
-    def __init__(self, source):
-        super().__init__(source, {})
-        self.mapping = self.createMapping()
+
+# LOC response model: https://www.loc.gov/apis/json-and-yaml/responses/item-and-resource/    
+def map_loc_record(source_record: dict) -> Optional[Record]:
+    if not source_record.get('resources'):
+        return None
     
-    def createMapping(self):
-        return {
-            'title': ('title', '{0}'),
-            'alternative': ('other_title', '{0}'),
-            'medium': ('original_format', '{0}'),
-            'authors': ('contributor', '{0}|||true'),
-            'dates': ('dates', '{0}|publication_date'),
-            'publisher': ('item', '{0}'),
-            'identifiers': [
-                ('number_lccn', '{0}|lccn'),
-                ('item', '{0}'),
-            ],
-            'contributors': 
-                ('contributor', '{0}|||contributor'),
-            'extent': [('item', '{0}')],
-            'is_part_of': ('partof', '{0}|collection'),
-            'abstract': 
-                ('description', '{0}')
-            ,
-        }
+    first_file_resource = source_record.get('resources')[0]
 
-    def applyFormatting(self):       
-        self.record.has_part = []
-        self.add_has_part_mapping()
+    if 'pdf' not in first_file_resource.keys() and not 'epub_file' in first_file_resource.keys():
+        return None
 
-        self.record.source = 'loc'
-        if self.record.medium:
-            self.record.medium = self.record.medium[0]
-        if self.record.is_part_of and len(self.record.is_part_of) == 0:
-            self.record.is_part_of = None
-        if self.record.abstract and len(self.record.abstract) == 0:
-            self.record.abstract = None
+    item_details = source_record.get('item', {})
+    lccn = source_record.get('number_lccn')[0]
 
-        #Convert string repr of list to actual list
-        itemList = ast.literal_eval(self.record.identifiers[1])
+    return Record(
+        uuid=uuid4(),
+        frbr_status=FRBRStatus.TODO.value,
+        cluster_status=False,
+        source=Source.LOC.value,
+        title=source_record.get('title'),
+        alternative=source_record.get('other_title'),
+        source_id=f'{lccn}|lccn',
+        medium=_get_medium(source_record),
+        authors=[f'{author}|||true' for author in source_record.get('contributor', [])] if source_record.get('contributor') else None,
+        dates=[f"{source_record.get('date')}|publication_date"] if source_record.get('date') else None,
+        publisher=_parse_publishers(item_details.get('created_published')),
+        identifiers=[id for id in [
+            f'{lccn}|lccn',
+            f"{item_details.get('call_number')[0]}|call_number" if item_details.get('call_number') else None
+        ] if id is not None],
+        contributors=[f'{contributor}|||contributor' for contributor in source_record.get('contributor', [])] if source_record.get('contributor') else None,
+        extent=item_details.get('medium')[0] if item_details.get('medium') else None,
+        subjects=[f'{subject}||' for subject in item_details.get('subjects')] if item_details.get('subjects') else None,
+        languages=[f'||{language}' for language in item_details.get('language')] if item_details.get('language') else None,
+        rights=get_rights_string(rights_source='loc', license=item_details.get('rights_advisory')[0]) if item_details.get('rights_advisory') else None,
+        abstract=source_record.get('description')[0] if source_record.get('description') else None,
+        is_part_of=[f'{part_of}|collection' for part_of in source_record.get('partof')] if source_record.get('partof') else None,
+        spatial=item_details.get('location')[0] if item_details.get('location') else None,
+        has_part=_get_has_part(first_file_resource)
+    )
 
-        self.record.identifiers[0], self.record.identifiers[1], self.record.source_id = self.formatIdentifierSourceID(itemList)
 
-        if self.record.identifiers[1] == None:
-            del self.record.identifiers[1]
+def _get_medium(source_record: dict) -> Optional[str]:
+    mediums = source_record.get('original_format', [])
 
-        self.record.publisher, self.record.spatial = self.formatPubSpatial(itemList)
-
-        self.record.extent = self.formatExtent(itemList)
-
-        self.record.subjects = self.formatSubjects(itemList)
-
-        self.record.rights = self.formatRights(itemList)
-
-        self.record.languages = self.formatLanguages(itemList)
-
-    #Identifier/SourceID Formatting to return (string, string, string)
-    def formatIdentifierSourceID(self, itemList):
-        newIdentifier = itemList
-        lccnNumber = self.record.identifiers[0][0]  #lccnNumber comes in as an array and we need the string inside the array
-        sourceID = lccnNumber
-        if 'call_number' in newIdentifier.keys():
-            if not isinstance(newIdentifier['call_number'], list):
-                    newIdentifier['call_number'] = list(newIdentifier['call_number'])
-
-            newIdentifier['call_number'][0] = f'{newIdentifier["call_number"][0]}|call_number'
-            callNumber = newIdentifier['call_number'][0].strip(' ')
-        else: 
-            callNumber = None
-        return (lccnNumber, callNumber, sourceID)
+    if not mediums:
+        return None
     
-    #Publisher/Spatial Formatting to return (array, string)
-    def formatPubSpatial(self, itemList):
-        pubArray = []
-        spatialString = None
-        if 'created_published' in itemList.keys():
-            for elem in itemList['created_published']:
-                if ':' not in elem:
-                    createdPublishedList = elem.split(',', 1)
-                    pubLocation = createdPublishedList[0].strip(' ')
-                    if len(createdPublishedList) >= 2 and ',' in createdPublishedList[1]:
-                        pubOnly = createdPublishedList[1].split(',')[0].strip(' ')
-                        pubArray.append(pubOnly)
-                    spatialString = pubLocation
-                else:
-                    pubLocatAndPubInfo = elem.split(':', 1)
-                    pubLocation = pubLocatAndPubInfo[0].strip()
-                    pubInfo = pubLocatAndPubInfo[1]
-                    pubOnly = pubInfo.split(',', 1)[0].strip()
-                    pubArray.append(pubOnly)
-                    spatialString = pubLocation
-            return (pubArray, spatialString)
+    return mediums[0]
+
+
+def _parse_publishers(created_published_list: list[str]) -> Optional[list[str]]:
+    publishers = []
+
+    for created_published_data in created_published_list:
+        if ':' not in created_published_data:
+            publisher_and_location_data = created_published_data.split(',', 1)
+
+            if len(publisher_and_location_data) >= 2 and ',' in publisher_and_location_data[1]:
+                publisher = publisher_and_location_data[1].split(',')[0].strip(' ')
+                publishers.append(publisher)
         else:
-            return ([], None)
-    
-    #Extent Formatting to return string
-    def formatExtent(self, itemList):
-        extentString = ''
+            publisher_and_location_data = created_published_data.split(':', 1)
+            publisher_info = publisher_and_location_data[1]
+            publisher = publisher_info.split(',', 1)[0].strip()
+            publishers.append(publisher)
 
-        if 'medium' in itemList:
-            if itemList['medium']:
-                extentString = itemList['medium'][0]
-                return extentString
-            
-        return None
-    
-    #Subjects Formatting to return array
-    def formatSubjects(self, itemList):
-        subjectArray = []
+    return publishers if publishers else None
 
-        if 'subjects' in itemList:
-            for elem in itemList['subjects']:
-                subjectArray.append(f'{elem}||')
-        
-        return subjectArray
-    
-    #Rights Formatting to return string
-    def formatRights(self, itemList):
-        rightsString = ''
 
-        if 'rights_advisory' in itemList:
-            if itemList['rights_advisory']:
-                rightsString = f'loc|{itemList["rights_advisory"][0]}|||'
-                return rightsString
-            
-        return None
-        
-    #Languages Formatting to return array
-    def formatLanguages(self, itemList):
-        languageArray = []
+def _get_has_part(first_file_resource: dict) -> list[str]:
+    has_part = []
 
-        if 'language' in itemList:
-            for elem in itemList['language']:
-                languageArray.append(f'||{elem}')
+    if 'pdf' in first_file_resource.keys():
+        has_part.append(Part(
+            index=1,
+            url=first_file_resource['pdf'],
+            source=Source.LOC.value,
+            file_type='application/pdf',
+            flags=FileFlags(download=True).to_string()
+        ).to_string())
 
-        return languageArray
-    
-    def add_has_part_mapping(self):
-        if not self.source.get('resources'):
-            return
+    if 'epub_file' in first_file_resource.keys():
+        has_part.append(Part(
+            index=1,
+            url=first_file_resource['epub_file'],
+            source=Source.LOC.value,
+            file_type='application/epub+zip',
+            flags=FileFlags(download=True).to_string()
+        ).to_string())
 
-        if 'pdf' in self.source['resources'][0].keys():
-            self.record.has_part.append(Part(
-                index=1,
-                url=self.source['resources'][0]['pdf'],
-                source=Source.LOC.value,
-                file_type='application/pdf',
-                flags=FileFlags(download=True).to_string()
-            ).to_string())
-
-        if 'epub_file' in self.source['resources'][0].keys():
-            self.record.has_part.append(Part(
-                index=1,
-                url=self.source['resources'][0]['epub_file'],
-                source=Source.LOC.value,
-                file_type='application/pdf',
-                flags=FileFlags(download=True).to_string()
-            ).to_string())
+    return has_part
