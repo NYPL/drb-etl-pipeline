@@ -68,6 +68,7 @@ class FileFlags:
     embed: bool = False
     download: bool = False
     cover: bool = False
+    fulfill_limited_access: bool = None
 
     def to_string(self) -> str:
         return json.dumps(asdict(self))

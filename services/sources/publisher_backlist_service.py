@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import urllib.parse
+import dataclasses
 from enum import Enum
 from typing import Optional
 from model import Record, Work, Edition, Item
@@ -15,6 +16,8 @@ from services.ssm_service import SSMService
 from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
+from digital_assets import get_stored_file_url
+from model import Part, FileFlags
 
 logger = create_log(__name__)
 
@@ -184,8 +187,9 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
                 
+                webpub_flags=FileFlags(reader=True, fulfill_limited_access=False)
                 self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
-                self.store_pdf_manifest(publisher_backlist_record.record, record_permissions['requires_login'])
+                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, flags=webpub_flags, path='/publisher_backlist')
                 
                 mapped_records.append(publisher_backlist_record)
             except Exception:
@@ -252,46 +256,6 @@ class PublisherBacklistService(SourceService):
         }
 
         record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
-
-    def store_pdf_manifest(self, record: Record, requires_login: bool):
-        for link in record.has_part:
-            item_no, url, source, media_type, _ = link.split('|')
-
-            if media_type == 'application/pdf':
-                manifest_path = f'manifests/publisher_backlist/{source}/{record.source_id}.json'
-                manifest_url = f'https://{self.file_bucket}.s3.amazonaws.com/{manifest_path}'
-
-                manifest_json = self.generate_manifest(record, url, manifest_url)
-
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.file_bucket)
-
-                manifest_flags = {
-                    'catalog': False,
-                    'download': False,
-                    'reader': True,
-                    'embed': False,
-                    **({'fulfill_limited_access': False} if requires_login else {})
-                }
-
-                record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', json.dumps(manifest_flags)]))
-                
-                break
-
-    @staticmethod
-    def generate_manifest(record, source_url, manifest_url):
-        manifest = WebpubManifest(source_url, 'application/pdf')
-
-        manifest.addMetadata(record)
-        
-        manifest.addChapter(source_url, record.title)
-
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifest_url,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()
 
     @staticmethod
     def parse_permissions(permissions: str) -> dict:
