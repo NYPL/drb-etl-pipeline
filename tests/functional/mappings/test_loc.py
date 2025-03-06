@@ -25,4 +25,4 @@ def test_map_loc_record():
     assert loc_record.subjects == ['Materia medica, Vegetable--Brazil||', 'Medicinal plants--Brazil--Identification||']
     assert loc_record.rights == 'loc|Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International CC BY-NC-ND 4.0 https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode|||'
     assert loc_record.is_part_of == ['open access books|collection', 'general collections|collection', 'catalog|collection', 'lc online resource|collection']
-    assert loc_record.has_part == ['1|https://tile.loc.gov/storage-services/master/gdc/gdcebookspublic/20/24/35/02/89/2024350289/2024350289.pdf|loc|application/pdf|{"catalog": false, "reader": false, "embed": false, "download": true, "cover": false}']
+    assert loc_record.has_part == ['1|https://tile.loc.gov/storage-services/master/gdc/gdcebookspublic/20/24/35/02/89/2024350289/2024350289.pdf|loc|application/pdf|{"catalog": false, "reader": false, "embed": false, "download": true, "cover": false, "fulfill_limited_access": false}']
