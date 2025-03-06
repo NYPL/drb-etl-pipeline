@@ -52,7 +52,7 @@ class CLACSOProcess():
             if records:
                 for record_mapping in records:
                     self.record_buffer.add(record_mapping.record)
-                    self.s3_manager.store_pdf_manifest(record_mapping.record, self.s3_bucket, flags=webpub_flags, path='manifests')
+                    self.s3_manager.store_pdf_manifest(record_mapping.record, self.s3_bucket, flags=webpub_flags)
 
             self.record_buffer.flush()
 

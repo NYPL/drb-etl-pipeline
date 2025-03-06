@@ -48,15 +48,13 @@ class S3Manager:
 
         if pdf_part is not None:
             if path:
-                manifest_path = f'{path}/{record.source}/{record_id}.json'
+                manifest_path = f'manifests/{path}/{record.source}/{record_id}.json'
 
-            print(manifest_path)
             manifest_url = get_stored_file_url(storage_name=bucket_name, file_path=manifest_path)
             manifest_json = self.generate_manifest(record=record, source_url=pdf_part.url, manifest_url=manifest_url)
 
             self.create_manifest_in_s3(manifest_path=manifest_path, manifest_json=manifest_json, s3_bucket=bucket_name)
 
-            print(json.dumps(dataclasses.asdict(flags)))
             record.has_part.insert(0, Part(
                 index=pdf_part.index,
                 url=manifest_url,

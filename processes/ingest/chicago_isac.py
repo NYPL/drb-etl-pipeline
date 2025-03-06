@@ -42,7 +42,7 @@ class ChicagoISACProcess():
                 if dcdw_record is None:
                     continue
 
-                self.s3_manager.store_pdf_manifest(dcdw_record, bucket_name=self.s3_bucket, path='manifests')
+                self.s3_manager.store_pdf_manifest(dcdw_record, bucket_name=self.s3_bucket)
                 
                 yield dcdw_record
             except Exception:
