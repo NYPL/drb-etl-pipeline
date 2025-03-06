@@ -64,8 +64,7 @@ class TestLOCProcess:
         mockMapping.applyMapping.assert_called_once()
 
         processMocks['addHasPartMapping'].assert_called_once_with(mockMapping, test_record)
-        testProcess.s3_manager.store_pdf_manifest.assert_called_once_with(test_record, 'test_aws_bucket',
-                                                                          flags='{"catalog": false, "reader": true, "embed": false, "download": false, "cover": false, "fulfill_limited_access": null}')
+        testProcess.s3_manager.store_pdf_manifest.assert_called_once_with(test_record, 'test_aws_bucket', path='manifests')
         processMocks['addDCDWToUpdateList'].assert_called_once_with(mockMapping)
 
     def test_processlocRecord_error(self, mocker):

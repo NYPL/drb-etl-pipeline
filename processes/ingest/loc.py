@@ -187,9 +187,8 @@ class LOCProcess(CoreProcess):
                 logger.warning(f'Unable to map author in LOC record {LOCRec.record} ')
                 return
             
-            webpub_flags = json.dumps(dataclasses.asdict(FileFlags(reader=True)))
             self.addHasPartMapping(record, LOCRec.record)
-            self.s3_manager.store_pdf_manifest(LOCRec.record, self.s3Bucket, flags=webpub_flags)
+            self.s3_manager.store_pdf_manifest(LOCRec.record, self.s3Bucket, path='manifests')
             self.storeEpubsInS3(LOCRec.record)
             self.addDCDWToUpdateList(LOCRec)
         except Exception:

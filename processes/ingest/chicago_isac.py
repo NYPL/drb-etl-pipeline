@@ -42,8 +42,7 @@ class ChicagoISACProcess():
                 if dcdw_record is None:
                     continue
 
-                webpub_flags = json.dumps(dataclasses.asdict(FileFlags(reader=True)))
-                self.s3_manager.store_pdf_manifest(dcdw_record, bucket_name=self.s3_bucket, flags=webpub_flags)
+                self.s3_manager.store_pdf_manifest(dcdw_record, bucket_name=self.s3_bucket, path='manifests')
                 
                 yield dcdw_record
             except Exception:

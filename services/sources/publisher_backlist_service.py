@@ -187,9 +187,9 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
                 
-                webpub_flags=json.dumps(dataclasses.asdict(FileFlags(reader=True, fulfill_limited_access=False)))
+                webpub_flags=FileFlags(reader=True, fulfill_limited_access=False)
                 self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
-                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, flags = webpub_flags, requires_login=record_permissions['requires_login'])
+                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, flags=webpub_flags, path='manifests/publisher_backlist')
                 
                 mapped_records.append(publisher_backlist_record)
             except Exception:
