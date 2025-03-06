@@ -37,6 +37,7 @@ class CLACSOProcess():
 
             records = self.dspace_service.get_records(
                 start_timestamp=start_datetime,
+                full_import=self.process_type == 'complete',
                 offset=self.offset,
                 limit=self.limit
             )
