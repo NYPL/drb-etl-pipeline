@@ -51,7 +51,7 @@ class LOCProcess():
         )
 
         for record in records:
-            self.s3_manager.store_pdf_manifest(record=record)
+            self.s3_manager.store_pdf_manifest(record=record, bucket_name=self.s3_bucket)
             self.store_epub(record=record)
 
             self.record_buffer.add(record=record)
