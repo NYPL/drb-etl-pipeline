@@ -2,25 +2,24 @@ import json
 import os
 import copy
 from botocore.exceptions import ClientError
+from typing import Optional
 
-from ..core import CoreProcess
-from datetime import datetime, timedelta, timezone
-from managers import S3Manager
+from datetime import datetime
+from managers import DBManager, S3Manager
 from model import Link
 from logger import create_log
+from .. import utils
 
 logger = create_log(__name__)
 
-class FulfillURLManifestProcess(CoreProcess):
+class FulfillURLManifestProcess():
 
     def __init__(self, *args):
-        super(FulfillURLManifestProcess, self).__init__(*args[:4])
+        self.process = args[0]
+        self.ingest_period = args[2]
 
-        self.full_import = self.process == 'complete' 
-        self.start_timestamp = None
-
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager() 
+        self.db_manager.createSession()
 
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.host = os.environ['DRB_API_HOST']
@@ -29,18 +28,11 @@ class FulfillURLManifestProcess(CoreProcess):
         self.s3_manager.createS3Client()
 
     def runProcess(self):
-        if self.process == 'daily':
-            start_timestamp = datetime.now(timezone.utc) - timedelta(days=1)
-            self.fetch_and_update_manifests(start_timestamp)
-        elif self.process == 'complete':
-            start_timestamp = None
-            self.fetch_and_update_manifests(start_timestamp)
-        elif self.process == 'custom':
-            time_stamp = self.ingestPeriod
-            start_timestamp = datetime.strptime(time_stamp, '%Y-%m-%dT%H:%M:%S')
-            self.fetch_and_update_manifests(start_timestamp)
+        start_timestamp = utils.get_start_datetime(process_type=self.process, ingest_period=self.ingest_period)
 
-    def fetch_and_update_manifests(self, start_timestamp=None):
+        self.fetch_and_update_manifests(start_timestamp=start_timestamp)
+
+    def fetch_and_update_manifests(self, start_timestamp: Optional[datetime]=None):
 
         batches = self.s3_manager.load_batches(self.prefix, self.s3_bucket)
         if start_timestamp:
@@ -86,7 +78,7 @@ class FulfillURLManifestProcess(CoreProcess):
             for link in metadata_json['links']:
                 self.fulfill_flag_update(link)
 
-        self.closeConnection()
+        self.db_manager.closeConnection()
 
         self.replace_manifest_object(metadata_json, metadata_json_copy, bucket_name, curr_key)
 
@@ -161,7 +153,7 @@ class FulfillURLManifestProcess(CoreProcess):
                                 newLinkFlag = dict(link.flags)
                                 newLinkFlag['fulfill_limited_access'] = True
                                 link.flags = newLinkFlag
-                                self.commitChanges()
+                                self.db_manager.commitChanges()
                         
     def check_copyright_status(self, metadata_json):
         for link in metadata_json['links']:
