@@ -21,7 +21,6 @@ class HathiTrustProcess():
 
     def __init__(self, *args):
         self.process = args[0]
-        self.custom_file = args[1]
 
         self.limit = int(args[4]) if args[4] else None
 
