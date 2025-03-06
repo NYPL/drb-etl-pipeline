@@ -55,7 +55,10 @@ def _get_medium(source_record: dict) -> Optional[str]:
     return mediums[0]
 
 
-def _parse_publishers(created_published_list: list[str]) -> Optional[list[str]]:
+def _parse_publishers(created_published_list: Optional[list[str]]) -> Optional[list[str]]:
+    if created_published_list is None:
+        return
+    
     publishers = []
 
     for created_published_data in created_published_list:

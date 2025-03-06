@@ -85,7 +85,7 @@ class LOCProcess():
 
         if epub_part is not None:
             epub_location = f'epubs/{epub_part.source}/{record_id}.epub'
-            epub_url = get_stored_file_url(storage_name=epub_url, file_path=epub_location)
+            epub_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=epub_location)
 
             record.has_part = [Part(
                 index=epub_part.index,

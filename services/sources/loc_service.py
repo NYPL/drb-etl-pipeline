@@ -67,18 +67,24 @@ class LOCService(SourceService):
             return
 
     def _fetch_page_json_data(self, page_url: str) -> Optional[dict]:
-        try:
-            page_response = requests.get(page_url, headers={ 'Accept': 'application/json' })
+        max_attempts = 3
 
-            # If we exceed the last page, a bad request will be returned
-            if page_response.status_code == 400:
-                return None
-            
-            page_response.raise_for_status()
+        for attempt in (0, max_attempts):
+            try:
+                page_response = requests.get(page_url, headers={ 'Accept': 'application/json' })
 
-            page_data = page_response.content
+                # If we exceed the last page, a bad request will be returned
+                if page_response.status_code == 400:
+                    return None
+                
+                page_response.raise_for_status()
 
-            return json.loads(page_data.decode('utf-8'))
-        except Exception:
-            logger.exception(f'Failed to load page data from: {page_url}')
-            return {}
+                page_data = page_response.content
+
+                return json.loads(page_data.decode('utf-8'))
+            except Exception:
+                if attempt < max_attempts - 1:
+                    continue
+
+                logger.exception(f'Failed to load page data from: {page_url}')
+                return {}
