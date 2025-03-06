@@ -49,7 +49,9 @@ class S3Manager:
         if pdf_part is not None:
             if path:
                 manifest_path = f'manifests/{path}/{record.source}/{record_id}.json'
-
+            else:
+                manifest_path = f'manifests/{record.source}/{record_id}.json'
+                
             manifest_url = get_stored_file_url(storage_name=bucket_name, file_path=manifest_path)
             manifest_json = self.generate_manifest(record=record, source_url=pdf_part.url, manifest_url=manifest_url)
 
