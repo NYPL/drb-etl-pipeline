@@ -10,7 +10,7 @@ logger = create_log(__name__)
 
 class PublisherBacklistProcess():
     def __init__(self, *args):
-        self.process = args[1]
+        self.process = args[0]
         self.ingest_period = args[2]
 
         self.limit = (len(args) >= 5 and args[4] and int(args[4]) <= 100) or None
@@ -42,7 +42,7 @@ class PublisherBacklistProcess():
             
             self.record_buffer.flush()
 
-            logger.info(f'Ingested {len(self.records)} Publisher Backlist records')
+            logger.info(f'Ingested {len(self.record_buffer.ingest_count)} Publisher Backlist records')
         except Exception as e:
             logger.exception('Failed to run Publisher Backlist process')
             raise e   
