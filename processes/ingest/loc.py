@@ -1,14 +1,17 @@
 import time
 import os, requests
+import json
+import dataclasses
 from requests.exceptions import HTTPError, ConnectionError
 
 from ..core import CoreProcess
 from mappings.base_mapping import MappingError
 from mappings.loc import LOCMapping
 from managers import RabbitMQManager, S3Manager, WebpubManifest
-from model import get_file_message
+from model import get_file_message, FileFlags
 from logger import create_log
 from datetime import datetime, timedelta, timezone
+from digital_assets import get_stored_file_url
 
 logger = create_log(__name__)
 
@@ -185,7 +188,7 @@ class LOCProcess(CoreProcess):
                 return
             
             self.addHasPartMapping(record, LOCRec.record)
-            self.storePDFManifest(LOCRec.record)
+            self.s3_manager.store_pdf_manifest(LOCRec.record, self.s3Bucket)
             self.storeEpubsInS3(LOCRec.record)
             self.addDCDWToUpdateList(LOCRec)
         except Exception:
@@ -212,33 +215,6 @@ class LOCProcess(CoreProcess):
             ])
             record.has_part.append(linkString2)
 
-
-    def storePDFManifest(self, record):
-        for link in record.has_part:
-            itemNo, uri, source, mediaType, flags = link.split('|')
-
-            if mediaType == 'application/pdf':
-                recordID = record.identifiers[0].split('|')[0]
-
-                manifestPath = 'manifests/{}/{}.json'.format(source, recordID)
-                manifestURI = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3Bucket, manifestPath
-                )
-
-                manifestJSON = self.generateManifest(record, uri, manifestURI)
-
-                self.s3_manager.createManifestInS3(manifestPath, manifestJSON, self.s3Bucket)
-
-                linkString = '|'.join([
-                    itemNo,
-                    manifestURI,
-                    source,
-                    'application/webpub+json',
-                    '{"catalog": false, "download": false, "reader": true, "embed": false}'
-                ])
-                record.has_part.insert(0, linkString)
-                break
-
     def storeEpubsInS3(self, record):
         for epubItem in record.has_part:
             itemNo, uri, source, mediaType, flagStr = epubItem.split('|')
@@ -256,27 +232,11 @@ class LOCProcess(CoreProcess):
                 break
 
     def addEPUBManifest(self, record, itemNo, source, flagStr, mediaType, location):
-            s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, location)
+            s3_url = get_stored_file_url(storage_name=self.s3Bucket, file_path=location)
 
-            linkString = '|'.join([itemNo, s3URL, source, mediaType, flagStr])
+            link_string = '|'.join([itemNo, s3_url, source, mediaType, flagStr])
 
-            record.has_part.insert(0, linkString)
-
-    @staticmethod
-    def generateManifest(record, sourceURI, manifestURI):
-        manifest = WebpubManifest(sourceURI, 'application/pdf')
-
-        manifest.addMetadata(record)
-        
-        manifest.addChapter(sourceURI, record.title)
-
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifestURI,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()
+            record.has_part.insert(0, link_string)
     
     @staticmethod
     def fetchPageJSON(url):
