@@ -60,7 +60,7 @@ class ClassifyProcess():
 
     def classify_records(self, start_datetime: Optional[datetime]=None, record_uuid: Optional[str]=None, source: Optional[str]=None):
         get_unfrbrized_records_query = (
-            self.session.query(Record)
+            self.db_manager.session.query(Record)
                 .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')
                 .filter(Record.frbr_status == 'to_do')
         )
@@ -80,8 +80,8 @@ class ClassifyProcess():
             unfrbrized_record.cluster_status = False
             unfrbrized_record.frbr_status = 'complete'
 
-            self.session.add(unfrbrized_record)
-            self.session.commit()
+            self.db_manager.session.add(unfrbrized_record)
+            self.db_manager.session.commit()
 
             if self.limit and self.classified_count >= self.limit:
                 break

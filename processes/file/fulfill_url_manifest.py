@@ -127,7 +127,7 @@ class FulfillURLManifestProcess():
         for toc in metadata_json['toc']:
             if 'pdf' in toc['href'] \
                 or 'epub' in toc['href']:
-                    for link in self.session.query(Link) \
+                    for link in self.db_manager.session.query(Link) \
                         .filter(Link.url == toc['href'].replace('https://', '')):
                             counter += 1
                             toc['href'] = f'https://{self.host}/fulfill/{link.id}'
@@ -137,7 +137,7 @@ class FulfillURLManifestProcess():
     def fulfill_replace(self, metadata, counter):
         if metadata['type'] == 'application/pdf' or metadata['type'] == 'application/epub+zip' \
             or metadata['type'] == 'application/epub+xml':
-                for link in self.session.query(Link) \
+                for link in self.db_manager.session.query(Link) \
                     .filter(Link.url == metadata['href'].replace('https://', '')):
                             counter += 1            
                             metadata['href'] = f'https://{self.host}/fulfill/{link.id}'
@@ -146,7 +146,7 @@ class FulfillURLManifestProcess():
     
     def fulfill_flag_update(self, metadata):
         if metadata['type'] == 'application/webpub+json':
-            for link in self.session.query(Link) \
+            for link in self.db_manager.session.query(Link) \
                 .filter(Link.url == metadata['href'].replace('https://', '')):   
                         if 'fulfill_limited_access' in link.flags.keys():
                             if link.flags['fulfill_limited_access'] == False:
@@ -158,7 +158,7 @@ class FulfillURLManifestProcess():
     def check_copyright_status(self, metadata_json):
         for link in metadata_json['links']:
             if link['type'] == 'application/webpub+json':
-                for psql_link in self.session.query(Link) \
+                for psql_link in self.db_manager.session.query(Link) \
                     .filter(Link.url == link['href'].replace('https://', '')):   
                         if 'fulfill_limited_access' not in psql_link.flags.keys():
                             copyright_status = False
