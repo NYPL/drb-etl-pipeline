@@ -106,6 +106,10 @@ class Record(Base, Core):
 
     __tableargs__ = (Index('ix_record_identifiers', identifiers, postgresql_using="gin"))
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._deletion_flag = False
+
     def __repr__(self):
         return '<Record(title={}, uuid={}, authors={})>'.format(
             self.title, self.uuid, self.authors
@@ -148,3 +152,11 @@ class Record(Base, Core):
         else:
             editionNo = extract(versionNum, 'english')
             self._has_version = f'{versionNum}|{editionNo}'
+
+    @property
+    def deletion_flag(self):
+        return self._deletion_flag
+    
+    @deletion_flag.setter
+    def deletion_flag(self, deletion_flag):
+        self._deletion_flag = deletion_flag

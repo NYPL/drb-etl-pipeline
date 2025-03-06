@@ -51,17 +51,18 @@ class DOABProcess():
                 records = self.dspace_service.get_records(start_timestamp=self.ingest_period, offset=self.offset, limit=self.limit)
             elif self.single_record:
                 record = self.dspace_service.get_single_record(record_id=self.single_record, source_identifier=self.DOAB_IDENTIFIER)
-                self.manage_links(record)
-                self.record_buffer.add(record.record)
+                self._process_record(record)
+                self.record_buffer.flush()
+                self._log_results()
+                return
 
             if records:
                 for record in records:
-                    self.manage_links(record)
-                    self.record_buffer.add(record.record)
+                    self._process_record(record)
             
             self.record_buffer.flush()
 
-            logger.info(f'Ingested {self.record_buffer.ingest_count} DOAB records')
+            self._log_results()
 
         except Exception as e:
             logger.exception('Failed to run DOAB process')
@@ -82,3 +83,15 @@ class DOABProcess():
         for epubLink in linkManager.ePubLinks:
             ePubPath, ePubURI = epubLink
             self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(ePubURI, ePubPath))
+
+    def _process_record(self, record):
+        if record.record._deletion_flag:
+            self.record_buffer.delete(record.record)
+        else:
+            self.manage_links(record)
+            self.record_buffer.add(record.record)
+
+    def _log_results(self):
+        if self.record_buffer.deletion_count != 0:
+            logger.info(f'Deleted {self.record_buffer.deletion_count} DOAB records')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} DOAB records')

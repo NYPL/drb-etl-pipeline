@@ -6,6 +6,7 @@ import json
 import dataclasses
 
 from model import FileFlags, FRBRStatus, Part, Record, Source
+from services import DSpaceService
 from .base_mapping import BaseMapping
 
 class DOABMapping(BaseMapping):
@@ -14,7 +15,27 @@ class DOABMapping(BaseMapping):
     def __init__(self, doab_record, namespaces):
         self.record = self.map_doab_record(doab_record, namespaces)
     
-    def map_doab_record(self, doab_record, namespaces) -> Record:
+    def map_doab_record(self, record, namespaces) -> Record:
+        header = record.find('.//header', namespaces=DSpaceService.ROOT_NAMESPACE)
+        deletion_flag = header is not None and header.get('status') == 'deleted'
+
+        if header is not None:
+            identifier = header.find('.//identifier', namespaces=DSpaceService.ROOT_NAMESPACE)
+            if identifier is not None:
+                source_id = identifier.text.split(':')[-1]
+
+        if deletion_flag and source_id:
+            delete_record=Record(
+                uuid=uuid4(),
+                frbr_status=FRBRStatus.TODO.value,
+                cluster_status=False,
+                source_id=source_id,
+            )
+            delete_record._deletion_flag = True
+            return delete_record
+        
+        doab_record = record.xpath('.//oai_dc:dc', namespaces=namespaces)[0]
+        
         identifiers, source_id = self._get_identifers(doab_record, namespaces=namespaces)
         title = doab_record.xpath('./dc:title/text()', namespaces=namespaces) + doab_record.xpath('./datacite:creator/text()', namespaces=namespaces)
 

@@ -8,7 +8,7 @@ def test_map_doab_record():
     with open('tests/fixtures/test-clacso.xml') as f:
         oaidc_records = etree.parse(f)
 
-    for record in oaidc_records.xpath('//oai_dc:dc', namespaces=DSpaceService.OAI_NAMESPACES):
+    for record in oaidc_records.xpath('.//record', namespaces=DSpaceService.OAI_NAMESPACES):
         if record is None:
             continue
 
