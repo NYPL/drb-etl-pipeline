@@ -2,8 +2,6 @@ import base64
 import boto3
 from botocore.exceptions import ClientError
 import hashlib
-import json
-import dataclasses
 from io import BytesIO
 import mimetypes
 import os
@@ -62,7 +60,7 @@ class S3Manager:
                 url=manifest_url,
                 source=record.source,
                 file_type='application/webpub+json',
-                flags=json.dumps(dataclasses.asdict(flags))
+                flags=flags.to_string()
             ).to_string())
 
     def create_manifest_in_s3(self, manifest_path, manifest_json, s3_bucket: str):
