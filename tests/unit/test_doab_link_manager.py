@@ -8,113 +8,113 @@ from managers.doabParser import LinkError
 
 class TestDOABLinkManager:
     @pytest.fixture
-    def testManager(self, mocker):
+    def test_manager(self, mocker):
         return DOABLinkManager(mocker.MagicMock())
 
     @pytest.fixture
-    def testHasParts(self):
+    def test_has_parts(self):
         return [
-            '1|testURI|test|testType|{"test": true}',
+            '1|test_uri|test|test_type|{"test": true}',
             '2|testOtherURI|test|testOtherType|{"test": false}'
         ]
 
-    def test_loadParsers(self, testManager):
-        assert len(testManager.parsers) == 7
-        assert testManager.parsers[0].__name__ == 'SpringerParser'
-        assert testManager.parsers[6].__name__ == 'DefaultParser'
+    def test_load_parsers(self, test_manager):
+        assert len(test_manager.parsers) == 7
+        assert test_manager.parsers[0].__name__ == 'SpringerParser'
+        assert test_manager.parsers[6].__name__ == 'DefaultParser'
 
-    def test_selectParser(self, testManager, mocker):
-        mockFindURI = mocker.patch.object(DOABLinkManager, 'findFinalURI')
-        mockFindURI.return_value = ('testRoot', 'testType')
+    def test_select_parser(self, test_manager, mocker):
+        mock_find_uri = mocker.patch.object(DOABLinkManager, 'find_final_uri')
+        mock_find_uri.return_value = ('test_root', 'test_type')
 
-        testManager.parsers = []
-        parserInstances = []
+        test_manager.parsers = []
+        parser_instances = []
         for i in range(3):
-            mockInstance = mocker.MagicMock()
-            mockInstance.validateURI.return_value = True if i == 1 else False
+            mock_instance = mocker.MagicMock()
+            mock_instance.validateURI.return_value = True if i == 1 else False
 
-            mockParser = mocker.MagicMock()
-            mockParser.return_value = mockInstance
+            mock_parser = mocker.MagicMock()
+            mock_parser.return_value = mock_instance
 
-            parserInstances.append(mockInstance)
-            testManager.parsers.append(mockParser)
+            parser_instances.append(mock_instance)
+            test_manager.parsers.append(mock_parser)
 
-        testParser = testManager.selectParser('testURI', 'testType')
+        test_parser = test_manager.select_parser('test_uri', 'test_type')
 
-        assert testParser == parserInstances[1]
+        assert test_parser == parser_instances[1]
         for i in range(3):
-            testManager.parsers[1].assert_called_once_with('testRoot', 'testType', testManager.record)
-        parserInstances[2].validateURI.assert_not_called
+            test_manager.parsers[1].assert_called_once_with('test_root', 'test_type', test_manager.record)
+        parser_instances[2].validateURI.assert_not_called
 
-    def test_parseLinks(self, testManager, testHasParts, mocker):
-        testManager.record.has_part = testHasParts
+    def test_parse_links(self, test_manager, test_has_parts, mocker):
+        test_manager.record.has_part = test_has_parts
 
-        mockParser = mocker.MagicMock(uri='testSourceURI')
-        mockParser.createLinks.return_value = [
-            ('parseURI1', {'other': True}, 'testType1', 'testManifest', None),
-            ('parseURI2', {'other': False}, 'testType2', None, 'testEPub')
+        mock_parser = mocker.MagicMock(uri='testSourceURI')
+        mock_parser.createLinks.return_value = [
+            ('parseURI1', {'other': True}, 'test_type1', 'testManifest', None),
+            ('parseURI2', {'other': False}, 'test_type2', None, 'testEPub')
         ]
 
-        mockSelect = mocker.patch.object(DOABLinkManager, 'selectParser')
-        mockSelect.side_effect = [mockParser] * 2
+        mock_select = mocker.patch.object(DOABLinkManager, 'select_parser')
+        mock_select.side_effect = [mock_parser] * 2
 
-        testManager.parseLinks()
+        test_manager.parse_links()
 
-        assert testManager.record.has_part == [
-            '1|parseURI1|test|testType1|{"test": true, "other": true}',
-            '1|parseURI2|test|testType2|{"test": true, "other": false}'
+        assert test_manager.record.has_part == [
+            '1|parseURI1|test|test_type1|{"test": true, "other": true}',
+            '1|parseURI2|test|test_type2|{"test": true, "other": false}'
         ]
-        assert testManager.manifests == ['testManifest']
-        assert testManager.ePubLinks == ['testEPub']
+        assert test_manager.manifests == ['testManifest']
+        assert test_manager.epub_links == ['testEPub']
 
-    def test_parseLinks_error(self, testManager, testHasParts, mocker):
-        testManager.record.has_part = testHasParts
+    def test_parse_links_error(self, test_manager, test_has_parts, mocker):
+        test_manager.record.has_part = test_has_parts
 
-        mockSelect = mocker.patch.object(DOABLinkManager, 'selectParser')
-        mockSelect.side_effect = [LinkError('test')] * 2
+        mock_select = mocker.patch.object(DOABLinkManager, 'select_parser')
+        mock_select.side_effect = [LinkError('test')] * 2
 
-        testManager.parseLinks()
+        test_manager.parse_links()
 
-        assert testManager.record.has_part == []
+        assert test_manager.record.has_part == []
 
-    def test_findFinalURI_direct(self, mocker):
-        mockResponse = mocker.MagicMock()
-        mockResponse.status_code = 200
-        mockResponse.headers = {'Content-Type': 'text/html; utf-8'}
+    def test_find_final_uri_direct(self, mocker):
+        mock_response = mocker.MagicMock()
+        mock_response.status_code = 200
+        mock_response.headers = {'Content-Type': 'text/html; utf-8'}
 
-        mockHead = mocker.patch.object(requests, 'head')
-        mockHead.return_value = mockResponse
+        mock_head = mocker.patch.object(requests, 'head')
+        mock_head.return_value = mock_response
 
-        testURI, testType = DOABLinkManager.findFinalURI('testURI', 'testType')
+        test_uri, test_type = DOABLinkManager.find_final_uri('test_uri', 'test_type')
 
-        assert testURI == 'testURI'
-        assert testType == 'text/html'
-        mockHead.assert_called_once_with('testURI', allow_redirects=False, timeout=15)
+        assert test_uri == 'test_uri'
+        assert test_type == 'text/html'
+        mock_head.assert_called_once_with('test_uri', allow_redirects=False, timeout=15)
 
-    def test_findFinalURI_error(self, mocker):
-        mockHead = mocker.patch.object(requests, 'head')
-        mockHead.side_effect = ConnectionError
+    def test_find_final_uri_error(self, mocker):
+        mock_head = mocker.patch.object(requests, 'head')
+        mock_head.side_effect = ConnectionError
 
         with pytest.raises(LinkError):
-            DOABLinkManager.findFinalURI('testURI', 'testType')
+            DOABLinkManager.find_final_uri('test_uri', 'test_type')
 
-    def test_findFinalURI_redirect(self, mocker):
-        mockResponse = mocker.MagicMock()
-        mockResponse.status_code = 301
-        mockResponse.headers = {'Location': 'sourceURI'}
+    def test_find_final_uri_redirect(self, mocker):
+        mock_response = mocker.MagicMock()
+        mock_response.status_code = 301
+        mock_response.headers = {'Location': 'sourceURI'}
 
-        mockResponse2 = mocker.MagicMock()
-        mockResponse2.status_code = 200
-        mockResponse2.headers = {'Content-Type': 'application/test'}
+        mock_response2 = mocker.MagicMock()
+        mock_response2.status_code = 200
+        mock_response2.headers = {'Content-Type': 'application/test'}
 
-        mockHead = mocker.patch.object(requests, 'head')
-        mockHead.side_effect = [mockResponse, mockResponse2]
+        mock_head = mocker.patch.object(requests, 'head')
+        mock_head.side_effect = [mock_response, mock_response2]
 
-        testURI, testType = DOABLinkManager.findFinalURI('testURI', 'testType')
+        test_uri, test_type = DOABLinkManager.find_final_uri('test_uri', 'test_type')
 
-        assert testURI == 'sourceURI'
-        assert testType == 'application/test'
-        mockHead.assert_has_calls([
-            mocker.call('testURI', allow_redirects=False, timeout=15),
+        assert test_uri == 'sourceURI'
+        assert test_type == 'application/test'
+        mock_head.assert_has_calls([
+            mocker.call('test_uri', allow_redirects=False, timeout=15),
             mocker.call('sourceURI', allow_redirects=False, timeout=15)
         ])

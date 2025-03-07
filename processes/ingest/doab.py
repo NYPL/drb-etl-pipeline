@@ -70,15 +70,15 @@ class DOABProcess():
             self.db_manager.close_connection()
 
     def manage_links(self, record):
-        linkManager = DOABLinkManager(record.record)
+        link_manager = DOABLinkManager(record.record)
 
-        linkManager.parseLinks()
+        link_manager.parse_links()
 
-        for manifest in linkManager.manifests:
+        for manifest in link_manager.manifests:
             manifest_path, manifest_json = manifest
             self.s3_manager.create_manifest_in_s3(
                 manifest_path, manifest_json, self.s3_bucket)
 
-        for epubLink in linkManager.ePubLinks:
-            ePubPath, ePubURI = epubLink
-            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(ePubURI, ePubPath))
+        for epub_link in link_manager.epub_links:
+            epub_path, epub_uri = epub_link
+            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(epub_uri, epub_path))
