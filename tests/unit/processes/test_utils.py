@@ -41,4 +41,3 @@ def test_parse_process_args(args, expected_params: utils.ProcessParams):
     params = utils.parse_process_args(*args)
 
     assert params == expected_params
-    
