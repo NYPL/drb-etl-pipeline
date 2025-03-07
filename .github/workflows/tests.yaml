@@ -4,18 +4,18 @@ on:
   pull_request:
     types: [opened, synchronize]
     paths:
-        - 'api/**'
-        - 'managers/**'
-        - 'mappings/**'
-        - 'model/**'
-        - 'processes/**'
-        - 'services/**'
-        - 'tests/**'
-        - 'utils/**'
-        - 'dev-requirements.txt'
-        - 'requirements.txt'
-        - 'main.py'
-        - 'Makefile' 
+      - "api/**"
+      - "managers/**"
+      - "mappings/**"
+      - "model/**"
+      - "processes/**"
+      - "services/**"
+      - "tests/**"
+      - "utils/**"
+      - "dev-requirements.txt"
+      - "requirements.txt"
+      - "main.py"
+      - "Makefile"
 
 jobs:
   test:
@@ -25,47 +25,75 @@ jobs:
       AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ENVIRONMENT: local
+      PIP_CACHE_DIR: ~/.cache/pip
+      DOCKER_BUILDKIT: 1
+
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+
       - name: Set up Python 3.9
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            dev-requirements.txt
+
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          path: |
+            ${{ env.PIP_CACHE_DIR }}
+            ~/.local
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'dev-requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-            ${{ runner.os }}-
+
       - name: Install GCC 12
         run: |
           sudo apt update
           sudo apt install -y gcc-12 g++-12
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 60
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 60
-      - name: Install dependencies
+
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip wheel
-          pip install -r dev-requirements.txt
-          pip install -r requirements.txt
-      - name: Run unit tests
+          pip install --cache-dir ${{ env.PIP_CACHE_DIR }} \
+            -r requirements.txt \
+            -r dev-requirements.txt
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile', '**/docker-compose*.yml', 'requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      - name: Build Docker images
         run: |
-          make unit
+          docker compose build --progress plain
+
       - name: Start Docker containers
         run: |
           docker compose up -d
+
       - name: Wait for docker containers to be ready
         run: |
           echo "Waiting for docker container..."
           sleep 90
-      - name: Run functional tests
+
+      - name: Run tests
         run: |
+          make unit
           make functional
-      - name: Run integration tests
-        run: |
           make integration
+
       - name: Stop Docker containers
         if: always()
         run: |
