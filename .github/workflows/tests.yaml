@@ -25,7 +25,6 @@ jobs:
       AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ENVIRONMENT: local
-      PIP_CACHE_DIR: ~/.cache/pip
       DOCKER_BUILDKIT: 1
 
     steps:
@@ -35,20 +34,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
-          cache: "pip"
-          cache-dependency-path: |
-            requirements.txt
-            dev-requirements.txt
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.PIP_CACHE_DIR }}
-            ~/.local
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt', 'dev-requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
 
       - name: Install GCC 12
         run: |
@@ -60,32 +45,19 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip wheel
-          pip install --cache-dir ${{ env.PIP_CACHE_DIR }} \
-            -r requirements.txt \
-            -r dev-requirements.txt
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Cache Docker layers
-        uses: actions/cache@v4
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile', '**/docker-compose*.yml', 'requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-docker-
+          pip install --no-cache-dir -r requirements.txt -r dev-requirements.txt
 
       - name: Build Docker images
         run: |
-          docker compose build --progress plain
+          docker compose build
 
       - name: Start Docker containers
         run: |
           docker compose up -d
 
-      - name: Wait for docker containers to be ready
+      - name: Wait for containers
         run: |
-          echo "Waiting for docker container..."
+          echo "Waiting for docker containers..."
           sleep 90
 
       - name: Run tests
