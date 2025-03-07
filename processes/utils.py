@@ -28,11 +28,11 @@ class ProcessParams:
 
 def parse_process_args(*args) -> ProcessParams:
     return ProcessParams(
-        process_type=args[0] if len(args) >= 1 else 'daily',
-        custom_file=args[1] if len(args) >= 2 else None,
-        ingest_period=args[2] if len(args) >= 3 else None,
-        record_id=args[3] if len(args) >= 4 else None,
-        limit=int(args[4]) if len(args) >= 5 else None,
-        offset=int(args[5]) if len(args) >= 6 else 0,
-        source=args[6] if len(args) >= 7 else None,
+        process_type=args[0] if len(args) > 0 else None,
+        custom_file=args[1] if len(args) > 1 else None,
+        ingest_period=args[2] if len(args) > 2 else None,
+        record_id=args[3] if len(args) > 3 else None,
+        limit=int(args[4]) if len(args) > 4 else None,
+        offset=int(args[5]) if len(args) > 5 else 0,
+        source=args[6] if len(args) > 6 else None,
     )
