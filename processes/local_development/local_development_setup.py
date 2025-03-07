@@ -6,26 +6,22 @@ from sqlalchemy.exc import ProgrammingError
 from time import sleep
 
 from managers import DBManager, ElasticsearchManager
-from ..core import CoreProcess
 from logger import create_log
 
 logger = create_log(__name__)
 
 
-class LocalDevelopmentSetupProcess(CoreProcess):
+class LocalDevelopmentSetupProcess():
     def __init__(self, *args):
-        super(LocalDevelopmentSetupProcess, self).__init__(*args[:4])
-
         self.elastic_search_manager = ElasticsearchManager()
+        self.db_manager = DBManager()
 
     def runProcess(self):
         try:
             self.initialize_db()
 
-            self.generateEngine()
-            self.createSession()
-            
-            self.initializeDatabase()
+            self.db_manager.createSession()
+            self.db_manager.initializeDatabase()
 
             self.elastic_search_manager.createElasticConnection()
             self.wait_for_elastic_search()
