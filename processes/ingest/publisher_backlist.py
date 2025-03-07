@@ -42,7 +42,7 @@ class PublisherBacklistProcess():
             
             self.record_buffer.flush()
 
-            logger.info(f'Ingested {len(self.record_buffer.ingest_count)} Publisher Backlist records')
+            logger.info(f'Ingested {self.record_buffer.ingest_count} Publisher Backlist records')
         except Exception as e:
             logger.exception('Failed to run Publisher Backlist process')
             raise e   
