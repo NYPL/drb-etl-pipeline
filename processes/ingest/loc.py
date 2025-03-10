@@ -1,290 +1,79 @@
-import time
-import os, requests
-from requests.exceptions import HTTPError, ConnectionError
+import os
 
-from ..core import CoreProcess
-from mappings.base_mapping import MappingError
-from mappings.loc import LOCMapping
-from managers import RabbitMQManager, S3Manager, WebpubManifest
-from model import get_file_message
+from digital_assets import get_stored_file_url
+from managers import DBManager, RabbitMQManager, S3Manager
+from model import get_file_message, Part, Record
 from logger import create_log
-from datetime import datetime, timedelta, timezone
+from ..record_buffer import RecordBuffer
+from .. import utils
+from services import LOCService
 
 logger = create_log(__name__)
 
-LOC_ROOT_OPEN_ACCESS = 'https://www.loc.gov/collections/open-access-books/?fo=json&fa=access-restricted%3Afalse&c=50&at=results&sb=timestamp_desc'
-LOC_ROOT_DIGIT = 'https://www.loc.gov/collections/selected-digitized-books/?fo=json&fa=access-restricted%3Afalse&c=50&at=results&sb=timestamp_desc' 
 
-class LOCProcess(CoreProcess):
+class LOCProcess():
 
     def __init__(self, *args):
-        super(LOCProcess, self).__init__(*args[:4])
+        self.process_type = args[0]
+        self.ingest_period = args[2]
 
-        self.ingestOffset = int(args[5] or 0)
-        self.ingestLimit = (int(args[4]) + self.ingestOffset) if args[4] else 5000
-        self.process == 'complete'
+        self.offset = int(args[5] or 0)
+        self.limit = (int(args[4]) + self.offset) if args[4] else 5000
         self.startTimestamp = None 
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
+
+        self.loc_service = LOCService()
 
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3_bucket = os.environ['FILE_BUCKET']
 
-        self.fileQueue = os.environ['FILE_QUEUE']
-        self.fileRoute = os.environ['FILE_ROUTING_KEY']
+        self.file_queue = os.environ['FILE_QUEUE']
+        self.file_route = os.environ['FILE_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
         self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
+        self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
 
     def runProcess(self):
-        if self.process == 'weekly':
-            startTimeStamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=7)
-            self.importLOCRecords(startTimeStamp)
-        elif self.process == 'complete':
-            self.importLOCRecords()
-        elif self.process == 'custom':
-            timeStamp = self.ingestPeriod
-            startTimeStamp = datetime.strptime(timeStamp, '%Y-%m-%dT%H:%M:%S')
-            self.importLOCRecords(startTimeStamp)
+        start_datetime = utils.get_start_datetime(
+            process_type=self.process_type,
+            ingest_period=self.ingest_period
+        )
 
-        self.saveRecords()
-        self.commitChanges()
+        records = self.loc_service.get_records(
+            start_timestamp=start_datetime,
+            limit=self.limit,
+        )
 
-        logger.info(f'Ingested {len(self.records)} LOC records')
-    
+        for record in records:
+            self.s3_manager.store_pdf_manifest(record=record, bucket_name=self.s3_bucket)
+            self.store_epub(record=record)
 
-    def importLOCRecords(self, startTimeStamp=None):
+            self.record_buffer.add(record=record)
 
-        openAccessRequestCount = 0 
-        digitizedRequestCount = 0
+        self.record_buffer.flush()
 
-        try:
-            openAccessRequestCount = self.importOpenAccessRecords(openAccessRequestCount, startTimeStamp)
-            logger.debug('Open Access Collection Ingestion Complete')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} LOC records')
 
-        except Exception or HTTPError as e:
-            logger.exception(e)
+    def store_epub(self, record: Record):
+        record_id = record.source_id.split('|')[0]
+        epub_part = next(filter(lambda part: part.file_type == 'application/epub+zip', record.get_parts()), None)
 
-        try:
-            digitizedRequestCount = self.importDigitizedRecords(digitizedRequestCount, startTimeStamp)
-            logger.debug('Digitized Books Collection Ingestion Complete')
-        
-        except Exception or HTTPError as e:
-            logger.exception(e)
+        if epub_part is not None:
+            epub_location = f'epubs/{epub_part.source}/{record_id}.epub'
+            epub_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=epub_location)
 
-        
+            record.has_part = [Part(
+                index=epub_part.index,
+                url=epub_url,
+                source=record.source,
+                file_type=epub_part.file_type,
+                flags=epub_part.flags
+            ).to_string()]
 
-    def importOpenAccessRecords(self, count, customTimeStamp):
-        sp = 1
-        try:
-
-            whileBreakFlag = False
-            
-            # An HTTP error will occur when the sp parameter value
-            # passes the last page number of the collection search reuslts
-            while sp < 100000:
-                if self.ingestLimit and count >= self.ingestLimit:
-                    break
-
-                openAccessURL = '{}&sp={}'.format(LOC_ROOT_OPEN_ACCESS, sp)
-                jsonData = self.fetchPageJSON(openAccessURL)
-                LOCData = jsonData.json()
-
-                for metaDict in LOCData['results']:
-                    #Weekly/Custom Ingestion Conditional
-                    if customTimeStamp:
-                        itemTimeStamp = datetime.strptime(metaDict['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
-
-                        if itemTimeStamp < customTimeStamp:
-                            whileBreakFlag = True
-                            break
-
-                    if 'resources' in metaDict.keys():
-                        if metaDict['resources']:
-                            resources = metaDict['resources'][0]
-                            if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
-                                logger.debug(f'OPEN ACCESS URL: {openAccessURL}')
-                                logger.debug(f"TITLE: {metaDict['title']}")
-
-                                self.processLOCRecord(metaDict)
-                                count += 1
-
-                                logger.debug(f'Count for OP Access: {count}')
-
-                if whileBreakFlag == True:
-                    logger.debug('No new items added to collection')
-                    break
-
-                sp += 1
-                time.sleep(5)
-
-        except Exception or HTTPError or IndexError or KeyError as e:
-            logger.exception(e)
-
-        return count
-
-    def importDigitizedRecords(self, count, customTimeStamp):
-        sp = 1
-        try:
-
-            whileBreakFlag = False
-
-            # An HTTP error will occur when the sp parameter value
-            # passes the last page number of the collection search reuslts
-            while sp < 100000:
-                if self.ingestLimit and count >= self.ingestLimit:
-                    break
-
-                digitizedURL = '{}&sp={}'.format(LOC_ROOT_DIGIT, sp)
-                jsonData = self.fetchPageJSON(digitizedURL)
-                LOCData = jsonData.json()
-
-                for metaDict in LOCData['results']:
-                    #Weekly Ingestion conditional
-                    if customTimeStamp:
-                        itemTimeStamp = datetime.strptime(metaDict['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ')
-
-                        if itemTimeStamp < customTimeStamp:
-                            whileBreakFlag = True
-                            break
-
-                    if 'resources' in metaDict.keys():
-                        if metaDict['resources']:
-                            resources = metaDict['resources'][0]
-                            if 'pdf' in resources.keys() or 'epub_file' in resources.keys():
-                                logger.debug(f'DIGITIZED URL: {digitizedURL}')
-                                logger.debug(f"TITLE: {metaDict['title']}")
-
-                                self.processLOCRecord(metaDict)
-                                count += 1
-
-                                logger.debug(f'Count for Digitized: {count}')
-            
-                if whileBreakFlag == True:
-                    logger.debug('No new items added to collection')
-                    break
-
-                sp += 1
-                time.sleep(5)
-                
-            return count
-        
-        except Exception or HTTPError or IndexError or KeyError as e:
-            logger.exception(e)
-
-    def processLOCRecord(self, record):
-        try:
-            LOCRec = LOCMapping(record)
-            LOCRec.applyMapping()
-
-            if LOCRec.record.authors is None:
-                logger.warning(f'Unable to map author in LOC record {LOCRec.record} ')
-                return
-            
-            self.addHasPartMapping(record, LOCRec.record)
-            self.storePDFManifest(LOCRec.record)
-            self.storeEpubsInS3(LOCRec.record)
-            self.addDCDWToUpdateList(LOCRec)
-        except Exception:
-            logger.exception(f'Unable to process LOC record')
-            
-    def addHasPartMapping(self, resultsRecord, record):
-        if 'pdf' in resultsRecord['resources'][0].keys():
-            linkString = '|'.join([
-                '1',
-                resultsRecord['resources'][0]['pdf'],
-                'loc',
-                'application/pdf',
-                '{"catalog": false, "download": true, "reader": false, "embed": false}'
-            ])
-            record.has_part.append(linkString)
-
-        if 'epub_file' in resultsRecord['resources'][0].keys():
-            linkString2 = '|'.join([
-                '1',
-                resultsRecord['resources'][0]['epub_file'],
-                'loc',
-                'application/epub+zip',
-                '{"reader": false, "catalog": false, "download": true}'
-            ])
-            record.has_part.append(linkString2)
-
-
-    def storePDFManifest(self, record):
-        for link in record.has_part:
-            itemNo, uri, source, mediaType, flags = link.split('|')
-
-            if mediaType == 'application/pdf':
-                recordID = record.identifiers[0].split('|')[0]
-
-                manifestPath = 'manifests/{}/{}.json'.format(source, recordID)
-                manifestURI = 'https://{}.s3.amazonaws.com/{}'.format(
-                    self.s3Bucket, manifestPath
-                )
-
-                manifestJSON = self.generateManifest(record, uri, manifestURI)
-
-                self.s3_manager.createManifestInS3(manifestPath, manifestJSON, self.s3Bucket)
-
-                linkString = '|'.join([
-                    itemNo,
-                    manifestURI,
-                    source,
-                    'application/webpub+json',
-                    '{"catalog": false, "download": false, "reader": true, "embed": false}'
-                ])
-                record.has_part.insert(0, linkString)
-                break
-
-    def storeEpubsInS3(self, record):
-        for epubItem in record.has_part:
-            itemNo, uri, source, mediaType, flagStr = epubItem.split('|')
-
-            if mediaType == 'application/epub+zip':
-
-                recordID = record.identifiers[0].split('|')[0]
-
-                bucketLocation = 'epubs/{}/{}.epub'.format(source, recordID)
-                self.addEPUBManifest(
-                    record, itemNo, source, flagStr, mediaType, bucketLocation
-                )
-
-                self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(uri, bucketLocation))
-                break
-
-    def addEPUBManifest(self, record, itemNo, source, flagStr, mediaType, location):
-            s3URL = 'https://{}.s3.amazonaws.com/{}'.format(self.s3Bucket, location)
-
-            linkString = '|'.join([itemNo, s3URL, source, mediaType, flagStr])
-
-            record.has_part.insert(0, linkString)
-
-    @staticmethod
-    def generateManifest(record, sourceURI, manifestURI):
-        manifest = WebpubManifest(sourceURI, 'application/pdf')
-
-        manifest.addMetadata(record)
-        
-        manifest.addChapter(sourceURI, record.title)
-
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifestURI,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()
-    
-    @staticmethod
-    def fetchPageJSON(url):
-        headers = {'Accept': 'application/json'}
-        elemResponse = requests.get(url, headers=headers)
-        elemResponse.raise_for_status()
-        return elemResponse
-
-
-class LOCError(Exception):
-    pass
+            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(epub_part.url, epub_location))

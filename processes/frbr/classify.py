@@ -1,28 +1,33 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import os
 import newrelic.agent
 import re
 from typing import Optional
 
-from ..core import CoreProcess
-from managers import OCLCCatalogManager, RabbitMQManager, RedisManager
+from managers import DBManager, OCLCCatalogManager, RabbitMQManager, RedisManager
 from mappings.oclc_bib import OCLCBibMapping
 from model import Record
 from logger import create_log
+from ..record_buffer import RecordBuffer
+from .. import utils
 
 
 logger = create_log(__name__)
 
 
-class ClassifyProcess(CoreProcess):
+class ClassifyProcess():
     def __init__(self, *args):
-        super(ClassifyProcess, self).__init__(*args[:4], batchSize=50)
+        self.process = args[0]
+        self.ingest_period = args[2]
+        self.single_record = args[3]
 
-        self.ingest_limit = int(args[4]) if len(args) >= 5 and args[4] else None
+        self.limit = int(args[4]) if len(args) >= 5 and args[4] else None
         self.source = args[6] if len(args) >= 7 and args[6] else None
 
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.redis_manager = RedisManager()
         self.redis_manager.createRedisClient()
@@ -34,35 +39,28 @@ class ClassifyProcess(CoreProcess):
         self.rabbitmq_manager.createRabbitConnection()
         self.rabbitmq_manager.createOrConnectQueue(self.catalog_queue, self.catalog_route)
 
-        self.classified_count = 0
-
         self.oclc_catalog_manager = OCLCCatalogManager()
 
     def runProcess(self):
         try:
-            start_datetime = (
-                datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-                if self.process == 'daily'
-                else self.ingestPeriod and datetime.strptime(self.ingestPeriod, '%Y-%m-%dT%H:%M:%S')
-            )
+            start_datetime = utils.get_start_datetime(process_type=self.process, ingest_period=self.ingest_period)
             
             self.classify_records(
                 start_datetime=start_datetime,
-                record_uuid=self.singleRecord,
+                record_uuid=self.single_record,
                 source=self.source, 
             )
             
-            self.saveRecords()
-            self.commitChanges()
+            self.record_buffer.flush()
             
-            logger.info(f'Classified {self.classified_count} records')
+            logger.info(f'Classified {self.record_buffer.ingest_count} records')
         except Exception as e:
             logger.exception(f'Failed to run classify process')
             raise e
 
     def classify_records(self, start_datetime: Optional[datetime]=None, record_uuid: Optional[str]=None, source: Optional[str]=None):
         get_unfrbrized_records_query = (
-            self.session.query(Record)
+            self.db_manager.session.query(Record)
                 .filter(Record.source != 'oclcClassify' and Record.source != 'oclcCatalog')
                 .filter(Record.frbr_status == 'to_do')
         )
@@ -82,11 +80,10 @@ class ClassifyProcess(CoreProcess):
             unfrbrized_record.cluster_status = False
             unfrbrized_record.frbr_status = 'complete'
 
-            self.session.add(unfrbrized_record)
-            self.session.commit()
-            self.classified_count += 1
+            self.db_manager.session.add(unfrbrized_record)
+            self.db_manager.session.commit()
 
-            if self.ingest_limit and self.classified_count >= self.ingest_limit:
+            if self.limit and self.classified_count >= self.limit:
                 break
 
             if self.redis_manager.checkIncrementerRedis('oclcCatalog', 'API'):
@@ -141,7 +138,7 @@ class ClassifyProcess(CoreProcess):
                 related_oclc_numbers=list(set(related_oclc_numbers))
             )
 
-            self.addDCDWToUpdateList(oclc_record)
+            self.record_buffer.add(oclc_record)
             self.get_oclc_catalog_records(oclc_record.record.identifiers)
 
     def get_oclc_catalog_records(self, identifiers):

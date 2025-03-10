@@ -4,7 +4,7 @@ import os
 from typing import Optional
 
 from digital_assets import get_stored_file_url
-from managers import DBManager, RabbitMQManager, S3Manager, WebpubManifest
+from managers import DBManager, RabbitMQManager, S3Manager
 from model import get_file_message, Record, Part, FileFlags, Source
 from logger import create_log
 from ..record_buffer import RecordBuffer
@@ -50,7 +50,7 @@ class METProcess():
         )
 
         for record_mapping in record_mappings:
-            self.store_pdf_manifest(record=record_mapping.record)
+            self.s3_manager.store_pdf_manifest(record=record_mapping.record, bucket_name=self.s3_bucket)
 
             try:
                 self.add_cover(record=record_mapping.record, file_type=record_mapping.file_type)
@@ -99,38 +99,3 @@ class METProcess():
                 return None
         
         return f'api/singleitem/image/pdf/p15324coll10/{record_id}/default.png'
-
-    def store_pdf_manifest(self, record: Record):
-        record_id = record.source_id.split('|')[0]
-        pdf_part = next(filter(lambda part: part.file_type == 'application/pdf', record.get_parts()), None)
-
-        if pdf_part is not None:
-            manifest_path = f'manifests/{record.source}/{record_id}'
-            manifest_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=manifest_path)
-            manifest_json = self.generate_manifest(record=record, source_uri=pdf_part.url, manifest_uri=manifest_url)
-
-            self.s3_manager.createManifestInS3(manifestPath=manifest_path, manifestJSON=manifest_json, s3_bucket=self.s3_bucket)
-
-            record.has_part.insert(0, Part(
-                index=pdf_part.index,
-                url=manifest_url,
-                source=record.source,
-                file_type='application/webpub+json',
-                flags=pdf_part.flags
-            ).to_string())
-
-    @staticmethod
-    def generate_manifest(record: Record, source_uri: str, manifest_uri: str):
-        manifest = WebpubManifest(source_uri, 'application/pdf')
-
-        manifest.addMetadata(record)
-
-        manifest.addChapter(source_uri, record.title)
-
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifest_uri,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()

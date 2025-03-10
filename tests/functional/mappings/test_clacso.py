@@ -4,7 +4,7 @@ from lxml import etree
 
 from services.sources.dspace_service import DSpaceService
 
-def test_map_doab_record():
+def test_map_clacso_record():
     with open('tests/fixtures/test-clacso.xml') as f:
         oaidc_records = etree.parse(f)
 

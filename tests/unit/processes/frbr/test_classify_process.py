@@ -1,6 +1,7 @@
 from datetime import datetime
 import os
 import pytest
+from unittest.mock import ANY
 
 from tests.helper import TestHelpers
 from processes import ClassifyProcess
@@ -19,11 +20,12 @@ class TestOCLCClassifyProcess:
         class TestClassifyProcess(ClassifyProcess):
             def __init__(self, *args):
                 self.records = set()
-                self.ingest_limit = None
-                self.ingestPeriod = None
-                self.singleRecord = None
+                self.limit = None
+                self.ingest_period = None
+                self.single_record = None
+                self.db_manager = mocker.MagicMock()
+                self.record_buffer = mocker.MagicMock()
                 self.source = None
-                self.records = []
                 self.catalog_queue = os.environ['OCLC_QUEUE']
                 self.catalog_route = os.environ['OCLC_ROUTING_KEY']
                 self.classified_count = 0
@@ -38,8 +40,6 @@ class TestOCLCClassifyProcess:
         return mocker.patch.multiple(
             ClassifyProcess,
             classify_records=mocker.DEFAULT,
-            saveRecords=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT,
         )
 
     @pytest.fixture
@@ -68,21 +68,19 @@ class TestOCLCClassifyProcess:
 
     def test_runProcess_custom(self, test_instance, run_process_mocks):
         test_instance.process = 'custom'
-        test_instance.ingestPeriod = '2022-01-01T00:00:00'
+        test_instance.ingest_period = '2022-01-01T00:00:00'
         test_instance.runProcess()
 
-        run_process_mocks['classify_records'].assert_called_once_with(start_datetime=datetime.strptime(test_instance.ingestPeriod, '%Y-%m-%dT%H:%M:%S'), record_uuid=None, source=None)
+        run_process_mocks['classify_records'].assert_called_once_with(start_datetime=datetime.strptime(test_instance.ingest_period, '%Y-%m-%dT%H:%M:%S'), record_uuid=None, source=None)
         
         for _, mocked_method in run_process_mocks.items():
             mocked_method.assert_called_once()
 
     def test_classify_records_not_full(self, test_instance, mocker):
         mock_frbrize_record = mocker.patch.object(ClassifyProcess, 'frbrize_record')
-        mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
-        test_instance.session = mock_session
 
-        mock_session.query().filter.return_value = mock_query
+        test_instance.db_manager.session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
@@ -96,11 +94,9 @@ class TestOCLCClassifyProcess:
 
     def test_classify_records_custom_range(self, test_instance, mocker):
         mock_frbrize = mocker.patch.object(ClassifyProcess, 'frbrize_record')
-        mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
-        test_instance.session = mock_session
 
-        mock_session.query().filter.return_value = mock_query
+        test_instance.db_manager.session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
@@ -114,11 +110,9 @@ class TestOCLCClassifyProcess:
 
     def test_classify_records_full(self, test_instance, mocker):
         mock_frbrize_record = mocker.patch.object(ClassifyProcess, 'frbrize_record')
-        mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
-        test_instance.session = mock_session
 
-        mock_session.query().filter.return_value = mock_query
+        test_instance.db_manager.session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
         mock_query.first.side_effect = mock_records + [None]
@@ -131,11 +125,9 @@ class TestOCLCClassifyProcess:
 
     def test_classify_records_full_batch(self, test_instance, mocker):
         mock_frbrize_record = mocker.patch.object(ClassifyProcess, 'frbrize_record')
-        mock_session = mocker.MagicMock()
         mock_query = mocker.MagicMock()
-        test_instance.session = mock_session
 
-        mock_session.query().filter.return_value = mock_query
+        test_instance.db_manager.session.query().filter.return_value = mock_query
         mock_query.filter.return_value = mock_query
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
         mock_query.first.side_effect = mock_records + [None]

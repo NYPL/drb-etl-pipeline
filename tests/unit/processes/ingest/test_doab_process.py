@@ -99,7 +99,7 @@ class TestDOABProcess:
         test_instance.manage_links(mock_record)
 
         mock_manager.parseLinks.assert_called_once()
-        test_instance.s3_manager.createManifestInS3.assert_called_once_with('pdfPath', 'pdfJSON', test_instance.s3_bucket)
+        test_instance.s3_manager.create_manifest_in_s3.assert_called_once_with('pdfPath', 'pdfJSON', test_instance.s3_bucket)
         test_instance.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
             test_instance.file_queue, 
             test_instance.file_route, 

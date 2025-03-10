@@ -10,11 +10,12 @@ from sqlalchemy.orm import joinedload
 
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
-from managers import S3Manager, WebpubManifest
+from managers import S3Manager
 from services.ssm_service import SSMService
 from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
+from model import FileFlags
 
 logger = create_log(__name__)
 
@@ -152,7 +153,7 @@ class PublisherBacklistService(SourceService):
         offset: Optional[int]=None,
         limit: Optional[int]=None
     ) -> list[PublisherBacklistMapping]:
-        records = self.get_publisher_backlist_records(deleted=False, full_import=full_import, start_timestamp=start_timestamp, offset=offset, limit=limit)
+        records = self.get_publisher_backlist_records(deleted=False, start_timestamp=start_timestamp, offset=offset, limit=limit)
         mapped_records = []
         
         for record in records:
@@ -184,8 +185,9 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
                 
+                webpub_flags=FileFlags(reader=True, fulfill_limited_access=False)
                 self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
-                self.store_pdf_manifest(publisher_backlist_record.record, record_permissions['requires_login'])
+                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, flags=webpub_flags, path='/publisher_backlist')
                 
                 mapped_records.append(publisher_backlist_record)
             except Exception:
@@ -193,7 +195,7 @@ class PublisherBacklistService(SourceService):
         
         return mapped_records
         
-    def build_filter_by_formula_parameter(self, deleted=None, full_import: bool=False, start_timestamp: datetime=None) -> str:
+    def build_filter_by_formula_parameter(self, deleted=None, start_timestamp: Optional[datetime]=None) -> str:
         if deleted:
             delete_filter = urllib.parse.quote("{DRB_Deleted} = TRUE()")
             
@@ -202,11 +204,8 @@ class PublisherBacklistService(SourceService):
         is_not_deleted_filter = urllib.parse.quote("{DRB_Deleted} = FALSE()")
         ready_to_ingest_filter = urllib.parse.quote("{DRB_Ready to ingest} = TRUE()")
 
-        if full_import:
-            return f'&filterByFormula=AND({ready_to_ingest_filter},{is_not_deleted_filter})'
-        
         if not start_timestamp:
-            start_timestamp = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+            return f'&filterByFormula=AND({ready_to_ingest_filter},{is_not_deleted_filter})'
         
         start_date_time_str = start_timestamp.strftime('%Y-%m-%d')
         is_same_date_time_filter = urllib.parse.quote(f"IS_SAME({{Last Modified}}, \"{start_date_time_str}\")")
@@ -216,12 +215,11 @@ class PublisherBacklistService(SourceService):
         
     def get_publisher_backlist_records(self,
         deleted: bool=False,
-        full_import: bool=False, 
         start_timestamp: datetime=None,
         offset: Optional[int]=None,
         limit: Optional[int]=None
     ) -> list[dict]:
-        filter_by_formula = self.build_filter_by_formula_parameter(deleted=deleted, full_import=full_import, start_timestamp=start_timestamp)
+        filter_by_formula = self.build_filter_by_formula_parameter(deleted=deleted, start_timestamp=start_timestamp)
         url = f'{BASE_URL}&pageSize={limit}{filter_by_formula}'
         headers = {"Authorization": f"Bearer {self.airtable_auth_token}"}
         publisher_backlist_records = []
@@ -252,46 +250,6 @@ class PublisherBacklistService(SourceService):
         }
 
         record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
-
-    def store_pdf_manifest(self, record: Record, requires_login: bool):
-        for link in record.has_part:
-            item_no, url, source, media_type, _ = link.split('|')
-
-            if media_type == 'application/pdf':
-                manifest_path = f'manifests/publisher_backlist/{source}/{record.source_id}.json'
-                manifest_url = f'https://{self.file_bucket}.s3.amazonaws.com/{manifest_path}'
-
-                manifest_json = self.generate_manifest(record, url, manifest_url)
-
-                self.s3_manager.createManifestInS3(manifest_path, manifest_json, self.file_bucket)
-
-                manifest_flags = {
-                    'catalog': False,
-                    'download': False,
-                    'reader': True,
-                    'embed': False,
-                    **({'fulfill_limited_access': False} if requires_login else {})
-                }
-
-                record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', json.dumps(manifest_flags)]))
-                
-                break
-
-    @staticmethod
-    def generate_manifest(record, source_url, manifest_url):
-        manifest = WebpubManifest(source_url, 'application/pdf')
-
-        manifest.addMetadata(record)
-        
-        manifest.addChapter(source_url, record.title)
-
-        manifest.links.append({
-            'rel': 'self',
-            'href': manifest_url,
-            'type': 'application/webpub+json'
-        })
-
-        return manifest.toJson()
 
     @staticmethod
     def parse_permissions(permissions: str) -> dict:

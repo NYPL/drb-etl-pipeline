@@ -6,6 +6,9 @@ from io import BytesIO
 import mimetypes
 import os
 from zipfile import ZipFile
+from managers import WebpubManifest
+from digital_assets import get_stored_file_url
+from model import Part, FileFlags
 
 from logger import create_log
 
@@ -37,10 +40,48 @@ class S3Manager:
         raise S3Error('Unable to create bucket in s3')
 
 
-    def createManifestInS3(self, manifestPath, manifestJSON, s3_bucket: str):
+    def store_pdf_manifest(self, record, bucket_name, flags=FileFlags(reader=True), path: str=None):
+        record_id = record.source_id.split('|')[0]
+        pdf_part = next(filter(lambda part: part.file_type == 'application/pdf', record.get_parts()), None)
+
+        if pdf_part is not None:
+            if path:
+                manifest_path = f'manifests/{path}/{record.source}/{record_id}.json'
+            else:
+                manifest_path = f'manifests/{record.source}/{record_id}.json'
+                
+            manifest_url = get_stored_file_url(storage_name=bucket_name, file_path=manifest_path)
+            manifest_json = self.generate_manifest(record=record, source_url=pdf_part.url, manifest_url=manifest_url)
+
+            self.create_manifest_in_s3(manifest_path=manifest_path, manifest_json=manifest_json, s3_bucket=bucket_name)
+
+            record.has_part.insert(0, Part(
+                index=pdf_part.index,
+                url=manifest_url,
+                source=record.source,
+                file_type='application/webpub+json',
+                flags=flags.to_string()
+            ).to_string())
+
+    def create_manifest_in_s3(self, manifest_path, manifest_json, s3_bucket: str):
         self.putObjectInBucket(
-            manifestJSON.encode('utf-8'), manifestPath, s3_bucket
+            manifest_json.encode('utf-8'), manifest_path, s3_bucket
         )
+
+    def generate_manifest(self, record, source_url, manifest_url):
+        manifest = WebpubManifest(source_url, 'application/pdf')
+
+        manifest.addMetadata(record)
+        
+        manifest.addChapter(source_url, record.title)
+
+        manifest.links.append({
+            'rel': 'self',
+            'href': manifest_url,
+            'type': 'application/webpub+json'
+        })
+
+        return manifest.toJson()
 
     def putObjectInBucket(
         self, obj, objKey, bucket, bucketPermissions='public-read'
