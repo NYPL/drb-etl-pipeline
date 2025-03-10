@@ -3,7 +3,7 @@ from services import DSpaceService
 from logger import create_log
 from mappings.doab import DOABMapping
 from managers import DBManager, DOABLinkManager, S3Manager, RabbitMQManager
-from model import get_file_message
+from model import get_file_message, Record
 from ..record_buffer import RecordBuffer
 
 logger = create_log(__name__)
@@ -70,8 +70,8 @@ class DOABProcess():
         finally:
             self.db_manager.close_connection()
 
-    def manage_links(self, record):
-        linkManager = DOABLinkManager(record.record)
+    def manage_links(self, record_mapping: Record):
+        linkManager = DOABLinkManager(record_mapping.record)
 
         linkManager.parseLinks()
 
@@ -84,12 +84,12 @@ class DOABProcess():
             ePubPath, ePubURI = epubLink
             self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(ePubURI, ePubPath))
 
-    def _process_record(self, record):
-        if record.record._deletion_flag:
-            self.record_buffer.delete(record.record)
+    def _process_record(self, record_mapping: Record):
+        if record_mapping.record.deletion_flag:
+            self.record_buffer.delete(record_mapping.record)
         else:
-            self.manage_links(record)
-            self.record_buffer.add(record.record)
+            self.manage_links(record_mapping)
+            self.record_buffer.add(record_mapping.record)
 
     def _log_results(self):
         if self.record_buffer.deletion_count != 0:

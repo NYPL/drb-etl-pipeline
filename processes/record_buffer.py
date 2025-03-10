@@ -25,6 +25,7 @@ class RecordBuffer:
         if len(self.records) > self.batch_size:
             self.flush()
 
+    # TODO: Implement deletion for the rest of the FRBR model
     def delete(self, record: Record):
         existing_record = self.db_manager.session.query(Record).filter(
             Record.source_id == record.source_id

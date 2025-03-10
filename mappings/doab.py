@@ -25,18 +25,18 @@ class DOABMapping(BaseMapping):
                 source_id = identifier.text.split(':')[-1]
 
         if deletion_flag and source_id:
-            delete_record=Record(
+            delete_record = Record(
                 uuid=uuid4(),
                 frbr_status=FRBRStatus.TODO.value,
                 cluster_status=False,
                 source_id=source_id,
             )
-            delete_record._deletion_flag = True
+            delete_record.deletion_flag = True
             return delete_record
         
         doab_record = record.xpath('.//oai_dc:dc', namespaces=namespaces)[0]
         
-        identifiers, source_id = self._get_identifers(doab_record, namespaces=namespaces)
+        identifiers = self._get_identifers(doab_record, namespaces=namespaces)
         title = doab_record.xpath('./dc:title/text()', namespaces=namespaces) + doab_record.xpath('./datacite:creator/text()', namespaces=namespaces)
 
         if identifiers is None or len(identifiers) == 0 or title is None or len(title) == 0:
@@ -121,13 +121,12 @@ class DOABMapping(BaseMapping):
                 doab_doi_group = re.search(self.DOI_REGEX, value)
                 if doab_doi_group:
                     value = doab_doi_group.group(1)
-                    source_id = value
                 else:
                     continue
 
             new_ids.append(f'{value}|{auth.lower()}')
 
-        return new_ids, source_id
+        return new_ids
 
     def _get_contributors(self, record, namespaces):
         return self._get_text_type_data(record, namespaces, './datacite:contributor', '{}|||{}')
