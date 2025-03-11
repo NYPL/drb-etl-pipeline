@@ -62,18 +62,18 @@ class LOCProcess():
 
     def store_epub(self, record: Record):
         record_id = record.source_id.split('|')[0]
-        epub_part = next(filter(lambda part: part.file_type == 'application/epub+zip', record.get_parts()), None)
+        epub_part = next(filter(lambda part: part.file_type == 'application/epub+zip', record.parts), None)
 
         if epub_part is not None:
             epub_location = f'epubs/{epub_part.source}/{record_id}.epub'
             epub_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=epub_location)
 
-            record.has_part = [Part(
+            record.has_part = [str(Part(
                 index=epub_part.index,
                 url=epub_url,
                 source=record.source,
                 file_type=epub_part.file_type,
                 flags=epub_part.flags
-            ).to_string()]
+            ))]
 
             self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(epub_part.url, epub_location))

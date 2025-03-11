@@ -50,7 +50,7 @@ class TestDSpaceService:
 
     def test_get_single_record_success(self, test_instance: DSpaceService, mock_query, mocker):
         mock_XML = mocker.MagicMock()
-        mock_XML.xpath.return_value = ['mock_record']
+        mock_XML.find.return_value = 'mock_record'
         mock_etree = mocker.patch('services.sources.dspace_service.etree')
         mock_etree.parse.return_value = mock_XML
 
@@ -66,7 +66,7 @@ class TestDSpaceService:
 
     def test_get_single_record_dspace_error(self, test_instance: DSpaceService, mock_query, mocker):
         mock_XML = mocker.MagicMock()
-        mock_XML.xpath.return_value = ['mock_record']
+        mock_XML.find.return_value = 'mock_record'
         mock_etree = mocker.patch('services.sources.dspace_service.etree')
         mock_etree.parse.return_value = mock_XML
 
