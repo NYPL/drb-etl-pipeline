@@ -46,7 +46,7 @@ class Part:
         
         return parsed_url.path[1:]
     
-    def to_string(self) -> str:
+    def __str__(self):
         return '|'.join([
             str(self.index) if self.index is not None else '', 
             self.url, 
@@ -70,8 +70,9 @@ class FileFlags:
     cover: bool = False
     fulfill_limited_access: bool = False
 
-    def to_string(self) -> str:
+    def __str__(self):
         return json.dumps(asdict(self))
+
 
 class Record(Base, Core):
     __tablename__ = 'records'
@@ -132,8 +133,8 @@ class Record(Base, Core):
         for attr in dir(self):
             yield attr, getattr(self, attr)
 
-
-    def get_parts(self) -> list[Part]:
+    @property
+    def parts(self) -> list[Part]:
         parts = []
 
         for part in self.has_part:

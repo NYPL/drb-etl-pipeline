@@ -81,21 +81,21 @@ def _get_has_part(first_file_resource: dict) -> list[str]:
     has_part = []
 
     if 'pdf' in first_file_resource.keys():
-        has_part.append(Part(
+        has_part.append(str(Part(
             index=1,
             url=first_file_resource['pdf'],
             source=Source.LOC.value,
             file_type='application/pdf',
-            flags=FileFlags(download=True).to_string()
-        ).to_string())
+            flags=str(FileFlags(download=True))
+        )))
 
     if 'epub_file' in first_file_resource.keys():
-        has_part.append(Part(
+        has_part.append(str(Part(
             index=1,
             url=first_file_resource['epub_file'],
             source=Source.LOC.value,
             file_type='application/epub+zip',
-            flags=FileFlags(download=True).to_string()
-        ).to_string())
+            flags=str(FileFlags(download=True))
+        )))
 
     return has_part

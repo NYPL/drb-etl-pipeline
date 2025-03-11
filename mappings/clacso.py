@@ -1,9 +1,7 @@
-import dataclasses
 import requests
 from datetime import datetime, timezone
 from bs4 import BeautifulSoup
 from uuid import uuid4
-import json
 from typing import Optional
 from model import Record, FRBRStatus, FileFlags, Part, Source
 from .base_mapping import BaseMapping
@@ -120,7 +118,7 @@ class CLACSOMapping(BaseMapping):
                         pdf_part = self._get_pdf_part(link=link)
 
                         if pdf_part:
-                            return [pdf_part.to_string()]
+                            return [str(pdf_part)]
     
     def _get_links(self, url: str) -> list:
         try:
@@ -149,7 +147,7 @@ class CLACSOMapping(BaseMapping):
             url=pdf_url,
             source=Source.CLACSO.value,
             file_type='application/pdf',
-            flags=json.dumps(dataclasses.asdict(FileFlags(download=True)))
+            flags=str(FileFlags(download=True))
         )
                             
     def createMapping(self):
