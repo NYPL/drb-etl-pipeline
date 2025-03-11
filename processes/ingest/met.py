@@ -75,12 +75,12 @@ class METProcess():
         file_url = get_stored_file_url(storage_name=self.s3_bucket, file_path=file_path)
         file_type = 'image/jpeg' if cover_source_url[-3:] == 'jpg' else 'image/png'
 
-        record.has_part.append(Part(
+        record.has_part.append(str(Part(
             url=file_url,
             source=Source.MET.value,
             file_type=file_type,
             flags=json.dumps(dataclasses.asdict(FileFlags(cover=True)))
-        ).to_string())
+        )))
 
         self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(cover_source_url, file_path))
 

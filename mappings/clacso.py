@@ -120,7 +120,7 @@ class CLACSOMapping(BaseMapping):
                         pdf_part = self._get_pdf_part(link=link)
 
                         if pdf_part:
-                            return [pdf_part.to_string()]
+                            return [str(pdf_part)]
     
     def _get_links(self, url: str) -> list:
         try:

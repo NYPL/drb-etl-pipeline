@@ -151,13 +151,15 @@ class DOABMapping(BaseMapping):
             return None
 
         html_parts = [
-            Part(
-                index=1,
-                url=dc_id,
-                source=Source.DOAB.value,
-                file_type='text/html',
-                flags=json.dumps(dataclasses.asdict(FileFlags(embed=True)))
-            ).to_string()
+            str(
+                Part(
+                    index=1,
+                    url=dc_id,
+                    source=Source.DOAB.value,
+                    file_type='text/html',
+                    flags=json.dumps(dataclasses.asdict(FileFlags(embed=True)))
+                )
+            )
             for dc_id in dc_ids if 'http' in dc_id
         ]
         

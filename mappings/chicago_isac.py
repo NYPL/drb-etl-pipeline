@@ -35,7 +35,7 @@ def map_chicago_isac_record(record: dict) -> Optional[Record]:
         is_part_of=f"{record.get('series')}|series" if record.get('series') else None,
         spatial=record.get('publisherLocation'),
         extent=record.get('extent'),
-        has_part=[pdf_part.to_string()],
+        has_part=[str(pdf_part)],
         date_created=datetime.now(timezone.utc).replace(tzinfo=None),
         date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
     )
