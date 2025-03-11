@@ -48,6 +48,7 @@ class RecordIngestor():
             logger.exception(f'Failed to ingest {self.params.source} records')
         finally:
             self.db_manager.close_connection()
+            self.rabbitmq_manager.closeRabbitConnection()
 
     def _ingest_record(self, record: Record):
         try:
