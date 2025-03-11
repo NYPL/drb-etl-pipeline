@@ -17,15 +17,15 @@ class RecordIngestor():
 
         self.db_manager = DBManager()
         self.db_manager.createSession()
-
-        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
-
+        
         self.record_pipeline_queue = os.environ.get('RECORD_PIPELINE_QUEUE')
         self.record_pipeline_route = os.environ.get('RECORD_PIPEPELINE_ROUTING_KEY')
 
         self.rabbitmq_manager = RabbitMQManager()
         self.rabbitmq_manager.createRabbitConnection()
         self.rabbitmq_manager.createOrConnectQueue(self.record_pipeline_route, self.record_pipeline_queue)
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager, rabbitmq_manager=self.rabbitmq_manager)
 
         self.source_service = source_service
 
@@ -52,11 +52,7 @@ class RecordIngestor():
 
     def _ingest_record(self, record: Record):
         try:
+            # TODO: Handle files before adding the record to the buffer
             self.record_buffer.add(record)
-            self.rabbitmq_manager.sendMessageToQueue(
-                queueName=self.record_pipeline_queue, 
-                routingKey=self.record_pipeline_route,
-                message={ 'recordId': record.source_id }
-            )
         except Exception:
             logger.exception(f'Failed to ingest record: {record}')
