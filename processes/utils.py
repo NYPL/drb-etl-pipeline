@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+
 def get_start_datetime(process_type: Optional[str]=None, ingest_period: Optional[str]=None) -> Optional[str]:
     if ingest_period is not None:
         return datetime.strptime(ingest_period, '%Y-%m-%dT%H:%M:%S')
@@ -28,7 +29,7 @@ class ProcessParams:
 
 def parse_process_args(*args) -> ProcessParams:
     return ProcessParams(
-        process_type=args[0] if len(args) > 0 else None,
+        process_type=args[0] if len(args) > 0 else 'daily',
         custom_file=args[1] if len(args) > 1 else None,
         ingest_period=args[2] if len(args) > 2 else None,
         record_id=args[3] if len(args) > 3 else None,
