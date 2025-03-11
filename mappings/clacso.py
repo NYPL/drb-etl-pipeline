@@ -17,7 +17,9 @@ class CLACSOMapping(BaseMapping):
     def __init__(self, clacso_record, namespaces):
         self.record = self._map_to_record(clacso_record, namespaces)
 
-    def _map_to_record(self, clacso_record, namespaces) -> Record:
+    def _map_to_record(self, record, namespaces) -> Record:
+        clacso_record = record.xpath('.//oai_dc:dc', namespaces=namespaces)[0]
+
         medium = self._get_medium(clacso_record, namespaces)
         
         if medium is None:
