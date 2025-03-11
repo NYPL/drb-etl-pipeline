@@ -3,8 +3,8 @@ from services import DSpaceService
 from logger import create_log
 from mappings.doab import DOABMapping
 from managers import DBManager, DOABLinkManager, S3Manager, RabbitMQManager
-from model import get_file_message, Record
-from ..record_buffer import RecordBuffer
+from model import get_file_message
+from ..record_buffer import RecordBuffer, Record
 
 logger = create_log(__name__)
 
@@ -71,7 +71,7 @@ class DOABProcess():
             self.db_manager.close_connection()
 
     def manage_links(self, record_mapping: Record):
-        linkManager = DOABLinkManager(record_mapping.record)
+        link_manager = DOABLinkManager(record_mapping.record)
 
         link_manager.parse_links()
 
