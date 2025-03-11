@@ -22,6 +22,9 @@ class DBManager:
         self.session = None
 
     def generateEngine(self):
+        if self.engine is not None:
+            return self.engine
+
         try:
             self.engine = create_engine(
                 'postgresql://{}:{}@{}:{}/{}'.format(

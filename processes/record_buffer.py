@@ -1,18 +1,10 @@
-import os
-from typing import Optional
-
-from managers import DBManager, RabbitMQManager
+from managers import DBManager
 from model import Record, FRBRStatus
 
 
 class RecordBuffer:
-    def __init__(self, db_manager: DBManager, rabbitmq_manager: Optional[RabbitMQManager]=None, batch_size: int=500):
+    def __init__(self, db_manager: DBManager, batch_size: int=500):
         self.db_manager = db_manager
-        self.rabbitmq_manager = rabbitmq_manager
-
-        self.record_pipeline_queue = os.environ.get('RECORD_PIPELINE_QUEUE')
-        self.record_pipeline_route = os.environ.get('RECORD_PIPEPELINE_ROUTING_KEY')
-
         self.records = set()
         self.batch_size = batch_size
         self.ingest_count = 0
@@ -46,15 +38,6 @@ class RecordBuffer:
 
     def flush(self):
         self.db_manager.bulkSaveObjects(self.records)
-
-        if self.rabbitmq_manager is not None:
-            for record in self.records:
-                self.rabbitmq_manager.sendMessageToQueue(
-                    queueName=self.record_pipeline_queue, 
-                    routingKey=self.record_pipeline_route,
-                    message={ 'recordId': record.source_id }
-                )
-
         self.ingest_count += len(self.records)
         self.records.clear()
 
