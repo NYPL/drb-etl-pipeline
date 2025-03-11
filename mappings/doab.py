@@ -2,8 +2,6 @@ import re
 
 from datetime import datetime, timezone
 from uuid import uuid4
-import json
-import dataclasses
 
 from model import FileFlags, FRBRStatus, Part, Record, Source
 from services import DSpaceService
@@ -157,7 +155,7 @@ class DOABMapping(BaseMapping):
                     url=dc_id,
                     source=Source.DOAB.value,
                     file_type='text/html',
-                    flags=json.dumps(dataclasses.asdict(FileFlags(embed=True)))
+                    flags=str(FileFlags(embed=True))
                 )
             )
             for dc_id in dc_ids if 'http' in dc_id

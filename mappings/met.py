@@ -1,5 +1,3 @@
-import dataclasses
-import json
 from uuid import uuid4
 
 from .base_mapping import BaseMapping
@@ -54,14 +52,14 @@ class METMapping(BaseMapping):
                     url=met_record.get('link'),
                     source=Source.MET.value,
                     file_type='text/html',
-                    flags=json.dumps(dataclasses.asdict(FileFlags(embed=True)))
+                    flags=str(FileFlags(embed=True))
                 )),
                 str(Part(
                     index=1,
                     url=self.PDF_LINK.format(met_record.get('dmrecord')),
                     source=Source.MET.value,
                     file_type='application/pdf',
-                    flags=json.dumps(dataclasses.asdict(FileFlags(download=True)))
+                    flags=str(FileFlags(download=True))
                 ))
             ]
         )

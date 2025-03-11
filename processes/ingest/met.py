@@ -1,5 +1,3 @@
-import dataclasses
-import json
 import os
 from typing import Optional
 
@@ -79,7 +77,7 @@ class METProcess():
             url=file_url,
             source=Source.MET.value,
             file_type=file_type,
-            flags=json.dumps(dataclasses.asdict(FileFlags(cover=True)))
+            flags=str(FileFlags(cover=True))
         )))
 
         self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(cover_source_url, file_path))

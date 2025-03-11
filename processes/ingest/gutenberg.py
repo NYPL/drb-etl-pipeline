@@ -1,4 +1,3 @@
-import dataclasses
 from datetime import datetime, timedelta, timezone
 import json
 import mimetypes
@@ -134,7 +133,7 @@ class GutenbergProcess():
                 source=Source.GUTENBERG.value,
                 url=cover_url,
                 file_type=mime_type,
-                flags=json.dumps(dataclasses.asdict(FileFlags(cover=True)))
+                flags=str(FileFlags(cover=True))
             )))
 
             cover_root = yaml_file.get('url').replace('ebooks', 'files')
