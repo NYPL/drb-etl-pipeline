@@ -56,7 +56,6 @@ class MUSEProcess(CoreProcess):
 
     def parseMuseRecord(self, marcRec):
         museRec = MUSEMapping(marcRec)
-        museRec.applyMapping()
 
         # Use the available source link to create a PDF manifest file and
         # store in S3

@@ -5,4 +5,5 @@ class Source(Enum):
     CLACSO = 'clacso'
     DOAB = 'doab'
     GUTENBERG = 'gutenberg'
-    MET = 'met'
+    MET = 'met',
+    MUSE = 'muse'
