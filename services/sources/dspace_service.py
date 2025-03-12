@@ -116,7 +116,6 @@ class DSpaceService(SourceService):
             url_params += f'&metadataPrefix=oai_dc'
 
         url = f'{self.base_url}{url_params}'
-        print(url)
 
         response = requests.get(url, stream=True, timeout=30, headers=headers)
 
