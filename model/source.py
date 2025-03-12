@@ -4,7 +4,7 @@ class Source(Enum):
     CHICACO_ISAC = 'isac'
     CLACSO = 'clacso'
     DOAB = 'doab'
-    GUTENBERG = 'gutenberg'
+    GUTENBERG = 'gutenberg',
     LOC = 'loc',
     MET = 'met',
     MUSE = 'muse'
