@@ -1,4 +1,4 @@
-from mappings.utils import clean_formatted_string
+from . import utils
 from .base_mapping import BaseMapping
 from model import FRBRStatus, Record, Source
 from uuid import uuid4
@@ -66,7 +66,7 @@ class MUSEMapping(BaseMapping):
 
             for values in zip(*subfield_data):
                 formatted_string = string_format.format(*values)
-                formatted_data.append(clean_formatted_string(formatted_string))
+                formatted_data.append(utils.clean_formatted_string(formatted_string))
 
         return formatted_data
     

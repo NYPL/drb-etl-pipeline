@@ -33,7 +33,7 @@ def parse_process_args(*args) -> ProcessParams:
         custom_file=args[1] if len(args) > 1 else None,
         ingest_period=args[2] if len(args) > 2 else None,
         record_id=args[3] if len(args) > 3 else None,
-        limit=int(args[4]) if len(args) > 4 else None,
-        offset=int(args[5]) if len(args) > 5 else 0,
+        limit=int(args[4]) if len(args) > 4 and args[4] else None,
+        offset=int(args[5]) if len(args) > 5  and args[5] else 0,
         source=args[6] if len(args) > 6 else None,
     )
