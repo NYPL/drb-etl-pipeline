@@ -41,5 +41,5 @@ def test_frbr_process(db_manager, unfrbrized_record_uuid):
             )
             .all()
     )
-
+    
     assert len(catalog_records) == len(oclc_identifiers)
