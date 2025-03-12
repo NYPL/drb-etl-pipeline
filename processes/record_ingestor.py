@@ -7,6 +7,7 @@ from managers import DBManager, RabbitMQManager, S3Manager
 from model import Record
 from services.sources.source_service import SourceService
 from . import utils
+import tracemalloc
 
 logger = create_log(__name__)
 
@@ -28,9 +29,8 @@ class RecordIngestor:
             )
 
             with Pool(processes=4) as pool:
-                ingest_results = pool.map(RecordIngestor._ingest_record, records)
-
-            ingest_count = len(set([result[0] for result in ingest_results if result[1] is True]))
+                ingest_results = pool.imap_unordered(RecordIngestor._ingest_record, records)
+                ingest_count = len(set([result[0] for result in ingest_results if result[1] is True]))
         except Exception:
             logger.exception(f'Failed to ingest {self.source} records')
 
