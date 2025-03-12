@@ -1,4 +1,3 @@
-import dataclasses
 from datetime import datetime, timedelta, timezone
 import json
 import mimetypes
@@ -40,7 +39,7 @@ class GutenbergProcess():
 
         self.gutenberg_service = GutenbergService()
 
-    def runProcess(self):
+    def runProcess(self) -> int:
         start_datetime = (
             datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
             if self.process_type == 'daily'
@@ -67,10 +66,12 @@ class GutenbergProcess():
 
         logger.info(f'Ingested {self.record_buffer.ingest_count} Gutenberg records')
 
+        return self.record_buffer.ingest_count
+
     def store_epubs(self, gutenberg_record: GutenbergMapping):
         epub_parts = []
 
-        for part in gutenberg_record.record.get_parts():
+        for part in gutenberg_record.record.parts:
             epub_id_parts = re.search(r'\/([0-9]+).epub.([a-z]+)$', part.url)
             gutenberg_id = epub_id_parts.group(1)
             gutenberg_type = epub_id_parts.group(2)
@@ -79,34 +80,34 @@ class GutenbergProcess():
                 epub_path = f'epubs/{part.source}/{gutenberg_id}_{gutenberg_type}.epub'
                 epub_url = get_stored_file_url(self.file_bucket, epub_path)
 
-                epub_parts.append(Part(
+                epub_parts.append(str(Part(
                     index=part.index,
                     source=part.source,
                     url=epub_url,
                     file_type=part.file_type,
                     flags=part.flags
-                ).to_string())
+                )))
 
                 self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(part.url, epub_path))
             else:
                 container_path = f'epubs/{part.source}/{gutenberg_id}_{gutenberg_type}/META-INF/container.xml'
                 manifest_path = f'epubs/{part.source}/{gutenberg_id}_{gutenberg_type}/manifest.json'
 
-                epub_parts.append(Part(
+                epub_parts.append(str(Part(
                     index=part.index,
                     source=part.source,
                     url=get_stored_file_url(self.file_bucket, container_path),
                     file_type='application/epub+xml',
                     flags=part.flags
-                ).to_string())
+                )))
 
-                epub_parts.append(Part(
+                epub_parts.append(str(Part(
                     index=part.index,
                     source=part.source,
                     url=get_stored_file_url(self.file_bucket, manifest_path),
                     file_type='application/epub+xml',
                     flags=part.flags
-                ).to_string())
+                )))
 
         gutenberg_record.record.has_part = epub_parts
 
@@ -127,13 +128,13 @@ class GutenbergProcess():
             cover_path = 'covers/gutenberg/{}{}'.format(gutenberg_id, file_type)
             cover_url = get_stored_file_url(self.file_bucket, cover_path)
 
-            gutenberg_record.record.has_part.append(Part(
+            gutenberg_record.record.has_part.append(str(Part(
                 index=None,
                 source=Source.GUTENBERG.value,
                 url=cover_url,
                 file_type=mime_type,
-                flags=json.dumps(dataclasses.asdict(FileFlags(cover=True)))
-            ).to_string())
+                flags=str(FileFlags(cover=True))
+            )))
 
             cover_root = yaml_file.get('url').replace('ebooks', 'files')
             cover_source_url = f"{cover_root}/{cover_data.get('image_path')}"

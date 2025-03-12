@@ -2,15 +2,13 @@ import base64
 import boto3
 from botocore.exceptions import ClientError
 import hashlib
-import json
-import dataclasses
 from io import BytesIO
 import mimetypes
 import os
 from zipfile import ZipFile
 from managers import WebpubManifest
 from digital_assets import get_stored_file_url
-from model import Part, FileFlags
+from model import Record, Part, FileFlags
 
 from logger import create_log
 
@@ -42,9 +40,9 @@ class S3Manager:
         raise S3Error('Unable to create bucket in s3')
 
 
-    def store_pdf_manifest(self, record, bucket_name, flags=FileFlags(reader=True), path: str=None):
+    def store_pdf_manifest(self, record: Record, bucket_name, flags=FileFlags(reader=True), path: str=None):
         record_id = record.source_id.split('|')[0]
-        pdf_part = next(filter(lambda part: part.file_type == 'application/pdf', record.get_parts()), None)
+        pdf_part = next(filter(lambda part: part.file_type == 'application/pdf', record.parts), None)
 
         if pdf_part is not None:
             if path:
@@ -57,13 +55,13 @@ class S3Manager:
 
             self.create_manifest_in_s3(manifest_path=manifest_path, manifest_json=manifest_json, s3_bucket=bucket_name)
 
-            record.has_part.insert(0, Part(
+            record.has_part.insert(0, str(Part(
                 index=pdf_part.index,
                 url=manifest_url,
                 source=record.source,
                 file_type='application/webpub+json',
-                flags=json.dumps(dataclasses.asdict(flags))
-            ).to_string())
+                flags=str(flags)
+            )))
 
     def create_manifest_in_s3(self, manifest_path, manifest_json, s3_bucket: str):
         self.putObjectInBucket(

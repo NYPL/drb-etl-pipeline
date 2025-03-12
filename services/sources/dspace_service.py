@@ -28,7 +28,7 @@ class DSpaceService(SourceService):
         self.base_url = base_url
         self.source_mapping = source_mapping
 
-    def get_records(self, full_import=False, start_timestamp=None, offset: Optional[int]=None, limit: Optional[int]=None):
+    def get_records(self, full_import=False, start_timestamp=None, offset: Optional[int]=0, limit: Optional[int]=None):
         resumption_token = None
 
         record_index = 0
@@ -44,7 +44,9 @@ class DSpaceService(SourceService):
 
             oaidc_records = etree.parse(oai_file)
 
-            for record in oaidc_records.xpath('//oai_dc:dc', namespaces=self.OAI_NAMESPACES):
+            all_records = oaidc_records.findall('.//record', namespaces=self.ROOT_NAMESPACE)
+
+            for record in all_records:
                 if record is None:
                     continue
 
@@ -78,7 +80,7 @@ class DSpaceService(SourceService):
         if response.status_code == 200:
             content = BytesIO(response.content)
             oaidc_XML = etree.parse(content)
-            oaidc_record = oaidc_XML.xpath('//oai_dc:dc', namespaces=self.OAI_NAMESPACES)[0]
+            oaidc_record = oaidc_XML.find('//record', namespaces=self.ROOT_NAMESPACE)
 
             try:
                 parsed_record = self.parse_record(oaidc_record)

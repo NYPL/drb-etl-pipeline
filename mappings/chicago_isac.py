@@ -1,6 +1,4 @@
-import dataclasses
 from datetime import datetime, timezone
-import json
 from typing import Optional
 from uuid import uuid4
 
@@ -19,7 +17,7 @@ def map_chicago_isac_record(record: dict) -> Optional[Record]:
         url=urls[0],
         source=Source.CHICACO_ISAC.value,
         file_type='application/pdf',
-        flags=json.dumps(dataclasses.asdict(FileFlags(download=True)))
+        flags=str(FileFlags(download=True))
     )
 
     return Record(
@@ -35,7 +33,7 @@ def map_chicago_isac_record(record: dict) -> Optional[Record]:
         is_part_of=f"{record.get('series')}|series" if record.get('series') else None,
         spatial=record.get('publisherLocation'),
         extent=record.get('extent'),
-        has_part=[pdf_part.to_string()],
+        has_part=[str(pdf_part)],
         date_created=datetime.now(timezone.utc).replace(tzinfo=None),
         date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
     )

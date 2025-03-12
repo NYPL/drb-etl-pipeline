@@ -1,5 +1,7 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+
 from enum import Enum
+import json
 from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -44,7 +46,7 @@ class Part:
         
         return parsed_url.path[1:]
     
-    def to_string(self) -> str:
+    def __str__(self):
         return '|'.join([
             str(self.index) if self.index is not None else '', 
             self.url, 
@@ -66,7 +68,10 @@ class FileFlags:
     embed: bool = False
     download: bool = False
     cover: bool = False
-    fulfill_limited_access: bool = None
+    fulfill_limited_access: bool = False
+
+    def __str__(self):
+        return json.dumps(asdict(self))
 
 
 class Record(Base, Core):
@@ -107,6 +112,10 @@ class Record(Base, Core):
 
     __tableargs__ = (Index('ix_record_identifiers', identifiers, postgresql_using="gin"))
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._deletion_flag = False
+
     def __repr__(self):
         return '<Record(title={}, uuid={}, authors={})>'.format(
             self.title, self.uuid, self.authors
@@ -124,8 +133,8 @@ class Record(Base, Core):
         for attr in dir(self):
             yield attr, getattr(self, attr)
 
-
-    def get_parts(self) -> list[Part]:
+    @property
+    def parts(self) -> list[Part]:
         parts = []
 
         for part in self.has_part:
@@ -149,3 +158,11 @@ class Record(Base, Core):
         else:
             editionNo = extract(versionNum, 'english')
             self._has_version = f'{versionNum}|{editionNo}'
+
+    @property
+    def deletion_flag(self):
+        return self._deletion_flag
+    
+    @deletion_flag.setter
+    def deletion_flag(self, deletion_flag):
+        self._deletion_flag = deletion_flag

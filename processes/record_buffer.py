@@ -8,6 +8,7 @@ class RecordBuffer:
         self.records = set()
         self.batch_size = batch_size
         self.ingest_count = 0
+        self.deletion_count = 0
 
     def add(self, record: Record):
         existing_record = self.db_manager.session.query(Record).filter(
@@ -23,6 +24,17 @@ class RecordBuffer:
 
         if len(self.records) > self.batch_size:
             self.flush()
+
+    # TODO: Implement deletion for the rest of the FRBR model
+    def delete(self, record: Record):
+        existing_record = self.db_manager.session.query(Record).filter(
+            Record.source_id == record.source_id
+        ).first()
+
+        if existing_record:
+            self.db_manager.session.delete(existing_record)
+            self.deletion_count += 1
+            self.db_manager.session.commit()
 
     def flush(self):
         self.db_manager.bulkSaveObjects(self.records)

@@ -45,7 +45,7 @@ class TestDOABProcess:
     @pytest.fixture
     def mocks(self, mocker):
         return {
-            'manage_links': mocker.patch.object(DOABProcess, 'manage_links'),
+            '_process_record': mocker.patch.object(DOABProcess, '_process_record'),
         }
 
     def test_runProcess_daily(self, test_instance: DOABProcess, record_mappings, mocks):
@@ -55,7 +55,7 @@ class TestDOABProcess:
         test_instance.runProcess()
 
         test_instance.dspace_service.get_records.assert_called_once_with(offset=0, limit=10000)
-        assert mocks['manage_links'].call_count == len(record_mappings)
+        assert mocks['_process_record'].call_count == len(record_mappings)
 
     def test_runProcess_complete(self, test_instance: DOABProcess, record_mappings, mocks):
         test_instance.dspace_service.get_records.return_value = record_mappings
@@ -64,7 +64,7 @@ class TestDOABProcess:
         test_instance.runProcess()
 
         test_instance.dspace_service.get_records.assert_called_once_with(full_import=True, offset=0, limit=10000)
-        assert mocks['manage_links'].call_count == len(record_mappings)
+        assert mocks['_process_record'].call_count == len(record_mappings)
 
     def test_runProcess_custom(self, test_instance: DOABProcess, record_mappings, mocks):
         test_instance.dspace_service.get_records.return_value = record_mappings
@@ -73,7 +73,7 @@ class TestDOABProcess:
         test_instance.runProcess()
 
         test_instance.dspace_service.get_records.assert_called_once_with(start_timestamp=None, offset=0, limit=10000)
-        assert mocks['manage_links'].call_count == len(record_mappings)
+        assert mocks['_process_record'].call_count == len(record_mappings)
 
     def test_runProcess_single(self, test_instance: DOABProcess, single_record_mapping, mocks):
         test_instance.dspace_service.get_single_record.return_value = single_record_mapping
@@ -83,7 +83,7 @@ class TestDOABProcess:
         test_instance.runProcess()
 
         test_instance.dspace_service.get_single_record.assert_called_once_with(record_id=1, source_identifier='oai:directory.doabooks.org')
-        assert mocks['manage_links'].call_count == 1
+        assert mocks['_process_record'].call_count == 1
 
 
     def test_manage_links_success(self, test_instance: DOABProcess, mocker):
@@ -91,14 +91,14 @@ class TestDOABProcess:
 
         mock_manager = mocker.MagicMock()
         mock_manager.manifests = [('pdfPath', 'pdfJSON')]
-        mock_manager.ePubLinks = [(['epubPath', 'epubURI'])]
+        mock_manager.epub_links = [(['epubPath', 'epubURI'])]
         
         mock_link_manager = mocker.patch('processes.ingest.doab.DOABLinkManager')
         mock_link_manager.return_value = mock_manager
 
         test_instance.manage_links(mock_record)
 
-        mock_manager.parseLinks.assert_called_once()
+        mock_manager.parse_links.assert_called_once()
         test_instance.s3_manager.create_manifest_in_s3.assert_called_once_with('pdfPath', 'pdfJSON', test_instance.s3_bucket)
         test_instance.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
             test_instance.file_queue, 
