@@ -31,8 +31,8 @@ OCLC_QUEUE: oclc_catalog
 OCLC_ROUTING_KEY: oclc_catalog
 FILE_QUEUE: drb_files
 FILE_ROUTING_KEY: drb_files
-RECORD_QUEUE: records
-RECORD_ROUTING_KEY: records
+RECORD_PIPELINE_QUEUE: records
+RECORD_PIPELINE_ROUTING_KEY: records
 
 AWS_REGION: us-east-1
 S3_ENDPOINT_URL: http://drb-local-s3:4566

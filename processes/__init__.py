@@ -19,3 +19,4 @@ from .ingest.loc import LOCProcess
 from .file.fulfill_url_manifest import FulfillURLManifestProcess
 from .ingest.publisher_backlist import PublisherBacklistProcess
 from .ingest.clacso import CLACSOProcess
+from .record_ingestor import RecordIngestor

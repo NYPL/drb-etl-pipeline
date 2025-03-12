@@ -126,7 +126,7 @@ class Record(Base, Core):
             'title', 'alternative', 'medium', 'is_part_of', 'subjects', 'authors',
             'contributors', 'languages', 'dates', 'rights', 'identifiers',
             'date_submitted', 'requires', 'spatial', 'publisher', 'has_version',
-            'table_of_contents', 'extent', 'abstract', 'has_part', 'coverage'
+            'table_of_contents', 'extent', 'abstract', 'has_part', 'coverage', 'date_modified'
         ]
     
     def __iter__(self):

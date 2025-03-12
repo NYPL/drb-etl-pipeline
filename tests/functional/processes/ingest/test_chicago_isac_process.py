@@ -7,7 +7,7 @@ from .assert_uploaded_manifests import assert_uploaded_manifests
 def test_chicago_isac_process():
     isac_process = ChicagoISACProcess('complete', None, None, None, 5, None)
 
-    isac_process.runProcess()
+    number_of_records_ingested = isac_process.runProcess()
 
-    records = assert_ingested_records(source_name=Source.CHICACO_ISAC.value)
+    records = assert_ingested_records(source_name=Source.CHICACO_ISAC.value, expected_number_of_records=number_of_records_ingested)
     assert_uploaded_manifests(records)
