@@ -1,5 +1,5 @@
 import json
-import multiprocessing
+from multiprocessing import Pool
 import os
 
 from logger import create_log
@@ -27,37 +27,40 @@ class RecordIngestor:
                 limit=params.limit
             )
 
-            ingest_pipeline_pool = multiprocessing.Pool(processes=4)
-            record_ingest_processes = [ingest_pipeline_pool.apply_async(self._ingest_record, args=(record,)) for record in records]
+            with Pool(processes=4) as pool:
+                ingest_results = pool.map(RecordIngestor._ingest_record, records)
 
-            ingest_results = [record_ingest_process.get() for record_ingest_process in record_ingest_processes]
-
-            ingest_count = len([ingest_result for ingest_result in ingest_results if ingest_result is True])
-
-            ingest_pipeline_pool.close()
-            ingest_pipeline_pool.join()
+            ingest_count = len(set([result[0] for result in ingest_results if result[1] is True]))
         except Exception:
             logger.exception(f'Failed to ingest {self.source} records')
 
         logger.info(f'Ingested {ingest_count} {self.source} records')
         return ingest_count
-
+    
     @staticmethod
-    def _ingest_record(record: Record) -> bool:
+    def _ingest_record(record: Record) -> tuple:
         try:
+            source_id = record.source_id
+            source = record.source
+
             RecordIngestor._store_record_files(record=record)
             RecordIngestor._save_record(record=record)
-            RecordIngestor._send_record_pipeline_message(record_id=record.id)
+            RecordIngestor._send_record_pipeline_message(source_id=source_id, source=source)
 
-            return True
+            return (source_id, True)
         except Exception:
             logger.exception(f'Failed to ingest record: {record}')
-            return False
+            return (source_id, False)
         
     @staticmethod
     def _save_record(record: Record):
         with DBManager() as db_manager:
-            existing_record = db_manager.session.query(Record).filter(Record.source_id == record.source_id).first()
+            existing_record = (
+                db_manager.session.query(Record)
+                    .filter(Record.source_id == record.source_id)
+                    .filter(Record.source == record.source)
+                    .first()
+            )
 
             if existing_record:
                 existing_record = RecordIngestor._update_record(record, existing_record)
@@ -67,12 +70,12 @@ class RecordIngestor:
             db_manager.session.commit()
         
     @staticmethod
-    def _send_record_pipeline_message(record_id: int):
+    def _send_record_pipeline_message(source_id: str, source: str):
         with RabbitMQManager(queue_name=os.environ.get('RECORD_PIPELINE_QUEUE'), routing_key=os.environ.get('RECORD_PIPELINE_ROUTING_KEY')) as rabbitmq_manager:
             rabbitmq_manager.sendMessageToQueue(
                 queueName=rabbitmq_manager.queue_name, 
                 routingKey=rabbitmq_manager.routing_key, 
-                message=json.dumps({ 'recordId': record_id })
+                message=json.dumps({ 'sourceId': source_id, 'source': source })
             )
 
     @staticmethod
