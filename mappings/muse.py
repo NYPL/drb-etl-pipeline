@@ -1,6 +1,6 @@
-from processes.utils import clean_formatted_string
+from mappings.utils import clean_formatted_string
 from .base_mapping import BaseMapping
-from model import FileFlags, FRBRStatus, Part, Record, Source
+from model import FRBRStatus, Record, Source
 from uuid import uuid4
 from datetime import datetime, timezone
 
@@ -48,12 +48,9 @@ class MUSEMapping(BaseMapping):
             date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
         )
 
-        for attr in dir(new_record):
-            print("new_record.%s = %r" % (attr, getattr(new_record, attr)))
-
         return new_record
 
-    def _get_formatted_field(self, record, field, subfields, str_format):
+    def _get_formatted_field(self, record, field, subfields, string_format):
         field_data = record.get_fields(field)
         formatted_data = []
         subfield_data = []
@@ -68,7 +65,7 @@ class MUSEMapping(BaseMapping):
                 continue
 
             for values in zip(*subfield_data):
-                formatted_string = str_format.format(*values)
+                formatted_string = string_format.format(*values)
                 formatted_data.append(clean_formatted_string(formatted_string))
 
         return formatted_data
