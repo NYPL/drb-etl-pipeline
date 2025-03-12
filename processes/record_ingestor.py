@@ -7,7 +7,6 @@ from managers import DBManager, RabbitMQManager, S3Manager
 from model import Record
 from services.sources.source_service import SourceService
 from . import utils
-import tracemalloc
 
 logger = create_log(__name__)
 
