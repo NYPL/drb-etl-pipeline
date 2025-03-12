@@ -1,4 +1,3 @@
-import dataclasses
 import os
 import pytest
 from datetime import datetime, timezone
@@ -267,7 +266,7 @@ def unclustered_multi_item_uuid(db_manager):
         source_id='unclustered_item2|test', 
         dates=['1966|publication_date'],
         identifiers=['2341317561|isbn'],
-        has_part=[f'1|example.com/2.pdf|{TEST_SOURCE}|text/html|{json.dumps(dataclasses.asdict(FileFlags(embed=True)))}']
+        has_part=[f'1|example.com/2.pdf|{TEST_SOURCE}|text/html|{str(FileFlags(embed=True))}']
     )
 
     unclustered_multi_item = create_or_update_record(record_data=test_unclustered_item_data, db_manager=db_manager)
