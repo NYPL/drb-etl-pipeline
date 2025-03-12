@@ -21,10 +21,14 @@ class DBManager:
         self.engine = None
         self.session = None
 
-    def generateEngine(self):
-        if self.engine is not None:
-            return self.engine
+    def __enter__(self):
+        self.createSession(autoflush=True)
+        return self
 
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.close_connection()
+
+    def generateEngine(self):
         try:
             self.engine = create_engine(
                 'postgresql://{}:{}@{}:{}/{}'.format(

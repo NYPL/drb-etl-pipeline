@@ -1,11 +1,10 @@
 import json
 import multiprocessing
 import os
-from sqlalchemy.orm import Session
 
 from logger import create_log
 from managers import DBManager, RabbitMQManager, S3Manager
-from model import Record, FRBRStatus
+from model import Record
 from services.sources.source_service import SourceService
 from . import utils
 
@@ -14,19 +13,18 @@ logger = create_log(__name__)
 
 class RecordIngestor:
 
-    def __init__(self, source_service: SourceService, source: str, *args):
-        self.params = utils.parse_process_args(*args)
+    def __init__(self, source_service: SourceService, source: str):
         self.source = source
         self.source_service = source_service
 
-    def ingest(self) -> int:
+    def ingest(self, params: utils.ProcessParams) -> int:
         ingest_count = 0
 
         try:
             records = self.source_service.get_records(
-                start_timestamp=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
-                offset=self.params.offset,
-                limit=self.params.limit
+                start_timestamp=utils.get_start_datetime(process_type=params.process_type, ingest_period=params.ingest_period),
+                offset=params.offset,
+                limit=params.limit
             )
 
             ingest_pipeline_pool = multiprocessing.Pool(processes=4)
@@ -58,36 +56,24 @@ class RecordIngestor:
         
     @staticmethod
     def _save_record(record: Record):
-        try:
-            db_manager = DBManager()
+        with DBManager() as db_manager:
+            existing_record = db_manager.session.query(Record).filter(Record.source_id == record.source_id).first()
 
-            with Session(db_manager.generateEngine()) as session, session.begin():
-                existing_record = session.query(Record).filter(Record.source_id == record.source_id).first()
+            if existing_record:
+                existing_record = RecordIngestor._update_record(record, existing_record)
+            else:
+                db_manager.session.add(record)
 
-                if existing_record:
-                    record = RecordIngestor._update_record(record, existing_record)
-
-                session.add(record)
-        finally: 
-            db_manager.engine.dispose()
+            db_manager.session.commit()
         
     @staticmethod
     def _send_record_pipeline_message(record_id: int):
-        try:
-            record_pipeline_queue = os.environ.get('RECORD_PIPELINE_QUEUE')
-            record_pipeline_route = os.environ.get('RECORD_PIPELINE_ROUTING_KEY')
-
-            rabbitmq_manager = RabbitMQManager()
-            rabbitmq_manager.createRabbitConnection()
-            rabbitmq_manager.createOrConnectQueue(record_pipeline_queue, record_pipeline_route)
-
+        with RabbitMQManager(queue_name=os.environ.get('RECORD_PIPELINE_QUEUE'), routing_key=os.environ.get('RECORD_PIPELINE_ROUTING_KEY')) as rabbitmq_manager:
             rabbitmq_manager.sendMessageToQueue(
-                queueName=record_pipeline_queue,
-                routingKey=record_pipeline_route,
+                queueName=rabbitmq_manager.queue_name, 
+                routingKey=rabbitmq_manager.routing_key, 
                 message=json.dumps({ 'recordId': record_id })
             )
-        finally:
-            rabbitmq_manager.closeRabbitConnection()
 
     @staticmethod
     def _store_record_files(record: Record):
@@ -104,10 +90,5 @@ class RecordIngestor:
                 continue
 
             setattr(existing_record, attribute, value)
-        
-        existing_record.cluster_status = False
-        
-        if existing_record.source not in ['oclcClassify', 'oclcCatalog']:
-            existing_record.frbr_status = FRBRStatus.TODO.value
 
         return existing_record
