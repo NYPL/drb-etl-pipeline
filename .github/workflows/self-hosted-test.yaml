@@ -32,7 +32,6 @@ jobs:
       ELASTICSEARCH_PORT: ${{ secrets.ELASTICSEARCH_PORT }}
       ELASTICSEARCH_SCHEME: ${{ secrets.ELASTICSEARCH_SCHEME }}
       REDIS_HOST: ${{ secrets.REDIS_HOST }}
-      ENVIRONMENT: qa
 
     steps:
       - name: Checkout code
@@ -44,10 +43,10 @@ jobs:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Set up Python 3.11
+      - name: Set up Python 3.9
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.9"
           cache: "pip"
           cache-dependency-path: |
             requirements.txt
@@ -77,4 +76,4 @@ jobs:
 
       - name: Run integration tests
         run: |
-          make integration --env=qa
+          pytest tests/integration --env=qa
