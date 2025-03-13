@@ -6,8 +6,8 @@ from pymarc import MARCReader
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
-from mappings.muse import MUSEMapping
 from managers import DBManager, MUSEError, MUSEManager, RabbitMQManager, S3Manager
+from mappings.muse import map_muse_record
 from model import get_file_message
 from logger import create_log
 from ..record_buffer import RecordBuffer
@@ -54,16 +54,16 @@ class MUSEProcess():
 
         logger.info(f'Ingested {self.record_buffer.ingest_count} MUSE records')
 
-    def parse_muse_record(self, marcRec):
-        record_mapping = MUSEMapping(marcRec)
+    def parse_muse_record(self, marc_record):
+        record = map_muse_record(marc_record)
 
         # Use the available source link to create a PDF manifest file and
         # store in S3
-        _, museLink, _, museType, _ = list(
-            record_mapping.record.has_part[0].split('|')
+        _, muse_link, _, muse_type, _ = list(
+            record.has_part[0].split('|')
         )
 
-        muse_manager = MUSEManager(record_mapping, museLink, museType)
+        muse_manager = MUSEManager(record, muse_link, muse_type)
 
         muse_manager.parseMusePage()
 
@@ -81,7 +81,7 @@ class MUSEProcess():
         if muse_manager.epubURL:
             self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(muse_manager.epubURL, muse_manager.s3EpubPath))
 
-        self.record_buffer.add(record=record_mapping.record)
+        self.record_buffer.add(record=record)
 
     def importMARCRecords(self, full=False, startTimestamp=None, recID=None):
         self.downloadRecordUpdates()
