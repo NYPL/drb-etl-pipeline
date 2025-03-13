@@ -1,12 +1,14 @@
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import datetime
+from typing import Optional, Generator
 import requests
 from io import BytesIO
 from lxml import etree
+
 from constants.get_constants import get_constants
 from logger import create_log
 from mappings.base_mapping import MappingError
 from mappings.xml import XMLMapping
+from model import Record
 from .source_service import SourceService
 
 logger = create_log(__name__)
@@ -28,14 +30,19 @@ class DSpaceService(SourceService):
         self.base_url = base_url
         self.source_mapping = source_mapping
 
-    def get_records(self, full_import=False, start_timestamp=None, offset: Optional[int]=0, limit: Optional[int]=None):
+    def get_records(
+        self, 
+        full_import: bool = False, 
+        start_timestamp: Optional[datetime] = None, 
+        offset: int = 0, 
+        limit: Optional[int] = None
+    ) -> Generator[Record, None, None]:
         resumption_token = None
-
         record_index = 0
-        mapped_records = []
+        record_count = 0
 
         while resumption_token is not None or record_index <= offset:
-            oai_file = self.download_records(full_import, start_timestamp, resumption_token=resumption_token)
+            oai_file = self.download_records(start_timestamp=start_timestamp, resumption_token=resumption_token)
             resumption_token = self.get_resumption_token(oai_file)
 
             if offset is not None and record_index <= offset:
@@ -56,14 +63,13 @@ class DSpaceService(SourceService):
                     if parsed_record.record is None:
                         continue
                     
-                    mapped_records.append(parsed_record)
+                    yield parsed_record.record
+                    record_count += 1
 
-                    if limit is not None and len(mapped_records) >= limit:
-                        return mapped_records
+                    if limit is not None and record_count >= limit:
+                        return
                 except Exception:
                     logger.error(f'Error parsing DSpace record {record}')
-
-        return mapped_records
 
     def parse_record(self, record):
         try:
@@ -95,7 +101,7 @@ class DSpaceService(SourceService):
         except AttributeError:
             return None
 
-    def download_records(self, full_import, start_timestamp, resumption_token=None):
+    def download_records(self, start_timestamp: Optional[datetime], resumption_token=None):
         headers = {
             # Pass a user-agent header to prevent 403 unauthorized responses from DSpace
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
@@ -103,14 +109,11 @@ class DSpaceService(SourceService):
 
         url_params = 'verb=ListRecords'
         if resumption_token:
-            url_params = f'{url_params}&resumptionToken={resumption_token}'
-        elif full_import is False:
-            if not start_timestamp:
-                start_timestamp = (datetime.now(timezone.utc).replace(
-                    tzinfo=None) - timedelta(hours=24)).strftime('%Y-%m-%d')
-            url_params = f'{url_params}&metadataPrefix=oai_dc&from={start_timestamp}'
+            url_params += f'&resumptionToken={resumption_token}'
+        elif start_timestamp:
+            url_params += f"&metadataPrefix=oai_dc&from={start_timestamp.strftime('%Y-%m-%d')}"
         else:
-            url_params = f'{url_params}&metadataPrefix=oai_dc'
+            url_params += f'&metadataPrefix=oai_dc'
 
         url = f'{self.base_url}{url_params}'
 

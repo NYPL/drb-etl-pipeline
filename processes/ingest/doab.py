@@ -70,8 +70,8 @@ class DOABProcess():
         finally:
             self.db_manager.close_connection()
 
-    def manage_links(self, record_mapping: Record):
-        link_manager = DOABLinkManager(record_mapping.record)
+    def manage_links(self, record: Record):
+        link_manager = DOABLinkManager(record)
 
         link_manager.parse_links()
 
@@ -84,12 +84,12 @@ class DOABProcess():
             epub_path, epub_uri = epub_link
             self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(epub_uri, epub_path))
 
-    def _process_record(self, record_mapping: Record):
-        if record_mapping.record.deletion_flag:
-            self.record_buffer.delete(record_mapping.record)
+    def _process_record(self, record: Record):
+        if record.deletion_flag:
+            self.record_buffer.delete(record)
         else:
-            self.manage_links(record_mapping)
-            self.record_buffer.add(record_mapping.record)
+            self.manage_links(record)
+            self.record_buffer.add(record)
 
     def _log_results(self):
         if self.record_buffer.deletion_count != 0:
