@@ -83,7 +83,7 @@ class ClassifyProcess():
             self.db_manager.session.add(unfrbrized_record)
             self.db_manager.session.commit()
 
-            if self.limit and self.classified_count >= self.limit:
+            if self.limit and self.record_buffer.ingest_count >= self.limit:
                 break
 
             if self.redis_manager.checkIncrementerRedis('oclcCatalog', 'API'):
@@ -138,7 +138,7 @@ class ClassifyProcess():
                 related_oclc_numbers=list(set(related_oclc_numbers))
             )
 
-            self.record_buffer.add(oclc_record)
+            self.record_buffer.add(oclc_record.record)
             self.get_oclc_catalog_records(oclc_record.record.identifiers)
 
     def get_oclc_catalog_records(self, identifiers):
