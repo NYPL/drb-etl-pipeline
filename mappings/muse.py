@@ -119,8 +119,7 @@ def _get_publishers(record):
 def _get_dates(record):
     dates = _get_formatted_field(record, '264', '{c}|publication_date')
 
-    if len(dates) < 1:
-        publication_date = record['008'].data[11:15]
+    if not dates and (publication_date := record['008'].data[11:15]):
         dates.append(f'{publication_date}|publication_date')
 
     return dates
