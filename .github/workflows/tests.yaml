@@ -21,7 +21,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      IS_CI: "true"
+      IS_CI: "false"
       AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       ENVIRONMENT: local
