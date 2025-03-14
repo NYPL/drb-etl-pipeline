@@ -1,12 +1,12 @@
 from digital_assets import get_stored_file_url
-from processes import ClusterProcess, LinkFulfiller, FulfillURLManifestProcess
+from processes import ClusterProcess, LinkFulfiller
 from model import FileFlags, Record, Part, Item
 import json
 import os
 from sqlalchemy.orm import joinedload
 
 
-def test_fulfillment_process(db_manager, s3_manager, limited_access_record_uuid):
+def test_fulfill_links(db_manager, s3_manager, limited_access_record_uuid):
     cluster_process = ClusterProcess('complete', None, None, limited_access_record_uuid, None)
     cluster_process.runProcess()
 
@@ -18,19 +18,19 @@ def test_fulfillment_process(db_manager, s3_manager, limited_access_record_uuid)
             .first()
     )
 
-    assert item is not None, "Item not created by cluster process"
+    assert item is not None, 'Item not created by cluster process'
     
     epub_link = next((link for link in item.links if link.media_type == 'application/epub+zip'), None)
-    assert epub_link is not None, "EPUB link not found in item links"
+    assert epub_link is not None, 'EPUB link not found in item links'
 
     test_manifest = {
-        "links": [{"type": epub_link.media_type, "href": epub_link.url}],
-        "readingOrder": [{"type": epub_link.media_type, "href": epub_link.url}],
-        "resources": [{"type": epub_link.media_type, "href": epub_link.url}],
-        "toc": [{"href": epub_link.url}]
+        'links': [{'type': epub_link.media_type, 'href': epub_link.url}],
+        'readingOrder': [{'type': epub_link.media_type, 'href': epub_link.url}],
+        'resources': [{'type': epub_link.media_type, 'href': epub_link.url}],
+        'toc': [{'href': epub_link.url}]
     }
     
-    manifest_key = f"manifests/publisher_backlist/test_{limited_access_record_uuid}.json"
+    manifest_key = f'manifests/publisher_backlist/test_{limited_access_record_uuid}.json'
     s3_manager.s3Client.put_object(
         Bucket=os.environ['FILE_BUCKET'],
         Key=manifest_key,
@@ -43,16 +43,16 @@ def test_fulfillment_process(db_manager, s3_manager, limited_access_record_uuid)
         url=get_stored_file_url(storage_name=os.environ['FILE_BUCKET'], file_path=manifest_key),
         source=record.source,
         file_type='application/webpub+json',
-        flags=str(FileFlags(reader=True))
+        flags=str(FileFlags(reader=True, limited_access=True))
     )))
 
-    fulfill_process = FulfillURLManifestProcess('complete', None, None, None)
-    fulfill_process.runProcess()
+    link_fulfiller = LinkFulfiller(db_manager)
+    link_fulfiller.fulfill_records_links([record])
 
     manifest_file = s3_manager.s3Client.get_object(Bucket=os.environ['FILE_BUCKET'], Key=manifest_key)
     fulfilled_manifest_json = json.loads(manifest_file['Body'].read().decode())
 
-    expected_url = f"https://{os.environ['DRB_API_HOST']}/fulfill/{epub_link.id}"
+    expected_url = f"{os.environ['DRB_API_URL']}/fulfill/{epub_link.id}"
 
     for manifest_section in ['links', 'readingOrder', 'resources', 'toc']:
         for manifest_link in fulfilled_manifest_json.get(manifest_section, []):
