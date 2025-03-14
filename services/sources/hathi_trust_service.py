@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+from dateutil import parser
 import gzip
 from io import BytesIO
 import requests
@@ -22,7 +23,6 @@ class HathiTrustService(SourceService):
 
     def __init__(self):
         self.constants = get_constants()
-        self.record_count = 0
 
     def get_records(
         self, 
@@ -31,21 +31,38 @@ class HathiTrustService(SourceService):
         offset: int = 0, 
         limit: Optional[int] = None
     ) -> Generator[Record, None, None]:
+        csv.field_size_limit(self.FIELD_SIZE_LIMIT)
+
         data_files = self._get_data_files()
-                
+        record_count = 0
+
         for data_file in data_files:
-            if limit and self.record_count >= limit:
-                return
+            if limit and record_count > limit:
+                break
 
-            if data_file.get('full') and start_timestamp is None:
-                yield from self._get_records_from_data_file(file_url=data_file.get('url'), limit=limit)
-            else:
-                date_format = self.get_hathi_date_format(date_string=data_file.get('modified'))
-                date_modified = datetime.strptime(data_file.get('modified'), date_format).replace(tzinfo=None)
-                
-                if date_modified >= start_timestamp:
-                    yield from self._get_records_from_data_file(file_url=data_file.get('url'), start_datetime=start_timestamp, limit=limit)
+            if ((start_timestamp is None and not data_file.get('full')) or 
+                (start_timestamp and parser.parse(data_file.get('modified')).replace(tzinfo=None) < start_timestamp)):
+                continue
 
+            file_data = self._get_data_from_file_url(file_url=data_file.get('url'))
+
+            if file_data is None:
+                continue
+            
+            with gzip.open(BytesIO(file_data), mode='rt') as gzip_file:
+                tsv_file = csv.reader(gzip_file, delimiter='\t')
+
+                for data_row in tsv_file:
+                    if limit and record_count > limit:
+                        break
+                    
+                    if self._is_ingestable(data_row, start_timestamp):
+                        record_mapping = HathiMapping(data_row, self.constants)
+                        record_mapping.applyMapping()
+
+                        yield record_mapping.record
+                        record_count +=1
+    
     def _get_data_files(self) -> list[dict]:
         try:
             file_list = requests.get(self.HATHI_DATAFILES, timeout=15)
@@ -55,49 +72,9 @@ class HathiTrustService(SourceService):
             raise e
 
         data_files = file_list.json()
-
-        data_files.sort(
-            key=lambda x: datetime.strptime(x['created'], self.get_hathi_date_format(x['created'])).timestamp(),
-            reverse=True
-        )
+        data_files.sort(key=lambda x: parser.parse(x['created']).timestamp(), reverse=True)
 
         return data_files
-
-    @staticmethod
-    def get_hathi_date_format(date_string: str):
-        if 'T' in date_string and '-' in date_string:
-            return '%Y-%m-%dT%H:%M:%S%z'
-        elif 'T' in date_string:
-            return '%Y-%m-%dT%H:%M:%S'
-        else:
-            return '%Y-%m-%d %H:%M:%S %z'
-
-    def _get_records_from_data_file(
-        self, 
-        file_url: str,
-        start_datetime: Optional[datetime]=None,
-        limit: Optional[int]=None,
-    ) -> Generator[Record, None, None]:
-        csv.field_size_limit(self.FIELD_SIZE_LIMIT)
-
-        data_file = self._get_data_from_file_url(file_url)
-
-        if data_file is None:
-            return
-        
-        with gzip.open(BytesIO(data_file), mode='rt') as gzip_file:
-            tsv_file = csv.reader(gzip_file, delimiter='\t')
-
-            for data_row in tsv_file:
-                if limit and self.record_count > limit:
-                    return
-                
-                if self._is_ingestable(data_row, start_datetime):
-                    record_mapping = HathiMapping(data_row, self.constants)
-                    record_mapping.applyMapping()
-
-                    yield record_mapping.record
-                    self.record_count +=1
 
     def _get_data_from_file_url(self, file_url: str):
         try:
