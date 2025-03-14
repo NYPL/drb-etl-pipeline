@@ -20,7 +20,8 @@ class Part:
     file_type: str
     flags: str
 
-    def get_file_bucket(self) -> Optional[str]:
+    @property
+    def file_bucket(self) -> Optional[str]:
         parsed_url = urlparse(self.url)
 
         if 'localhost' in parsed_url.hostname:
@@ -33,7 +34,8 @@ class Part:
         
         return parsed_url.hostname.split('.')[0]
 
-    def get_file_key(self) -> Optional[str]:
+    @property
+    def file_key(self) -> Optional[str]:
         parsed_url = urlparse(self.url)
 
         if 'localhost' in parsed_url.hostname:
