@@ -132,7 +132,7 @@ is to run this command `alembic revision -m "<revision name>"` which will create
 - `download` Added to pdf/epub links to indicate if a book is downloadable on the frontend
 - `catalog` Indicates if a book is a part of a catalog which may not be readable online, but can be accessed with other means like requesting online 
 - `nypl_login` Indicates if a book is a requestable book on the frontend for NYPL patrons
-- `fulfill_limited_access` Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
+- `limited_access` Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
 
 #### Building and running a process in Docker
 
