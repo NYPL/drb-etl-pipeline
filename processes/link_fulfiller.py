@@ -16,15 +16,16 @@ class LinkFulfiller:
         self.db_manager = db_manager
 
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Bucket()
+        self.s3_manager.createS3Client()
 
         self.host = os.environ.get('DRB_API_HOST')
 
     def fulfill_records_links(self, records: list[Record]):
         for record in records:
             for part in record.parts:
-                if json.loads(part.flags).get('requires_login'):
+                if json.loads(part.flags).get('nypl_login'):
                     self._fulfill_manifest(record)
+                    logger.info(f'Fulfilled manifest links for record: {record}')
 
     def _fulfill_manifest(self, record: Record):
         manifest_part = next(filter(lambda part: part.file_type == 'application/webpub+json', record.parts), None)
@@ -64,4 +65,6 @@ class LinkFulfiller:
             ('pdf' in manifest_link['href'] or 'epub' in manifest_link['href'])):
             link = self.db_manager.session.query(Link).filter(Link.url == manifest_link['href'].replace('https://', '')).first()
 
-        return f'https://{self.host}/fulfill/{link.id}' if link else manifest_link['href']
+            return f'https://{self.host}/fulfill/{link.id}' if link else manifest_link['href']
+        
+        return manifest_link['href']

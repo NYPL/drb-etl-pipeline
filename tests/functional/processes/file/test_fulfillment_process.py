@@ -1,19 +1,22 @@
-from processes import ClusterProcess, FulfillURLManifestProcess
-from model import Record, Item
+from digital_assets import get_stored_file_url
+from processes import ClusterProcess, LinkFulfiller, FulfillURLManifestProcess
+from model import FileFlags, Record, Part, Item
 import json
 import os
 from sqlalchemy.orm import joinedload
-import pytest
+
 
 def test_fulfillment_process(db_manager, s3_manager, limited_access_record_uuid):
     cluster_process = ClusterProcess('complete', None, None, limited_access_record_uuid, None)
     cluster_process.runProcess()
 
     record = db_manager.session.query(Record).filter_by(uuid=limited_access_record_uuid).first()
-    item = db_manager.session.query(Item)\
-        .options(joinedload(Item.links))\
-        .filter_by(record_id=record.id)\
-        .first()
+    item = (
+        db_manager.session.query(Item)
+            .options(joinedload(Item.links))
+            .filter_by(record_id=record.id)
+            .first()
+    )
 
     assert item is not None, "Item not created by cluster process"
     
@@ -27,42 +30,35 @@ def test_fulfillment_process(db_manager, s3_manager, limited_access_record_uuid)
         "toc": [{"href": epub_link.url}]
     }
     
-    s3_key = f"manifests/publisher_backlist/test_{limited_access_record_uuid}.json"
+    manifest_key = f"manifests/publisher_backlist/test_{limited_access_record_uuid}.json"
     s3_manager.s3Client.put_object(
         Bucket=os.environ['FILE_BUCKET'],
-        Key=s3_key,
+        Key=manifest_key,
         Body=json.dumps(test_manifest),
         ContentType='application/json'
     )
 
-    fulfill_process = FulfillURLManifestProcess(
-        'complete',
-        None,
-        None,
-        None
-    )
+    record.has_part.insert(0, str(Part(
+        index=1,
+        url=get_stored_file_url(storage_name=os.environ['FILE_BUCKET'], file_path=manifest_key),
+        source=record.source,
+        file_type='application/webpub+json',
+        flags=str(FileFlags(reader=True))
+    )))
+
+    fulfill_process = FulfillURLManifestProcess('complete', None, None, None)
     fulfill_process.runProcess()
 
-    response = s3_manager.s3Client.get_object(Bucket=os.environ['FILE_BUCKET'], Key=s3_key)
-    updated_manifest = json.loads(response['Body'].read().decode())
+    manifest_file = s3_manager.s3Client.get_object(Bucket=os.environ['FILE_BUCKET'], Key=manifest_key)
+    fulfilled_manifest_json = json.loads(manifest_file['Body'].read().decode())
 
     expected_url = f"https://{os.environ['DRB_API_HOST']}/fulfill/{epub_link.id}"
 
-    manifest_sections = [
-        ('readingOrder', 0),
-        ('resources', 0),
-        ('toc', 0)
-    ]
-
-    for section, index in manifest_sections:
-        actual_url = updated_manifest[section][index]['href']
-        assert actual_url == expected_url, (
-            f"Manifest section {section} mismatch\n"
-            f"Expected: {expected_url}\n"
-            f"Actual:   {actual_url}"
-        )
+    for manifest_section in ['links', 'readingOrder', 'resources', 'toc']:
+        for manifest_link in fulfilled_manifest_json.get(manifest_section, []):
+            assert manifest_link.get('href') == expected_url
 
     s3_manager.s3Client.delete_object(
         Bucket=os.environ['FILE_BUCKET'],
-        Key=s3_key
+        Key=manifest_key
     )

@@ -71,9 +71,10 @@ class FileFlags:
     download: bool = False
     cover: bool = False
     fulfill_limited_access: bool = False
+    nypl_login: bool = False
 
     def __str__(self):
-        return json.dumps(asdict(self))
+        return json.dumps({ flag_name: flag for flag_name, flag in asdict(self).items() if flag is True })
 
 
 class Record(Base, Core):
