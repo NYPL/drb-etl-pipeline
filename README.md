@@ -151,7 +151,7 @@ To run the unit tests, run `make unit`.
 
 To run the integration tests, run `make integration`.
 
-To run the functional tests, run `make functional`.
+To run the functional tests, run `make functional` (Your local development environment must be running in Docker for these functional tests to properly run)
 
 ### Managing secrets
 
