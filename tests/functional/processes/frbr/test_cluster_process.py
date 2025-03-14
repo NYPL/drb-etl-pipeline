@@ -19,7 +19,9 @@ def test_cluster_process(db_manager, unclustered_record_uuid):
 def test_cluster_record(db_manager, unclustered_record_uuid):
     record_clusterer = RecordClusterer(db_manager=db_manager)
 
-    record_clusterer.cluster_record(unclustered_record_uuid)
+    unclustered_record = db_manager.session.query(Record).filter(Record.uuid == unclustered_record_uuid).first()
+
+    record_clusterer.cluster_record(unclustered_record)
 
     assert_record_clustered(record_uuid=unclustered_record_uuid, db_manager=db_manager)
 

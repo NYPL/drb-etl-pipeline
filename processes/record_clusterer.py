@@ -26,32 +26,19 @@ class RecordClusterer:
 
         self.constants = get_constants()
 
-    def cluster_record(self, record_uuid):
-        query_filters = [
-            Record.frbr_status == 'complete',
-            Record.cluster_status == False,
-            Record.source.notin_(['oclcClassify', 'oclcCatalog']),
-            Record.title.isnot(None),
-            Record.uuid == record_uuid
-        ]
-
-        get_unclustered_record_query = self.db_manager.session.query(Record).filter(*query_filters)
-
-        unclustered_record = get_unclustered_record_query.first()
-        if not unclustered_record:
-            logger.info(f'No unclustered record found with UUID {record_uuid}')
-            return
-
+    def cluster_record(self, record) -> list[Record]:
         try:
-            work, stale_work_ids = self._get_clustered_works(unclustered_record)
+            work, stale_work_ids, records = self._get_clustered_work_and_records(record)
             self._update_elastic_search(works_to_index=[work], works_to_delete=stale_work_ids)
             self._delete_stale_works(stale_work_ids)
-            logger.info(f'Clustered record with uuid: {record_uuid}')
+            logger.info(f'Clustered record: {record}')
+
+            return records
         except Exception as e:
-            logger.exception(f'Failed to cluster record {unclustered_record}')
+            logger.exception(f'Failed to cluster record {record}')
             raise e
 
-    def _get_clustered_works(self, record: Record):
+    def _get_clustered_work_and_records(self, record: Record):
         matched_record_ids = self._find_all_matching_records(record) + [record.id]
 
         clustered_editions, records = self._cluster_matched_records(matched_record_ids)
@@ -65,14 +52,14 @@ class RecordClusterer:
 
         self._update_cluster_status(matched_record_ids)
 
-        return work, stale_work_ids
+        return work, stale_work_ids, records
 
     def _update_elastic_search(self, works_to_index: list, works_to_delete: set):
         self.elastic_search_manager.deleteWorkRecords(works_to_delete)
         self._index_works_in_elastic_search(works_to_index)
 
     def _delete_stale_works(self, work_ids: set[str]):
-        self.deleteRecordsByQuery(self.db_manager.session.query(Work).filter(Work.id.in_(list(work_ids))))
+        self.db_manager.deleteRecordsByQuery(self.db_manager.session.query(Work).filter(Work.id.in_(list(work_ids))))
 
     def _cluster_matched_records(self, record_ids: list[str]):
         records = self.db_manager.session.query(Record).filter(Record.id.in_(record_ids)).all()
@@ -199,4 +186,3 @@ class RecordClusterer:
             formatted_ids.append(formatted_id)
 
         return '{{{}}}'.format(','.join(formatted_ids))
-
