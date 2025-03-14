@@ -82,9 +82,12 @@ class HathiTrustService(SourceService):
             data_file_response.raise_for_status()
 
             return data_file_response.content
+        except requests.exceptions.RequestException:
+            logger.exception(f'Received HTTP error with status code: {data_file_response.status_code} from {file_url}')
         except Exception:
             logger.exception(f'Unable to get data from Hathi Trust file url {file_url}')
-            return None
+        
+        return None
         
     def _is_ingestable(self, data_row, start_datetime: Optional[datetime]) -> bool:
         rights = data_row[2] if len(data_row) > 2 else None
