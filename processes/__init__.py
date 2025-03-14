@@ -21,3 +21,4 @@ from .ingest.publisher_backlist import PublisherBacklistProcess
 from .ingest.clacso import CLACSOProcess
 from .record_ingestor import RecordIngestor
 from .record_frbrizer import RecordFRBRizer
+from .record_clusterer import RecordClusterer
