@@ -16,8 +16,8 @@ from .util.db_maintenance import DatabaseMaintenanceProcess
 from .util.db_migration import MigrationProcess
 from .ingest.chicago_isac import ChicagoISACProcess
 from .ingest.loc import LOCProcess
-from .file.fulfill_url_manifest import FulfillURLManifestProcess
 from .ingest.publisher_backlist import PublisherBacklistProcess
 from .ingest.clacso import CLACSOProcess
 from .record_ingestor import RecordIngestor
+from .link_fulfiller import LinkFulfiller
 from .record_frbrizer import RecordFRBRizer
