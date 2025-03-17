@@ -6,7 +6,7 @@ from sqlalchemy import text, delete
 from uuid import uuid4
 
 from processes import ClusterProcess
-from model import Collection, Edition, FileFlags, Item, Link, Record, Work
+from model import Collection, Edition, FileFlags, Item, Link, Part, Record, Work
 from model.postgres.item import ITEM_LINKS
 from logger import create_log
 from managers import DBManager, RabbitMQManager, S3Manager
@@ -292,8 +292,15 @@ def limited_access_record_uuid(db_manager):
         'source': TEST_SOURCE,
         'source_id': 'pbtestSourceID',
         'publisher_project_source': ['University of Michigan Press'],
-        'has_part': [f'1|https://example.com/book.epub|{TEST_SOURCE}|application/epub+zip|{json.dumps({"reader": True})}']
-
+        'has_part': [
+            str(Part(
+                index=1,
+                url='https://example.com/book.epub',
+                source=TEST_SOURCE,
+                file_type='application/epub+zip',
+                flags=str(FileFlags(reader=True, nypl_login=True))
+            )),
+        ],
     }
 
     limited_access_record = create_or_update_record(record_data=test_limited_access_record_data, db_manager=db_manager)
