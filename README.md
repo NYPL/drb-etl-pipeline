@@ -74,14 +74,14 @@ It's required to have Docker/Docker Desktop installed locally for setting up a l
 
 All services share a single entry point in `main.py` file. This script dynamically imports available processes from the `processes` directory and executes the selected process. This script accepts the following arguments (these can also be displayed by running `python main.py --help`)
 
-- `--process`/`-p` The name of the process to execute. This should be the name of the process class
-- `--environment`/`-e` The environment in which to execute the process. This controls which set of environment variables are loaded from the `config` directory, and should be set to `local` for local development
-- `--ingestType`/`-i` Applicable for processes that fetch records from external sources. Generally three settings are available (see individual processes for their own settings): `daily`, `complete` and `custom`
-- `--inputFile`/`-f` Used with the `custom` ingest setting provides a local file of records to import
-- `--startDate`/`-s` Also used with the `custom` ingest setting, sets a start point for a period to query or ingest records
-- `--limit`/`-l` Limits the total number of rows imported in a single process
-- `--offset`/`-o` Skips the first `n` rows of an import process
-- `--singleRecord`/`-r` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
+- `--process`/`-p`: The name of the process to execute. This should be the name of the process class
+- `--environment`/`-e`: The environment in which to execute the process. This controls which set of environment variables are loaded from the `config` directory, and should be set to `local` for local development
+- `--ingestType`/`-i`: Applicable for processes that fetch records from external sources. Generally three settings are available (see individual processes for their own settings): `daily`, `complete` and `custom`
+- `--inputFile`/`-f`: Used with the `custom` ingest setting provides a local file of records to import
+- `--startDate`/`-s`: Also used with the `custom` ingest setting, sets a start point for a period to query or ingest records
+- `--limit`/`-l`: Limits the total number of rows imported in a single process
+- `--offset`/`-o`: Skips the first `n` rows of an import process
+- `--singleRecord`/`-r`: Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
 
 To set up a local environment there is a special process to initialize a database and search cluster which is the `LocalDevelopmentSetupProcess`. However, it's recommended to run the `LocalDevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. Before running a command, it's required to set these config variables in the sample-compose.yaml file:
 
@@ -104,35 +104,35 @@ An example of running one of these processes is: `python main.py -p LOCProcess -
 
 The currently available processes (with the exception of the UofSC and ChicagoISAC processes) are:
 
-- `LocalDevelopmentSetupProcess` Initialize a testing/development database
-- `SeedLocalDataProcess` imports a sample set of HathiTrust records and FRBRizes/clusters them
-- `APIProcess` run the DRB API
-- `HathiTrustProcess` Run an import job on HathiTrust records
-- `CatalogProcess` Retrieve all OCLC Catalog records for identifiers in the queue
-- `ClassifyProcess` Classify (FRBRize) records newly imported into the DCDW
-- `ClusterProcess` Group records that have been FRBRized into editions via a Machine Learning algorithm
-- `S3Process` Fetch files (e.g. ePubs, cover images, etc.) associated with Item and Edition records and store them in AWS s3
-- `NYPLProcess` Fetch files from the NYPL catalog (specifically Bib records) and import them
-- `GutenbergProcess` Fetch updated files from Project Gutenberg and import them
-- `MUSEProcess` Fetch open access books from Project MUSE and import them
-- `METProcess` Fetch open access books from The MET Watson Digital Collections and import them
-- `DOABProcess` Fetch open access books from the Directory of Open Access Books and import them
-- `LOCProcess` Fetch open access and digitized books from the Library of Congress and import them
-- `PublisherBacklistProcess` Fetch open access and limited access books from the Publisher Backlist Project and import them
-- `CoverProcess` Fetch covers for edition records
+- `LocalDevelopmentSetupProcess`: Initialize a testing/development database
+- `SeedLocalDataProcess`: Import a sample set of HathiTrust records and FRBRizes/clusters them
+- `APIProcess`: Run the DRB API
+- `HathiTrustProcess`: Run an import job on HathiTrust records
+- `CatalogProcess`: Retrieve all OCLC Catalog records for identifiers in the queue
+- `ClassifyProcess`: Classify (FRBRize) records newly imported into the DCDW
+- `ClusterProcess`: Group records that have been FRBRized into editions via a Machine Learning algorithm
+- `S3Process`: Fetch files (e.g. ePubs, cover images, etc.) associated with Item and Edition records and store them in AWS s3
+- `NYPLProcess`: Fetch files from the NYPL catalog (specifically Bib records) and import them
+- `GutenbergProcess`: Fetch updated files from Project Gutenberg and import them
+- `MUSEProcess`: Fetch open access books from Project MUSE and import them
+- `METProcess`: Fetch open access books from The MET Watson Digital Collections and import them
+- `DOABProcess`: Fetch open access books from the Directory of Open Access Books and import them
+- `LOCProcess`: Fetch open access and digitized books from the Library of Congress and import them
+- `PublisherBacklistProcess`: Fetch open access and limited access books from the Publisher Backlist Project and import them
+- `CoverProcess`: Fetch covers for edition records
 
 ### Database Migration
 The database migration tool Alembic is utilized in this codebase for the Postgresql database. The first step 
 is to run this command `alembic revision -m "<revision name>"` which will create a new migration version in the `migrations/versions` directory. Aftwerwards, the `load_env_file` method parameters in the `migrations/env.py` file determine which config credentials the database migration will run on. The command to run the database migration is `alembic upgrade head` to run the most recent migration created or `alembic upgrade <name of version migration>` to upgrade to a specific version. To revert the migration, the command `alembic downgrade -1` will undo the last migration upgrade and the command `alembic downgrade <name of version migration>` will revert the database to a specific version. It's highly recommended to run this migration before merging in branches concerning updates to database migration.
 
-
 #### Appendix Link Flags (All flags are booleans)
-- `reader` Added to 'application/webpub+json' links to indicate if a book will have a Read Online function on the frontend
-- `embed` Indicates if a book will be using a third party web reader like Hathitrust's web reader on the frontend
-- `download` Added to pdf/epub links to indicate if a book is downloadable on the frontend
-- `catalog` Indicates if a book is a part of a catalog which may not be readable online, but can be accessed with other means like requesting online 
-- `nypl_login` Indicates if a book is a requestable book on the frontend for NYPL patrons
-- `fulfill_limited_access` Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
+
+- `reader`: Added to 'application/webpub+json' links to indicate if a book will have a Read Online function on the frontend
+- `embed`: Indicates if a book will be using a third party web reader like Hathitrust's web reader on the frontend
+- `download`: Added to pdf/epub links to indicate if a book is downloadable on the frontend
+- `catalog`: Indicates if a book is a part of a catalog which may not be readable online, but can be accessed with other means like requesting online 
+- `nypl_login`: Indicates if a book is a requestable book on the frontend for NYPL patrons
+- `limited_access`: Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
 
 #### Building and running a process in Docker
 
@@ -151,6 +151,8 @@ When running a Docker image locally that interacts with other resources running 
 To run the unit tests, run `make unit`.
 
 To run the integration tests, run `make integration`.
+
+To run the functional tests, run `make functional` (Your local development environment must be running in Docker for these functional tests to properly run)
 
 ### Managing secrets
 

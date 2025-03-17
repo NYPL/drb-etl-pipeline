@@ -21,6 +21,13 @@ class DBManager:
         self.engine = None
         self.session = None
 
+    def __enter__(self):
+        self.createSession(autoflush=True)
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.close_connection()
+
     def generateEngine(self):
         try:
             self.engine = create_engine(

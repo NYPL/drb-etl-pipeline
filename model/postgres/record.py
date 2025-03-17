@@ -20,7 +20,8 @@ class Part:
     file_type: str
     flags: str
 
-    def get_file_bucket(self) -> Optional[str]:
+    @property
+    def file_bucket(self) -> Optional[str]:
         parsed_url = urlparse(self.url)
 
         if 'localhost' in parsed_url.hostname:
@@ -33,7 +34,8 @@ class Part:
         
         return parsed_url.hostname.split('.')[0]
 
-    def get_file_key(self) -> Optional[str]:
+    @property
+    def file_key(self) -> Optional[str]:
         parsed_url = urlparse(self.url)
 
         if 'localhost' in parsed_url.hostname:
@@ -68,10 +70,11 @@ class FileFlags:
     embed: bool = False
     download: bool = False
     cover: bool = False
-    fulfill_limited_access: bool = False
+    limited_access: bool = False
+    nypl_login: bool = False
 
     def __str__(self):
-        return json.dumps(asdict(self))
+        return json.dumps({ flag_name: flag for flag_name, flag in asdict(self).items() if flag is True })
 
 
 class Record(Base, Core):
@@ -126,7 +129,7 @@ class Record(Base, Core):
             'title', 'alternative', 'medium', 'is_part_of', 'subjects', 'authors',
             'contributors', 'languages', 'dates', 'rights', 'identifiers',
             'date_submitted', 'requires', 'spatial', 'publisher', 'has_version',
-            'table_of_contents', 'extent', 'abstract', 'has_part', 'coverage'
+            'table_of_contents', 'extent', 'abstract', 'has_part', 'coverage', 'date_modified'
         ]
     
     def __iter__(self):

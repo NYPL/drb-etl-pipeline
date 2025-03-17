@@ -6,7 +6,7 @@ from sqlalchemy import text, delete
 from uuid import uuid4
 
 from processes import ClusterProcess
-from model import Collection, Edition, FileFlags, Item, Link, Record, Work
+from model import Collection, Edition, FileFlags, Item, Link, Part, Record, Work
 from model.postgres.item import ITEM_LINKS
 from logger import create_log
 from managers import DBManager, RabbitMQManager, S3Manager
@@ -247,6 +247,15 @@ def unclustered_record_uuid(db_manager):
 
 
 @pytest.fixture(scope='session')
+def unclustered_pipeline_record_uuid(db_manager):
+    test_unclustered_record_data = generate_test_data(title='unclustered pipeline record', uuid=uuid4(), source_id='unclustered|test')
+
+    unclustered_record = create_or_update_record(record_data=test_unclustered_record_data, db_manager=db_manager)
+
+    return unclustered_record.uuid
+
+
+@pytest.fixture(scope='session')
 def unclustered_multi_edition_uuid(db_manager):
     test_unclustered_edition_data = generate_test_data(title='multi edition record', uuid=uuid4(), source_id='unclustered_edition|test', dates=['1988|publication_date'], identifiers=['1234567891011|isbn'])
     test_unclustered_edition_data2 = generate_test_data(title='the multi edition record', uuid=uuid4(), source_id='unclustered_edition2|test', dates=['1977|publication_date'], identifiers=['1234567891011|isbn'])
@@ -292,8 +301,15 @@ def limited_access_record_uuid(db_manager):
         'source': TEST_SOURCE,
         'source_id': 'pbtestSourceID',
         'publisher_project_source': ['University of Michigan Press'],
-        'has_part': [f'1|https://example.com/book.epub|{TEST_SOURCE}|application/epub+zip|{json.dumps({"reader": True})}']
-
+        'has_part': [
+            str(Part(
+                index=1,
+                url='https://example.com/book.epub',
+                source=TEST_SOURCE,
+                file_type='application/epub+zip',
+                flags=str(FileFlags(reader=True, nypl_login=True))
+            )),
+        ],
     }
 
     limited_access_record = create_or_update_record(record_data=test_limited_access_record_data, db_manager=db_manager)

@@ -1,14 +1,11 @@
-import csv
-from datetime import datetime
-import gzip
-import requests
+from datetime import datetime, timedelta
 
-from constants.get_constants import get_constants
 from logger import create_log
 from managers import DBManager, RedisManager
-from mappings.hathitrust import HathiMapping
-from processes import CatalogProcess, ClassifyProcess, ClusterProcess, HathiTrustProcess
+from processes import CatalogProcess, ClassifyProcess, ClusterProcess
+from services import HathiTrustService
 from ..record_buffer import RecordBuffer
+
 
 logger = create_log(__name__)
 
@@ -22,11 +19,16 @@ class SeedLocalDataProcess():
 
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
-        self.constants = get_constants()
+        self.hathi_trust_service = HathiTrustService()
 
     def runProcess(self):
         try:
-            self.fetch_hathi_sample_data()
+            records = self.hathi_trust_service.get_records(start_timestamp=datetime.now() - timedelta(days=7), limit=50)
+
+            for record in records:
+                self.record_buffer.add(record)
+
+            self.record_buffer.flush()
 
             process_args = ['complete'] + ([None] * 4)
 
@@ -44,57 +46,3 @@ class SeedLocalDataProcess():
         except Exception as e:
             logger.exception(f'Failed to seed local data')
             raise e
-
-    def fetch_hathi_sample_data(self):
-        self.import_from_hathi_trust_data_file()
-
-        self.record_buffer.flush()
-
-        logger.info(f'Ingested {self.record_buffer.ingest_count} Hathi Trust sample records')
-
-    def import_from_hathi_trust_data_file(self):
-        hathi_files_response = requests.get(HathiTrustProcess.HATHI_DATAFILES)
-
-        if hathi_files_response.status_code != 200:
-            raise Exception('Unable to load Hathi Trust data files')
-
-        hathi_files_json = hathi_files_response.json()
-
-        hathi_files_json.sort(
-            key=lambda file: datetime.strptime(
-                file['created'],
-                self.map_to_hathi_date_format(file['created'])
-            ).timestamp(),
-            reverse=True
-        )
-
-        temp_hathi_file = '/tmp/tmp_hathi.txt.gz'
-        in_copyright_statuses = { 'ic', 'icus', 'ic-world', 'und' }
-
-        with open(temp_hathi_file, 'wb') as hathi_tsv_file:
-            hathi_data_response = requests.get(hathi_files_json[0]['url'])
-
-            hathi_tsv_file.write(hathi_data_response.content)
-
-        with gzip.open(temp_hathi_file, 'rt') as unzipped_tsv_file:
-            hathi_tsv_file = csv.reader(unzipped_tsv_file, delimiter='\t')
-
-            for number_of_books_ingested, book in enumerate(hathi_tsv_file):
-                if number_of_books_ingested > 500:
-                    break
-
-                book_right = book[2]
-
-                if book_right not in in_copyright_statuses:
-                    hathi_record = HathiMapping(book, self.constants)
-                    hathi_record.applyMapping()
-
-                    self.record_buffer.add(hathi_record.record)
-    
-    def map_to_hathi_date_format(self, date: str):
-        if 'T' in date and '-' in date:
-            return '%Y-%m-%dT%H:%M:%S%z'
-        elif 'T' in date:
-            return '%Y-%m-%dT%H:%M:%S'
-        else:
-            return '%Y-%m-%d %H:%M:%S %z'

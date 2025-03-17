@@ -1,4 +1,5 @@
-from processes import ClusterProcess
+import pytest
+from processes import ClusterProcess, RecordClusterer
 from model import Record, Item, Edition, Work
 
 def test_cluster_process(db_manager, unclustered_record_uuid):
@@ -12,23 +13,17 @@ def test_cluster_process(db_manager, unclustered_record_uuid):
     
     db_manager.session.commit()
 
-    clustered_record = db_manager.session.query(Record).filter(Record.uuid == unclustered_record_uuid).first()
+    assert_record_clustered(record_uuid=unclustered_record_uuid, db_manager=db_manager)
 
-    assert clustered_record.cluster_status == True
-    
-    frbrized_model = (
-        db_manager.session.query(Item, Edition, Work)
-            .join(Edition, Edition.id == Item.edition_id)
-            .join(Work, Work.id == Edition.work_id)
-            .filter(Item.record_id == clustered_record.id)
-            .first()
-    )
+@pytest.mark.skip
+def test_cluster_record(db_manager, unclustered_pipeline_record_uuid):
+    record_clusterer = RecordClusterer(db_manager=db_manager)
 
-    item, edition, work = frbrized_model
+    unclustered_record = db_manager.session.query(Record).filter(Record.uuid == unclustered_pipeline_record_uuid).first()
 
-    assert item is not None
-    assert edition is not None
-    assert work is not None
+    record_clusterer.cluster_record(unclustered_record)
+
+    assert_record_clustered(record_uuid=unclustered_pipeline_record_uuid, db_manager=db_manager)
 
 def test_cluster_multi_edition(db_manager, unclustered_multi_edition_uuid):
     cluster_process = ClusterProcess('complete', None, None, unclustered_multi_edition_uuid, None)
@@ -106,3 +101,22 @@ def test_cluster_multi_item(db_manager, unclustered_multi_item_uuid):
 
     for item in items:
         assert item.edition_id == editions[0].id
+
+def assert_record_clustered(record_uuid: str, db_manager):
+    clustered_record = db_manager.session.query(Record).filter(Record.uuid == record_uuid).first()
+
+    assert clustered_record.cluster_status == True
+    
+    frbrized_model = (
+        db_manager.session.query(Item, Edition, Work)
+            .join(Edition, Edition.id == Item.edition_id)
+            .join(Work, Work.id == Edition.work_id)
+            .filter(Item.record_id == clustered_record.id)
+            .first()
+    )
+
+    item, edition, work = frbrized_model
+
+    assert item is not None
+    assert edition is not None
+    assert work is not None

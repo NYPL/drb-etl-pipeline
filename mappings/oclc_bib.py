@@ -8,6 +8,7 @@ from .base_mapping import BaseMapping
 
 class OCLCBibMapping(BaseMapping):
     def __init__(self, oclc_bib, related_oclc_numbers=[]):
+        self.related_oclc_numbers = related_oclc_numbers
         self.record = self._map_to_record(oclc_bib, related_oclc_numbers)
 
     def _map_to_record(self, oclc_bib, related_oclc_numbers=[]) -> Record:

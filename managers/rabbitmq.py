@@ -10,7 +10,17 @@ logger = create_log(__name__)
 
 
 class RabbitMQManager:
-    def __init__(self, host=None, port=None, virtual_host=None, exchange=None, user=None, pswd=None):
+    def __init__(
+        self, 
+        host=None, 
+        port=None, 
+        virtual_host=None,
+        exchange=None, 
+        user=None, 
+        pswd=None,
+        queue_name=None, 
+        routing_key=None,
+    ):
         super(RabbitMQManager, self).__init__()
         self.rabbitHost = host or os.environ.get('RABBIT_HOST', None)
         self.rabbitPort = port or os.environ.get('RABBIT_PORT', None)
@@ -19,6 +29,18 @@ class RabbitMQManager:
 
         self.rabbitUser = user or os.environ.get('RABBIT_USER', None)
         self.rabbitPswd = pswd or os.environ.get('RABBIT_PSWD', None)
+
+        self.queue_name = queue_name
+        self.routing_key = routing_key
+
+    def __enter__(self):
+        self.createRabbitConnection()
+        self.createOrConnectQueue(queueName=self.queue_name, routingKey=self.routing_key)
+
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.closeRabbitConnection()
     
     def createRabbitConnection(self):
         paramDict = {
