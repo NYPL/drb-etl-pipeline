@@ -6,6 +6,7 @@ import pytest
 from tests.helper import TestHelpers
 from processes.cluster import ClusterProcess, ClusterError
 from model import Record
+from processes.utils import ProcessParams
 
 
 class TestClusterProcess:
@@ -21,6 +22,8 @@ class TestClusterProcess:
     def testInstance(self, mocker):
         class TestClusterProcess(ClusterProcess):
             def __init__(self):
+                self.params = ProcessParams()
+                self.db_manager = mocker.MagicMock()
                 self.records = []
                 self.ingestPeriod = None
                 self.limit = None
@@ -36,24 +39,18 @@ class TestClusterProcess:
     def testRecord(self, mocker):
         return mocker.MagicMock(id=1, title='Test', identifiers=['2|oclc'], uuid='testUUID')
 
-    def test_runProcess_daily(self, testInstance, mocker):
+    def test_runProcess_daily(self, testInstance: ClusterProcess, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'cluster_records')
-        mockSave = mocker.patch.object(ClusterProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
 
-        testInstance.process = 'daily'
+        testInstance.params.process_type = 'daily'
         testInstance.runProcess()
 
         mockCluster.assert_called_once
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
 
-    def test_runProcess_complete(self, testInstance, mocker):
+    def test_runProcess_complete(self, testInstance: ClusterProcess, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'cluster_records')
-        mockSave = mocker.patch.object(ClusterProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
 
-        testInstance.process = 'complete'
+        testInstance.params.process_type = 'complete'
         testInstance.runProcess()
 
         mockCluster.assert_called_once_with(
@@ -61,40 +58,31 @@ class TestClusterProcess:
             record_uuid=None,
             source=None
         )
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
 
-    def test_runProcess_custom(self, testInstance, mocker):
+    def test_runProcess_custom(self, testInstance: ClusterProcess, mocker):
         mockCluster = mocker.patch.object(ClusterProcess, 'cluster_records')
-        mockSave = mocker.patch.object(ClusterProcess, 'saveRecords')
-        mockCommit = mocker.patch.object(ClusterProcess, 'commitChanges')
 
-        testInstance.process = 'custom'
-        testInstance.ingestPeriod = '2020-01-01T00:00:00'
+        testInstance.params.process_type = 'custom'
+        testInstance.params.ingest_period = '2020-01-01T00:00:00'
         testInstance.runProcess()
 
         mockCluster.assert_called_once_with(
-            start_datetime=datetime.strptime(testInstance.ingestPeriod, '%Y-%m-%dT%H:%M:%S'),
-            record_uuid=None,
-            source=None
+            start_datetime=datetime.strptime(testInstance.params.ingest_period, '%Y-%m-%dT%H:%M:%S'),
+            record_uuid=testInstance.params.record_id,
+            source=testInstance.params.source
         )
-        mockSave.assert_called_once
-        mockCommit.assert_called_once
 
-    def test_cluster_records_not_full(self, testInstance, mocker):
+    def test_cluster_records_not_full(self, testInstance: ClusterProcess, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
             cluster_record=mocker.DEFAULT,
             update_elastic_search=mocker.DEFAULT,
             delete_stale_works=mocker.DEFAULT,
-            closeConnection=mocker.DEFAULT,
         )
 
-        mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
-        testInstance.session = mockSession
 
-        mockSession.query().filter.return_value = mockQuery
+        testInstance.db_manager.session.query().filter.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
         mockQuery.first.side_effect = ['rec1', 'rec2', None]
 
@@ -113,23 +101,19 @@ class TestClusterProcess:
         clusterMocks['delete_stale_works'].assert_called_once_with(
             set(['uuid2', 'uuid3', 'uuid4'])
         )
-        testInstance.session.commit.assert_called_once()
+        testInstance.db_manager.session.commit.assert_called_once()
 
-    def test_cluster_records_custom_range(self, testInstance, mocker):
+    def test_cluster_records_custom_range(self, testInstance: ClusterProcess, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
             cluster_record=mocker.DEFAULT,
             update_elastic_search=mocker.DEFAULT,
             delete_stale_works=mocker.DEFAULT,
-            closeConnection=mocker.DEFAULT,
         )
-        mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
-        testInstance.session = mockSession
-        testInstance.process = 'custom'
-        mocker.patch('processes.cluster.datetime')
+        testInstance.params.process_type = 'custom'
 
-        mockSession.query().filter.return_value = mockQuery
+        testInstance.db_manager.session.query().filter.return_value = mockQuery
         mockQuery.filter.return_value = mockQuery
         mockQuery.first.side_effect = ['rec{}'.format(i) for i in range(50)] + [None]
 
@@ -151,21 +135,18 @@ class TestClusterProcess:
             mocker.call(set([])), mocker.call(set([]))
         ])
 
-    def test_cluster_records_full(self, testInstance, mocker):
+    def test_cluster_records_full(self, testInstance: ClusterProcess, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
             cluster_record=mocker.DEFAULT,
             update_elastic_search=mocker.DEFAULT,
             delete_stale_works=mocker.DEFAULT,
-            closeConnection=mocker.DEFAULT,
             update_cluster_status=mocker.DEFAULT
         )
 
-        mockSession = mocker.MagicMock()
         mockQuery = mocker.MagicMock()
-        testInstance.session = mockSession
 
-        mockSession.query().filter.return_value = mockQuery
+        testInstance.db_manager.session.query().filter.return_value = mockQuery
         mockQueryResponses = [mocker.MagicMock(id=1), mocker.MagicMock(id=2), None]
         mockQuery.first.side_effect = mockQueryResponses
 
@@ -176,7 +157,7 @@ class TestClusterProcess:
         assert mockQuery.first.call_count == 3
         clusterMocks['update_cluster_status'].assert_called_once_with([2])
 
-    def test_cluster_record_w_matching_records(self, testInstance, testRecord, mocker):
+    def test_cluster_record_w_matching_records(self, testInstance: ClusterProcess, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
             find_all_matching_records=mocker.DEFAULT,
@@ -188,8 +169,6 @@ class TestClusterProcess:
         clusterMocks['cluster_matched_records'].return_value = (['ed1', 'ed2'], ['inst1', 'inst2', 'inst3'])
         clusterMocks['create_work_from_editions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
 
-        mockSession = mocker.MagicMock()
-        testInstance.session = mockSession
         testWork, testDeleted = testInstance.cluster_record(testRecord)
 
         assert testWork == 'testDBWork'
@@ -200,10 +179,10 @@ class TestClusterProcess:
         clusterMocks['create_work_from_editions'].assert_called_once_with(
             ['ed1', 'ed2'], ['inst1', 'inst2', 'inst3']
         )
-        mockSession.flush.assert_called_once()
+        testInstance.db_manager.session.flush.assert_called_once()
         clusterMocks['update_cluster_status'].assert_called_once_with(['3|test', 1])
 
-    def test_cluster_record_wo_matching_records(self, testInstance, testRecord, mocker):
+    def test_cluster_record_wo_matching_records(self, testInstance: ClusterProcess, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
             find_all_matching_records=mocker.DEFAULT,
@@ -215,8 +194,6 @@ class TestClusterProcess:
         clusterMocks['cluster_matched_records'].return_value = (['ed1'], ['inst1'])
         clusterMocks['create_work_from_editions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
 
-        mockSession = mocker.MagicMock()
-        testInstance.session = mockSession
         testWork, testDeleted = testInstance.cluster_record(testRecord)
 
         assert testWork == 'testDBWork'
@@ -225,10 +202,10 @@ class TestClusterProcess:
         clusterMocks['find_all_matching_records'].assert_called_once_with(testRecord)
         clusterMocks['cluster_matched_records'].assert_called_once_with([1])
         clusterMocks['create_work_from_editions'].assert_called_once_with(['ed1'], ['inst1'])
-        mockSession.flush.assert_called_once()
+        testInstance.db_manager.session.flush.assert_called_once()
         clusterMocks['update_cluster_status'].assert_called_once_with([1])
 
-    def test_cluster_record_error(self, testInstance, testRecord, mocker):
+    def test_cluster_record_error(self, testInstance: ClusterProcess, testRecord, mocker):
         clusterMocks = mocker.patch.multiple(
             ClusterProcess,
             tokenize_title=mocker.DEFAULT,
@@ -243,44 +220,38 @@ class TestClusterProcess:
         clusterMocks['create_work_from_editions'].return_value = ('testDBWork', ['uuid1', 'uuid2'])
         clusterMocks['tokenize_title'].return_value = set(['test', 'title'])
 
-        mockSession = mocker.MagicMock()
-        testInstance.session = mockSession
         testWork, testDeleted = testInstance.cluster_record(testRecord)
 
-        mockSession.flush.side_effect = DataError('test', {}, 'testing')
+        testInstance.db_manager.session.flush.side_effect = DataError('test', {}, 'testing')
 
         with pytest.raises(ClusterError):
             testInstance.cluster_record(testRecord)
 
-    def test_update_cluster_status(self, testInstance, mocker):
-        mockSession = mocker.MagicMock()
-        testInstance.session = mockSession
+    def test_update_cluster_status(self, testInstance: ClusterProcess):
 
         testInstance.update_cluster_status([1])
 
-        mockSession.query().filter().update.assert_called_once()
+        testInstance.db_manager.session.query().filter().update.assert_called_once()
 
-    def test_cluster_matched_records(self, testInstance, mocker):
+    def test_cluster_matched_records(self, testInstance: ClusterProcess, mocker):
         mockMLModel = mocker.MagicMock()
         mockMLModel.parseEditions.return_value = ['ed1', 'ed2']
         mockKManager = mocker.patch('processes.cluster.KMeansManager')
         mockKManager.return_value = mockMLModel
 
-        mockSession = mocker.MagicMock()
-        mockSession.query().filter().all.return_value = ['rec1', 'rec2', 'rec3']
-        testInstance.session = mockSession
+        testInstance.db_manager.session.query().filter().all.return_value = ['rec1', 'rec2', 'rec3']
         testEditions, testRecords = testInstance.cluster_matched_records([1, 2, 3]) 
 
         assert testEditions == ['ed1', 'ed2']
         assert testRecords == ['rec1', 'rec2', 'rec3']
 
-        mockSession.query.filter.all.assert_called_once
+        testInstance.db_manager.session.query.filter.all.assert_called_once
         mockKManager.assert_called_once_with(['rec1', 'rec2', 'rec3'])
         mockMLModel.createDF.assert_called_once
         mockMLModel.generateClusters.assert_called_once
         mockMLModel.parseEditions.assert_called_once
 
-    def test_create_work_from_editions(self, testInstance, mocker):
+    def test_create_work_from_editions(self, testInstance: ClusterProcess, mocker):
         mockRecManager = mocker.MagicMock()
         mockRecManager.buildWork.return_value = 'testWorkData'
         mockRecManager.work = 'testWork'
@@ -288,12 +259,10 @@ class TestClusterProcess:
         mockManagerInst = mocker.patch('processes.cluster.SFRRecordManager')
         mockManagerInst.return_value = mockRecManager
 
-        mockSession = mocker.MagicMock()
-        testInstance.session = mockSession
         testWork = testInstance.create_work_from_editions('testEditions', 'testInstances')
 
         assert testWork == ('testWork', ['uuid1', 'uuid2'])
-        mockManagerInst.assert_called_once_with(mockSession, {})
+        mockManagerInst.assert_called_once_with(testInstance.db_manager.session, {})
         mockRecManager.buildWork.assert_called_once_with('testInstances', 'testEditions')
         mockRecManager.saveWork.assert_called_once_with('testWorkData')
         mockRecManager.mergeRecords.assert_called_once()
@@ -325,20 +294,18 @@ class TestClusterProcess:
         with pytest.raises(Exception):
             testInstance.find_all_matching_records(testRecord)
 
-    def test_get_matched_records(self, testInstance, mocker):
-        testInstance.session = mocker.MagicMock()
-
+    def test_get_matched_records(self, testInstance: ClusterProcess, mocker):
         mockFormatArray = mocker.patch.object(ClusterProcess, 'format_identifiers')
         mockFormatArray.return_value = 'testIdentifierArray'
 
-        testInstance.session.query().filter().filter().filter().all.side_effect = [[1], [2, 3]]
+        testInstance.db_manager.session.query().filter().filter().filter().all.side_effect = [[1], [2, 3]]
 
         testMatches = testInstance.get_matched_records([str(i) for i in range(103)], set([]))
 
         assert testMatches == [1, 2, 3]
-        testInstance.session.query().filter.call_args[0][0].compare(~Record.id.in_([]))
+        testInstance.db_manager.session.query().filter.call_args[0][0].compare(~Record.id.in_([]))
 
-        testInstance.session.query().filter().filter.call_args[0][0].compare(Record.identifiers.overlap('testIdentifierArray'))
+        testInstance.db_manager.session.query().filter().filter.call_args[0][0].compare(Record.identifiers.overlap('testIdentifierArray'))
 
     def test_format_identifiers(self, testInstance):
         assert testInstance.format_identifiers(['{test}|test', 'multi,test|test'])\

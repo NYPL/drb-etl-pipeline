@@ -1,8 +1,11 @@
+import dateutil
+import dateutil.parser
 import pytest
 from unittest.mock import ANY
 
 from tests.helper import TestHelpers
 from processes import PublisherBacklistProcess
+from processes.utils import ProcessParams
 
 
 class TestPublisherBacklistProcess:
@@ -18,6 +21,7 @@ class TestPublisherBacklistProcess:
     def test_instance(self, mocker) -> PublisherBacklistProcess:
         class TestPublisherBacklistProcess(PublisherBacklistProcess):
             def __init__(self, *args):
+                self.params = ProcessParams()
                 self.publisher_backlist_service = mocker.MagicMock()
                 self.db_manager = mocker.MagicMock()
                 self.record_buffer = mocker.MagicMock()
@@ -36,30 +40,30 @@ class TestPublisherBacklistProcess:
     def test_runProcess_daily(self, test_instance: PublisherBacklistProcess, record_mappings):
         test_instance.publisher_backlist_service.get_records.return_value = record_mappings
 
-        test_instance.process = 'daily'
+        test_instance.params.process_type = 'daily'
         test_instance.runProcess()
 
-        test_instance.publisher_backlist_service.get_records.assert_called_once_with(start_timestamp=ANY, offset=None, limit=None)
+        test_instance.publisher_backlist_service.get_records.assert_called_once_with(start_timestamp=ANY, offset=0, limit=None)
         test_instance.record_buffer.add.call_count = len(record_mappings)
         test_instance.db_manager.close_connection.assert_called_once()
 
     def test_runProcess_complete(self, test_instance: PublisherBacklistProcess, record_mappings):
         test_instance.publisher_backlist_service.get_records.return_value = record_mappings
 
-        test_instance.process = 'complete'
+        test_instance.params.process_type = 'complete'
         test_instance.runProcess()
 
-        test_instance.publisher_backlist_service.get_records.assert_called_once_with(start_timestamp=None, offset=None, limit=None)
+        test_instance.publisher_backlist_service.get_records.assert_called_once_with(start_timestamp=None, offset=0, limit=None)
         test_instance.record_buffer.add.call_count = len(record_mappings)
         test_instance.db_manager.close_connection.assert_called_once()
 
     def test_runProcess_custom(self, test_instance: PublisherBacklistProcess, record_mappings):
         test_instance.publisher_backlist_service.get_records.return_value = record_mappings
         
-        test_instance.process = 'custom'
+        test_instance.params.ingest_period = '2021-01-01T12:00:00'
         test_instance.runProcess()
 
-        test_instance.publisher_backlist_service.get_records.assert_called_once_with(start_timestamp=None, offset=None, limit=None)
+        test_instance.publisher_backlist_service.get_records.assert_called_once_with(start_timestamp=dateutil.parser.parse(test_instance.params.ingest_period), offset=0, limit=None)
         test_instance.record_buffer.add.call_count = len(record_mappings)
         test_instance.db_manager.close_connection.assert_called_once()
 

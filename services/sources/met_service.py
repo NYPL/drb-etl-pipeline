@@ -21,7 +21,6 @@ class METService(SourceService):
 
     def get_records(
         self,
-        full_import: bool=False,
         start_timestamp: Optional[datetime]=None,
         offset: int=0,
         limit: Optional[int]=None

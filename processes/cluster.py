@@ -1,31 +1,27 @@
-from datetime import datetime, timedelta, timezone
 import re
 from sqlalchemy.exc import DataError
 from typing import Optional
 
 from constants.get_constants import get_constants
-from .core import CoreProcess
-from managers import SFRRecordManager, KMeansManager, SFRElasticRecordManager, ElasticsearchManager, RedisManager
+from managers import DBManager, SFRRecordManager, KMeansManager, SFRElasticRecordManager, ElasticsearchManager, RedisManager
 from model import Record, Work
 from logger import create_log
+from . import utils
 
 logger = create_log(__name__)
 
 
-class ClusterProcess(CoreProcess):
+class ClusterProcess():
     MAX_MATCH_DISTANCE = 4
     CLUSTER_BATCH_SIZE = 50
     CLUSTER_SIZE_LIMIT = 10000
     IDENTIFIERS_TO_MATCH = r'\|(?:isbn|issn|oclc|lccn|owi)$'
 
     def __init__(self, *args):
-        super(ClusterProcess, self).__init__(*args[:4])
+        self.params = utils.parse_process_args(*args)
 
-        self.limit = int(args[4]) if len(args) >= 5 and args[4] else None
-        self.source = args[6] if len(args) >= 7 and args[6] else None
-
-        self.generateEngine()
-        self.createSession()
+        self.db_manager = DBManager()
+        self.db_manager.createSession()
 
         self.redis_manager = RedisManager()
         self.redis_manager.createRedisClient()
@@ -40,22 +36,16 @@ class ClusterProcess(CoreProcess):
 
     def runProcess(self):
         try:
-            start_datetime = (
-                datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-                if self.process == 'daily'
-                else self.ingestPeriod and datetime.strptime(self.ingestPeriod, '%Y-%m-%dT%H:%M:%S')
-            )
-            
             self.cluster_records(
-                start_datetime=start_datetime,
-                record_uuid=self.singleRecord,
-                source=self.source, 
+                start_datetime=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
+                record_uuid=self.params.record_id,
+                source=self.params.source, 
             )
         except Exception as e:
             logger.exception('Failed to run cluster process')
             raise e
         finally:
-            self.close_connection()
+            self.db_manager.close_connection()
 
     def cluster_records(self, start_datetime=None, record_uuid=None, source=None):
         query_filters = [
@@ -74,11 +64,11 @@ class ClusterProcess(CoreProcess):
         if source:
             query_filters.append(Record.source == source)
 
-        get_unclustered_records_query = self.session.query(Record).filter(*query_filters)
+        get_unclustered_records_query = self.db_manager.session.query(Record).filter(*query_filters)
 
         works_to_index = []
         work_ids_to_delete = set()
-        number_of_records_clusters = 0
+        number_of_records_clustered = 0
 
         while unclustered_record := get_unclustered_records_query.first():
             try:
@@ -89,14 +79,14 @@ class ClusterProcess(CoreProcess):
                 logger.exception(f'Failed to cluster record {unclustered_record}')
                 
                 self.update_cluster_status([unclustered_record.id])
-                self.session.commit()
+                self.db_manager.session.commit()
             except Exception as e:
                 logger.exception(f'Failed to cluster record {unclustered_record}')
                 raise e
             
-            number_of_records_clusters += 1
+            number_of_records_clustered += 1
 
-            if self.limit and number_of_records_clusters >= self.limit:
+            if self.params.limit and number_of_records_clustered >= self.params.limit:
                 break
 
             if len(works_to_index) >= self.CLUSTER_BATCH_SIZE:
@@ -107,13 +97,13 @@ class ClusterProcess(CoreProcess):
                 self.delete_stale_works(work_ids_to_delete)
                 work_ids_to_delete = set()
 
-                self.session.commit()
+                self.db_manager.session.commit()
 
         logger.info(f'Clustered {len(works_to_index)} works')
         self.update_elastic_search(works_to_index, work_ids_to_delete)
         self.delete_stale_works(work_ids_to_delete)
 
-        self.session.commit()
+        self.db_manager.session.commit()
 
     def cluster_record(self, record: Record):
         matched_record_ids = self.find_all_matching_records(record) + [record.id]
@@ -122,9 +112,9 @@ class ClusterProcess(CoreProcess):
         work, stale_work_ids = self.create_work_from_editions(clustered_editions, records)
 
         try:
-            self.session.flush()
+            self.db_manager.session.flush()
         except Exception:
-            self.session.rollback()
+            self.db_manager.session.rollback()
             logger.exception(f'Unable to cluster record {record}')
 
             raise ClusterError(f'Unable to cluster record {record}')
@@ -135,7 +125,7 @@ class ClusterProcess(CoreProcess):
 
     def update_cluster_status(self, record_ids: list[str], cluster_status: bool=True):
         (
-            self.session.query(Record)
+            self.db_manager.session.query(Record)
                 .filter(Record.id.in_(list(set(record_ids))))
                 .update(
                     {
@@ -150,10 +140,10 @@ class ClusterProcess(CoreProcess):
         self.index_works_in_elastic_search(works_to_index)
 
     def delete_stale_works(self, work_ids: set[str]):
-        self.deleteRecordsByQuery(self.session.query(Work).filter(Work.id.in_(list(work_ids))))
+        self.db_manager.deleteRecordsByQuery(self.db_manager.session.query(Work).filter(Work.id.in_(list(work_ids))))
 
     def cluster_matched_records(self, record_ids: list[str]):
-        records = self.session.query(Record).filter(Record.id.in_(record_ids)).all()
+        records = self.db_manager.session.query(Record).filter(Record.id.in_(record_ids)).all()
 
         kmean_manager = KMeansManager(records)
 
@@ -213,7 +203,7 @@ class ClusterProcess(CoreProcess):
 
             try:
                 records = (
-                    self.session.query(Record.title, Record.id, Record.identifiers)
+                    self.db_manager.session.query(Record.title, Record.id, Record.identifiers)
                         .filter(~Record.id.in_(list(already_matched_record_ids)))
                         .filter(Record.identifiers.overlap(id_batch))
                         .filter(Record.title.isnot(None))
@@ -227,7 +217,7 @@ class ClusterProcess(CoreProcess):
         return matched_records
 
     def create_work_from_editions(self, editions, records):
-        record_manager = SFRRecordManager(self.session, self.constants['iso639'])
+        record_manager = SFRRecordManager(self.db_manager.session, self.constants['iso639'])
 
         work_data = record_manager.buildWork(records, editions)
 
