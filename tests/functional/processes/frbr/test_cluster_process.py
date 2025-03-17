@@ -16,14 +16,14 @@ def test_cluster_process(db_manager, unclustered_record_uuid):
     assert_record_clustered(record_uuid=unclustered_record_uuid, db_manager=db_manager)
 
 @pytest.mark.skip
-def test_cluster_record(db_manager, unclustered_record_uuid):
+def test_cluster_record(db_manager, unclustered_pipeline_record_uuid):
     record_clusterer = RecordClusterer(db_manager=db_manager)
 
-    unclustered_record = db_manager.session.query(Record).filter(Record.uuid == unclustered_record_uuid).first()
+    unclustered_record = db_manager.session.query(Record).filter(Record.uuid == unclustered_pipeline_record_uuid).first()
 
     record_clusterer.cluster_record(unclustered_record)
 
-    assert_record_clustered(record_uuid=unclustered_record_uuid, db_manager=db_manager)
+    assert_record_clustered(record_uuid=unclustered_pipeline_record_uuid, db_manager=db_manager)
 
 def test_cluster_multi_edition(db_manager, unclustered_multi_edition_uuid):
     cluster_process = ClusterProcess('complete', None, None, unclustered_multi_edition_uuid, None)

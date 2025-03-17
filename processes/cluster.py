@@ -237,7 +237,7 @@ class ClusterProcess(CoreProcess):
 
         return record_manager.work, stale_work_ids
 
-    def index_works_in_elastic_search(self, works: Work):
+    def index_works_in_elastic_search(self, works: list[Work]):
         work_documents = []
 
         for work in works:

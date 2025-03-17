@@ -247,6 +247,15 @@ def unclustered_record_uuid(db_manager):
 
 
 @pytest.fixture(scope='session')
+def unclustered_pipeline_record_uuid(db_manager):
+    test_unclustered_record_data = generate_test_data(title='unclustered pipeline record', uuid=uuid4(), source_id='unclustered|test')
+
+    unclustered_record = create_or_update_record(record_data=test_unclustered_record_data, db_manager=db_manager)
+
+    return unclustered_record.uuid
+
+
+@pytest.fixture(scope='session')
 def unclustered_multi_edition_uuid(db_manager):
     test_unclustered_edition_data = generate_test_data(title='multi edition record', uuid=uuid4(), source_id='unclustered_edition|test', dates=['1988|publication_date'], identifiers=['1234567891011|isbn'])
     test_unclustered_edition_data2 = generate_test_data(title='the multi edition record', uuid=uuid4(), source_id='unclustered_edition2|test', dates=['1977|publication_date'], identifiers=['1234567891011|isbn'])

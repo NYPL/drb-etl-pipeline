@@ -29,7 +29,7 @@ class RecordClusterer:
     def cluster_record(self, record) -> list[Record]:
         try:
             work, stale_work_ids, records = self._get_clustered_work_and_records(record)
-            self._update_elastic_search(works_to_index=[work], works_to_delete=stale_work_ids)
+            self._update_elastic_search(work_to_index=work, works_to_delete=stale_work_ids)
             self._delete_stale_works(stale_work_ids)
             logger.info(f'Clustered record: {record}')
 
@@ -54,9 +54,9 @@ class RecordClusterer:
 
         return work, stale_work_ids, records
 
-    def _update_elastic_search(self, works_to_index: list, works_to_delete: set):
+    def _update_elastic_search(self, work_to_index: Work, works_to_delete: set):
         self.elastic_search_manager.deleteWorkRecords(works_to_delete)
-        self._index_works_in_elastic_search(works_to_index)
+        self._index_works_in_elastic_search(work_to_index)
 
     def _delete_stale_works(self, work_ids: set[str]):
         self.db_manager.deleteRecordsByQuery(self.db_manager.session.query(Work).filter(Work.id.in_(list(work_ids))))
@@ -153,14 +153,14 @@ class RecordClusterer:
 
         return record_manager.work, stale_work_ids
 
-    def _index_works_in_elastic_search(self, works: Work):
+    def _index_works_in_elastic_search(self, work: Work):
         work_documents = []
 
-        for work in works:
-            elastic_manager = SFRElasticRecordManager(work)
-            elastic_manager.getCreateWork()
-            work_documents.append(elastic_manager.work)
+        elastic_manager = SFRElasticRecordManager(work)
+        elastic_manager.getCreateWork()
+        work_documents.append(elastic_manager.work)
 
+        # TODO: save single work
         self.elastic_search_manager.saveWorkRecords(work_documents)
 
     def _titles_overlap(self, tokenized_record_title: set, tokenized_matched_record_title: set):
