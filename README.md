@@ -126,12 +126,13 @@ The database migration tool Alembic is utilized in this codebase for the Postgre
 is to run this command `alembic revision -m "<revision name>"` which will create a new migration version in the `migrations/versions` directory. Aftwerwards, the `load_env_file` method parameters in the `migrations/env.py` file determine which config credentials the database migration will run on. The command to run the database migration is `alembic upgrade head` to run the most recent migration created or `alembic upgrade <name of version migration>` to upgrade to a specific version. To revert the migration, the command `alembic downgrade -1` will undo the last migration upgrade and the command `alembic downgrade <name of version migration>` will revert the database to a specific version. It's highly recommended to run this migration before merging in branches concerning updates to database migration.
 
 #### Appendix Link Flags (All flags are booleans)
+
 - `reader`: Added to 'application/webpub+json' links to indicate if a book will have a Read Online function on the frontend
 - `embed`: Indicates if a book will be using a third party web reader like Hathitrust's web reader on the frontend
 - `download`: Added to pdf/epub links to indicate if a book is downloadable on the frontend
 - `catalog`: Indicates if a book is a part of a catalog which may not be readable online, but can be accessed with other means like requesting online 
 - `nypl_login`: Indicates if a book is a requestable book on the frontend for NYPL patrons
-- `fulfill_limited_access`: Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
+- `limited_access`: Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
 
 #### Building and running a process in Docker
 
