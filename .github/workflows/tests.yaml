@@ -69,8 +69,9 @@ jobs:
           echo "Waiting for services..." && sleep 90
 
       - name: Run functional and integration tests
-        run: |
+        env:
           ENVIRONMENT: local
+        run: |
           make functional integration
 
       - name: Cleanup
