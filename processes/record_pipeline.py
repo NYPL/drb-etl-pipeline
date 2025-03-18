@@ -32,8 +32,10 @@ logger = create_log(__name__)
 
 class RecordPipelineProcess:
 
-    def __init__(self):
+    def __init__(self, *args):
         self.db_manager = DBManager()
+        self.db_manager.generateEngine()
+        self.db_manager.createSession()
 
         self.record_queue = os.environ['RECORD_PIPELINE_QUEUE']
         self.record_route = os.environ['RECORD_PIPELINE_ROUTING_KEY']
@@ -43,11 +45,11 @@ class RecordPipelineProcess:
         self.rabbitmq_manager.createOrConnectQueue(self.record_queue, self.record_route)
 
         self.record_frbrizer = RecordFRBRizer(db_manager=self.db_manager)
-        self.record_frbrizer = RecordClusterer(db_manager=self.db_manager)
+        self.record_clusterer = RecordClusterer(db_manager=self.db_manager)
         self.link_fulfiller = LinkFulfiller(db_manager=self.db_manager)
 
-    def run(self):
-        while message := self.rabbit_mq_manager.getMessageFromQueue(self.record_queue):
+    def runProcess(self):
+        while message := self.rabbitmq_manager.getMessageFromQueue(self.record_queue):
             message_props, _, message_body = message
 
             if not message_props or not message_body:
