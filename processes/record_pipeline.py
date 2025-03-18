@@ -67,7 +67,7 @@ class RecordPipelineProcess:
 
                 self.link_fulfiller.fulfill_records_links(clustered_records)
                     
-                self.rabbitmq_manager.acknowledgeMessage(message_props.delivery_tag)
+                self.rabbitmq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
             except Exception:
                 logger.exception(f'Failed to process record with source_id: {source_id} and source: {source}')
                 self.rabbitmq_manager.reject_message(delivery_tag=message_props.delivery_tag)

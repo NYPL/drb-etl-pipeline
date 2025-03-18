@@ -86,7 +86,7 @@ class RecordClusterer:
 
     def _find_all_matching_records(self, record: Record):
         tokenized_record_title = self._tokenize_title(record.title)
-        ids_to_check = list(filter(lambda id: re.search(self.IDENTIFIERS_TO_MATCH, id), record.identifiers))
+        ids_to_check = {id for id in record.identifiers if re.search(self.IDENTIFIERS_TO_MATCH, id)}
 
         matched_record_ids = set()
         checked_ids = set()
