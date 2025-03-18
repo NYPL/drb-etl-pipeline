@@ -16,19 +16,65 @@ Pros:
 - State Management: We can ensure the database state fields truthfully match the state of a record. 
 '''
 
+import json
+import os
+
+from .record_frbrizer import RecordFRBRizer
+from .record_clusterer import RecordClusterer
+from .link_fulfiller import LinkFulfiller
+
+from logger import create_log
+from managers import DBManager, RabbitMQManager
+from model import Record
+
+logger = create_log(__name__)
+
+
 class RecordPipelineProcess:
 
     def __init__(self):
-        pass
+        self.db_manager = DBManager()
 
-    def run():
-        pass
-        # 1. Read message from queue
+        self.record_queue = os.environ['RECORD_PIPELINE_QUEUE']
+        self.record_route = os.environ['RECORD_PIPELINE_ROUTING_KEY']
 
-        # 2. Store/add files
+        self.rabbitmq_manager = RabbitMQManager()
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(self.record_queue, self.record_route)
 
-        # 3. FRBRize record
+        self.record_frbrizer = RecordFRBRizer(db_manager=self.db_manager)
+        self.record_frbrizer = RecordClusterer(db_manager=self.db_manager)
+        self.link_fulfiller = LinkFulfiller(db_manager=self.db_manager)
 
-        # 4. Cluster record
+    def run(self):
+        while message := self.rabbit_mq_manager.getMessageFromQueue(self.record_queue):
+            message_props, _, message_body = message
 
-        # 5. Optionally fulfill links
+            if not message_props or not message_body:
+                break
+
+            source_id, source = self._process_message(message_body=message_body)
+
+            try:
+                record = self.db_manager.session.query(Record)\
+                    .filter(Record.source_id == source_id, Record.source == source).first()
+
+                frbrized_record = self.record_frbrizer.frbrize_record(record)
+
+                clustered_records = self.record_clusterer.cluster_record(frbrized_record)
+
+                self.link_fulfiller.fulfill_records_links(clustered_records)
+                    
+                self.rabbitmq_manager.acknowledgeMessage(message_props.delivery_tag)
+            except Exception:
+                logger.exception(f'Failed to process record with source_id: {source_id} and source: {source}')
+                self.rabbitmq_manager.reject_message(delivery_tag=message_props.delivery_tag)
+            
+
+    def _process_message(self, message_body) -> Record:
+        message = json.loads(message_body)
+
+        source_id = message.get('sourceId')
+        source = message.get('source')
+
+        return source_id, source
