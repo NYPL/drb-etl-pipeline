@@ -25,7 +25,7 @@ class LinkFulfiller:
             for part in record.parts:
                 if json.loads(part.flags).get('limited_access'):
                     self._fulfill_manifest(record)
-                    logger.info(f'Fulfilled manifest links for record: {record}')
+                    logger.info(f'Fulfilled manifest links for record: {record.uuid}')
 
     def _fulfill_manifest(self, record: Record):
         manifest_part = next(filter(lambda part: part.file_type == 'application/webpub+json', record.parts), None)

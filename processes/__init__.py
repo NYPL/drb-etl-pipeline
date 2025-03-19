@@ -14,6 +14,7 @@ from .ingest.muse import MUSEProcess
 from .ingest.met import METProcess
 from .util.db_maintenance import DatabaseMaintenanceProcess
 from .util.db_migration import MigrationProcess
+from .util.redrive_records import RedriveRecordsProcess
 from .ingest.chicago_isac import ChicagoISACProcess
 from .ingest.loc import LOCProcess
 from .ingest.publisher_backlist import PublisherBacklistProcess

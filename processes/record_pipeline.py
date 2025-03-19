@@ -1,21 +1,3 @@
-
-
-'''
-High-Level Flow:
-
-1. Ingestors get and map records and send message to record pipeline queue
-2. Record pipeline process processes messages from the queue
-3. For each message, the record pipeline stores the files, frbrizes and clusters the record
-4. Optionally, the process fulfills the links
-
-Pros: 
-- Scalability: We can spin up n tasks to process messages from the queue. 
-- Simplicity: Removes potentially 4 processes and ECS tasks
-- Testability: Possible to test 
-- Observability/Debuggability: Easier to see where a record fails to be processed in the pipeline
-- State Management: We can ensure the database state fields truthfully match the state of a record. 
-'''
-
 import json
 import os
 
@@ -49,31 +31,41 @@ class RecordPipelineProcess:
         self.link_fulfiller = LinkFulfiller(db_manager=self.db_manager)
 
     def runProcess(self):
-        while message := self.rabbitmq_manager.getMessageFromQueue(self.record_queue):
+        try:
+            while message := self.rabbitmq_manager.getMessageFromQueue(self.record_queue):
+                message_props, _, message_body = message
+
+                if not message_props or not message_body:
+                    break
+                
+                self._process_message(message)
+        except Exception:
+            logger.exception('Failed to run record pipeline process')
+        finally:
+            self.db_manager.close_connection()
+            self.rabbitmq_manager.closeRabbitConnection()
+    
+    def _process_message(self, message):
+        try:
             message_props, _, message_body = message
+            source_id, source = self._parse_message(message_body=message_body)
 
-            if not message_props or not message_body:
-                break
+            record = (
+                self.db_manager.session.query(Record)
+                    .filter(Record.source_id == source_id, Record.source == source)
+                    .first()
+            )
 
-            source_id, source = self._process_message(message_body=message_body)
+            frbrized_record = self.record_frbrizer.frbrize_record(record)
+            clustered_records = self.record_clusterer.cluster_record(frbrized_record)
+            self.link_fulfiller.fulfill_records_links(clustered_records)
+                
+            self.rabbitmq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
+        except Exception:
+            logger.exception(f'Failed to process record with source_id: {source_id} and source: {source}')            
+            self.rabbitmq_manager.reject_message(delivery_tag=message_props.delivery_tag)
 
-            try:
-                record = self.db_manager.session.query(Record)\
-                    .filter(Record.source_id == source_id, Record.source == source).first()
-
-                frbrized_record = self.record_frbrizer.frbrize_record(record)
-
-                clustered_records = self.record_clusterer.cluster_record(frbrized_record)
-
-                self.link_fulfiller.fulfill_records_links(clustered_records)
-                    
-                self.rabbitmq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
-            except Exception:
-                logger.exception(f'Failed to process record with source_id: {source_id} and source: {source}')
-                self.rabbitmq_manager.reject_message(delivery_tag=message_props.delivery_tag)
-            
-
-    def _process_message(self, message_body) -> Record:
+    def _parse_message(self, message_body) -> tuple:
         message = json.loads(message_body)
 
         source_id = message.get('sourceId')

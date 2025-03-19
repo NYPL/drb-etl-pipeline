@@ -1,5 +1,4 @@
 import re
-from typing import Optional
 from sqlalchemy.exc import DataError
 from logger import create_log
 from managers import DBManager, ElasticsearchManager, KMeansManager, SFRElasticRecordManager, SFRRecordManager
@@ -28,10 +27,14 @@ class RecordClusterer:
 
     def cluster_record(self, record) -> list[Record]:
         try:
+            logger.info("Radiografías de la experiencia escolar")
+
             work, stale_work_ids, records = self._get_clustered_work_and_records(record)
-            self._update_elastic_search(work_to_index=work, works_to_delete=stale_work_ids)
             self._delete_stale_works(stale_work_ids)
             logger.info(f'Clustered record: {record}')
+
+            self._update_elastic_search(work_to_index=work, works_to_delete=stale_work_ids)
+            logger.info(f'Indexed {work} in ElasticSearch')
 
             return records
         except Exception as e:
@@ -45,10 +48,10 @@ class RecordClusterer:
         work, stale_work_ids = self._create_work_from_editions(clustered_editions, records)
 
         try:
-            self.db_manager.session.flush()
-        except Exception:
+            self.db_manager.session.commit()
+        except Exception as e:
             self.db_manager.session.rollback()
-            logger.exception(f'Unable to cluster record {record}')
+            raise e
 
         self._update_cluster_status(matched_record_ids)
 
@@ -100,7 +103,7 @@ class RecordClusterer:
             checked_ids.update(ids_to_check)
             ids_to_check.clear()
 
-            for matched_record_title, matched_record_id, matched_record_identifiers in matched_records:
+            for matched_record_title, matched_record_id, matched_record_identifiers, *_ in matched_records:
                 if not matched_record_title:
                     logger.warning('Invalid title found in matched records')
                     continue
@@ -128,12 +131,11 @@ class RecordClusterer:
 
             try:
                 records = (
-                    self.db_manager.session.query(
-                        Record.title, Record.id, Record.identifiers)
-                    .filter(~Record.id.in_(already_matched_record_ids))
-                    .filter(Record.identifiers.overlap(id_batch))
-                    .filter(Record.title.isnot(None))
-                    .all()
+                    self.db_manager.session.query(Record.title, Record.id, Record.identifiers, Record.has_part)
+                        .filter(~Record.id.in_(already_matched_record_ids))
+                        .filter(Record.identifiers.overlap(id_batch))
+                        .filter(Record.title.isnot(None))
+                        .all()
                 )
 
                 matched_records.extend(records)

@@ -6,6 +6,7 @@ from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
 from model.utilities.extractDailyEdition import extract
+from textwrap import shorten
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -120,9 +121,7 @@ class Record(Base, Core):
         self._deletion_flag = False
 
     def __repr__(self):
-        return '<Record(title={}, uuid={}, authors={})>'.format(
-            self.title, self.uuid, self.authors
-        )
+        return f'<Record(title={shorten(self.title, width=50)}, uuid={self.uuid})>'
     
     def __dir__(self):
         return ['uuid', 'frbr_status', 'cluster_status', 'source', 'publisher_project_source', 'source_id',
