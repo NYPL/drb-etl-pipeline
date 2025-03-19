@@ -39,7 +39,7 @@ class Work(Base, Core):
     rights = relationship('Rights', secondary=WORK_RIGHTS, backref='works')
 
     def __repr__(self):
-        return f"<Work(title={shorten(self.title, width=50)}, uuid={self.uuid})>"
+        return f"<Work(title={shorten(self.title, width=50, placeholder='...')}, uuid={self.uuid})>"
 
     def __dir__(self):
         return [

@@ -121,7 +121,7 @@ class Record(Base, Core):
         self._deletion_flag = False
 
     def __repr__(self):
-        return f'<Record(title={shorten(self.title, width=50)}, uuid={self.uuid})>'
+        return f"<Record(title={shorten(self.title, width=50, placeholder='...')}, uuid={self.uuid})>"
     
     def __dir__(self):
         return ['uuid', 'frbr_status', 'cluster_status', 'source', 'publisher_project_source', 'source_id',
