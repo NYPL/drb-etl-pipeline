@@ -29,6 +29,7 @@ class RecordClusterer:
         try:
             work, stale_work_ids, records = self._get_clustered_work_and_records(record)
             self._delete_stale_works(stale_work_ids)
+            self.db_manager.commitChanges()
             logger.info(f'Clustered record: {record}')
 
             self._update_elastic_search(work_to_index=work, works_to_delete=stale_work_ids)
@@ -44,14 +45,7 @@ class RecordClusterer:
 
         clustered_editions, records = self._cluster_matched_records(matched_record_ids)
         work, stale_work_ids = self._create_work_from_editions(clustered_editions, records)
-
         self._update_cluster_status(matched_record_ids)
-
-        try:
-            self.db_manager.session.commit()
-        except Exception as e:
-            self.db_manager.session.rollback()
-            raise e
 
         return work, stale_work_ids, records
 
