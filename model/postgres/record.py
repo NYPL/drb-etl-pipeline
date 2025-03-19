@@ -140,6 +140,9 @@ class Record(Base, Core):
     def parts(self) -> list[Part]:
         parts = []
 
+        if not self.has_part:
+            return parts
+
         for part in self.has_part:
             index, file_url, source, file_type, flags = part.split('|')
 

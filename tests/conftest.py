@@ -236,6 +236,33 @@ def unfrbrized_record_uuid(db_manager):
 
     return unfrbrized_record.uuid
 
+@pytest.fixture(scope='session')
+def unfrbrized_pipeline_record_uuid(db_manager):
+    test_unfrbrized_record_data = {
+        'title': 'Sense and sensibility',
+        'uuid': uuid4(),
+        'frbr_status': 'to_do',
+        'cluster_status': False,
+        "source": TEST_SOURCE,
+        'authors': ['Austen, Jane||true'],
+        'identifiers': ['1503292738|isbn'],
+        'source_id': '1503292738|isbn',
+        'dates': ['1811|publication_date'],
+        'has_part': [
+            str(Part(
+                index=1,
+                url='https://example.com/book.epub',
+                source=TEST_SOURCE,
+                file_type='application/epub+zip',
+                flags=str(FileFlags(embed=True))
+            )),
+        ],
+        'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
+    }
+
+    unfrbrized_record = create_or_update_record(record_data=test_unfrbrized_record_data, db_manager=db_manager)
+
+    return unfrbrized_record.uuid
 
 @pytest.fixture(scope='session')
 def unclustered_record_uuid(db_manager):
