@@ -4,6 +4,7 @@ from model import FileFlags, FRBRStatus, Part, Record, Source
 from uuid import uuid4
 from datetime import datetime, timezone
 from mappings.base_mapping import CustomFormatter
+from .rights import get_rights_string
 
 
 DEFAULT_PUBLISHER = 'John Hopkins University Press||'
@@ -18,7 +19,11 @@ def map_muse_record(muse_record) -> Record:
     extent = _get_formatted_field(muse_record, '300', '{a}{b}{c}')
     toc = _get_formatted_field(muse_record, '505', '{a}')
 
-    rights = 'muse|https://creativecommons.org/licenses/by-nc/4.0/||Creative Commons Attribution-NonCommercial 4.0 International|'
+    rights = get_rights_string(
+        rights_source=Source.MUSE.value,
+        license='https://creativecommons.org/licenses/by-nc/4.0/',
+        rights_statement='Attribution-NonCommercial 4.0 International'
+    )
 
     return Record(
         uuid=uuid4(),
