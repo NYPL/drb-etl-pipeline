@@ -18,52 +18,171 @@ Once stored in the DCDW these records are used to generate "clustered" work reco
 
 Using these retrieved records, and matched records from the DCDW as a corpus, these records are passed into a relatively simple Machine Learning algorithm to identify which records represent single editions and produce a the data model which is stored in a PostgreSQL database and indexed in ElasticSearch.
 
-## Running the Pipeline
+## Quickstart Guide
 
-This application is built as a monorepo, which can be built as a single Docker container. This container can be run to execute different processes, which either execute discrete tasks or start a persistent service (such as a Flask API instance). The monorepo structure allows for a high degree of code reuse and makes extending existing services/adding new services easier as they can be based on existing patterns. Many of the modules include abstract base classes that define the mandatory methods for each service.
+This guide provides step-by-step instructions to get the DRB ETL pipeline running locally. The application uses a hybrid approach where core services (databases, elasticsearch, etc.) run in Docker containers, while the ETL processes themselves can be run either through Docker or directly with Python for more flexibility during development.
+
+### Prerequisites
+
+- Python 3.9 (specified in `.pythonversion`)
+- Docker Desktop
+- AWS access to the `nypl-digital-dev` account (submit ServiceNow request to DevOps)
+- Access to required AWS parameter store secrets - ask a team member
+
+### Setup Steps
+
+1. Clone the repository:
+
+   ```bash
+   git clone git@github.com:NYPL/drb-etl-pipeline.git
+   cd drb-etl-pipeline
+   ```
+
+2. Create and activate a Python virtual environment:
+
+   ```bash
+   # Create virtual environment
+   python3.9 -m venv venv
+
+   # Activate it (Mac/Linux)
+   source venv/bin/activate
+
+   # Or on Windows
+   .\venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Configure secrets:
+
+   - Create `config/local-secrets.yaml` with the following (get values from team member):
+     ```yaml
+     AWS_SECRET: xxx
+     AWS_ACCESS: xxx
+     ```
+
+5. Start core services in Docker:
+
+   ```bash
+   docker compose up
+   ```
+
+   This will start PostgreSQL, Elasticsearch, RabbitMQ, Redis, and the API service.
+
+   Verify the API is running by visiting: http://127.0.0.1:5050/apidocs/
+
+6. Initialize the local development environment:
+
+   ```bash
+   python main.py -p LocalDevelopmentSetupProcess -e local
+   ```
+
+7. Restart Docker services:
+
+   ```bash
+   docker compose up
+   ```
+
+8. Seed the database with initial data:
+   ```bash
+   python main.py -p SeedLocalDataProcess -e local -i daily
+   ```
+
+### Verifying Your Setup
+
+To verify your database setup and view the data:
+
+1. Install PGAdmin4 (optional but recommended for database visualization)
+2. Add a new server in PGAdmin4 with these settings:
+
+   - Hostname/address: localhost
+   - Port: 5432
+   - Maintenance database: drb_test_db
+   - Username: postgres
+   - Password: localpsql
+
+3. Test with a simple query:
+   ```sql
+   SELECT * FROM works;
+   ```
+
+### Understanding the Architecture
+
+The application uses a hybrid approach for local development:
+
+1. **Docker Services**: Core infrastructure (databases, search, message queue) runs in Docker containers via `docker-compose.yml`. This provides a consistent environment and eliminates the need to install these services locally.
+
+2. **ETL Processes**: The actual ETL processes (defined in `processes/__init__.py`) can be run in two ways:
+   - Through Docker for production-like environments
+   - Directly with Python for local development (`python main.py -p ProcessName -e local`)
+
+This setup allows developers to:
+
+- Maintain a stable core infrastructure through Docker
+- Quickly iterate on individual processes without rebuilding containers
+- Run specific parts of the pipeline as needed during development
+
+Common processes you might need to run locally:
+
+```bash
+# Run the API
+python main.py -p APIProcess -e local
+
+# Import HathiTrust records
+python main.py -p HathiTrustProcess -e local -i daily
+
+# Run the clustering process
+python main.py -p ClusterProcess -e local
+```
 
 ## Analytics
 
 Analytics projects are stored separately from other DRB processes and scripts, in the [analytics](analytics) folder. Each analytics project is listed below:
-* [University Press Backlist Project](analytics/upress_reporting) = Generates [Counter 5 reports](https://airtable.com/appBoLf4lMofecGPU/tblIjRKk0fnoGOqMo?blocks=hide) given a timeframe. Be sure to set up the corresponding analytics env variables (ex. `DOWNLOAD_BUCKET` and `DOWNLOAD_LOG_PATH`). To generate Counter 5 reports, run the following:
-    ```
-    python3 analytics/upress_reporting/runner.py <REPORTING PERIOD>
-    ```
+
+- [University Press Backlist Project](analytics/upress_reporting) = Generates [Counter 5 reports](https://airtable.com/appBoLf4lMofecGPU/tblIjRKk0fnoGOqMo?blocks=hide) given a timeframe. Be sure to set up the corresponding analytics env variables (ex. `DOWNLOAD_BUCKET` and `DOWNLOAD_LOG_PATH`). To generate Counter 5 reports, run the following:
+  ```
+  python3 analytics/upress_reporting/runner.py <REPORTING PERIOD>
+  ```
   Here is an example command:
-    ```
-    python3 analytics/upress_reporting/runner.py --start 2024-03-01 --end 2024-03-30
-    ```
+  ```
+  python3 analytics/upress_reporting/runner.py --start 2024-03-01 --end 2024-03-30
+  ```
   You can also generate a Counter 5 report using fiscal quarter notation:
-    ```
-    python3 analytics/upress_reporting/runner.py --year 2025 --quarter Q1
-    ```
+  ```
+  python3 analytics/upress_reporting/runner.py --year 2025 --quarter Q1
+  ```
 
 ### Local Development
 
 Locally these services can be run in two modes:
 
-1) As a local docker image, which replicates the deployed version of any component process. This allows for confidence that locally developed code will function properly in the QA and production environments.
-2) As individual services on the host machine with local PostgreSQL and ElasticSearch instances. This is the primary mode for developing new services as it allows for instantaneous debugging without the need to rebuild or restart a virtual environment or container image
+1. As a local docker image, which replicates the deployed version of any component process. This allows for confidence that locally developed code will function properly in the QA and production environments.
+2. As individual services on the host machine with local PostgreSQL and ElasticSearch instances. This is the primary mode for developing new services as it allows for instantaneous debugging without the need to rebuild or restart a virtual environment or container image
 
 #### Dependencies and Installation
 
 Local development requires that the following services be available. They do not need to be running locally, but for development purposes this is probably easiest. These should be installed by whatever means is easiest (on macOS this is generally `brew`, or your package manager of choice). These dependencies are:
-- PostgreSQL@10 
+
+- PostgreSQL@10
   - Note that v10 is deprecated.
-- ElasticSearch@7.10 
+- ElasticSearch@7.10
   - Note you may need to follow the [macOS Homebrew install guide](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/brew.html#brew).
 - RabbitMQ
 - Redis
 - XCode Command Line Tools
 
-This is a Python application and requires Python >= 3.6. It is recommended that a virtual environment be set up for the application (again use the virtual environment tool of your choice).  There are several options, but most developers use [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/installation.html#).
+This is a Python application and requires Python >= 3.9. It is recommended that a virtual environment be set up for the application (again use the virtual environment tool of your choice). There are several options, but most developers use [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/installation.html#).
 
 The steps to install the application are:
 
-1. Install dependencies, including Python >= 3.6, if not already installed
+1. Install dependencies, including Python >= 3.9, if not already installed
 2. Set up virtual environment
 3. Clone this repository
-4. Run `pip install -r requirements.txt` from the root directory.  If you run into the error ```pip: command not found``` while installing the dependencies, you may need to alias python3 and pip3 to python and pip, respectively. 
+4. Run `pip install -r requirements.txt` from the root directory. If you run into the error `pip: command not found` while installing the dependencies, you may need to alias python3 and pip3 to python and pip, respectively.
 5. Configure environment variables per instructions below
 6. Run `LocalDevelopmentSetupProcess` per instructions below
 7. Run `SeedLocalDataProcess` to seed data in your local database.
@@ -89,7 +208,7 @@ To set up a local environment there is a special process to initialize a databas
 `HATHI_API_SECRET`:
 `OCLC_API_KEY`:
 
-You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values. 
+You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values.
 
 The `local.yaml` file (host names are localhost) referenced below and the `local-compose.yaml` file (host names are docker container names) referenced in the `docker-compose.yml` file do not include other sensitive data such as NYPL API and AWS credentials. Instead, create a `local-secrets.yaml` file to store secrets that cannot be retrieved from parameter store when developing locally. Please reach out to one of the backend developers for secrets in this file.
 
@@ -97,7 +216,7 @@ With the configurations set, one of these commands should be run: `make up` or `
 
 The docker compose file uses the `local-compose.yaml` file in the `config` directory and additional configurations and dependencies can be added to the file to build upon your local environment.
 
-To run the processes individually in a local environment, the command should be in this format and should use the `local.yaml` file: 
+To run the processes individually in a local environment, the command should be in this format and should use the `local.yaml` file:
 `python main.py -p APIProcess -e local` or `python main.py -p APIProcess -e local`.
 
 An example of running one of these processes is: `python main.py -p LOCProcess -e local -i complete`
@@ -122,7 +241,8 @@ The currently available processes (with the exception of the UofSC and ChicagoIS
 - `CoverProcess`: Fetch covers for edition records
 
 ### Database Migration
-The database migration tool Alembic is utilized in this codebase for the Postgresql database. The first step 
+
+The database migration tool Alembic is utilized in this codebase for the Postgresql database. The first step
 is to run this command `alembic revision -m "<revision name>"` which will create a new migration version in the `migrations/versions` directory. Aftwerwards, the `load_env_file` method parameters in the `migrations/env.py` file determine which config credentials the database migration will run on. The command to run the database migration is `alembic upgrade head` to run the most recent migration created or `alembic upgrade <name of version migration>` to upgrade to a specific version. To revert the migration, the command `alembic downgrade -1` will undo the last migration upgrade and the command `alembic downgrade <name of version migration>` will revert the database to a specific version. It's highly recommended to run this migration before merging in branches concerning updates to database migration.
 
 #### Appendix Link Flags (All flags are booleans)
@@ -130,7 +250,7 @@ is to run this command `alembic revision -m "<revision name>"` which will create
 - `reader`: Added to 'application/webpub+json' links to indicate if a book will have a Read Online function on the frontend
 - `embed`: Indicates if a book will be using a third party web reader like Hathitrust's web reader on the frontend
 - `download`: Added to pdf/epub links to indicate if a book is downloadable on the frontend
-- `catalog`: Indicates if a book is a part of a catalog which may not be readable online, but can be accessed with other means like requesting online 
+- `catalog`: Indicates if a book is a part of a catalog which may not be readable online, but can be accessed with other means like requesting online
 - `nypl_login`: Indicates if a book is a requestable book on the frontend for NYPL patrons
 - `limited_access`: Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
 
@@ -168,23 +288,25 @@ Production deployments are to be made when releases are cut against `main`.
 
 ### Release Process
 
-We use git tags to tag releases and github's release feature to deploy.  The steps are as follows:
+We use git tags to tag releases and github's release feature to deploy. The steps are as follows:
 
-  1. Decide on a new version number (assume 0.12.0 for the following steps)
-  2. Make sure your local `main` branch is up to date
-  3. Create a new branch named as the version number
-  4. Commit your change and push to your branch. 
-  5. Create a PR titled the Release <version number>
-  6. Once the PR is approved, squash and merge the change into main.
-  7. In github, navigate to the 'Releases' tab and click on 'Draft a new release'
-  8. Choose to create a new tag (e.g. v0.12.0), set `main` as the target, and name your release after the new version number
-     ('v0.12.0')
-  9.  Use the following command to print out the release notes: `cat <(git log <first-commit>..HEAD --pretty=format:"%h - %s (%an, %ad)" --date=short)`. Replace `<first-commit>` with the SHA of the first commit.
-  10. Give the team a heads up in  `#researchnow_aka_sfr` in Slack, make sure the release is 'Set as the latest release', and hit 'Publish release'
-  11. Check the repo's `Actions` tab to observe the progress of the deployment to production
+1. Decide on a new version number (assume 0.12.0 for the following steps)
+2. Make sure your local `main` branch is up to date
+3. Create a new branch named as the version number
+4. Commit your change and push to your branch.
+5. Create a PR titled the Release <version number>
+6. Once the PR is approved, squash and merge the change into main.
+7. In github, navigate to the 'Releases' tab and click on 'Draft a new release'
+8. Choose to create a new tag (e.g. v0.12.0), set `main` as the target, and name your release after the new version number
+   ('v0.12.0')
+9. Use the following command to print out the release notes: `cat <(git log <first-commit>..HEAD --pretty=format:"%h - %s (%an, %ad)" --date=short)`. Replace `<first-commit>` with the SHA of the first commit.
+10. Give the team a heads up in `#researchnow_aka_sfr` in Slack, make sure the release is 'Set as the latest release', and hit 'Publish release'
+11. Check the repo's `Actions` tab to observe the progress of the deployment to production
+
     - Note that the deployment job merely kicks off an ECS service update. To fully verify success, you'll need to check the
       `Deployments` tab for the relevant service / cluster in the ECS console.
-  12. Send a message to `#researchnow_aka_sfr` in Slack to notify folks when the release finishes.
+
+12. Send a message to `#researchnow_aka_sfr` in Slack to notify folks when the release finishes.
 
 And you're done!
 
