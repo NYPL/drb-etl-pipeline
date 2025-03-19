@@ -6,6 +6,7 @@ from requests.exceptions import ReadTimeout, ConnectionError, HTTPError
 
 from managers import WebpubManifest
 from logger import create_log
+from mappings.muse import add_has_part_link
 
 logger = create_log(__name__)
 
@@ -15,7 +16,7 @@ class MUSEManager:
 
     def __init__(self, record, link, mediaType):
         self.record = record
-        self.museID = record.record.source_id
+        self.museID = record.source_id
         self.link = link
         self.mediaType = mediaType
         self.museSoup = None
@@ -68,7 +69,8 @@ class MUSEManager:
 
     def addReadableLinks(self):
         if self.pdfDownloadURL:
-            self.record.add_has_part_link(
+            add_has_part_link(
+                self.record,
                 self.pdfDownloadURL,
                 'application/pdf',
                 json.dumps({'download': True, 'reader': False, 'catalog': False})
@@ -76,14 +78,16 @@ class MUSEManager:
 
         if self.epubURL:
             self.s3EpubPath = 'epubs/muse/{}.epub'.format(self.museID)
-            self.record.add_has_part_link(
+            add_has_part_link(
+                self.record,
                 self.constructS3Link(self.s3EpubPath),
                 'application/epub+zip',
                 json.dumps({'download': True, 'reader': False, 'catalog': False})
             )
 
             self.epubReadPath = 'epubs/muse/{}/manifest.json'.format(self.museID)
-            self.record.add_has_part_link(
+            add_has_part_link(
+                self.record,
                 self.constructS3Link(self.epubReadPath),
                 'application/webpub+json',
                 json.dumps({'download': False, 'reader': True, 'catalog': False})
@@ -92,7 +96,8 @@ class MUSEManager:
         self.constructWebpubManifest()
         if self.pdfWebpubManifest:
             self.s3PDFReadPath = 'manifests/muse/{}.json'.format(self.museID)
-            self.record.add_has_part_link(
+            add_has_part_link(
+                self.record,
                 self.create_manifest_in_s3(self.s3PDFReadPath),
                 'application/webpub+json',
                 json.dumps({'reader': True, 'download': False, 'catalog': False})
@@ -100,7 +105,7 @@ class MUSEManager:
 
     def constructWebpubManifest(self):
         pdfManifest = WebpubManifest(self.link, self.mediaType)
-        pdfManifest.addMetadata(self.record.record)
+        pdfManifest.addMetadata(self.record)
 
         chapterTable = self.museSoup.find(id='available_items_list_wrap')
 
