@@ -3,7 +3,6 @@
 import json
 import os
 from processes.record_pipeline import RecordPipelineProcess
-from model import Record
 from tests.functional.processes.frbr.test_cluster_process import assert_record_clustered
 from tests.functional.processes.frbr.test_frbr_process import assert_record_frbrized
 
