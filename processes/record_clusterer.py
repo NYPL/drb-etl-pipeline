@@ -45,13 +45,13 @@ class RecordClusterer:
         clustered_editions, records = self._cluster_matched_records(matched_record_ids)
         work, stale_work_ids = self._create_work_from_editions(clustered_editions, records)
 
+        self._update_cluster_status(matched_record_ids)
+
         try:
             self.db_manager.session.commit()
         except Exception as e:
             self.db_manager.session.rollback()
             raise e
-
-        self._update_cluster_status(matched_record_ids)
 
         return work, stale_work_ids, records
 
