@@ -2,6 +2,7 @@ from sqlalchemy import Column, ForeignKey, Integer, Unicode, Table
 from sqlalchemy.dialects.postgresql import JSONB, ARRAY, UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.mutable import MutableList
+from textwrap import shorten
 
 from .base import Base, Core
 
@@ -38,9 +39,7 @@ class Work(Base, Core):
     rights = relationship('Rights', secondary=WORK_RIGHTS, backref='works')
 
     def __repr__(self):
-        return '<Work(title={}, authors={}, uuid={})>'.format(
-            self.title, ', '.join([a['name'] for a in self.authors]), self.uuid
-        )
+        return f"<Work(title={shorten(self.title, width=50, placeholder='...')}, uuid={self.uuid})>"
 
     def __dir__(self):
         return [
