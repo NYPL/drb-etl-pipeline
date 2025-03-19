@@ -27,8 +27,6 @@ class RecordClusterer:
 
     def cluster_record(self, record) -> list[Record]:
         try:
-            logger.info("Radiografías de la experiencia escolar")
-
             work, stale_work_ids, records = self._get_clustered_work_and_records(record)
             self._delete_stale_works(stale_work_ids)
             logger.info(f'Clustered record: {record}')

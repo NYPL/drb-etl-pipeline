@@ -45,6 +45,3 @@ class RedriveRecordsProcess:
         finally:
             self.db_manager.close_connection()
             self.rabbitmq_manager.closeRabbitConnection()
-
-
-
