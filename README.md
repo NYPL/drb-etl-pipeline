@@ -59,7 +59,7 @@ This guide provides step-by-step instructions to get the DRB ETL pipeline runnin
 
 4. Configure secrets:
 
-   - Create `config/local-secrets.yaml` with the following (get values from team member):
+   - Create `config/local-secrets.yaml` with the following (get the link to AWS parameter store from a team member):
      ```yaml
      AWS_SECRET: xxx
      AWS_ACCESS: xxx
