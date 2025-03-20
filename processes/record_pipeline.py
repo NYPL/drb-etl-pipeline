@@ -8,6 +8,7 @@ from .link_fulfiller import LinkFulfiller
 from logger import create_log
 from managers import DBManager, RabbitMQManager
 from model import Record
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 
 logger = create_log(__name__)
 
@@ -57,7 +58,7 @@ class RecordPipelineProcess:
             )
 
             frbrized_record = self.record_frbrizer.frbrize_record(record)
-            clustered_records = self.record_clusterer.cluster_record(frbrized_record)
+            clustered_records = self._cluster_record_with_timeout(frbrized_record, timeout=60)
             self.link_fulfiller.fulfill_records_links(clustered_records)
                 
             self.rabbitmq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
@@ -72,3 +73,11 @@ class RecordPipelineProcess:
         source = message.get('source')
 
         return source_id, source
+    
+    def _cluster_record_with_timeout(self, frbrized_record, timeout):
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(self.record_clusterer.cluster_record, frbrized_record)
+            try:
+                return future.result(timeout=timeout)
+            except TimeoutError:
+                raise TimeoutError(f"Clustering process timed out after {timeout} seconds for {frbrized_record}")
