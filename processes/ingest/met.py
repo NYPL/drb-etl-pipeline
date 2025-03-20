@@ -16,11 +16,7 @@ class METProcess():
     MET_ROOT_URL = 'https://libmma.contentdm.oclc.org/digital'
 
     def __init__(self, *args):
-        self.process = args[0]
-        self.ingest_period = args[2]
-
-        self.offset = int(args[5] or 0)
-        self.limit = (int(args[4]) + self.offset) if args[4] else 5000
+        self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
         self.db_manager.createSession()
@@ -42,9 +38,9 @@ class METProcess():
 
     def runProcess(self):
         record_mappings = self.met_service.get_records(
-            start_timestamp=utils.get_start_datetime(process_type=self.process, ingest_period=self.ingest_period),
-            limit=self.limit,
-            offset=self.offset
+            start_timestamp=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
+            limit=self.params.limit,
+            offset=self.params.offset
         )
 
         for record_mapping in record_mappings:

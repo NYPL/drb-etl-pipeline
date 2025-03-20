@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import uuid4
 
 from .base_mapping import BaseMapping
@@ -61,7 +62,9 @@ class METMapping(BaseMapping):
                     file_type='application/pdf',
                     flags=str(FileFlags(download=True))
                 ))
-            ]
+            ],
+            date_created=datetime.now(timezone.utc).replace(tzinfo=None),
+            date_modified=datetime.now(timezone.utc).replace(tzinfo=None)
         )
     
     def createMapping(self):
