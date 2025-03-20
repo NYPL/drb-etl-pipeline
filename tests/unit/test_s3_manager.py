@@ -7,12 +7,14 @@ from managers.s3 import S3Manager, S3Error
 class TestS3Manager:
     @pytest.fixture
     def test_instance(self, mocker):
-        test_instance = S3Manager()
-        test_instance.client = mocker.MagicMock()
+        class TestS3Manager(S3Manager):
+            
+            def __init__(self):
+                self.client = mocker.MagicMock()
+        
+        return TestS3Manager()
 
-        return test_instance
-
-    def test_put_object_success_epub(self, test_instance, mocker):
+    def test_put_object_success_epub(self, test_instance: S3Manager, mocker):
         manager_mocks = mocker.patch.multiple(
             S3Manager,
             get_md5_hash=mocker.DEFAULT,
@@ -37,7 +39,7 @@ class TestS3Manager:
             ContentMD5='testMd5Hash', Metadata={'md5Checksum': 'testMd5Hash'}
         )
 
-    def test_put_object_existing_outdated(self, test_instance, mocker):
+    def test_put_object_existing_outdated(self, test_instance: S3Manager, mocker):
         mock_get_object_response = mocker.MagicMock()
         mock_get_object_response.statusCode = 301
         manager_mocks = mocker.patch.multiple(
@@ -65,7 +67,7 @@ class TestS3Manager:
             ContentMD5='testMd5Hash', Metadata={'md5Checksum': 'testMd5Hash'}
         )
 
-    def test_put_object_existing_unmodified(self, test_instance, mocker):
+    def test_put_object_existing_unmodified(self, test_instance: S3Manager, mocker):
         mock_hash = mocker.patch.object(S3Manager, 'get_md5_hash')
         mock_hash.return_value = 'testMd5Hash'
         mock_get = mocker.patch.object(S3Manager, 'get_object')
@@ -79,7 +81,7 @@ class TestS3Manager:
         mock_get.assert_called_once_with('testKey.epub', 'testBucket', md5_hash='testMd5Hash')
         test_instance.client.put_object.assert_not_called
 
-    def test_put_object_error(self, test_instance, mocker):
+    def test_put_object_error(self, test_instance: S3Manager, mocker):
         mock_hash = mocker.patch.object(S3Manager, 'get_md5_hash')
         mock_hash.return_value = 'testMd5Hash'
         mock_get = mocker.patch.object(S3Manager, 'get_object')
@@ -90,7 +92,7 @@ class TestS3Manager:
         with pytest.raises(S3Error):
             test_instance.put_object('testObj', 'testKey', 'testBucket')
 
-    def test_store_epub(self, test_instance, mocker):
+    def test_store_epub(self, test_instance: S3Manager, mocker):
         mock_epub_zip_component = mocker.MagicMock()
         mock_epub_zip_component.read.side_effect = ['compBytes1', 'compBytes2']
 
@@ -110,7 +112,7 @@ class TestS3Manager:
             mocker.call(object='compBytes2', key='10.10/testKey/comp2', bucket='testBucket')
         ])
 
-    def test_get_object_success(self, test_instance):
+    def test_get_object_success(self, test_instance: S3Manager):
         test_instance.client.get_object.return_value = 'testObject'
 
         test_response = test_instance.get_object('testKey', 'testBucket')
@@ -121,7 +123,7 @@ class TestS3Manager:
             Key='testKey'
         )
 
-    def test_get_object_error(self, test_instance):
+    def test_get_object_error(self, test_instance: S3Manager):
         test_instance.client.get_object.side_effect = ClientError({}, 'Testing')
 
         with pytest.raises(S3Error):
