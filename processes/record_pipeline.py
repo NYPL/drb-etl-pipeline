@@ -63,9 +63,9 @@ class RecordPipelineProcess:
                 
             self.rabbitmq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
         except Exception:
-            logger.exception(f'Failed to process record with source_id: {source_id} and source: {source}')            
+            logger.exception(f'Failed to process record with source_id: {source_id} and source: {source}')
+            self.rabbitmq_manager.reject_message(delivery_tag=message_props.delivery_tag)         
         finally:
-            self.rabbitmq_manager.reject_message(delivery_tag=message_props.delivery_tag)
             if self.db_manager.session: 
                 self.db_manager.session.close()
 
