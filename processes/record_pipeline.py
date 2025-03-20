@@ -16,8 +16,6 @@ class RecordPipelineProcess:
 
     def __init__(self, *args):
         self.db_manager = DBManager()
-        self.db_manager.generateEngine()
-        self.db_manager.createSession()
 
         self.record_queue = os.environ['RECORD_PIPELINE_QUEUE']
         self.record_route = os.environ['RECORD_PIPELINE_ROUTING_KEY']
@@ -42,11 +40,14 @@ class RecordPipelineProcess:
         except Exception:
             logger.exception('Failed to run record pipeline process')
         finally:
-            self.db_manager.close_connection()
             self.rabbitmq_manager.closeRabbitConnection()
+            if self.db_manager.engine: 
+                self.db_manager.engine.dispose()
     
     def _process_message(self, message):
         try:
+            self.db_manager.createSession()
+
             message_props, _, message_body = message
             source_id, source = self._parse_message(message_body=message_body)
 
@@ -63,7 +64,10 @@ class RecordPipelineProcess:
             self.rabbitmq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
         except Exception:
             logger.exception(f'Failed to process record with source_id: {source_id} and source: {source}')            
+        finally:
             self.rabbitmq_manager.reject_message(delivery_tag=message_props.delivery_tag)
+            if self.db_manager.session: 
+                self.db_manager.session.close()
 
     def _parse_message(self, message_body) -> tuple:
         message = json.loads(message_body)
