@@ -28,13 +28,10 @@ class RecordClusterer:
     def cluster_record(self, record) -> list[Record]:
         try:
             work, stale_work_ids, records = self._get_clustered_work_and_records(record)
+            self._commit_changes()
+            
             self._delete_stale_works(stale_work_ids)
-
-            try:
-                self.db_manager.commitChanges()
-            except Exception as e:
-                self.db_manager.session.rollback()
-                raise e
+            self._commit_changes()
             
             logger.info(f'Clustered record: {record}')
 
@@ -54,6 +51,13 @@ class RecordClusterer:
         self._update_cluster_status(matched_record_ids)
 
         return work, stale_work_ids, records
+    
+    def _commit_changes(self):
+        try:
+            self.db_manager.commitChanges()
+        except Exception as e:
+            self.db_manager.session.rollback()
+            raise e
 
     def _update_elastic_search(self, work_to_index: Work, works_to_delete: set):
         self.elastic_search_manager.deleteWorkRecords(works_to_delete)
