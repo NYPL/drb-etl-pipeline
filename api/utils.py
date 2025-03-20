@@ -576,7 +576,7 @@ class APIUtils():
         return url
 
     @staticmethod
-    def getPresignedUrlFromObjectUrl(s3Client, url):
+    def getPresignedUrlFromObjectUrl(client, url):
         """
         Given the URL of an S3 resource, generate a presigned Amazon S3 URL
         that can be used to access that resource. This function assumes S3
@@ -601,7 +601,7 @@ class APIUtils():
         timeValid = 1000 * 30
 
         return APIUtils.generate_presigned_url(
-            s3Client,
+            client,
             "get_object",
             {'Bucket': bucketName,'Key': objectKey},
             timeValid

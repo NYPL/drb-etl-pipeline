@@ -83,7 +83,7 @@ class TestS3Process:
 
         mock_generate_webpub.assert_called_once_with('testBucketPath', 'test_aws_bucket')
 
-        mock_s3.putObjectInBucket.assert_has_calls([
+        mock_s3.put_object.assert_has_calls([
             mocker.call('testFileBytes', 'testBucketPath.epub', 'test_aws_bucket'),
             mocker.call('testWebpubJson', 'testBucketPath/manifest.json', 'test_aws_bucket')
         ])

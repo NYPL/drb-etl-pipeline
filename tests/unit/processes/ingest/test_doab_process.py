@@ -27,7 +27,7 @@ class TestDOABProcess:
                 self.single_record = 0
                 self.db_manager = mocker.MagicMock()
                 self.record_buffer = mocker.MagicMock()
-                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
+                self.s3_manager = mocker.MagicMock(client=mocker.MagicMock())
                 self.s3_bucket = 'test_aws_bucket'
                 self.file_queue = 'test_file_queue'
                 self.file_route = 'test_file_key'

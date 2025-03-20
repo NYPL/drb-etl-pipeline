@@ -31,7 +31,7 @@ def test_fulfill_links(db_manager, s3_manager, limited_access_record_uuid):
     }
     
     manifest_key = f'manifests/publisher_backlist/test_{limited_access_record_uuid}.json'
-    s3_manager.s3Client.put_object(
+    s3_manager.client.put_object(
         Bucket=os.environ['FILE_BUCKET'],
         Key=manifest_key,
         Body=json.dumps(test_manifest),
@@ -49,7 +49,7 @@ def test_fulfill_links(db_manager, s3_manager, limited_access_record_uuid):
     link_fulfiller = LinkFulfiller(db_manager)
     link_fulfiller.fulfill_records_links([record])
 
-    manifest_file = s3_manager.s3Client.get_object(Bucket=os.environ['FILE_BUCKET'], Key=manifest_key)
+    manifest_file = s3_manager.client.get_object(Bucket=os.environ['FILE_BUCKET'], Key=manifest_key)
     fulfilled_manifest_json = json.loads(manifest_file['Body'].read().decode())
 
     expected_url = f"{os.environ['DRB_API_URL']}/fulfill/{epub_link.id}"
@@ -58,7 +58,7 @@ def test_fulfill_links(db_manager, s3_manager, limited_access_record_uuid):
         for manifest_link in fulfilled_manifest_json.get(manifest_section, []):
             assert manifest_link.get('href') == expected_url
 
-    s3_manager.s3Client.delete_object(
+    s3_manager.client.delete_object(
         Bucket=os.environ['FILE_BUCKET'],
         Key=manifest_key
     )

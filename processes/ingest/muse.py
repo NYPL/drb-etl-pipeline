@@ -30,7 +30,6 @@ class MUSEProcess():
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
 
         self.file_queue = os.environ['FILE_QUEUE']
         self.file_route = os.environ['FILE_ROUTING_KEY']
@@ -72,7 +71,7 @@ class MUSEProcess():
         muse_manager.addReadableLinks()
 
         if muse_manager.pdfWebpubManifest:
-            self.s3_manager.putObjectInBucket(
+            self.s3_manager.put_object(
                 muse_manager.pdfWebpubManifest.toJson().encode('utf-8'),
                 muse_manager.s3PDFReadPath,
                 muse_manager.s3Bucket

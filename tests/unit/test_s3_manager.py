@@ -6,187 +6,126 @@ from managers.s3 import S3Manager, S3Error
 
 class TestS3Manager:
     @pytest.fixture
-    def testInstance(self, mocker):
-        testInstance = S3Manager()
-        testInstance.s3Client = mocker.MagicMock()
+    def test_instance(self, mocker):
+        test_instance = S3Manager()
+        test_instance.client = mocker.MagicMock()
 
-        return testInstance
+        return test_instance
 
-    def test_initializer(self):
-        assert isinstance(S3Manager(), S3Manager)
-
-    def test_createS3Client(self, testInstance, mocker):
-        mockBoto = mocker.patch('managers.s3.boto3')
-        mockBoto.client.return_value = 'testClient'
-        mocker.patch.dict(
-            'os.environ',
-            {
-                'AWS_ACCESS': 'access',
-                'AWS_SECRET': 'secret',
-                'AWS_REGION': 'region'
-            }
-        )
-        testInstance.createS3Client()
-
-        assert testInstance.s3Client == 'testClient'
-        mockBoto.client.assert_called_once_with(
-            's3',
-            aws_access_key_id='access',
-            aws_secret_access_key='secret',
-            region_name='region',
-            endpoint_url=None
-        )
-
-    def test_createS3Bucket_success(self, testInstance):
-        testInstance.s3Client.create_bucket.return_value =\
-            {'Location': 'testing'}
-
-        assert testInstance.createS3Bucket('testBucket', 'test-perms') is True
-        testInstance.s3Client.create_bucket.assert_called_once_with(
-            ACL='test-perms', Bucket='testBucket'
-        )
-
-    def test_createS3Bucket_failure(self, testInstance):
-        testInstance.s3Client.create_bucket.return_value = {}
-
-        with pytest.raises(S3Error):
-            testInstance.createS3Bucket('testBucket', 'test-perms')
-
-    def test_putObjectInBucket_success_epub(self, testInstance, mocker):
-        managerMocks = mocker.patch.multiple(
+    def test_put_object_success_epub(self, test_instance, mocker):
+        manager_mocks = mocker.patch.multiple(
             S3Manager,
-            getmd5HashOfObject=mocker.DEFAULT,
-            getObjectFromBucket=mocker.DEFAULT,
-            putExplodedEpubComponentsInBucket=mocker.DEFAULT
+            get_md5_hash=mocker.DEFAULT,
+            get_object=mocker.DEFAULT,
+            store_epub=mocker.DEFAULT
         )
-        managerMocks['getmd5HashOfObject'].return_value = 'testMd5Hash'
-        managerMocks['getObjectFromBucket'].return_value = None
+        manager_mocks['get_md5_hash'].return_value = 'testMd5Hash'
+        manager_mocks['get_object'].return_value = None
 
-        testInstance.s3Client.put_object.return_value = 'testObjectResponse'
+        test_instance.client.put_object.return_value = 'testObjectResponse'
 
-        testResponse = testInstance.putObjectInBucket(
-            'testObj', 'testKey.epub', 'testBucket'
-        )
+        testResponse = test_instance.put_object('testObj', 'testKey.epub', 'testBucket')
 
         assert testResponse == 'testObjectResponse'
 
-        managerMocks['getmd5HashOfObject'].assert_called_once_with('testObj')
-        managerMocks['getObjectFromBucket'].assert_called_once_with(
-            'testKey.epub', 'testBucket', md5Hash='testMd5Hash'
-        )
-        managerMocks['putExplodedEpubComponentsInBucket']\
-            .assert_called_once_with('testObj', 'testKey.epub', 'testBucket')
-        testInstance.s3Client.put_object.assert_called_once_with(
+        manager_mocks['get_md5_hash'].assert_called_once_with('testObj')
+        manager_mocks['get_object'].assert_called_once_with('testKey.epub', 'testBucket', md5_hash='testMd5Hash')
+        manager_mocks['store_epub'].assert_called_once_with('testObj', 'testKey.epub', 'testBucket')
+        test_instance.client.put_object.assert_called_once_with(
             ACL='public-read', Body='testObj', Bucket='testBucket',
             Key='testKey.epub', ContentType='application/epub+zip',
             ContentMD5='testMd5Hash', Metadata={'md5Checksum': 'testMd5Hash'}
         )
 
-    def test_putObjectInBucket_existing_outdated(self, testInstance, mocker):
-        mockExisting = mocker.MagicMock()
-        mockExisting.statusCode = 301
-        managerMocks = mocker.patch.multiple(
+    def test_put_object_existing_outdated(self, test_instance, mocker):
+        mock_get_object_response = mocker.MagicMock()
+        mock_get_object_response.statusCode = 301
+        manager_mocks = mocker.patch.multiple(
             S3Manager,
-            getmd5HashOfObject=mocker.DEFAULT,
-            getObjectFromBucket=mocker.DEFAULT,
-            putExplodedEpubComponentsInBucket=mocker.DEFAULT
+            get_md5_hash=mocker.DEFAULT,
+            get_object=mocker.DEFAULT,
+            store_epub=mocker.DEFAULT
         )
-        managerMocks['getmd5HashOfObject'].return_value = 'testMd5Hash'
-        managerMocks['getObjectFromBucket'].return_value = mockExisting
+        manager_mocks['get_md5_hash'].return_value = 'testMd5Hash'
+        manager_mocks['get_object'].return_value = mock_get_object_response
 
-        testInstance.s3Client.put_object.return_value = 'testObjectResponse'
+        test_instance.client.put_object.return_value = 'testObjectResponse'
 
-        testResponse = testInstance.putObjectInBucket(
-            'testObj', 'testKey.epub', 'testBucket'
-        )
+        test_response = test_instance.put_object('testObj', 'testKey.epub', 'testBucket')
 
-        assert testResponse == 'testObjectResponse'
+        assert test_response == 'testObjectResponse'
 
-        managerMocks['getmd5HashOfObject'].assert_called_once_with('testObj')
-        managerMocks['getObjectFromBucket'].assert_called_once_with(
-            'testKey.epub', 'testBucket', md5Hash='testMd5Hash'
-        )
-        managerMocks['putExplodedEpubComponentsInBucket']\
-            .assert_called_once_with('testObj', 'testKey.epub', 'testBucket')
-        testInstance.s3Client.put_object.assert_called_once_with(
+        manager_mocks['get_md5_hash'].assert_called_once_with('testObj')
+        manager_mocks['get_object'].assert_called_once_with('testKey.epub', 'testBucket', md5_hash='testMd5Hash')
+        manager_mocks['store_epub'].assert_called_once_with('testObj', 'testKey.epub', 'testBucket')
+        test_instance.client.put_object.assert_called_once_with(
             ACL='public-read', Body='testObj', Bucket='testBucket',
             Key='testKey.epub',
             ContentType='application/epub+zip',
             ContentMD5='testMd5Hash', Metadata={'md5Checksum': 'testMd5Hash'}
         )
 
-    def test_putObjectInBucket_existing_unmodified(self, testInstance, mocker):
-        mockHash = mocker.patch.object(S3Manager, 'getmd5HashOfObject')
-        mockHash.return_value = 'testMd5Hash'
-        mockGet = mocker.patch.object(S3Manager, 'getObjectFromBucket')
-        mockGet.return_value = {'ResponseMetadata': {'HTTPStatusCode': 304}}
+    def test_put_object_existing_unmodified(self, test_instance, mocker):
+        mock_hash = mocker.patch.object(S3Manager, 'get_md5_hash')
+        mock_hash.return_value = 'testMd5Hash'
+        mock_get = mocker.patch.object(S3Manager, 'get_object')
+        mock_get.return_value = {'ResponseMetadata': {'HTTPStatusCode': 304}}
 
-        testResponse = testInstance.putObjectInBucket(
-            'testObj', 'testKey.epub', 'testBucket'
-        )
+        test_response = test_instance.put_object('testObj', 'testKey.epub', 'testBucket')
 
-        assert testResponse is None
+        assert test_response is None
 
-        mockHash.assert_called_once_with('testObj')
-        mockGet.assert_called_once_with(
-            'testKey.epub', 'testBucket', md5Hash='testMd5Hash'
-        )
-        testInstance.s3Client.put_object.assert_not_called
+        mock_hash.assert_called_once_with('testObj')
+        mock_get.assert_called_once_with('testKey.epub', 'testBucket', md5_hash='testMd5Hash')
+        test_instance.client.put_object.assert_not_called
 
-    def test_putObjectInBucket_error(self, testInstance, mocker):
-        mockHash = mocker.patch.object(S3Manager, 'getmd5HashOfObject')
-        mockHash.return_value = 'testMd5Hash'
-        mockGet = mocker.patch.object(S3Manager, 'getObjectFromBucket')
-        mockGet.return_value = None
+    def test_put_object_error(self, test_instance, mocker):
+        mock_hash = mocker.patch.object(S3Manager, 'get_md5_hash')
+        mock_hash.return_value = 'testMd5Hash'
+        mock_get = mocker.patch.object(S3Manager, 'get_object')
+        mock_get.return_value = None
 
-        testInstance.s3Client.put_object.side_effect =\
-            ClientError({}, 'Testing')
+        test_instance.client.put_object.side_effect = ClientError({}, 'Testing')
 
         with pytest.raises(S3Error):
-            testInstance.putObjectInBucket('testObj', 'testKey', 'testBucket')
+            test_instance.put_object('testObj', 'testKey', 'testBucket')
 
-    def test_putExplodedEpubComponentsInBucket(self, testInstance, mocker):
-        mockZipComp = mocker.MagicMock()
-        mockZipComp.read.side_effect = ['compBytes1', 'compBytes2']
+    def test_store_epub(self, test_instance, mocker):
+        mock_epub_zip_component = mocker.MagicMock()
+        mock_epub_zip_component.read.side_effect = ['compBytes1', 'compBytes2']
 
-        mockZip = mocker.MagicMock()
-        mockZip.namelist.return_value = ['comp1', 'comp2']
-        mockZip.open.return_value = mockZipComp
+        mock_epub_zip = mocker.MagicMock()
+        mock_epub_zip.namelist.return_value = ['comp1', 'comp2']
+        mock_epub_zip.open.return_value = mock_epub_zip_component
 
-        mockZipFile = mocker.patch('managers.s3.ZipFile')
-        mockZipFile.return_value.__enter__.return_value = mockZip
+        mock_zip_package = mocker.patch('managers.s3.ZipFile')
+        mock_zip_package.return_value.__enter__.return_value = mock_epub_zip
 
-        mockPut = mocker.patch.object(S3Manager, 'putObjectInBucket')
+        mock_put = mocker.patch.object(S3Manager, 'put_object')
 
-        testInstance.putExplodedEpubComponentsInBucket(
-            b'testObj', '10.10/testKey.epub', 'testBucket'
-        )
+        test_instance.store_epub(b'testObj', '10.10/testKey.epub', 'testBucket')
 
-        mockPut.assert_has_calls([
-            mocker.call('compBytes1', '10.10/testKey/comp1', 'testBucket'),
-            mocker.call('compBytes2', '10.10/testKey/comp2', 'testBucket')
+        mock_put.assert_has_calls([
+            mocker.call(object='compBytes1', key='10.10/testKey/comp1', bucket='testBucket'),
+            mocker.call(object='compBytes2', key='10.10/testKey/comp2', bucket='testBucket')
         ])
 
-    def test_getObjectFromBucket_success(self, testInstance, mocker):
-        testInstance.s3Client.get_object.return_value = 'testObject'
+    def test_get_object_success(self, test_instance):
+        test_instance.client.get_object.return_value = 'testObject'
 
-        testResponse = testInstance.getObjectFromBucket(
-            'testKey', 'testBucket'
-        )
+        test_response = test_instance.get_object('testKey', 'testBucket')
 
-        assert testResponse == 'testObject'
-        testInstance.s3Client.get_object.assert_called_once_with(
+        assert test_response == 'testObject'
+        test_instance.client.get_object.assert_called_once_with(
             Bucket='testBucket', 
             Key='testKey'
         )
 
-    def test_getObjectFromBucket_error(self, testInstance, mocker):
-        testInstance.s3Client.get_object.side_effect =\
-            ClientError({}, 'Testing')
+    def test_get_object_error(self, test_instance):
+        test_instance.client.get_object.side_effect = ClientError({}, 'Testing')
 
         with pytest.raises(S3Error):
-            testInstance.getObjectFromBucket('testKey', 'testBucket')
+            test_instance.get_object('testKey', 'testBucket')
 
-    def test_getmd5HashOfObject(self):
-        S3Manager.getmd5HashOfObject('testing'.encode('utf-8')) ==\
-            'ae2b1fca515949e5d54fb22b8ed95575'
+    def test_get_md5_hash(self):
+        S3Manager.get_md5_hash('testing'.encode('utf-8')) == 'ae2b1fca515949e5d54fb22b8ed95575'

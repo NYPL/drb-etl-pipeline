@@ -15,7 +15,7 @@ def test_s3_process(rabbitmq_manager: RabbitMQManager, s3_manager: S3Manager):
 
     rabbitmq_manager.createOrConnectQueue(file_queue, file_route)
 
-    s3_manager.putObjectInBucket(bytes(), TEST_SOURCE_FILE_NAME, file_bucket)
+    s3_manager.put_object(bytes(), TEST_SOURCE_FILE_NAME, file_bucket)
     file_url = f'http://localhost:4566/{file_bucket}/{TEST_SOURCE_FILE_NAME}'
 
     rabbitmq_manager.sendMessageToQueue(
@@ -28,9 +28,9 @@ def test_s3_process(rabbitmq_manager: RabbitMQManager, s3_manager: S3Manager):
 
     s3_process.runProcess(max_poll_attempts=1)
 
-    processed_file = s3_manager.getObjectFromBucket(TEST_PROCESSED_FILE_NAME, file_bucket)
+    processed_file = s3_manager.get_object(TEST_PROCESSED_FILE_NAME, file_bucket)
 
     assert processed_file is not None
     
-    s3_manager.s3Client.delete_object(Bucket=file_bucket, Key=TEST_SOURCE_FILE_NAME)
-    s3_manager.s3Client.delete_object(Bucket=file_bucket, Key=TEST_PROCESSED_FILE_NAME)
+    s3_manager.client.delete_object(Bucket=file_bucket, Key=TEST_SOURCE_FILE_NAME)
+    s3_manager.client.delete_object(Bucket=file_bucket, Key=TEST_PROCESSED_FILE_NAME)
