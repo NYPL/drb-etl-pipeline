@@ -19,7 +19,7 @@ class TestCoverProcess:
                 self.batchSize = 3
                 self.runTime = datetime.now()
                 self.redis_manager = mocker.MagicMock()
-                self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
+                self.s3_manager = mocker.MagicMock(client=mocker.MagicMock())
                 self.editions_to_update = set()
 
         return TestCoverProcess()
@@ -190,4 +190,4 @@ class TestCoverProcess:
         assert mockEdition.links[0].media_type == 'image/tst'
         assert mockEdition.links[0].flags == {'cover': True}
         testProcess.db_manager.bulkSaveObjects.assert_called_once_with(testProcess.editions_to_update)
-        testProcess.s3_manager.putObjectInBucket.assert_called_once_with('testBytes', 'covers/test/1.tst', 'test_aws_bucket')
+        testProcess.s3_manager.put_object.assert_called_once_with('testBytes', 'covers/test/1.tst', 'test_aws_bucket')

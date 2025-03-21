@@ -32,7 +32,6 @@ class LimitedAccessPermissions(Enum):
 class PublisherBacklistService(SourceService):
     def __init__(self):
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
         self.title_prefix = 'titles/publisher_backlist'
         self.file_bucket = os.environ['FILE_BUCKET']
         self.limited_file_bucket = f'drb-files-limited-{os.environ.get("ENVIRONMENT", "qa")}'
@@ -79,7 +78,7 @@ class PublisherBacklistService(SourceService):
             bucket_name = url.hostname.split('.')[0]
             file_path = url.path.lstrip('/')
 
-            self.s3_manager.s3Client.delete_object(Bucket=bucket_name, Key=file_path)
+            self.s3_manager.client.delete_object(Bucket=bucket_name, Key=file_path)
 
     def delete_record_data(self, record: Record):
         items = self.db_manager.session.query(Item).filter(Item.record_id == record.id).all()
@@ -173,7 +172,7 @@ class PublisherBacklistService(SourceService):
                 record_permissions = self.parse_permissions(record_metadata.get('Access type in DRB (from Access types)')[0])
                 bucket = self.file_bucket if not record_permissions['requires_login'] else self.limited_file_bucket
                 s3_path = f'{self.title_prefix}/{record_metadata[SOURCE_FIELD][0]}/{file_name}'
-                s3_response = self.s3_manager.putObjectInBucket(file.getvalue(), s3_path, bucket)
+                s3_response = self.s3_manager.put_object(file.getvalue(), s3_path, bucket)
                 
                 if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
                     logger.error(f'Failed to upload file for {record_metadata.get("DRB_Record ID")} to S3')

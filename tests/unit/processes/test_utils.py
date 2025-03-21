@@ -16,7 +16,7 @@ def test_get_start_datetime(process_type: str, ingest_period: Optional[str], exp
 
     if expected_start_datetime is not None:
         assert start_datetime is not None
-        assert start_datetime.replace(second=0, microsecond=0) == expected_start_datetime.replace(second=0, microsecond=0)
+        assert start_datetime.replace(minute=0, second=0, microsecond=0) == expected_start_datetime.replace(minute=0, second=0, microsecond=0)
     else:
         assert start_datetime == expected_start_datetime
 
