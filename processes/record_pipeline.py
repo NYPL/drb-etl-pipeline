@@ -1,5 +1,6 @@
 import json
 import os
+from time import sleep
 
 from .record_frbrizer import RecordFRBRizer
 from .record_clusterer import RecordClusterer
@@ -28,15 +29,22 @@ class RecordPipelineProcess:
         self.record_clusterer = RecordClusterer(db_manager=self.db_manager)
         self.link_fulfiller = LinkFulfiller(db_manager=self.db_manager)
 
-    def runProcess(self):
+    def runProcess(self, max_attempts: int=4):
         try:
-            while message := self.rabbitmq_manager.getMessageFromQueue(self.record_queue):
-                message_props, _, message_body = message
+             for attempt in range(0, max_attempts):
+                wait_time = 30 * attempt
 
-                if not message_props or not message_body:
-                    break
-                
-                self._process_message(message)
+                if wait_time:
+                    logger.info(f'Waiting {wait_time}s for record messages')
+                    sleep(wait_time)
+
+                while message := self.rabbitmq_manager.getMessageFromQueue(self.record_queue):
+                    message_props, _, message_body = message
+
+                    if not message_props or not message_body:
+                        break
+                    
+                    self._process_message(message)
         except Exception:
             logger.exception('Failed to run record pipeline process')
         finally:
