@@ -27,6 +27,8 @@ OCLC_QUEUE: sfrOCLCCatalog
 OCLC_ROUTING_KEY: sfrOCLCCatalog
 FILE_QUEUE: sfrS3Files
 FILE_ROUTING_KEY: sfrS3Files
+RECORD_PIPELINE_QUEUE: sfrRecords
+RECORD_PIPELINE_ROUTING_KEY: sfrRecords
 
 # OCLC CONFIGURATION
 # OCLC API keys must be configured in secrets file
