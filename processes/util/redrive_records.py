@@ -1,4 +1,3 @@
-import json
 import os
 
 from logger import create_log
@@ -26,22 +25,35 @@ class RedriveRecordsProcess:
 
     def runProcess(self):
         try:
+            query_filters = [Record.source == self.params.source]
+
+            if self.params.process_type != 'complete':
+                query_filters.append(Record.cluster_status == False)
+            
             source_ids = (
                 self.db_manager.session.query(Record.source_id)
-                    .filter(Record.source == self.params.source)
+                    .filter(*query_filters)
                     .yield_per(1000)
             )
 
-            for source_id, *_ in source_ids:
+            redrive_count = 0
+
+            for count, (source_id, *_) in enumerate(source_ids, start=1):
                 self.rabbitmq_manager.sendMessageToQueue(
                     queueName=self.records_queue, 
                     routingKey=self.records_route, 
-                    message=json.dumps({ 'source': self.params.source, 'sourceId': source_id })
+                    message={ 'source': self.params.source, 'sourceId': source_id }
                 )
 
-            logger.info(f'Redrove records for source: {self.params.source}')
+                redrive_count = count
+
+                if self.params.limit and redrive_count >= self.params.limit:
+                    break
+
+
+            logger.info(f'Redrove {redrive_count} {self.params.source} records')
         except Exception as e:
-            logger.info(f'Failed to redrive records for source: {self.params.source}')
+            logger.info(f'Failed to redrive {self.params.source} records for source')
         finally:
             self.db_manager.close_connection()
             self.rabbitmq_manager.closeRabbitConnection()
