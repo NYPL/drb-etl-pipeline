@@ -1,0 +1,44 @@
+{
+  "compilerOptions": {
+    "target": "es2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "~/*": ["*"]
+    },
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "outDir": "dist",
+    "jsx": "preserve",
+    "incremental": true
+  },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs",
+      "target": "ES6"
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "decs.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "next.config.js",
+    "cucumber.js",
+    "newrelic.js",
+    "src/components/Citations/APACitation.jsx",
+    "src/components/Citations/APACitation.test.jsx",
+    "src/components/Citations/formatCitation.jsx",
+    "src/components/RequestDigital/RequestDigital.jsx",
+    "src/__tests__/index.test.tsx"
+  ],
+  "exclude": ["node_modules", "jest.config.ts", "setupTests.js"]
+}

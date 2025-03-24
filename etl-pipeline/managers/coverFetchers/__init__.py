@@ -1,0 +1,4 @@
+from .contentCafeFetcher import ContentCafeFetcher
+from .googleBooksFetcher import GoogleBooksFetcher
+from .hathiFetcher import HathiFetcher
+from .openLibraryFetcher import OpenLibraryFetcher

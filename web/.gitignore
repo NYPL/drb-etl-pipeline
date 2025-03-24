@@ -1,0 +1,30 @@
+dist
+sfr-front-end
+node_modules
+npm-debug.log
+.next
+.DS_STORE
+.nyc_output
+coverage
+.env
+.env.local
+build
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+
+# troubleshooting files
+vega.feature
+vega.spec.ts
+
+# New Relic
+newrelic_agent.log
+
+.vscode
+.vscode/launch.json
+
+# playwright
+playwright-report
+test-results
