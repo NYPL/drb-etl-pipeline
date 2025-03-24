@@ -12,11 +12,13 @@ This ETL pipeline transforms data from various sources into a unified "FRBRized"
 - `Edition`: A specific published version (e.g. the 1917 edition)
 - `Work`: The abstract creative work (e.g. "Moby Dick")
 
+These records are organized into "clusters" - groups of editions that represent the same work. For example, all editions of "Moby Dick" would be clustered together, making it easy for users to find different versions of the same work.
+
 The pipeline:
 
 1. Imports source records into a Dublin Core Data Warehouse (DCDW)
 2. Uses OCLC services to enhance and FRBRize the records
-3. Groups records into editions using machine learning
+3. Groups records into editions using machine learning (clustering)
 4. Makes the data available through an API
 
 ## API Endpoints
@@ -30,7 +32,7 @@ Both endpoints provide Swagger documentation at `/apidocs/`.
 
 ## Quickstart Guide
 
-This guide provides step-by-step instructions to get the DRB ETL pipeline running locally. The application uses a hybrid approach where core services (databases, elasticsearch, etc.) run in Docker containers, while the ETL processes themselves can be run either through Docker or directly with Python for more flexibility during development.
+This guide provides step-by-step instructions to get the DRB ETL pipeline running locally.
 
 ### Prerequisites
 
@@ -48,100 +50,65 @@ This guide provides step-by-step instructions to get the DRB ETL pipeline runnin
    cd drb-etl-pipeline
    ```
 
-2. Create and activate a Python virtual environment:
+2. Configure secrets:
 
-   ```bash
-   # Create virtual environment
-   python3.9 -m venv venv
-
-   # Activate it (Mac/Linux)
-   source venv/bin/activate
-
-   # Or on Windows
-   .\venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Configure secrets:
-
-   - Create `config/local-secrets.yaml` with the following (get the link to AWS parameter store from a team member):
+   - Create `config/local-secrets.yaml` with the following (get values from team member):
      ```yaml
      AWS_SECRET: xxx
      AWS_ACCESS: xxx
      ```
 
-5. Start core services in Docker:
+3. Start the application:
 
    ```bash
    docker compose up
    ```
 
-   This will start PostgreSQL, Elasticsearch, RabbitMQ, Redis, and the API service.
+   This will:
 
-   Verify the API is running by visiting: http://127.0.0.1:5050/apidocs/
+   - Start all required services (PostgreSQL, Elasticsearch, RabbitMQ, Redis)
+   - Initialize the database schema
+   - Seed the database with sample data
+   - Start the API
 
-6. Initialize the local development environment:
+4. Verify the setup:
+   - API Documentation: http://127.0.0.1:5050/apidocs/
+   - Database: Use PGAdmin4 or your preferred PostgreSQL client:
+     ```
+     Host: localhost
+     Port: 5432
+     Database: drb_test_db
+     Username: postgres
+     Password: localpsql
+     ```
 
-   ```bash
-   python main.py -p LocalDevelopmentSetupProcess -e local
-   ```
+### Cleaning Up
 
-7. Restart Docker services:
-
-   ```bash
-   docker compose up
-   ```
-
-8. Seed the database with initial data:
-   ```bash
-   python main.py -p SeedLocalDataProcess -e local -i daily
-   ```
-
-### Verifying Your Setup
-
-To verify your database setup and view the data:
-
-1. Install PGAdmin4 (optional but recommended for database visualization)
-2. Add a new server in PGAdmin4 with these settings:
-
-   - Hostname/address: localhost
-   - Port: 5432
-   - Maintenance database: drb_test_db
-   - Username: postgres
-   - Password: localpsql
-
-3. Test with a simple query:
-   ```sql
-   SELECT * FROM works;
-   ```
-
-### Understanding the Architecture
-
-The application uses a hybrid approach for local development:
-
-1. **Docker Services**: Core infrastructure (databases, search, message queue) runs in Docker containers via `docker-compose.yml`. This provides a consistent environment and eliminates the need to install these services locally.
-
-2. **ETL Processes**: The actual ETL processes (defined in `processes/__init__.py`) can be run in two ways:
-   - Through Docker for production-like environments
-   - Directly with Python for local development (`python main.py -p ProcessName -e local`)
-
-This setup allows developers to:
-
-- Maintain a stable core infrastructure through Docker
-- Quickly iterate on individual processes without rebuilding containers
-- Run specific parts of the pipeline as needed during development
-
-Common processes you might need to run locally:
+To start fresh (this will delete all data):
 
 ```bash
-# Run the API
-python main.py -p APIProcess -e local
+docker compose down --volumes
+docker compose up
+```
 
+To stop services without losing data:
+
+```bash
+docker compose down
+docker compose up  # when you want to start again
+```
+
+### Running Individual Processes
+
+While Docker handles the main setup, you can run individual processes using:
+
+```bash
+python main.py -p ProcessName -e local [options]
+```
+
+For example:
+
+```bash
 # Import HathiTrust records
 python main.py -p HathiTrustProcess -e local -i daily
 
@@ -149,42 +116,7 @@ python main.py -p HathiTrustProcess -e local -i daily
 python main.py -p ClusterProcess -e local
 ```
 
-### Process Flags
-
-When running any process using `python main.py`, the following flags are available:
-
-- `--process`/`-p`: Name of the process to execute (e.g. `APIProcess`, `HathiTrustProcess`)
-- `--environment`/`-e`: Environment to run in (`local`, `qa`, `production`). Controls which config file is loaded from the `config` directory
-- `--ingestType`/`-i`: For data ingestion processes:
-  - `daily`: Regular incremental import
-  - `complete`: Full import
-  - `custom`: Import from custom source
-- `--inputFile`/`-f`: Path to input file when using `custom` ingest type
-- `--startDate`/`-s`: Start date for custom period imports
-- `--limit`/`-l`: Limit number of records processed
-- `--offset`/`-o`: Skip first N records
-- `--singleRecord`/`-r`: Process single record by ID (ignores `ingestType`, `limit`, and `offset`)
-- `--source`/`-src`: Run against records from a specific source
-- `options`: Additional arguments passed as a list
-
-Example commands:
-
-```bash
-# Run API in local environment
-python main.py -p APIProcess -e local
-
-# Import specific HathiTrust record
-python main.py -p HathiTrustProcess -e local -r record_id_123
-
-# Run custom import with limit
-python main.py -p NYPLProcess -e local -i custom -f my_records.csv -l 100
-```
-
-You can also view all available flags by running:
-
-```bash
-python main.py --help
-```
+See `python main.py --help` for all available options.
 
 ## Available Processes
 
@@ -197,15 +129,7 @@ Core Setup:
 - `APIProcess`: Run the DRB API
 
 Data Ingestion:
-
-- `HathiTrustProcess`: Import from HathiTrust
-- `NYPLProcess`: Import from NYPL catalog
-- `GutenbergProcess`: Import from Project Gutenberg
-- `MUSEProcess`: Import from Project MUSE
-- `METProcess`: Import from MET Watson Digital Collections
-- `DOABProcess`: Import from Directory of Open Access Books
-- `LOCProcess`: Import from Library of Congress
-- `PublisherBacklistProcess`: Import from Publisher Backlist Project
+All data ingestion processes can be found in the [`processes/ingest`](processes/ingest) directory. These processes import data from various sources like HathiTrust, NYPL Catalog, Project Gutenberg, and more. Each process follows a similar pattern but is tailored to its specific data source.
 
 Processing:
 
@@ -217,35 +141,48 @@ Processing:
 
 ## Testing
 
+This project uses [pytest](https://docs.pytest.org/) for testing. You can run tests using make commands or pytest directly:
+
 ```bash
-# Run unit tests
-make unit
+# Run all tests using make commands
+make unit           # Run unit tests
+make integration    # Run integration tests
+make functional     # Run functional tests (requires running Docker environment)
 
-# Run integration tests
-make integration
-
-# Run functional tests (requires running Docker environment)
-make functional
+# Run tests directly with pytest
+python -m pytest                     # Run all tests
+python -m pytest path/to/test.py     # Run a specific test file
+python -m pytest -k "test_name"      # Run tests matching "test_name"
+python -m pytest -v                  # Run tests with verbose output
 ```
+
+For more options and detailed usage of pytest, see the [pytest documentation](https://docs.pytest.org/en/stable/how-to/usage.html).
 
 ## Deployment
 
-This application deploys via Github Actions to AWS ECS:
+This application uses continuous deployment (CD) via Github Actions to AWS ECS. The full CI/CD pipeline runs automatically when code is merged to `main`.
 
-- QA changes deploy automatically to [DRB QA Instance](http://drb-api-qa.nypl.org)
-- Production deploys via releases cut against `main`
+The deployment process:
 
-### Release Process
+1. **Deploy to QA**
 
-1. Create new version branch (e.g. `v0.12.0`)
-2. Create PR titled "Release v0.12.0"
-3. After approval, squash and merge to main
-4. Create Github release:
-   - Tag: v0.12.0
-   - Target: main
-   - Generate notes: `cat <(git log <first-commit>..HEAD --pretty=format:"%h - %s (%an, %ad)" --date=short)`
-5. Notify team in #researchnow_aka_sfr Slack channel
-6. Monitor deployment in Github Actions and ECS console
+   - Builds Docker image
+   - Pushes to ECR
+   - Deploys to QA environment at [https://drb-api-qa.nypl.org/](https://drb-api-qa.nypl.org/)
+
+2. **Run CI Tests**
+
+   - Runs after QA deployment completes
+   - Executes full test suite against QA environment
+
+3. **Deploy to Production**
+   - Automatically triggers if QA deployment and tests pass
+   - Deploys to production environment at [https://digital-research-books-api.nypl.org/](https://digital-research-books-api.nypl.org/)
+
+You can monitor deployments in:
+
+- GitHub Actions: `.github/workflows/full-ci-cd.yaml`
+- AWS ECS Console
 
 ## Analytics
 
