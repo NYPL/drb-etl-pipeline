@@ -16,7 +16,7 @@ def main(*args):
     s3_manager = S3Manager()
     s3_manager.createS3Client()
 
-    source_arg = next(filter(lambda option: option.startswith('source'), args), None)
+    source_arg = next((option for option in args if option.startswith('source=')), None)
     source = source_arg.split('=')[1] if source_arg else 'gutenberg'
 
     record_parts = db_manager.session.query(Record.has_part, Record.source_id).filter(Record.source == source).yield_per(1000)
@@ -36,8 +36,6 @@ def main(*args):
                     print(f'{source_id} is missing a file: {file_part}')
                     records_with_missing_files += 1
                     break
-            else:
-                requests.head(url)
                 
     print(f'Percentage of {source} records with missing files: {(records_with_missing_files / record_count) * 100}%')
 
