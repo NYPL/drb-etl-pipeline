@@ -45,7 +45,7 @@ class METMapping(BaseMapping):
                 rights_source=Source.MET.value, 
                 license=met_record.get('rights'),
                 rights_reason=met_record.get('copyra'),
-                rights_date=met_record.get('copyri')
+                rights_statement=met_record.get('copyri'),
             ),
             has_part=met_record.get('link') and [
                 str(Part(
