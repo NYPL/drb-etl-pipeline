@@ -36,7 +36,6 @@ This guide provides step-by-step instructions to get the DRB ETL pipeline runnin
 
 ### Prerequisites
 
-- Python 3.9 (specified in `.pythonversion`)
 - Docker Desktop
 - AWS access to the `nypl-digital-dev` account (submit ServiceNow request to DevOps)
 - Access to required AWS parameter store secrets - ask a team member
@@ -58,20 +57,29 @@ This guide provides step-by-step instructions to get the DRB ETL pipeline runnin
      AWS_ACCESS: xxx
      ```
 
-3. Start the application:
+3. Initial Setup (one-time only):
+
+   ```bash
+   # Run the database setup and seeding process
+   docker compose -f docker-compose.setup.yml up --abort-on-container-exit
+   ```
+
+4. Regular Startup:
 
    ```bash
    docker compose up
    ```
 
-   This will:
+   This will start:
 
-   - Start all required services (PostgreSQL, Elasticsearch, RabbitMQ, Redis)
-   - Initialize the database schema
-   - Seed the database with sample data
-   - Start the API
+   - PostgreSQL database
+   - Elasticsearch
+   - RabbitMQ
+   - Redis
+   - LocalStack (S3)
+   - API service
 
-4. Verify the setup:
+5. Verify the setup:
    - API Documentation: http://127.0.0.1:5050/apidocs/
    - Database: Use PGAdmin4 or your preferred PostgreSQL client:
      ```
@@ -82,25 +90,9 @@ This guide provides step-by-step instructions to get the DRB ETL pipeline runnin
      Password: localpsql
      ```
 
-### Cleaning Up
-
-To start fresh (this will delete all data):
-
-```bash
-docker compose down --volumes
-docker compose up
-```
-
-To stop services without losing data:
-
-```bash
-docker compose down
-docker compose up  # when you want to start again
-```
-
 ### Running Individual Processes
 
-While Docker handles the main setup, you can run individual processes using:
+While Docker handles the main services, you can run individual processes using:
 
 ```bash
 python main.py -p ProcessName -e local [options]

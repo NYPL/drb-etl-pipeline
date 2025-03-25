@@ -1,0 +1,68 @@
+services:
+  devsetup:
+    container_name: drb_local_devSetUp
+    depends_on:
+      - database
+      - elasticsearch
+      - s3
+    build:
+      context: .
+    command: -e local-compose -p LocalDevelopmentSetupProcess
+    volumes:
+      - type: bind
+        source: .
+        target: /src
+        read_only: true
+
+  database:
+    extends:
+      file: docker-compose.yml
+      service: database
+
+  elasticsearch:
+    extends:
+      file: docker-compose.yml
+      service: elasticsearch
+
+  rabbitmq:
+    extends:
+      file: docker-compose.yml
+      service: rabbitmq
+
+  redis:
+    extends:
+      file: docker-compose.yml
+      service: redis
+
+  s3:
+    extends:
+      file: docker-compose.yml
+      service: s3
+
+  seeddb:
+    container_name: drb_local_seed
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      database:
+        condition: service_started
+      elasticsearch:
+        condition: service_started
+      redis:
+        condition: service_started
+      s3:
+        condition: service_started
+    build:
+      context: .
+    command: -e local-compose -p SeedLocalDataProcess -i daily
+    volumes:
+      - type: bind
+        source: .
+        target: /src
+        read_only: true
+
+volumes:
+  drb_local_dbdata:
+  drb_local_esdata:
+  drb_local_mqdata:
+  drb_local_rsdata:

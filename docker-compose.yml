@@ -63,49 +63,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./localstack/init-localstack-resources.sh:/etc/localstack/init/ready.d/init-localstack-resources.sh
 
-  devsetup:
-    container_name: drb_local_devSetUp
-    depends_on:
-      - database
-      - elasticsearch
-      - s3
-    build:
-      context: .
-    command: -e local-compose -p LocalDevelopmentSetupProcess
-    volumes:
-      - type: bind
-        source: .
-        target: /src
-        read_only: true
-
-  seeddb:
-    container_name: drb_local_seed
-    depends_on:
-      rabbitmq:
-        condition: service_healthy
-      devsetup:
-        condition: service_completed_successfully
-      database:
-        condition: service_started
-      elasticsearch:
-        condition: service_started
-      redis:
-        condition: service_started
-      s3:
-        condition: service_started
-    build:
-      context: .
-    command: -e local-compose -p SeedLocalDataProcess -i daily
-    volumes:
-      - type: bind
-        source: .
-        target: /src
-        read_only: true
-
   api:
     container_name: drb_local_api
     depends_on:
-      - seeddb
       - database
       - elasticsearch
       - s3
