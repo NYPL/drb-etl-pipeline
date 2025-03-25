@@ -1,4 +1,7 @@
 from .json import JSONMapping
+import re
+
+AUTHOR_DIGITS = r"\d+-*."
 
 class PublisherBacklistMapping(JSONMapping):
     def __init__(self, source):
@@ -12,8 +15,8 @@ class PublisherBacklistMapping(JSONMapping):
             'dates': [('Pub Date', '{0}|publication_date')],
             'publisher': ('Publisher (from Project)', '{0}||'),
             'identifiers': [
-                ('ISBN', '{0}|isbn'),
-                ('OCLC', '{0}|oclc')
+                ('OCLC', '{0}|oclc'),
+                ('Hathi ID', '{0}|hathi'),
             ],
             'abstract': ('Content Provider', 'Book digitized by library {0}'),
             'rights': ('DRB Rights Classification', '{0}||||'),
@@ -27,7 +30,8 @@ class PublisherBacklistMapping(JSONMapping):
     def applyFormatting(self):
         self.record.has_part = []
         if self.record.source:
-            self.record.source = self.record.source[0]
+            self.record.source = 'Schomburg'
+            #self.record.source = self.record.source[0]
 
         if self.record.publisher_project_source:
             publisher_source = self.record.publisher_project_source[0]
@@ -49,12 +53,16 @@ class PublisherBacklistMapping(JSONMapping):
 
         if ';' in self.record.authors:
             author_list = self.record.authors.split('; ')
-            new_author_list = [f'{author}|||true' for author in author_list] 
-            return new_author_list
-        else:
-            author_list.append(f'{self.record.authors}|||true)')
+            author_list = [f'{author}|||true' for author in author_list] 
             return author_list
-        
+        else:
+            self.record.authors = re.sub(AUTHOR_DIGITS, "", self.record.authors).rstrip()
+            if self.record.authors[-1] == ',':
+                new_authors = self.record.authors[:-1]
+                author_list.append(f'{new_authors}|||true)')
+            else:
+                author_list.append(f'{self.record.authors}|||true)')
+        return author_list
         
     def format_identifiers(self):
         if 'isbn' in self.record.identifiers[0]:
@@ -73,6 +81,22 @@ class PublisherBacklistMapping(JSONMapping):
                     return formatted_isbns
                 else:
                     return formatted_isbns
+        elif 'oclc' in self.record.identifiers[0]:
+            oclc_string = self.record.identifiers[0].split('|')[0]
+            oclcs = []
+
+            if ';' in oclc_string:
+                oclcs = oclc_string.split('; ')    
+            elif ',' in oclc_string:
+                oclcs = oclc_string.split(', ')
+ 
+            if oclcs:
+                formatted_oclcs = [f'{oclc}|oclc' for oclc in oclcs]
+                if len(self.record.identifiers) > 1 and 'hathi' in self.record.identifiers[1]:
+                    formatted_oclcs.append(f'{self.record.identifiers[1]}')
+                    return formatted_oclcs
+                else:
+                    return formatted_oclcs
                 
         return self.record.identifiers
     

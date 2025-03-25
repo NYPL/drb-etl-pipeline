@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 import json
+import boto3
 import os
 import requests
 import urllib.parse
@@ -15,6 +16,8 @@ from services.ssm_service import SSMService
 from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
+
+s3_client = boto3.client("s3")
 
 logger = create_log(__name__)
 
@@ -183,12 +186,16 @@ class PublisherBacklistService(SourceService):
                 
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
-                
+                s3_url = ''
                 # self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
-                # self.store_pdf_manifest(publisher_backlist_record.record, record_permissions['requires_login'])
-                
+                try:
+                    self.add_has_part_mapping(s3_url, publisher_backlist_record.record, False, False)
+                except Exception:
+                    continue
+
+                self.store_pdf_manifest(publisher_backlist_record.record, False)
+                    
                 mapped_records.append(publisher_backlist_record)
-                return mapped_records
             except Exception:
                 logger.exception(f'Failed to process Publisher Backlist record: {record_metadata}')
         
@@ -225,13 +232,9 @@ class PublisherBacklistService(SourceService):
         filter_by_formula = self.build_filter_by_formula_parameter(deleted=deleted, full_import=full_import, start_timestamp=start_timestamp)
         url = f'{BASE_URL}&pageSize={limit}{filter_by_formula}'
         headers = {"Authorization": f"Bearer {self.airtable_auth_token}"}
-        print(self.airtable_auth_token)
         publisher_backlist_records = []
 
-        print(url)
-
         records_response = requests.get(url, headers=headers)
-        print(records_response.status_code)
         records_response_json = records_response.json()
 
         publisher_backlist_records.extend(records_response_json.get('records', []))
@@ -246,17 +249,43 @@ class PublisherBacklistService(SourceService):
         return publisher_backlist_records
 
     def add_has_part_mapping(self, s3_url: str, record: Record, is_downloadable: bool, requires_login: bool):
-        item_no = '1'
-        media_type = 'application/pdf'
-        flags = {
-            'catalog': False,
-            'download': is_downloadable,
-            'reader': False,
-            'embed': False,
-            'nypl_login': requires_login,
-        }
+        print(record.identifiers)
 
-        record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
+        if record.identifiers:
+            if 'hathi' in record.identifiers[-1]:
+                hathi_identifier = record.identifiers[-1].split('|')[0]
+                try:
+                    url = f'https://pdf-pipeline-store-qa.s3.us-east-1.amazonaws.com/tagged_pdfs/{hathi_identifier}.pdf'
+                    r = requests.get(url)
+                    if r.status_code == 200:
+                        item_no = '1'
+                        media_type = 'application/pdf'
+                        flags = {
+                            'catalog': False,
+                            'download': is_downloadable,
+                            'reader': False,
+                            'embed': False,
+                            'nypl_login': requires_login,
+                        }
+
+                        record.has_part.append('|'.join([item_no, url, record.source, media_type, json.dumps(flags)]))
+                    else:
+                        raise Exception
+                except Exception as e:
+                    raise Exception
+
+
+        # item_no = '1'
+        # media_type = 'application/pdf'
+        # flags = {
+        #     'catalog': False,
+        #     'download': is_downloadable,
+        #     'reader': False,
+        #     'embed': False,
+        #     'nypl_login': requires_login,
+        # }
+
+        # record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
 
     def store_pdf_manifest(self, record: Record, requires_login: bool):
         for link in record.has_part:
@@ -279,7 +308,6 @@ class PublisherBacklistService(SourceService):
                 }
 
                 record.has_part.insert(0, '|'.join([item_no, manifest_url, source, 'application/webpub+json', json.dumps(manifest_flags)]))
-                
                 break
 
     @staticmethod
