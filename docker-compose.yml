@@ -48,6 +48,25 @@ services:
     volumes:
       - drb_local_rsdata:/data
 
+  api:
+    container_name: drb_local_api
+    depends_on:
+      - database
+      - elasticsearch
+      - s3
+      - redis
+      - rabbitmq
+    build:
+      context: .
+    command: -e local-compose -p APIProcess
+    ports:
+      - 5050:5050
+    volumes:
+      - type: bind
+        source: .
+        target: /src
+        read_only: true
+
   s3:
     container_name: drb-local-s3
     image: localstack/localstack:latest
@@ -72,25 +91,6 @@ services:
     build:
       context: .
     command: -e local-compose -p LocalDevelopmentSetupProcess
-    volumes:
-      - type: bind
-        source: .
-        target: /src
-        read_only: true
-
-  api:
-    container_name: drb_local_api
-    depends_on:
-      - database
-      - elasticsearch
-      - s3
-      - redis
-      - rabbitmq
-    build:
-      context: .
-    command: -e local-compose -p APIProcess
-    ports:
-      - 5050:5050
     volumes:
       - type: bind
         source: .

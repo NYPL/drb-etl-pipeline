@@ -1,18 +1,8 @@
 services:
   devsetup:
-    container_name: drb_local_devSetUp
-    depends_on:
-      - database
-      - elasticsearch
-      - s3
-    build:
-      context: .
-    command: -e local-compose -p LocalDevelopmentSetupProcess
-    volumes:
-      - type: bind
-        source: .
-        target: /src
-        read_only: true
+    extends:
+      file: docker-compose.yml
+      service: devsetup
 
   database:
     extends:
@@ -42,6 +32,7 @@ services:
   seeddb:
     container_name: drb_local_seed
     depends_on:
+      - devsetup
       - database
       - elasticsearch
       - s3
