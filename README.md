@@ -60,7 +60,7 @@ This guide provides step-by-step instructions to get the DRB ETL pipeline runnin
 3. Initial Setup (one-time only):
 
    ```bash
-   # Run the database setup and seeding process
+   # Run the database seeding process
    docker compose -f docker-compose.setup.yml up --abort-on-container-exit
    ```
 

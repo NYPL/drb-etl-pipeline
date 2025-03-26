@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD: localpsql
 
   elasticsearch:
+    # Use the latest version of Elasticsearch supported by Amazon AWS ES.
     container_name: drb_local_es
     image: elasticsearch:8.15.0
     ports:
@@ -34,11 +35,6 @@ services:
       - 5672:5672
     volumes:
       - drb_local_mqdata:/var/lib/rabbitmq
-    healthcheck:
-      test: ["CMD", "rabbitmqctl", "status"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
 
   redis:
     container_name: drb_local_rs
@@ -53,9 +49,6 @@ services:
     depends_on:
       - database
       - elasticsearch
-      - s3
-      - redis
-      - rabbitmq
     build:
       context: .
     command: -e local-compose -p APIProcess
