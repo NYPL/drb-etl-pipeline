@@ -1,47 +1,37 @@
-from datetime import datetime, timezone, timedelta
-
 from logger import create_log
 from managers import DBManager
 from ..record_buffer import RecordBuffer
 from services import NYPLBibService
+from .. import utils
 
 logger = create_log(__name__)
 
 
 class NYPLProcess():
     def __init__(self, *args):
-        self.process_type = args[0]
-        self.ingest_period = args[2]
-        self.limit = (len(args) >= 5 and args[4]) or None
-        self.offset = (len(args) >= 6 and args[5]) or None
+        self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
+        self.db_manager.createSession()
+
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.nypl_bib_service = NYPLBibService()
 
     def runProcess(self):
         try:
-            self.db_manager.createSession()
-            record_buffer = RecordBuffer(self.db_manager)
-
-            start_datetime = (
-                datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-                if self.process_type == 'daily'
-                else self.ingest_period and datetime.strptime(self.ingest_period, '%Y-%m-%dT%H:%M:%S')
-            )
-
             records = self.nypl_bib_service.get_records(
-                start_timestamp=start_datetime,
-                offset=self.offset,
-                limit=self.limit
+                start_timestamp=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
+                offset=self.params.offset,
+                limit=self.params.limit
             )
             
             for record_mapping in records:
-                record_buffer.add(record_mapping.record)
+                self.record_buffer.add(record_mapping.record)
             
-            record_buffer.flush()
+            self.record_buffer.flush()
 
-            logger.info(f'Ingested {record_buffer.ingest_count} NYPL records')
+            logger.info(f'Ingested {self.record_buffer.ingest_count} NYPL records')
         except Exception as e:
             logger.exception(f'Failed to ingest NYPL records')
             raise e

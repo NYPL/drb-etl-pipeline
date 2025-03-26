@@ -6,83 +6,82 @@ from pymarc import MARCReader
 import requests
 from requests.exceptions import ReadTimeout, HTTPError
 
-from ..core import CoreProcess
-from mappings.muse import MUSEMapping
-from managers import MUSEError, MUSEManager, RabbitMQManager, S3Manager
+from managers import DBManager, MUSEError, MUSEManager, RabbitMQManager, S3Manager
+from mappings.muse import map_muse_record
 from model import get_file_message
 from logger import create_log
-
+from ..record_buffer import RecordBuffer
+from .. import utils
 
 logger = create_log(__name__)
 
 
-class MUSEProcess(CoreProcess):
+class MUSEProcess():
     MARC_URL = 'https://about.muse.jhu.edu/lib/metadata?format=marc&content=book&include=oa&filename=open_access_books&no_auth=1'
     MARC_CSV_URL = 'https://about.muse.jhu.edu/static/org/local/holdings/muse_book_metadata.csv'
     MUSE_ROOT_URL = 'https://muse.jhu.edu'
 
     def __init__(self, *args):
-        super(MUSEProcess, self).__init__(*args[:4])
+        self.params = utils.parse_process_args(*args)
 
-        self.ingest_limit = int(args[4]) if args[4] else None
+        self.db_manager = DBManager()
+        self.db_manager.createSession()
 
-        self.generateEngine()
-        self.createSession()
+        self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
 
-        self.fileQueue = os.environ['FILE_QUEUE']
-        self.fileRoute = os.environ['FILE_ROUTING_KEY']
+        self.file_queue = os.environ['FILE_QUEUE']
+        self.file_route = os.environ['FILE_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
         self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.fileQueue, self.fileRoute)
+        self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
 
     def runProcess(self):
-        if self.process == 'daily':
+
+        if self.params.process_type == 'daily':
             self.importMARCRecords()
-        elif self.process == 'complete':
+        elif self.params.process_type == 'complete':
             self.importMARCRecords(full=True)
-        elif self.process == 'custom':
-            self.importMARCRecords(startTimestamp=self.ingestPeriod)
-        elif self.process == 'single':
-            self.importMARCRecords(recID=self.singleRecord)
+        elif self.params.process_type == 'custom':
+            self.importMARCRecords(startTimestamp=self.params.ingest_period)
+        elif self.params.record_id:
+            self.importMARCRecords(recID=self.params.record_id)
 
-        self.saveRecords()
-        self.commitChanges()
+        self.record_buffer.flush()
 
-        logger.info(f'Ingested {len(self.records)} MUSE records')
+        logger.info(f'Ingested {self.record_buffer.ingest_count} MUSE records')
 
-    def parseMuseRecord(self, marcRec):
-        museRec = MUSEMapping(marcRec)
-        museRec.applyMapping()
+    def parse_muse_record(self, marc_record):
+        record = map_muse_record(marc_record)
 
         # Use the available source link to create a PDF manifest file and
         # store in S3
-        _, museLink, _, museType, _ = list(
-            museRec.record.has_part[0].split('|')
+        _, muse_link, _, muse_type, _ = list(
+            record.has_part[0].split('|')
         )
 
-        museManager = MUSEManager(museRec, museLink, museType)
+        muse_manager = MUSEManager(record, muse_link, muse_type)
 
-        museManager.parseMusePage()
+        muse_manager.parseMusePage()
 
-        museManager.identifyReadableVersions()
+        muse_manager.identifyReadableVersions()
 
-        museManager.addReadableLinks()
+        muse_manager.addReadableLinks()
 
-        if museManager.pdfWebpubManifest:
+        if muse_manager.pdfWebpubManifest:
             self.s3_manager.putObjectInBucket(
-                museManager.pdfWebpubManifest.toJson().encode('utf-8'),
-                museManager.s3PDFReadPath,
-                museManager.s3Bucket
+                muse_manager.pdfWebpubManifest.toJson().encode('utf-8'),
+                muse_manager.s3PDFReadPath,
+                muse_manager.s3Bucket
             )
 
-        if museManager.epubURL:
-            self.rabbitmq_manager.sendMessageToQueue(self.fileQueue, self.fileRoute, get_file_message(museManager.epubURL, museManager.s3EpubPath))
+        if muse_manager.epubURL:
+            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(muse_manager.epubURL, muse_manager.s3EpubPath))
 
-        self.addDCDWToUpdateList(museRec)
+        self.record_buffer.add(record=record)
 
     def importMARCRecords(self, full=False, startTimestamp=None, recID=None):
         self.downloadRecordUpdates()
@@ -101,7 +100,7 @@ class MUSEProcess(CoreProcess):
         processed_record_count = 0
 
         for record in marcReader:
-            if self.ingest_limit and processed_record_count >= self.ingest_limit:
+            if self.params.limit and processed_record_count >= self.params.limit:
                 break
 
             if (startDateTime or recID) \
@@ -110,7 +109,7 @@ class MUSEProcess(CoreProcess):
                 continue
 
             try:
-                self.parseMuseRecord(record)
+                self.parse_muse_record(record)
                 processed_record_count += 1
             except MUSEError as e:
                 logger.warning('Unable to parse MUSE record')

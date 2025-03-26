@@ -1,8 +1,12 @@
+import dateutil
+import dateutil.parser
 import pytest
+from unittest.mock import ANY
 
 from model import get_file_message
 from processes.ingest.doab import DOABProcess
 from tests.helper import TestHelpers
+from processes.utils import ProcessParams
 
 class TestDOABProcess:
     @classmethod
@@ -17,6 +21,7 @@ class TestDOABProcess:
     def test_instance(self, mocker):
         class TestDOAB(DOABProcess):
             def __init__(self):
+                self.params = ProcessParams()
                 self.process = 'test_process'
                 self.ingest_period = None
                 self.single_record = 0
@@ -51,35 +56,34 @@ class TestDOABProcess:
     def test_runProcess_daily(self, test_instance: DOABProcess, record_mappings, mocks):
         test_instance.dspace_service.get_records.return_value = record_mappings
 
-        test_instance.process = 'daily'
+        test_instance.params.process_type = 'daily'
         test_instance.runProcess()
 
-        test_instance.dspace_service.get_records.assert_called_once_with(offset=0, limit=10000)
+        test_instance.dspace_service.get_records.assert_called_once_with(start_timestamp=ANY, offset=0, limit=None)
         assert mocks['_process_record'].call_count == len(record_mappings)
 
     def test_runProcess_complete(self, test_instance: DOABProcess, record_mappings, mocks):
         test_instance.dspace_service.get_records.return_value = record_mappings
 
-        test_instance.process = 'complete'
+        test_instance.params.process_type = 'complete'
         test_instance.runProcess()
 
-        test_instance.dspace_service.get_records.assert_called_once_with(full_import=True, offset=0, limit=10000)
+        test_instance.dspace_service.get_records.assert_called_once_with(start_timestamp=None, offset=0, limit=None)
         assert mocks['_process_record'].call_count == len(record_mappings)
 
     def test_runProcess_custom(self, test_instance: DOABProcess, record_mappings, mocks):
         test_instance.dspace_service.get_records.return_value = record_mappings
         
-        test_instance.process = 'custom'
+        test_instance.params.ingest_period = '2022-01-01T12:00:00'
         test_instance.runProcess()
 
-        test_instance.dspace_service.get_records.assert_called_once_with(start_timestamp=None, offset=0, limit=10000)
+        test_instance.dspace_service.get_records.assert_called_once_with(start_timestamp=dateutil.parser.parse(test_instance.params.ingest_period), offset=0, limit=None)
         assert mocks['_process_record'].call_count == len(record_mappings)
 
     def test_runProcess_single(self, test_instance: DOABProcess, single_record_mapping, mocks):
         test_instance.dspace_service.get_single_record.return_value = single_record_mapping
         
-        test_instance.process = 'single'
-        test_instance.single_record = 1
+        test_instance.params.record_id = 1
         test_instance.runProcess()
 
         test_instance.dspace_service.get_single_record.assert_called_once_with(record_id=1, source_identifier='oai:directory.doabooks.org')
@@ -87,7 +91,7 @@ class TestDOABProcess:
 
 
     def test_manage_links_success(self, test_instance: DOABProcess, mocker):
-        mock_record = mocker.MagicMock();
+        mock_record = mocker.MagicMock()
 
         mock_manager = mocker.MagicMock()
         mock_manager.manifests = [('pdfPath', 'pdfJSON')]

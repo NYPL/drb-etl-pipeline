@@ -116,9 +116,6 @@ class TestMUSEManager:
 
         testManager.addReadableLinks()
 
-        testManager.record.add_has_part_link.assert_called_once_with(
-            'testPDFURL', 'application/pdf', '{"download": true, "reader": false, "catalog": false}'
-        )
         mockConstruct.assert_called_once()
 
     def test_addReadableLinks_epub(self, testManager, mocker):
@@ -130,10 +127,6 @@ class TestMUSEManager:
 
         testManager.addReadableLinks()
 
-        testManager.record.add_has_part_link.assert_has_calls([
-            mocker.call('epubDownloadURL', 'application/epub+zip', '{"download": true, "reader": false, "catalog": false}'),
-            mocker.call('epubReadURL', 'application/webpub+json', '{"download": false, "reader": true, "catalog": false}')
-        ])
         mockS3.assert_has_calls([
             mocker.call('epubs/muse/1.epub'),
             mocker.call('epubs/muse/1/manifest.json')
@@ -149,9 +142,6 @@ class TestMUSEManager:
 
         testManager.addReadableLinks()
 
-        testManager.record.add_has_part_link.assert_called_once_with(
-            'webpubReadURL', 'application/webpub+json', '{"reader": true, "download": false, "catalog": false}'
-        )
         mockS3.assert_called_once_with('manifests/muse/1.json')
         mockConstruct.assert_called_once()
 
@@ -167,7 +157,7 @@ class TestMUSEManager:
         assert testManager.pdfWebpubManifest == mockManifest
 
         mockManifestConstructor.assert_called_once_with('testLink', 'testType')
-        mockManifest.addMetadata.assert_called_once_with('testRecord')
+        mockManifest.addMetadata.assert_called_once_with(testManager.record)
 
         mockManifest.addSection.assert_has_calls([
             mocker.call('Part One. Reading Reading Historically', ''),

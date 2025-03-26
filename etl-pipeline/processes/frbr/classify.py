@@ -17,12 +17,7 @@ logger = create_log(__name__)
 
 class ClassifyProcess():
     def __init__(self, *args):
-        self.process = args[0]
-        self.ingest_period = args[2]
-        self.single_record = args[3]
-
-        self.limit = int(args[4]) if len(args) >= 5 and args[4] else None
-        self.source = args[6] if len(args) >= 7 and args[6] else None
+        self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
         self.db_manager.createSession()
@@ -42,13 +37,11 @@ class ClassifyProcess():
         self.oclc_catalog_manager = OCLCCatalogManager()
 
     def runProcess(self):
-        try:
-            start_datetime = utils.get_start_datetime(process_type=self.process, ingest_period=self.ingest_period)
-            
+        try:            
             self.classify_records(
-                start_datetime=start_datetime,
-                record_uuid=self.single_record,
-                source=self.source, 
+                start_datetime=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
+                record_uuid=self.params.record_id,
+                source=self.params.source, 
             )
             
             self.record_buffer.flush()
@@ -72,7 +65,7 @@ class ClassifyProcess():
             get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.uuid == record_uuid)
 
         if source:
-            get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.source == self.source)
+            get_unfrbrized_records_query = get_unfrbrized_records_query.filter(Record.source == source)
 
         while unfrbrized_record := get_unfrbrized_records_query.first():
             self.frbrize_record(unfrbrized_record)
@@ -83,7 +76,7 @@ class ClassifyProcess():
             self.db_manager.session.add(unfrbrized_record)
             self.db_manager.session.commit()
 
-            if self.limit and self.record_buffer.ingest_count >= self.limit:
+            if self.params.limit and self.record_buffer.ingest_count >= self.params.limit:
                 break
 
             if self.redis_manager.checkIncrementerRedis('oclcCatalog', 'API'):

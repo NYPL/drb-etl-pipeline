@@ -5,6 +5,7 @@ from unittest.mock import ANY
 
 from tests.helper import TestHelpers
 from processes import ClassifyProcess
+from processes.utils import ProcessParams
 
 class TestOCLCClassifyProcess:
     @classmethod
@@ -19,6 +20,7 @@ class TestOCLCClassifyProcess:
     def test_instance(self, mocker):
         class TestClassifyProcess(ClassifyProcess):
             def __init__(self, *args):
+                self.params = ProcessParams()
                 self.records = set()
                 self.limit = None
                 self.ingest_period = None
@@ -51,27 +53,27 @@ class TestOCLCClassifyProcess:
 
         return mockRecord
 
-    def test_runProcess_daily(self, test_instance, run_process_mocks):
-        test_instance.process = 'daily'
+    def test_runProcess_daily(self, test_instance: ClassifyProcess, run_process_mocks):
+        test_instance.params.process_type = 'daily'
         test_instance.runProcess()
 
         for _, mockedMethod in run_process_mocks.items():
             mockedMethod.assert_called_once()
 
-    def test_runProcess_complete(self, test_instance, run_process_mocks):
-        test_instance.process = 'complete'
+    def test_runProcess_complete(self, test_instance: ClassifyProcess, run_process_mocks):
+        test_instance.params.process_type = 'complete'
         test_instance.runProcess()
 
         run_process_mocks['classify_records'].assert_called_once_with(start_datetime=None, record_uuid=None, source=None)
         for _, mocked_method in run_process_mocks.items():
             mocked_method.assert_called_once()
 
-    def test_runProcess_custom(self, test_instance, run_process_mocks):
-        test_instance.process = 'custom'
-        test_instance.ingest_period = '2022-01-01T00:00:00'
+    def test_runProcess_custom(self, test_instance: ClassifyProcess, run_process_mocks):
+        test_instance.params.process_type = 'custom'
+        test_instance.params.ingest_period = '2022-01-01T00:00:00'
         test_instance.runProcess()
 
-        run_process_mocks['classify_records'].assert_called_once_with(start_datetime=datetime.strptime(test_instance.ingest_period, '%Y-%m-%dT%H:%M:%S'), record_uuid=None, source=None)
+        run_process_mocks['classify_records'].assert_called_once_with(start_datetime=datetime.strptime(test_instance.params.ingest_period, '%Y-%m-%dT%H:%M:%S'), record_uuid=None, source=None)
         
         for _, mocked_method in run_process_mocks.items():
             mocked_method.assert_called_once()

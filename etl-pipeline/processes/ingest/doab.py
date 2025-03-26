@@ -5,6 +5,7 @@ from mappings.doab import DOABMapping
 from managers import DBManager, DOABLinkManager, S3Manager, RabbitMQManager
 from model import get_file_message
 from ..record_buffer import RecordBuffer, Record
+from .. import utils
 
 logger = create_log(__name__)
 
@@ -13,9 +14,7 @@ class DOABProcess():
     DOAB_IDENTIFIER = 'oai:directory.doabooks.org'
 
     def __init__(self, *args):
-        self.process = args[0]
-        self.ingest_period = args[2]
-        self.single_record = args[3]
+        self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
         self.db_manager.createSession()
@@ -31,39 +30,33 @@ class DOABProcess():
 
         self.rabbitmq_manager = RabbitMQManager()
         self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(
-            self.file_queue, self.file_route)
-
-        self.offset = int(args[5]) if args[5] else 0
-        self.limit = (int(args[4]) + self.offset) if args[4] else 10000
+        self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
 
         self.dspace_service = DSpaceService(base_url=self.DOAB_BASE_URL, source_mapping=DOABMapping)
 
     def runProcess(self):
         try:
-            records = []
-
-            if self.process == 'daily':
-                records = self.dspace_service.get_records(offset=self.offset, limit=self.limit)
-            elif self.process == 'complete':
-                records = self.dspace_service.get_records(full_import=True, offset=self.offset, limit=self.limit)
-            elif self.process == 'custom':
-                records = self.dspace_service.get_records(start_timestamp=self.ingest_period, offset=self.offset, limit=self.limit)
-            elif self.single_record:
-                record = self.dspace_service.get_single_record(record_id=self.single_record, source_identifier=self.DOAB_IDENTIFIER)
+            if self.params.record_id is not None:
+                record = self.dspace_service.get_single_record(record_id=self.params.record_id, source_identifier=self.DOAB_IDENTIFIER)
+                
                 self._process_record(record)
                 self.record_buffer.flush()
                 self._log_results()
+                
                 return
 
-            if records:
-                for record in records:
-                    self._process_record(record)
+            records = self.dspace_service.get_records(
+                start_timestamp=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
+                offset=self.params.offset,
+                limit=self.params.limit
+            )
+                
+            for record in records:
+                self._process_record(record)
             
             self.record_buffer.flush()
 
             self._log_results()
-
         except Exception as e:
             logger.exception('Failed to run DOAB process')
             raise e

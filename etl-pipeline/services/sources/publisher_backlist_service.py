@@ -148,7 +148,6 @@ class PublisherBacklistService(SourceService):
 
     def get_records(
         self,
-        full_import: bool=False, 
         start_timestamp: datetime=None,
         offset: Optional[int]=None,
         limit: Optional[int]=None

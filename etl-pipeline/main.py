@@ -24,7 +24,7 @@ def main(args):
     if args.script is not None:
         logger.info(f'Running script {args.script} in {environment}')
         
-        run_script(args.script)
+        run_script(args.script, *args.options)
         
         return
 
@@ -75,13 +75,13 @@ def register_scripts() -> dict:
     return dict(script_functions)
 
 
-def run_script(script: str):
+def run_script(script: str, *args):
     scripts = register_scripts()
 
     script = scripts.get(script)
 
     if script is not None:
-        script()
+        script(*args)
 
 
 def create_arg_parser():

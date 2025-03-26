@@ -14,12 +14,7 @@ logger = create_log(__name__)
 class LOCProcess():
 
     def __init__(self, *args):
-        self.process_type = args[0]
-        self.ingest_period = args[2]
-
-        self.offset = int(args[5] or 0)
-        self.limit = (int(args[4]) + self.offset) if args[4] else 5000
-        self.startTimestamp = None 
+        self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
         self.db_manager.createSession()
@@ -40,14 +35,10 @@ class LOCProcess():
         self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
 
     def runProcess(self):
-        start_datetime = utils.get_start_datetime(
-            process_type=self.process_type,
-            ingest_period=self.ingest_period
-        )
-
         records = self.loc_service.get_records(
-            start_timestamp=start_datetime,
-            limit=self.limit,
+            start_timestamp=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
+            limit=self.params.limit,
+            offset=self.params.offset
         )
 
         for record in records:

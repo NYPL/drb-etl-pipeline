@@ -36,9 +36,8 @@ class NYPLBibService(SourceService):
 
     def get_records(
         self,
-        full_import: bool=False,
         start_timestamp: datetime=None,
-        offset: Optional[int]=None,
+        offset: int=0,
         limit: Optional[int]=None
     ) -> Generator[NYPLMapping, None, None]:
         nypl_bib_query = 'SELECT * FROM bib WHERE publish_year <= 1965'
