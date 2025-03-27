@@ -1,12 +1,9 @@
 import json
-import mimetypes
 import os
 import re
 
-from digital_assets import get_stored_file_url
 from mappings.gutenberg import GutenbergMapping
 from managers import S3Manager
-from model import FileFlags, Part, Source
 from logger import create_log
 from ..record_file_saver import RecordFileSaver
 from services import GutenbergService
@@ -15,7 +12,7 @@ from .. import utils
 logger = create_log(__name__)
 
 
-class GutenbergV2Process():
+class GutenbergFileBackillProcess:
     def __init__(self, *args):
         self.params = utils.parse_process_args(*args)
 
