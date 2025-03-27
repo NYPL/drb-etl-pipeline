@@ -90,6 +90,31 @@ This guide provides step-by-step instructions to get the DRB ETL pipeline runnin
      Password: localpsql
      ```
 
+6. Set up local python env:
+
+Create a virtual environment
+```sh
+python -m venv venv
+```
+
+Activate the virtual environment. You will need to do this for every terminal session.
+```sh
+source venv/bin/activate
+```
+
+Make sure `wheel` is upgraded to avoid installation errors later
+```sh
+pip install --upgrade wheel
+```
+
+Install requirements
+```sh
+pip install -r requirements.txt
+```
+
+You're now ready to run individual processes documented in the following section.
+
+
 ### Running Individual Processes
 
 While Docker handles the main services, you can run individual processes using:
@@ -108,7 +133,7 @@ python main.py -p HathiTrustProcess -e local -i daily
 python main.py -p ClusterProcess -e local
 ```
 
-First, install python requirements using `pip install -r requirements.txt`, then run `python main.py --help` for all available options.
+See `python main.py --help` for all available options.
 
 ## Available Processes
 
