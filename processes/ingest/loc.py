@@ -31,8 +31,8 @@ class LOCProcess():
         self.file_route = os.environ['FILE_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
+        self.rabbitmq_manager.create_connection()
+        self.rabbitmq_manager.create_or_connect_queue(self.file_queue, self.file_route)
 
     def runProcess(self):
         records = self.loc_service.get_records(
@@ -67,4 +67,4 @@ class LOCProcess():
                 flags=epub_part.flags
             ))]
 
-            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(epub_part.url, epub_location))
+            self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(epub_part.url, epub_location))
