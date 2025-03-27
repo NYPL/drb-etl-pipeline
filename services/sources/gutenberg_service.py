@@ -40,7 +40,8 @@ class GutenbergService(SourceService):
         self,
         start_timestamp: Optional[datetime]=None,
         offset: int=0,
-        limit: Optional[int]=None
+        limit: Optional[int]=None,
+        record_only: bool=False,
     ) -> Generator[GutenbergMapping, None, None]:
         current_position = 0
         page_size = 100
@@ -67,7 +68,10 @@ class GutenbergService(SourceService):
                 gutenberg_record = GutenbergMapping(rdf_file, self.GUTENBERG_NAMESPACES, self.constants, yaml_file)
                 gutenberg_record.applyMapping()
 
-                yield gutenberg_record
+                if record_only:
+                    yield gutenberg_record.record
+                else:
+                    yield gutenberg_record
 
             if current_position >= limit: 
                 break

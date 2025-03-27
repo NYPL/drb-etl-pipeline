@@ -1,7 +1,9 @@
 import json
+from multiprocessing import Pool
 import os
 import re
 
+from model import Record
 from mappings.gutenberg import GutenbergMapping
 from managers import S3Manager
 from logger import create_log
@@ -12,29 +14,34 @@ from .. import utils
 logger = create_log(__name__)
 
 
-class GutenbergFileBackillProcess:
+class GutenbergFileBackfill:
     def __init__(self, *args):
         self.params = utils.parse_process_args(*args)
-
-        self.file_bucket = os.environ['FILE_BUCKET']
-        self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
-
         self.gutenberg_service = GutenbergService()
-        self.record_file_saver = RecordFileSaver(storage_manager=self.s3_manager)
 
     def runProcess(self):
         records = self.gutenberg_service.get_records(
             start_timestamp=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
             offset=self.params.offset,
             limit=self.params.limit,
+            record_only=True
         )
 
-        for record_mapping in records:
-            self.store_epubs(record_mapping)
+        with Pool(processes=4) as pool:
+            file_backfill_results = pool.imap_unordered(GutenbergFileBackfill._store_epubs, records)
+            file_backfills = [result for result in file_backfill_results]
+            successful_file_backfills = len([result for result in file_backfills if result is True])
 
-    def store_epubs(self, gutenberg_record: GutenbergMapping):
-        for part in gutenberg_record.record.parts:
+        logger.info(f'Stored {successful_file_backfills}/{len(file_backfills)} Gutenberg files')
+
+    @staticmethod
+    def _store_epubs(record: Record):
+        file_bucket = os.environ.get('FILE_BUCKET')
+        s3_manager = S3Manager()
+        s3_manager.createS3Client()
+        record_file_saver = RecordFileSaver(storage_manager=s3_manager)
+
+        for part in record.parts:
             epub_id_parts = re.search(r'\/([0-9]+).epub.([a-z]+)$', part.url)
             gutenberg_id = epub_id_parts.group(1)
             gutenberg_type = epub_id_parts.group(2)
@@ -43,6 +50,12 @@ class GutenbergFileBackillProcess:
                 epub_path = f'epubs/{part.source}/{gutenberg_id}_{gutenberg_type}.epub'
 
                 try:
-                    self.record_file_saver.store_file(file_url=part.url, file_path=epub_path)
+                    record_file_saver.store_file(file_url=part.url, file_path=epub_path)
+                    s3_manager.s3Client.head_object(Bucket=file_bucket, Key=epub_path)
+            
+                    return True
                 except Exception:
-                    logger.info(f'Failed to save files for {gutenberg_record.record}')
+                    logger.info(f'Failed to save {part.url} for {record}')
+                    return False
+                
+        return True
