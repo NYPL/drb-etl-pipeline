@@ -24,7 +24,6 @@ class LOCProcess():
         self.loc_service = LOCService()
 
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
 
         self.file_queue = os.environ['FILE_QUEUE']

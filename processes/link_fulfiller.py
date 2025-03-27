@@ -16,7 +16,6 @@ class LinkFulfiller:
         self.db_manager = db_manager
 
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
 
         self.api_url = os.environ.get('DRB_API_URL')
 
@@ -34,7 +33,7 @@ class LinkFulfiller:
             logger.warning(f'No manifest found for record: {record}')
             return
         
-        manifest_file = self.s3_manager.s3Client.get_object(Bucket=manifest_part.file_bucket, Key=manifest_part.file_key)
+        manifest_file = self.s3_manager.client.get_object(Bucket=manifest_part.file_bucket, Key=manifest_part.file_key)
 
         manifest = json.loads(manifest_file['Body'].read().decode('utf-8'))
         fulfilled_manifest = self._update_manifest_links(manifest)
@@ -43,7 +42,7 @@ class LinkFulfiller:
             logger.info(f'Manifest links have already been fulfilled for record: {record}')
             return
         
-        self.s3_manager.s3Client.put_object(
+        self.s3_manager.client.put_object(
             Bucket=manifest_part.file_bucket, 
             Key=manifest_part.file_key, 
             Body=json.dumps(fulfilled_manifest, ensure_ascii=False), 

@@ -38,7 +38,6 @@ class S3Process():
     @staticmethod
     def process_files(max_poll_attempts: int):
         storage_manager = S3Manager()
-        storage_manager.createS3Client()
 
         file_queue = os.environ['FILE_QUEUE']
         file_route = os.environ['FILE_ROUTING_KEY']
@@ -78,7 +77,7 @@ class S3Process():
         try:
             file_contents = S3Process.get_file_contents(file_url)
 
-            storage_manager.putObjectInBucket(file_contents, file_path, s3_file_bucket)
+            storage_manager.put_object(file_contents, file_path, s3_file_bucket)
             
             del file_contents
 
@@ -87,7 +86,7 @@ class S3Process():
 
                 web_pub_manifest = S3Process.generate_webpub(file_root, s3_file_bucket)
 
-                storage_manager.putObjectInBucket(web_pub_manifest, f'{file_root}/manifest.json', s3_file_bucket)
+                storage_manager.put_object(web_pub_manifest, f'{file_root}/manifest.json', s3_file_bucket)
 
             rabbit_mq_manager.acknowledge_message_processed(message_props.delivery_tag)
 

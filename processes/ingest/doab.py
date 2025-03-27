@@ -22,7 +22,6 @@ class DOABProcess():
         self.record_buffer = RecordBuffer(self.db_manager)
 
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
         self.s3_bucket = os.environ['FILE_BUCKET']
 
         self.file_queue = os.environ['FILE_QUEUE']
@@ -70,8 +69,7 @@ class DOABProcess():
 
         for manifest in link_manager.manifests:
             manifest_path, manifest_json = manifest
-            self.s3_manager.create_manifest_in_s3(
-                manifest_path, manifest_json, self.s3_bucket)
+            self.s3_manager.create_manifest_in_s3(manifest_path, manifest_json, self.s3_bucket)
 
         for epub_link in link_manager.epub_links:
             epub_path, epub_uri = epub_link

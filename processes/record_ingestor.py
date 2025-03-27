@@ -80,7 +80,6 @@ class RecordIngestor:
     @staticmethod
     def _store_record_files(record: Record):
         s3_manager = S3Manager()
-        s3_manager.createS3Client()
         file_bucket = os.environ.get('FILE_BUCKET')
 
         s3_manager.store_pdf_manifest(record=record, bucket_name=file_bucket)
