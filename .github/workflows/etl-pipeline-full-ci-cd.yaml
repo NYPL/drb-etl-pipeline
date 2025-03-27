@@ -3,6 +3,8 @@ name: ETL Pipeline Full CI/CD
 on:
   push:
     branches: [main]
+    paths:
+      - "etl-pipeline/**"
 
 concurrency:
   group: continuous-deployment

@@ -11,7 +11,6 @@ class SearchPage {
   readonly passwordField: Locator;
   readonly loginButton: Locator;
   readonly firstRequestButton: Locator;
-  readonly deliveryLocationHeading: Locator;
 
   readonly governmentDocumentsCheckbox: Locator;
   readonly firstGovernmentDocumentAuthor: Locator;
@@ -54,9 +53,6 @@ class SearchPage {
     this.passwordField = page.locator("#pin");
     this.loginButton = page.locator("[value='Submit']");
     this.firstRequestButton = page.locator("a:text('Request scan') >> nth=0");
-    this.deliveryLocationHeading = page.locator(
-      "h2:text('Choose a delivery location')"
-    );
 
     this.governmentDocumentsCheckbox = page.locator(
       "span:text('Show only US government documents')"
@@ -142,14 +138,10 @@ class SearchPage {
 
   async verifyFirstRequestButtonVisible() {
     await expect(this.firstRequestButton).toBeVisible();
-  }
-
-  async clickFirstRequestButton() {
-    await this.firstRequestButton.click();
-  }
-
-  async verifyDeliveryLocationHeadingVisible() {
-    await expect(this.deliveryLocationHeading).toBeVisible();
+    await expect(this.firstRequestButton).toHaveAttribute(
+      "href",
+      /.*www\.nypl\.org\/research\/collections\/shared-collection-catalog\/hold\/request\/.*/
+    );
   }
 
   async verifyFirstLoginForOptionsButtonVisible() {

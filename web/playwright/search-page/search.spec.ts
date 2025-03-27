@@ -15,8 +15,6 @@ test.describe("EDD Request Process", () => {
     await searchPage.fillPasswordField(process.env.CATALOG_USER_PIN);
     await searchPage.clickLoginButton();
     await searchPage.verifyFirstRequestButtonVisible();
-    await searchPage.clickFirstRequestButton();
-    await searchPage.verifyDeliveryLocationHeadingVisible();
   });
 });
 

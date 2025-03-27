@@ -4,6 +4,8 @@ on:
   # will run on all PRs that are opened or updated (synchronized)
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
+  paths:
+    - web/**
 
 jobs:
   # changelog must be edited for every PR
@@ -14,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dangoslen/changelog-enforcer@v3
         with:
-          changeLogPath: "CHANGELOG.md"
+          changeLogPath: "web/CHANGELOG.md"
           skipLabels: "no-changelog"
 
   lint:
@@ -28,7 +30,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: "web/.nvmrc"
           cache: npm
 
       - name: Cache node modules
@@ -61,7 +63,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: "web/.nvmrc"
           cache: npm
 
       - name: Cache node modules
@@ -94,7 +96,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: "web/.nvmrc"
           cache: npm
 
       - name: Cache node modules
@@ -130,8 +132,9 @@ jobs:
         env:
           APP_ENV: development
           AIRTABLE_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+        working-directory: ./web
         run: |
-          docker build web/Dockerfile --build-arg airtable_api_key=$AIRTABLE_KEY \
+          docker build -f Dockerfile --build-arg airtable_api_key=$AIRTABLE_KEY \
           --build-arg APP_ENV=$APP_ENV .
 
   playwright_tests:

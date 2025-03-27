@@ -13,7 +13,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: "web/.nvmrc"
           cache: npm
 
       - name: Configure AWS credentials from Test account
@@ -35,8 +35,9 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
           AIRTABLE_KEY: ${{ secrets.AIRTABLE_API_KEY }}
           NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+        working-directory: ./web
         run: |
-          docker build web/Dockerfile --build-arg airtable_api_key=$AIRTABLE_KEY -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          docker build -f Dockerfile --build-arg airtable_api_key=$AIRTABLE_KEY -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
           --build-arg APP_ENV=$APP_ENV \
           --build-arg NEW_RELIC_APP_NAME="Digital Research Books (QA)" \
           --build-arg NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY \

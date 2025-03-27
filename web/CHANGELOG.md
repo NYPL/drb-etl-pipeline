@@ -1,6 +1,10 @@
 # CHANGE LOG
 
-## [Prerelease]
+## [Pre-release]
+
+- Update to Next.js 13.5.9 for vulnerability patch
+
+## [0.18.4]
 
 - Add rollback step to ci/cd yml file
 - Update Playwright.yml step for setting env

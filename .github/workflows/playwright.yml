@@ -19,9 +19,10 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: ".nvmrc"
+          node-version-file: "web/.nvmrc"
 
       - name: Set environment for branch
+        working-directory: ./web
         run: |
           touch .env
           echo "BASE_URL=${{ inputs.base_url }}" >> .env
@@ -33,22 +34,27 @@ jobs:
           sudo echo "127.0.0.1 local.nypl.org" | sudo tee -a /etc/hosts
 
       - name: Install Test Dependencies
+        working-directory: ./web
         run: npm i @playwright/test@1.49.1
 
       - name: Install Playwright
+        working-directory: ./web
         run: npx playwright install --with-deps
 
       - name: Build app
+        working-directory: ./web
         run: NODE_ENV=test npm run build
 
       - name: Start the app
         if: inputs.base_url == 'http://local.nypl.org:3000/'
+        working-directory: ./web
         run: |
           NODE_ENV=test npm start &
           sleep 5
         shell: bash
 
       - name: Run your tests
+        working-directory: ./web
         run: npm run playwright
         env:
           CATALOG_USERNAME: ${{ secrets.CATALOG_USERNAME }}
