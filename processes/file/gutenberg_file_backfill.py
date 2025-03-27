@@ -32,7 +32,7 @@ class GutenbergFileBackfill:
             file_backfills = [result for result in file_backfill_results]
             successful_file_backfills = len([result for result in file_backfills if result is True])
 
-        logger.info(f'Stored {successful_file_backfills}/{len(file_backfills)} Gutenberg files')
+        logger.info(f'Stored {successful_file_backfills}/{len(file_backfills)} Gutenberg record files')
 
     @staticmethod
     def _store_epubs(record: Record):
@@ -40,6 +40,7 @@ class GutenbergFileBackfill:
         s3_manager = S3Manager()
         s3_manager.createS3Client()
         record_file_saver = RecordFileSaver(storage_manager=s3_manager)
+        saved_files = True
 
         for part in record.parts:
             epub_id_parts = re.search(r'\/([0-9]+).epub.([a-z]+)$', part.url)
@@ -51,11 +52,9 @@ class GutenbergFileBackfill:
 
                 try:
                     record_file_saver.store_file(file_url=part.url, file_path=epub_path)
-                    s3_manager.s3Client.head_object(Bucket=file_bucket, Key=epub_path)
-            
-                    return True
+                    s3_manager.s3Client.head_object(Bucket=file_bucket, Key=epub_path)            
                 except Exception:
                     logger.info(f'Failed to save {part.url} for {record}')
-                    return False
+                    saved_files = False
                 
-        return True
+        return saved_files
