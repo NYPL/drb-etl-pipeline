@@ -1,6 +1,7 @@
 from .file.covers import CoverProcess
 from .ingest.doab import DOABProcess
 from .ingest.gutenberg import GutenbergProcess
+from .ingest.gutenberg_v2 import GutenbergV2Process
 from .ingest.hathi_trust import HathiTrustProcess
 from .ingest.nypl import NYPLProcess
 from .frbr.catalog import CatalogProcess
@@ -22,5 +23,6 @@ from .ingest.clacso import CLACSOProcess
 from .record_ingestor import RecordIngestor
 from .link_fulfiller import LinkFulfiller
 from .record_frbrizer import RecordFRBRizer
+from .record_file_saver import RecordFileSaver
 from .record_clusterer import RecordClusterer
 from .record_pipeline import RecordPipelineProcess
