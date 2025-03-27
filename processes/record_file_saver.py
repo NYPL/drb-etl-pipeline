@@ -32,7 +32,7 @@ class RecordFileSaver:
             logger.info(f'Stored file {file_path} from {file_url}')
         except Exception as e:
             logger.exception(f'Failed to store file {file_path} from {file_url}')
-            raise 
+            raise e
 
     def get_file_contents(self, file_url: str):
         try:
