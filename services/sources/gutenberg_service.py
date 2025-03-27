@@ -73,7 +73,7 @@ class GutenbergService(SourceService):
                 else:
                     yield gutenberg_record
 
-            if current_position >= limit: 
+            if limit is not None and current_position >= limit: 
                 break
 
     def get_repositories(self, 
