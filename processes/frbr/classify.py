@@ -31,8 +31,8 @@ class ClassifyProcess():
         self.catalog_route = os.environ['OCLC_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.catalog_queue, self.catalog_route)
+        self.rabbitmq_manager.create_connection()
+        self.rabbitmq_manager.create_or_connect_queue(self.catalog_queue, self.catalog_route)
 
         self.oclc_catalog_manager = OCLCCatalogManager()
 
@@ -152,7 +152,7 @@ class ClassifyProcess():
                 logger.debug(f'Skipping catalog lookup process for OCLC number {oclc_number}')
                 continue
 
-            self.rabbitmq_manager.sendMessageToQueue(self.catalog_queue, self.catalog_route, { 'oclcNo': oclc_number, 'owiNo': owi_number })
+            self.rabbitmq_manager.send_message_to_queue(self.catalog_queue, self.catalog_route, { 'oclcNo': oclc_number, 'owiNo': owi_number })
             catalogued_record_count += 1
 
         if catalogued_record_count > 0:

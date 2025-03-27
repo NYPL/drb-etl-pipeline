@@ -44,8 +44,8 @@ class S3Process():
         file_route = os.environ['FILE_ROUTING_KEY']
 
         rabbit_mq_manager = RabbitMQManager()
-        rabbit_mq_manager.createRabbitConnection()
-        rabbit_mq_manager.createOrConnectQueue(file_queue, file_route)
+        rabbit_mq_manager.create_connection()
+        rabbit_mq_manager.create_or_connect_queue(file_queue, file_route)
 
         for poll_attempt in range(0, max_poll_attempts):
             wait_time = 30 * poll_attempt
@@ -54,7 +54,7 @@ class S3Process():
                 logger.info(f'Waiting {wait_time}s for S3 file messages')
                 sleep(wait_time)
 
-            while message := rabbit_mq_manager.getMessageFromQueue(file_queue):
+            while message := rabbit_mq_manager.get_message_from_queue(file_queue):
                 message_props, _, message_body = message
 
                 if not message_props or not message_body:
@@ -89,7 +89,7 @@ class S3Process():
 
                 storage_manager.putObjectInBucket(web_pub_manifest, f'{file_root}/manifest.json', s3_file_bucket)
 
-            rabbit_mq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
+            rabbit_mq_manager.acknowledge_message_processed(message_props.delivery_tag)
 
             logger.info(f'Stored file in S3 for {file_url}')
         except Exception:
