@@ -1,0 +1,26 @@
+name: ETL Pipeline Full CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "etl-pipeline/**"
+
+concurrency:
+  group: continuous-deployment
+  cancel-in-progress: false
+
+jobs:
+  deploy_to_qa:
+    uses: ./.github/workflows/etl-pipeline-deploy-qa.yaml@main
+    secrets: inherit
+
+  run_ci:
+    needs: deploy_to_qa
+    uses: ./.github/workflows/etl-pipeline-ci.yaml@main
+    secrets: inherit
+
+  deploy_to_production:
+    needs: run_ci
+    uses: ./.github/workflows/etl-pipeline-deploy-production.yaml@main
+    secrets: inherit
