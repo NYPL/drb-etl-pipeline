@@ -108,7 +108,7 @@ python main.py -p HathiTrustProcess -e local -i daily
 python main.py -p ClusterProcess -e local
 ```
 
-See `python main.py --help` for all available options.
+First, install python requirements using `pip install -r requirements.txt`, then run `python main.py --help` for all available options.
 
 ## Available Processes
 
