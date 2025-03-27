@@ -34,10 +34,11 @@ def is_record_missing_files(record_parts: tuple) -> bool:
             try:
                 s3_manager.s3Client.head_object(Bucket=file_part.file_bucket, Key = file_part.file_key)
             except botocore.exceptions.ClientError:
+                print(f'Missing S3 file: {url}')
                 return True
         else:
             try:
-                url_head_response = requests.head(url)
+                url_head_response = requests.head(url, headers={ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5)' })
 
                 if not url_head_response.ok:
                     print(f'Received {url_head_response.status_code} for url: {url}')
