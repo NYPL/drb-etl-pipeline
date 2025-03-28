@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import boto3
 import requests
 import urllib.parse
 from enum import Enum
@@ -167,6 +168,7 @@ class PublisherBacklistService(SourceService):
                     file_url = self.download_file_from_location(record_metadata, record_permissions, publisher_backlist_record.record)
                 except Exception:
                     logger.exception(f'Failed to download file for {record}')
+                    continue
                 
                 publisher_backlist_record.record.has_part.append(str(Part(
                     index=1,
@@ -190,6 +192,24 @@ class PublisherBacklistService(SourceService):
 
             if hath_identifier is not None:
                 hathi_id = hath_identifier.split('|')[0]
+
+                s3 = boto3.client("s3")
+
+                try:
+                    s3.head_object(Bucket=os.environ.get('PDF_BUCKET', None), Key=f'tagged_pdfs/{hathi_id}.pdf')
+                except Exception:
+                    logger.exception('PDF object does not exist')
+                    raise Exception
+
+                source_bucket_key = {'Bucket': os.environ.get('PDF_BUCKET', None), 'Key': f'tagged_pdfs/{hathi_id}.pdf'}
+                try:
+                    s3.copy(
+                        source_bucket_key,
+                        Bucket='drb-files-qa',
+                        Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf'
+                    )
+                except Exception:
+                    logger.exception("Error during copy response")
 
                 # TODO - move converted PDFs over to drb-files S3 buckets
                 # TODO - ensure these files are publicly accessible
