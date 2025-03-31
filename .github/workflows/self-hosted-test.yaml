@@ -27,7 +27,7 @@ env:
   SECONDARY_AWS_ACCOUNTID: "946183545209"
   IMAGE_TAG: nypl-nginx-test
   ENVIRONMENT: qa
-  # Other service credentials
+  # Service credentials
   NYPL_BIB_USER: ${{ secrets.NYPL_BIB_USER }}
   NYPL_BIB_PASSWORD: ${{ secrets.NYPL_BIB_PASSWORD }}
   OCLC_WSKEY: ${{ secrets.OCLC_WSKEY }}
@@ -74,22 +74,6 @@ jobs:
           echo "Cross-account access test:"
           aws ssm describe-parameters --max-items 1 --region ${{ env.AWS_REGION }}
 
-      # Retrieve GitHub API Key from SSM
-      - name: Get GitHub API Key from SSM
-        id: get-github-key
-        run: |
-          echo "Retrieving GitHub API key from SSM..."
-          GITHUB_API_KEY=$(aws ssm get-parameter \
-            --name "/drb/qa/github-key" \
-            --with-decryption \
-            --query "Parameter.Value" \
-            --output text)
-          
-          # Mask the key in logs and set as output
-          echo "::add-mask::$GITHUB_API_KEY"
-          echo "GITHUB_API_KEY=${GITHUB_API_KEY}" >> $GITHUB_ENV
-          echo "Key retrieved successfully"
-
       # Python environment setup
       - name: Install Python 3.9 and build tools
         run: |
@@ -106,8 +90,7 @@ jobs:
             build-essential \
             cmake \
             libblas-dev \
-            liblapack-dev \
-            jq
+            liblapack-dev
           sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
           sudo update-alternatives --set python3 /usr/bin/python3.9
 
@@ -115,28 +98,10 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Validate GitHub API Key
-        run: |
-          if [ -z "$GITHUB_API_KEY" ]; then
-            echo "::error::GitHub API key is empty"
-            exit 1
-          fi
-          
-          echo "Validating GitHub API key..."
-          response=$(curl -s -H "Authorization: bearer $GITHUB_API_KEY" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/rate_limit)
-          
-          if [[ "$response" == *"Bad credentials"* ]]; then
-            echo "::error::Invalid GitHub API credentials"
-            exit 1
-          fi
-
       - name: Set up Python environment
         run: |
           python3 -m pip install --upgrade pip wheel
           pip install setuptools==58.2.0
-          pip install pytest-rerunfailures  # Required for retry functionality
           pip install --prefer-binary -r requirements.txt -r dev-requirements.txt
 
       - name: Handle fasttext separately if still needed
@@ -148,30 +113,31 @@ jobs:
             --global-option="-I/usr/include" \
             fasttext==0.9.2
 
-      - name: Verify critical packages
+      - name: Prepare test data
         run: |
-          python3 -c "import fasttext; print(f'fasttext version: {fasttext.__version__}')" || echo "Fasttext verification failed"
-          python3 -m pytest --version
+          mkdir -p ingestJSONFiles
+          if [ ! -f "ingestJSONFiles/chicagoISAC_metadata.json" ]; then
+            echo "Using default test data..."
+            cp tests/functional/ingestJSONFiles/chicagoISAC_metadata.json ingestJSONFiles/ || true
+          fi
 
-      - name: Run QA integration tests
+      - name: Run Integration Tests
         env:
-          GITHUB_API_KEY: ${{ env.GITHUB_API_KEY }}
+          GITHUB_API_KEY: ${{ secrets.GITHUB_API_KEY }}
         run: |
           python3 -m pytest tests/integration \
             --env=qa \
-            --junitxml=test-results.xml \
             --reruns=3 \
             --reruns-delay=5
-            
+
       - name: Run Functional Tests
         run: |
           python3 -m pytest tests/functional \
             --env=qa \
-            --junitxml=functional-test-results.xml \
-            -m "functional" \
-            --verbose
+            -v
 
       - name: Cleanup GitHub API Key
+        if: always()
         run: |
           echo "Cleaning up GitHub API key..."
           unset GITHUB_API_KEY
