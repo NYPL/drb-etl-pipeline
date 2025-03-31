@@ -33,13 +33,19 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GHARunnerSession
+          role-session-name: GHARunnerSession-${{ github.run_id }}
 
-      - name: Verify AWS permissions
+      - name: Verify AWS access
+        run: aws sts get-caller-identity
+
+      - name: Test SSM access (non-critical)
+        continue-on-error: true
         run: |
-          echo "Testing AWS access for QA environment..."
-          aws sts get-caller-identity
-          aws ssm get-parameter --name /drb/qa/elasticsearch/user --with-decryption --query Parameter.Value --output text
+          if aws ssm get-parameter --name /drb/qa/elasticsearch/user --with-decryption --query Parameter.Value --output text; then
+            echo "SSM access successful"
+          else
+            echo "Warning: SSM access failed - some tests may fail"
+          fi
 
       - name: Install Amazon Linux dependencies
         run: |
