@@ -186,6 +186,7 @@ class PublisherBacklistService(SourceService):
     
     def download_file_from_location(self, record_metadata: dict, record_permissions: dict, record: Record) -> str:
         file_location = record_metadata.get('DRB_File Location')
+        aws_file_bucket = os.environ.get("FILE_BUCKET", "drb-files-local")
 
         if not file_location:
             hath_identifier = next((identifier for identifier in record.identifiers if identifier.endswith('hathi')), None)
@@ -205,15 +206,13 @@ class PublisherBacklistService(SourceService):
                 try:
                     s3.copy(
                         source_bucket_key,
-                        Bucket='drb-files-qa',
+                        Bucket=aws_file_bucket,
                         Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf'
                     )
                 except Exception:
                     logger.exception("Error during copy response")
 
-                # TODO - move converted PDFs over to drb-files S3 buckets
-                # TODO - ensure these files are publicly accessible
-                return f'https://pdf-pipeline-store-qa.s3.amazonaws.com/tagged-pdfs/{hathi_id}.pdf'
+                return f'https://{aws_file_bucket}.s3.us-east-1.amazonaws.com/titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf'
                 
             raise Exception(f'Unable to get file for {record}')
 
