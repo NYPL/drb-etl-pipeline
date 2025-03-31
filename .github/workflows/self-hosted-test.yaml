@@ -27,10 +27,9 @@ env:
   SECONDARY_AWS_ACCOUNTID: "946183545209"
   IMAGE_TAG: nypl-nginx-test
   ENVIRONMENT: qa
-  # Service credentials
+  # Other service credentials
   NYPL_BIB_USER: ${{ secrets.NYPL_BIB_USER }}
   NYPL_BIB_PASSWORD: ${{ secrets.NYPL_BIB_PASSWORD }}
-  GITHUB_API_KEY: ${{ secrets.GITHUB_API_KEY }}
   OCLC_WSKEY: ${{ secrets.OCLC_WSKEY }}
   OCLC_SECRET: ${{ secrets.OCLC_SECRET }}
   # AWS service parameters
@@ -75,6 +74,22 @@ jobs:
           echo "Cross-account access test:"
           aws ssm describe-parameters --max-items 1 --region ${{ env.AWS_REGION }}
 
+      # Retrieve GitHub API Key from SSM
+      - name: Get GitHub API Key from SSM
+        id: get-github-key
+        run: |
+          echo "Retrieving GitHub API key from SSM..."
+          GITHUB_API_KEY=$(aws ssm get-parameter \
+            --name "/drb/qa/github-key" \
+            --with-decryption \
+            --query "Parameter.Value" \
+            --output text)
+          
+          # Mask the key in logs and set as output
+          echo "::add-mask::$GITHUB_API_KEY"
+          echo "GITHUB_API_KEY=${GITHUB_API_KEY}" >> $GITHUB_ENV
+          echo "Key retrieved successfully (first 5 chars: ${GITHUB_API_KEY:0:5}...)"
+
       # Python environment setup
       - name: Install Python 3.9 and build tools
         run: |
@@ -92,7 +107,7 @@ jobs:
             cmake \
             libblas-dev \
             liblapack-dev \
-            jq  # Added for JSON parsing
+            jq  # For JSON parsing
           sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
           sudo update-alternatives --set python3 /usr/bin/python3.9
 
@@ -103,35 +118,22 @@ jobs:
       - name: Validate GitHub API Key
         run: |
           if [ -z "$GITHUB_API_KEY" ]; then
-            echo "::error::GITHUB_API_KEY secret is missing"
+            echo "::error::GitHub API key is empty"
             exit 1
           fi
           
-          # Test token validity
+          echo "Validating GitHub API key..."
           response=$(curl -s -H "Authorization: bearer $GITHUB_API_KEY" \
+            -H "Accept: application/vnd.github.v3+json" \
             https://api.github.com/rate_limit)
           
           if [[ "$response" == *"Bad credentials"* ]]; then
-            echo "::error::Invalid GitHub API token"
+            echo "::error::Invalid GitHub API credentials"
             exit 1
           fi
           
-          echo "GitHub API token is valid"
-
-      - name: Check GitHub API rate limits
-        run: |
-          response=$(curl -s -H "Authorization: bearer $GITHUB_API_KEY" \
-            https://api.github.com/rate_limit)
-          
           remaining=$(echo "$response" | jq -r '.resources.graphql.remaining')
-          reset_time=$(echo "$response" | jq -r '.resources.graphql.reset')
-          
-          if [ "$remaining" -lt 100 ]; then
-            echo "::warning::Low GitHub API calls remaining ($remaining)"
-            echo "Next reset at $(date -d @$reset_time)"
-          else
-            echo "GitHub API calls remaining: $remaining"
-          fi
+          echo "GitHub API validated successfully (remaining calls: $remaining)"
 
       - name: Set up Python environment
         run: |
@@ -155,7 +157,7 @@ jobs:
 
       - name: Run QA integration tests
         env:
-          GITHUB_API_KEY: ${{ secrets.GITHUB_API_KEY }}
+          GITHUB_API_KEY: ${{ env.GITHUB_API_KEY }}
           GITHUB_API_RETRIES: 3
           GITHUB_API_TIMEOUT: 30
         run: |
@@ -164,3 +166,9 @@ jobs:
             --junitxml=test-results.xml \
             --reruns $GITHUB_API_RETRIES \
             --reruns-delay 5
+
+      - name: Cleanup GitHub API Key
+        run: |
+          echo "Cleaning up GitHub API key..."
+          unset GITHUB_API_KEY
+          echo "GITHUB_API_KEY=" >> $GITHUB_ENV
