@@ -4,5 +4,6 @@ from .sources.publisher_backlist_service import PublisherBacklistService
 from .google_drive_service import GoogleDriveService
 from .sources.dspace_service import DSpaceService
 from .sources.gutenberg_service import GutenbergService
+from .sources.hathi_trust_service import HathiTrustService
 from .sources.met_service import METService
 from .sources.loc_service import LOCService

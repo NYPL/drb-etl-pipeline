@@ -14,12 +14,7 @@ logger = create_log(__name__)
 class LOCProcess():
 
     def __init__(self, *args):
-        self.process_type = args[0]
-        self.ingest_period = args[2]
-
-        self.offset = int(args[5] or 0)
-        self.limit = (int(args[4]) + self.offset) if args[4] else 5000
-        self.startTimestamp = None 
+        self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
         self.db_manager.createSession()
@@ -36,18 +31,14 @@ class LOCProcess():
         self.file_route = os.environ['FILE_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
+        self.rabbitmq_manager.create_connection()
+        self.rabbitmq_manager.create_or_connect_queue(self.file_queue, self.file_route)
 
     def runProcess(self):
-        start_datetime = utils.get_start_datetime(
-            process_type=self.process_type,
-            ingest_period=self.ingest_period
-        )
-
         records = self.loc_service.get_records(
-            start_timestamp=start_datetime,
-            limit=self.limit,
+            start_timestamp=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
+            limit=self.params.limit,
+            offset=self.params.offset
         )
 
         for record in records:
@@ -76,4 +67,4 @@ class LOCProcess():
                 flags=epub_part.flags
             ))]
 
-            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(epub_part.url, epub_location))
+            self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(epub_part.url, epub_location))

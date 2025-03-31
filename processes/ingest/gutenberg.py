@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta, timezone
 import json
 import mimetypes
 import os
@@ -11,17 +10,14 @@ from model import get_file_message, FileFlags, Part, Source
 from logger import create_log
 from ..record_buffer import RecordBuffer
 from services import GutenbergService
+from .. import utils
 
 logger = create_log(__name__)
 
 
 class GutenbergProcess():
     def __init__(self, *args):
-        self.process_type = args[0]
-        self.ingest_period = args[2]
-
-        self.offset = int(args[5] or 0)
-        self.limit = (int(args[4]) + self.offset) if args[4] else 5000
+        self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
         self.db_manager.createSession()
@@ -32,24 +28,18 @@ class GutenbergProcess():
         self.file_route = os.environ['FILE_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
+        self.rabbitmq_manager.create_connection()
+        self.rabbitmq_manager.create_or_connect_queue(self.file_queue, self.file_route)
 
         self.file_bucket = os.environ['FILE_BUCKET']
 
         self.gutenberg_service = GutenbergService()
 
     def runProcess(self) -> int:
-        start_datetime = (
-            datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
-            if self.process_type == 'daily'
-            else self.ingest_period and datetime.strptime(self.ingest_period, '%Y-%m-%dT%H:%M:%S')
-        )
-
         records = self.gutenberg_service.get_records(
-            start_timestamp=start_datetime,
-            offset=self.offset,
-            limit=self.limit
+            start_timestamp=utils.get_start_datetime(process_type=self.params.process_type, ingest_period=self.params.ingest_period),
+            offset=self.params.offset,
+            limit=self.params.limit,
         )
 
         for record_mapping in records:
@@ -88,7 +78,7 @@ class GutenbergProcess():
                     flags=part.flags
                 )))
 
-                self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(part.url, epub_path))
+                self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(part.url, epub_path))
             else:
                 container_path = f'epubs/{part.source}/{gutenberg_id}_{gutenberg_type}/META-INF/container.xml'
                 manifest_path = f'epubs/{part.source}/{gutenberg_id}_{gutenberg_type}/manifest.json'
@@ -139,4 +129,4 @@ class GutenbergProcess():
             cover_root = yaml_file.get('url').replace('ebooks', 'files')
             cover_source_url = f"{cover_root}/{cover_data.get('image_path')}"
 
-            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(cover_source_url, cover_path))
+            self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(cover_source_url, cover_path))

@@ -38,10 +38,10 @@ class GutenbergService(SourceService):
 
     def get_records(
         self,
-        full_import: bool=False,
         start_timestamp: Optional[datetime]=None,
-        offset: Optional[int]=None,
-        limit: Optional[int]=None
+        offset: int=0,
+        limit: Optional[int]=None,
+        record_only: bool=False,
     ) -> Generator[GutenbergMapping, None, None]:
         current_position = 0
         page_size = 100
@@ -68,9 +68,12 @@ class GutenbergService(SourceService):
                 gutenberg_record = GutenbergMapping(rdf_file, self.GUTENBERG_NAMESPACES, self.constants, yaml_file)
                 gutenberg_record.applyMapping()
 
-                yield gutenberg_record
+                if record_only:
+                    yield gutenberg_record.record
+                else:
+                    yield gutenberg_record
 
-            if current_position >= limit: 
+            if limit is not None and current_position >= limit: 
                 break
 
     def get_repositories(self, 

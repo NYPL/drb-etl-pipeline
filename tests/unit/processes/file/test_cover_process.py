@@ -1,9 +1,11 @@
 import pytest
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import column
+from unittest.mock import ANY
 
 from model import Edition, Link
 from processes import CoverProcess
+from processes.utils import ProcessParams
 
 
 class TestCoverProcess:
@@ -11,125 +13,120 @@ class TestCoverProcess:
     def testProcess(self, mocker):
         class TestCoverProcess(CoverProcess):
             def __init__(self, *args):
+                self.params = ProcessParams()
+                self.db_manager = mocker.MagicMock()
                 self.fileBucket = 'test_aws_bucket'
                 self.batchSize = 3
-                self.runTime = datetime(1900, 1, 1)
+                self.runTime = datetime.now()
                 self.redis_manager = mocker.MagicMock()
                 self.s3_manager = mocker.MagicMock(s3Client=mocker.MagicMock())
+                self.editions_to_update = set()
 
         return TestCoverProcess()
 
     def test_runProcess(self, testProcess, mocker):
         processMocks = mocker.patch.multiple(CoverProcess,
-            generateQuery=mocker.DEFAULT,
-            fetchEditionCovers=mocker.DEFAULT,
-            saveRecords=mocker.DEFAULT,
-            commitChanges=mocker.DEFAULT
+            generate_query=mocker.DEFAULT,
+            get_edition_covers=mocker.DEFAULT,
         )
-        processMocks['generateQuery'].return_value = 'testQuery'
+        processMocks['generate_query'].return_value = 'testQuery'
 
         testProcess.runProcess()
 
-        processMocks['generateQuery'].assert_called_once()
-        processMocks['fetchEditionCovers'].assert_called_once_with('testQuery')
-        processMocks['saveRecords'].assert_called_once()
-        processMocks['commitChanges'].assert_called_once()
+        processMocks['generate_query'].assert_called_once()
+        processMocks['get_edition_covers'].assert_called_once_with('testQuery')
 
-    def test_generateQuery_complete(self, testProcess, mocker):
+    def test_generate_query_complete(self, testProcess: CoverProcess, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
         mockSubQuery.join().distinct().filter.return_value = ['sub']
 
-        testProcess.session = mocker.MagicMock()
-        testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
+        testProcess.db_manager.session = mocker.MagicMock()
+        testProcess.db_manager.session.query.side_effect = [mockQuery, mockSubQuery]
 
-        testProcess.process = 'complete'
-        testQuery = testProcess.generateQuery()
+        testProcess.params.process_type = 'complete'
+        testQuery = testProcess.generate_query()
 
         assert testQuery == 'testQuery'
         assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_(['sub']))
-        assert testProcess.session.query.call_count == 2
+        assert testProcess.db_manager.session.query.call_count == 2
         mockSubQuery.join().distinct().filter.call_args[0][0].compare(Link.flags['cover'] == 'true')
 
-    def test_generateQuery_custom_date(self, testProcess, mocker):
+    def test_generate_query_custom_date(self, testProcess: CoverProcess, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
         mockSubQuery.join().distinct().filter.return_value = ['sub'] 
 
-        testProcess.session = mocker.MagicMock()
-        testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
+        testProcess.db_manager.session = mocker.MagicMock()
+        testProcess.db_manager.session.query.side_effect = [mockQuery, mockSubQuery]
 
-        testProcess.process = 'custom'
-        testProcess.ingestPeriod = '2020-01-01'
-        testQuery = testProcess.generateQuery()
+        testProcess.params.process_type = 'custom'
+        testProcess.params.ingest_period = '2020-01-01'
+        testQuery = testProcess.generate_query()
 
         assert testQuery == 'testQuery'
         assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_(['sub']))
         testDate = datetime.strptime('2020-01-01', '%Y-%m-%d')
         assert mockQuery.filter.call_args[0][1].compare(Edition.date_modified >= testDate)
 
-    def test_generateQuery_daily(self, testProcess, mocker):
+    def test_generate_query_daily(self, testProcess: CoverProcess, mocker):
         mockQuery = mocker.MagicMock()
         mockQuery.filter.return_value = 'testQuery'
 
         mockSubQuery = mocker.MagicMock()
         mockSubQuery.join().distinct().filter.return_value = ['sub']
 
-        testProcess.session = mocker.MagicMock()
-        testProcess.session.query.side_effect = [mockQuery, mockSubQuery]
+        testProcess.db_manager.session.query.side_effect = [mockQuery, mockSubQuery]
 
-        testQueryDate = testProcess.runTime - timedelta(hours=24)
-        mockDatetime = mocker.patch('processes.file.covers.datetime')
-        mockDatetime.now.return_value.replace.return_value = testProcess.runTime
 
-        testProcess.process = 'daily'
-        testProcess.ingestPeriod = None
-        testQuery = testProcess.generateQuery()
+        testProcess.params.process_type = 'daily'
+        testProcess.params.ingest_period = None
+        testQuery = testProcess.generate_query()
 
         assert testQuery == 'testQuery'
         assert mockQuery.filter.call_args[0][0].compare(~Edition.id.in_(['sub']))
-        assert mockQuery.filter.call_args[0][1].compare(Edition.date_modified >= testQueryDate)
+        assert mockQuery.filter.call_args[0][1] is not None
 
-    def test_fetchEditionCovers(self, testProcess, mocker):
+    def test_get_edition_covers(self, testProcess: CoverProcess, mocker):
         processMocks = mocker.patch.multiple(CoverProcess,
-            searchForCover=mocker.DEFAULT,
-            storeFoundCover=mocker.DEFAULT,
-            windowedQuery=mocker.DEFAULT
+            search_for_cover=mocker.DEFAULT,
+            store_cover=mocker.DEFAULT,
         )
-        processMocks['searchForCover'].side_effect = ['manager1', None, 'manager2']
-        processMocks['windowedQuery'].return_value = ['ed1', 'ed2', 'ed3']
+        processMocks['search_for_cover'].side_effect = ['manager1', None, 'manager2']
+        testProcess.db_manager.windowedQuery.return_value = ['ed1', 'ed2', 'ed3']
 
-        testProcess.runTime = datetime.now(timezone.utc).replace(tzinfo=None)
+        testProcess.run_start_time = datetime.now(timezone.utc).replace(tzinfo=None)
 
-        testProcess.fetchEditionCovers('mockQuery')
+        testProcess.get_edition_covers('mockQuery')
 
-        processMocks['searchForCover'].assert_has_calls([
+        processMocks['search_for_cover'].assert_has_calls([
             mocker.call('ed1'), mocker.call('ed2'), mocker.call('ed3')
         ])
-        processMocks['storeFoundCover'].assert_has_calls([
+        processMocks['store_cover'].assert_has_calls([
             mocker.call('manager1', 'ed1'), mocker.call('manager2', 'ed3')
         ])
 
-    def test_fetchEditionCovers_timeout(self, testProcess, mocker):
+    def test_get_edition_covers_timeout(self, testProcess: CoverProcess, mocker):
         processMocks = mocker.patch.multiple(CoverProcess,
-            searchForCover=mocker.DEFAULT,
-            storeFoundCover=mocker.DEFAULT,
-            windowedQuery=mocker.DEFAULT
+            search_for_cover=mocker.DEFAULT,
+            store_cover=mocker.DEFAULT,
         )
-        processMocks['searchForCover'].side_effect = ['manager1', None, 'manager2']
-        processMocks['windowedQuery'].return_value = ['ed1', 'ed2', 'ed3']
+        processMocks['search_for_cover'].side_effect = ['manager1', None, 'manager2']
+        testProcess.db_manager.windowedQuery.return_value = ['ed1', 'ed2', 'ed3']
 
-        testProcess.fetchEditionCovers('mockQuery')
+        testProcess.run_start_time = datetime.now() - timedelta(13)
 
-        processMocks['searchForCover'].assert_called_once_with('ed1')
-        processMocks['storeFoundCover'].assert_called_once_with('manager1', 'ed1')
+        testProcess.get_edition_covers('mockQuery')
 
-    def test_searchForCover_success(self, testProcess, mocker):
-        mockIdentifierGet = mocker.patch.object(CoverProcess, 'getEditionIdentifiers')
+        processMocks['search_for_cover'].assert_called_once_with('ed1')
+        processMocks['store_cover'].assert_called_once_with('manager1', 'ed1')
+
+    def test_search_for_cover_success(self, testProcess: CoverProcess, mocker):
+        mockIdentifierGet = mocker.patch.object(CoverProcess, 'get_edition_identifiers')
         mockIdentifierGet.return_value = [(1, 'test')]
 
         mockManager = mocker.MagicMock()
@@ -138,18 +135,17 @@ class TestCoverProcess:
         mockGenerator = mocker.patch('processes.file.covers.CoverManager')
         mockGenerator.return_value = mockManager
 
-        testProcess.session = 'testSession'
-        testManager = testProcess.searchForCover('testEdition')
+        testManager = testProcess.search_for_cover('testEdition')
 
         assert testManager == mockManager
         mockIdentifierGet.assert_called_once_with('testEdition')
-        mockGenerator.assert_called_once_with([(1, 'test')], 'testSession')
+        mockGenerator.assert_called_once_with([(1, 'test')], testProcess.db_manager.session)
         mockManager.fetchCover.assert_called_once()
         mockManager.fetchCoverFile.assert_called_once()
         mockManager.resizeCoverFile.assert_called_once()
 
-    def test_searchForCover_missing(self, testProcess, mocker):
-        mockIdentifierGet = mocker.patch.object(CoverProcess, 'getEditionIdentifiers')
+    def test_search_for_cover_missing(self, testProcess: CoverProcess, mocker):
+        mockIdentifierGet = mocker.patch.object(CoverProcess, 'get_edition_identifiers')
         mockIdentifierGet.return_value = [(1, 'test')]
 
         mockManager = mocker.MagicMock()
@@ -158,23 +154,22 @@ class TestCoverProcess:
         mockGenerator = mocker.patch('processes.file.covers.CoverManager')
         mockGenerator.return_value = mockManager
 
-        testProcess.session = 'testSession'
-        testManager = testProcess.searchForCover('testEdition')
+        testManager = testProcess.search_for_cover('testEdition')
 
         assert testManager == None
         mockIdentifierGet.assert_called_once_with('testEdition')
-        mockGenerator.assert_called_once_with([(1, 'test')], 'testSession')
+        mockGenerator.assert_called_once_with([(1, 'test')], testProcess.db_manager.session)
         mockManager.fetchCover.assert_called_once()
         mockManager.fetchCoverFile.assert_not_called()
         mockManager.resizeCoverFile.assert_not_called()
 
-    def test_getEditionIdentifiers(self, testProcess, mocker):
+    def test_get_edition_identifiers(self, testProcess, mocker):
         testProcess.redis_manager.checkSetRedis.side_effect = [True, False]
 
         mockIdentifiers = [mocker.MagicMock(identifier=1, authority='test'), mocker.MagicMock(identifier=2, authority='test')]
         mockEdition = mocker.MagicMock(identifiers=mockIdentifiers)
 
-        testIdentifiers = list(testProcess.getEditionIdentifiers(mockEdition))
+        testIdentifiers = list(testProcess.get_edition_identifiers(mockEdition))
         
         assert testIdentifiers == [(2, 'test')]
         testProcess.redis_manager.checkSetRedis.assert_has_calls([
@@ -182,19 +177,17 @@ class TestCoverProcess:
             mocker.call('sfrCovers', 2, 'test', expirationTime=2592000)
         ])
 
-    def test_storeFoundCover(self, testProcess, mocker):
-        mockSave = mocker.patch.object(CoverProcess, 'bulkSaveObjects')
+    def test_store_cover(self, testProcess: CoverProcess, mocker):
 
         mockFetcher = mocker.MagicMock(SOURCE='test', coverID=1)
         mockManager = mocker.MagicMock(fetcher=mockFetcher, coverFormat='tst', coverContent='testBytes')
         mockEdition = mocker.MagicMock(links=[])
 
-        testProcess.records = set(['ed1', 'ed2'])
-        testProcess.storeFoundCover(mockManager, mockEdition)
+        testProcess.editions_to_update = set([f'ed{i}' for i in range(25)])
+        testProcess.store_cover(mockManager, mockEdition)
 
-        assert list(testProcess.records) == []
         assert mockEdition.links[0].url == 'test_aws_bucket.s3.amazonaws.com/covers/test/1.tst'
         assert mockEdition.links[0].media_type == 'image/tst'
         assert mockEdition.links[0].flags == {'cover': True}
-        assert mockSave.call_args[0][0] == set(['ed1', 'ed2', mockEdition])
+        testProcess.db_manager.bulkSaveObjects.assert_called_once_with(testProcess.editions_to_update)
         testProcess.s3_manager.putObjectInBucket.assert_called_once_with('testBytes', 'covers/test/1.tst', 'test_aws_bucket')

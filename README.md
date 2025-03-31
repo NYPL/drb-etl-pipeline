@@ -2,206 +2,223 @@
 
 ![ETL_Pipeline_Tests](https://github.com/NYPL/drb-etl-pipeline/workflows/ETL_Pipeline_Tests/badge.svg)
 
-A containerized python application for importing data from multiple source projects and transforming this data into a unified format that can be accessed via an API (which powers [Digital Research Books Beta](http://digital-research-books-beta.nypl.org/)). The application runs a set of individual processes that can be orchestrated with AWS ECS, Kubernetes, or run as standalone processes.
-
-The overall goal of this project is to provide access to the universe of open source and public domain monographs through a single portal, making it much easier for researchers, students, and others to discover obscure works and newly digitized materials that they may otherwise be unaware of.
+A containerized python application for importing data from multiple source projects and transforming this data into a unified format that can be accessed via an API (which powers [Digital Research Books Beta](http://digital-research-books-beta.nypl.org/)).
 
 ## Process Overview
 
-This ETL pipeline operates in several phases to progressively enhance the data that is received from the source projects. This allows us to both normalize data from a wide range of sources (which naturally exists in numerous formats) and to enhance this data in an additive way, presenting the resulting records to users.
+This ETL pipeline transforms data from various sources into a unified "FRBRized" format where:
 
-The objective is to produce a database of "FRBRized". In these records each source record is represented as an `Item` (something that can actually be read online), which are grouped into `Edition`s (e.g. the 1917 edition of X), which are in turn grouped into `Work`s, (e.g. Moby Dick, or, The Whale). Through this a user can search for and find a single `Work` record and see all editions of that `Work` and all of its options for reading online.
+- `Item`: Something that can be read online (e.g. a specific digital copy)
+- `Edition`: A specific published version (e.g. the 1917 edition)
+- `Work`: The abstract creative work (e.g. "Moby Dick")
 
-The first step of this work is to gather all source records into the "Dublin Core Data Warehouse (DCDW)". This is a simple data store (currently a flat file in a PostgreSQL database) that normalizes data (from CSVs, MARC records, XML documents and more) into a simple Dublin Core representation. This representation uses the flexibility of DC to allow comparison from these different files while tolerating different formats and missing fields, as all DC fields are optional we can create valid DC records regardless of the source. Using some additional formatting rules (description TK) within each field, we additionally do not lose fidelity from these records.
+These records are organized into "clusters" - groups of editions that represent the same work. For example, all editions of "Moby Dick" would be clustered together, making it easy for users to find different versions of the same work.
 
-Once stored in the DCDW these records are used to generate "clustered" work records in the FRBRized BIBFRAME model desrcibed above. This is done by using the source DCDW records as "seed" records to fetch additional metadata from the OCLC catalog, utilizing the OCLC Classify service to initially FRBRize these records and retrieve additional MARC records for the work.
+The pipeline:
 
-Using these retrieved records, and matched records from the DCDW as a corpus, these records are passed into a relatively simple Machine Learning algorithm to identify which records represent single editions and produce a the data model which is stored in a PostgreSQL database and indexed in ElasticSearch.
+1. Imports source records into a Dublin Core Data Warehouse (DCDW)
+2. Uses OCLC services to enhance and FRBRize the records
+3. Groups records into editions using machine learning (clustering)
+4. Makes the data available through an API
 
-## Running the Pipeline
+## API Endpoints
 
-This application is built as a monorepo, which can be built as a single Docker container. This container can be run to execute different processes, which either execute discrete tasks or start a persistent service (such as a Flask API instance). The monorepo structure allows for a high degree of code reuse and makes extending existing services/adding new services easier as they can be based on existing patterns. Many of the modules include abstract base classes that define the mandatory methods for each service.
+The DRB API is available at:
 
-## Analytics
+- Production: [https://digital-research-books-api.nypl.org/](https://digital-research-books-api.nypl.org/)
+- QA: [https://drb-api-qa.nypl.org/](https://drb-api-qa.nypl.org/)
 
-Analytics projects are stored separately from other DRB processes and scripts, in the [analytics](analytics) folder. Each analytics project is listed below:
-* [University Press Backlist Project](analytics/upress_reporting) = Generates [Counter 5 reports](https://airtable.com/appBoLf4lMofecGPU/tblIjRKk0fnoGOqMo?blocks=hide) given a timeframe. Be sure to set up the corresponding analytics env variables (ex. `DOWNLOAD_BUCKET` and `DOWNLOAD_LOG_PATH`). To generate Counter 5 reports, run the following:
-    ```
-    python3 analytics/upress_reporting/runner.py <REPORTING PERIOD>
-    ```
-  Here is an example command:
-    ```
-    python3 analytics/upress_reporting/runner.py --start 2024-03-01 --end 2024-03-30
-    ```
-  You can also generate a Counter 5 report using fiscal quarter notation:
-    ```
-    python3 analytics/upress_reporting/runner.py --year 2025 --quarter Q1
-    ```
+Both endpoints provide Swagger documentation at `/apidocs/`.
 
-### Local Development
+## Quickstart Guide
 
-Locally these services can be run in two modes:
+This guide provides step-by-step instructions to get the DRB ETL pipeline running locally.
 
-1) As a local docker image, which replicates the deployed version of any component process. This allows for confidence that locally developed code will function properly in the QA and production environments.
-2) As individual services on the host machine with local PostgreSQL and ElasticSearch instances. This is the primary mode for developing new services as it allows for instantaneous debugging without the need to rebuild or restart a virtual environment or container image
+### Prerequisites
 
-#### Dependencies and Installation
+- Docker Desktop
+- AWS access to the `nypl-digital-dev` account (submit ServiceNow request to DevOps)
+- Access to required AWS parameter store secrets - ask a team member
 
-Local development requires that the following services be available. They do not need to be running locally, but for development purposes this is probably easiest. These should be installed by whatever means is easiest (on macOS this is generally `brew`, or your package manager of choice). These dependencies are:
-- PostgreSQL@10 
-  - Note that v10 is deprecated.
-- ElasticSearch@7.10 
-  - Note you may need to follow the [macOS Homebrew install guide](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/brew.html#brew).
-- RabbitMQ
-- Redis
-- XCode Command Line Tools
+### Setup Steps
 
-This is a Python application and requires Python >= 3.6. It is recommended that a virtual environment be set up for the application (again use the virtual environment tool of your choice).  There are several options, but most developers use [venv](https://docs.python.org/3/library/venv.html) or [virtualenv](https://virtualenv.pypa.io/en/latest/installation.html#).
+1. Clone the repository:
 
-The steps to install the application are:
+   ```bash
+   git clone git@github.com:NYPL/drb-etl-pipeline.git
+   cd drb-etl-pipeline
+   ```
 
-1. Install dependencies, including Python >= 3.6, if not already installed
-2. Set up virtual environment
-3. Clone this repository
-4. Run `pip install -r requirements.txt` from the root directory.  If you run into the error ```pip: command not found``` while installing the dependencies, you may need to alias python3 and pip3 to python and pip, respectively. 
-5. Configure environment variables per instructions below
-6. Run `LocalDevelopmentSetupProcess` per instructions below
-7. Run `SeedLocalDataProcess` to seed data in your local database.
+2. Configure secrets:
 
-#### Running services on host machine
+   - Create `config/local-secrets.yaml` with the following (get values from team member):
+     ```yaml
+     AWS_SECRET: xxx
+     AWS_ACCESS: xxx
+     ```
 
-It's required to have Docker/Docker Desktop installed locally for setting up a local development environment in this section. Further details on using Docker with this codebase is given in the next section.
+3. Initial Setup (one-time only):
 
-All services share a single entry point in `main.py` file. This script dynamically imports available processes from the `processes` directory and executes the selected process. This script accepts the following arguments (these can also be displayed by running `python main.py --help`)
+   ```bash
+   # Run the database seeding process
+   docker compose -f docker-compose.setup.yml up --abort-on-container-exit
+   ```
 
-- `--process`/`-p` The name of the process to execute. This should be the name of the process class
-- `--environment`/`-e` The environment in which to execute the process. This controls which set of environment variables are loaded from the `config` directory, and should be set to `local` for local development
-- `--ingestType`/`-i` Applicable for processes that fetch records from external sources. Generally three settings are available (see individual processes for their own settings): `daily`, `complete` and `custom`
-- `--inputFile`/`-f` Used with the `custom` ingest setting provides a local file of records to import
-- `--startDate`/`-s` Also used with the `custom` ingest setting, sets a start point for a period to query or ingest records
-- `--limit`/`-l` Limits the total number of rows imported in a single process
-- `--offset`/`-o` Skips the first `n` rows of an import process
-- `--singleRecord`/`-r` Accepts a single record identifier for the current process and imports that record only. Setting this will ignore `ingestType`, `limit` and `offset`.
+4. Regular Startup:
 
-To set up a local environment there is a special process to initialize a database and search cluster which is the `LocalDevelopmentSetupProcess`. However, it's recommended to run the `LocalDevelopmentSetupProcess` and `APIProcess` at the same time to build the most efficient local environment. Before running a command, it's required to set these config variables in the sample-compose.yaml file:
+   ```bash
+   docker compose up
+   ```
 
-`HATHI_API_KEY`:
-`HATHI_API_SECRET`:
-`OCLC_API_KEY`:
+   This will start:
 
-You can find the values to these variables from the HathiTrust website (https://babel.hathitrust.org/cgi/kgs/request) and OCLC website (https://www.oclc.org/developer/api/keys.en.html) or ask other developers for assistance on attaining these values. 
+   - PostgreSQL database
+   - Elasticsearch
+   - RabbitMQ
+   - Redis
+   - LocalStack (S3)
+   - API service
 
-The `local.yaml` file (host names are localhost) referenced below and the `local-compose.yaml` file (host names are docker container names) referenced in the `docker-compose.yml` file do not include other sensitive data such as NYPL API and AWS credentials. Instead, create a `local-secrets.yaml` file to store secrets that cannot be retrieved from parameter store when developing locally. Please reach out to one of the backend developers for secrets in this file.
+5. Verify the setup:
+   - API Documentation: http://127.0.0.1:5050/apidocs/
+   - Database: Use PGAdmin4 or your preferred PostgreSQL client:
+     ```
+     Host: localhost
+     Port: 5432
+     Database: drb_test_db
+     Username: postgres
+     Password: localpsql
+     ```
 
-With the configurations set, one of these commands should be run: `make up` or `docker compose up`. These commands will run the `docker-compose.yml` file in the codebase. Please ensure Docker/Docker Desktop is installed locally. After running one of the commands, a short import process will occur and populate the database with some sample data alongside running the API locally. This will allow you to query the API at `localhost:5050` and query the ESC at `localhost:9200`.
+6. Set up local python env:
 
-The docker compose file uses the `local-compose.yaml` file in the `config` directory and additional configurations and dependencies can be added to the file to build upon your local environment.
+Create a virtual environment
+```sh
+python -m venv venv
+```
 
-To run the processes individually in a local environment, the command should be in this format and should use the `local.yaml` file: 
-`python main.py -p APIProcess -e local` or `python main.py -p APIProcess -e local`.
+Activate the virtual environment. You will need to do this for every terminal session.
+```sh
+source venv/bin/activate
+```
 
-An example of running one of these processes is: `python main.py -p LOCProcess -e local -i complete`
+Make sure `wheel` is upgraded to avoid installation errors later
+```sh
+pip install --upgrade wheel
+```
 
-The currently available processes (with the exception of the UofSC and ChicagoISAC processes) are:
+Install requirements
+```sh
+pip install -r requirements.txt
+```
 
-- `LocalDevelopmentSetupProcess` Initialize a testing/development database
-- `SeedLocalDataProcess` imports a sample set of HathiTrust records and FRBRizes/clusters them
-- `APIProcess` run the DRB API
-- `HathiTrustProcess` Run an import job on HathiTrust records
-- `CatalogProcess` Retrieve all OCLC Catalog records for identifiers in the queue
-- `ClassifyProcess` Classify (FRBRize) records newly imported into the DCDW
-- `ClusterProcess` Group records that have been FRBRized into editions via a Machine Learning algorithm
-- `S3Process` Fetch files (e.g. ePubs, cover images, etc.) associated with Item and Edition records and store them in AWS s3
-- `NYPLProcess` Fetch files from the NYPL catalog (specifically Bib records) and import them
-- `GutenbergProcess` Fetch updated files from Project Gutenberg and import them
-- `MUSEProcess` Fetch open access books from Project MUSE and import them
-- `METProcess` Fetch open access books from The MET Watson Digital Collections and import them
-- `DOABProcess` Fetch open access books from the Directory of Open Access Books and import them
-- `LOCProcess` Fetch open access and digitized books from the Library of Congress and import them
-- `PublisherBacklistProcess` Fetch open access and limited access books from the Publisher Backlist Project and import them
-- `CoverProcess` Fetch covers for edition records
-
-### Database Migration
-The database migration tool Alembic is utilized in this codebase for the Postgresql database. The first step 
-is to run this command `alembic revision -m "<revision name>"` which will create a new migration version in the `migrations/versions` directory. Aftwerwards, the `load_env_file` method parameters in the `migrations/env.py` file determine which config credentials the database migration will run on. The command to run the database migration is `alembic upgrade head` to run the most recent migration created or `alembic upgrade <name of version migration>` to upgrade to a specific version. To revert the migration, the command `alembic downgrade -1` will undo the last migration upgrade and the command `alembic downgrade <name of version migration>` will revert the database to a specific version. It's highly recommended to run this migration before merging in branches concerning updates to database migration.
+You're now ready to run individual processes documented in the following section.
 
 
-#### Appendix Link Flags (All flags are booleans)
-- `reader` Added to 'application/webpub+json' links to indicate if a book will have a Read Online function on the frontend
-- `embed` Indicates if a book will be using a third party web reader like Hathitrust's web reader on the frontend
-- `download` Added to pdf/epub links to indicate if a book is downloadable on the frontend
-- `catalog` Indicates if a book is a part of a catalog which may not be readable online, but can be accessed with other means like requesting online 
-- `nypl_login` Indicates if a book is a requestable book on the frontend for NYPL patrons
-- `fulfill_limited_access` Indicates if a Limited Access book has been encrypted and can be read by NYPL patrons
+### Running Individual Processes
 
-#### Building and running a process in Docker
+While Docker handles the main services, you can run individual processes using:
 
-To run these processes as a containerized process you must have Docker Desktop installed.
+```bash
+python main.py -p ProcessName -e local [options]
+```
 
-Building the container is a standard process as the container provides an `ENTRYPOINT` that accepts all arguments that can be passed to `main.py`, which control the specific process invoked.
+For example:
 
-To build the container run the following command from the project root: `docker build -t drb-etl-pipeline .`
+```bash
+# Import HathiTrust records
+python main.py -p HathiTrustProcess -e local -i daily
 
-This will place an image `drb-etl-pipeline:latest` in your local docker instance. To run a process with the containerized application (in this instance the Flask API) execute the following command: `docker run drb-etl-pipeline -p APIProcess -e YOUR_ENV_FILE`. The `ENTRYPOINT` will accept the same arguments as invoking the process via the CLI.
+# Run the clustering process
+python main.py -p ClusterProcess -e local
+```
 
-When running a Docker image locally that interacts with other resources running on `localhost` it is necessary to supply a special URL to access them. Due to this it is generally helpful to define a unique `config` file for local docker testing. You may not wish to commit this file to git as it may contain secrets.
+See `python main.py --help` for all available options.
 
-### Testing
+## Available Processes
 
-To run the unit tests, run `make unit`.
+The main processes available in this pipeline are:
 
-To run the integration tests, run `make integration`.
+Core Setup:
 
-### Managing secrets
+- `LocalDevelopmentSetupProcess`: Initialize development database
+- `SeedLocalDataProcess`: Import sample data
+- `APIProcess`: Run the DRB API
 
-To keep sensitive settings out of git, some secrets configuration must be done to run the cluster. To set up for running on your local machine, copy the `config/example.yaml` file and provide the necessary configuration (ask a colleague if you need some of the keys required there). Then provide the name of this file as the `--environment` argument when you run scripts.
+Data Ingestion:
+All data ingestion processes can be found in the [`processes/ingest`](processes/ingest) directory. These processes import data from various sources like HathiTrust, NYPL Catalog, Project Gutenberg, and more. Each process follows a similar pattern but is tailored to its specific data source.
 
-Any file that contains sensitive details should not be committed to git. These values can be loaded via the AWS Parameter Store or AWS ECS. Speak to a NYPL engineer for access to these secrets and information on configuring your local setup to use them.
+Processing:
+
+- `CatalogProcess`: Retrieve OCLC Catalog records
+- `ClassifyProcess`: FRBRize records
+- `ClusterProcess`: Group records into editions
+- `S3Process`: Fetch associated files (ePubs, covers)
+- `CoverProcess`: Fetch edition covers
+
+## Testing
+
+This project uses [pytest](https://docs.pytest.org/) for testing. You can run tests using make commands or pytest directly:
+
+```bash
+# Run all tests using make commands
+make unit           # Run unit tests
+make integration    # Run integration tests
+make functional     # Run functional tests (requires running Docker environment)
+
+# Run tests directly with pytest
+python -m pytest                     # Run all tests
+python -m pytest path/to/test.py     # Run a specific test file
+python -m pytest -k "test_name"      # Run tests matching "test_name"
+python -m pytest -v                  # Run tests with verbose output
+```
+
+For more options and detailed usage of pytest, see the [pytest documentation](https://docs.pytest.org/en/stable/how-to/usage.html).
 
 ## Deployment
 
-This application is deployed via Github Actions to an ECS cluster. Once merged into QA changes are deployed to [the DRB QA Instance](http://drb-api-qa.nypl.org)
+This application uses continuous deployment (CD) via Github Actions to AWS ECS. The full CI/CD pipeline runs automatically when code is merged to `main`.
 
-Production deployments are to be made when releases are cut against `main`.
+The deployment process:
 
-### Release Process
+1. **Deploy to QA**
 
-We use git tags to tag releases and github's release feature to deploy.  The steps are as follows:
+   - Builds Docker image
+   - Pushes to ECR
+   - Deploys to QA environment at [https://drb-api-qa.nypl.org/](https://drb-api-qa.nypl.org/)
 
-  1. Decide on a new version number (assume 0.12.0 for the following steps)
-  2. Make sure your local `main` branch is up to date
-  3. Create a new branch named as the version number
-  4. Commit your change and push to your branch. 
-  5. Create a PR titled the Release <version number>
-  6. Once the PR is approved, squash and merge the change into main.
-  7. In github, navigate to the 'Releases' tab and click on 'Draft a new release'
-  8. Choose to create a new tag (e.g. v0.12.0), set `main` as the target, and name your release after the new version number
-     ('v0.12.0')
-  9.  Use the following command to print out the release notes: `cat <(git log <first-commit>..HEAD --pretty=format:"%h - %s (%an, %ad)" --date=short)`. Replace `<first-commit>` with the SHA of the first commit.
-  10. Give the team a heads up in  `#researchnow_aka_sfr` in Slack, make sure the release is 'Set as the latest release', and hit 'Publish release'
-  11. Check the repo's `Actions` tab to observe the progress of the deployment to production
-    - Note that the deployment job merely kicks off an ECS service update. To fully verify success, you'll need to check the
-      `Deployments` tab for the relevant service / cluster in the ECS console.
-  12. Send a message to `#researchnow_aka_sfr` in Slack to notify folks when the release finishes.
+2. **Run CI Tests**
 
-And you're done!
+   - Runs after QA deployment completes
+   - Executes full test suite against QA environment
 
-## TODO
+3. **Deploy to Production**
+   - Automatically triggers if QA deployment and tests pass
+   - Deploys to production environment at [https://digital-research-books-api.nypl.org/](https://digital-research-books-api.nypl.org/)
 
-- Improve this README
-- ~~Add following data ingest processes:~~
-  - ~~NYPL Catalog~~
-  - ~~Project Gutenberg~~
-  - ~~DOAB~~
-  - ~~Project MUSE~~
-  - ~~MET Exhibition Catalogs~~
-- ~~Add centralized logging process~~
-- Add commenting/documentation strings
-- ~~Generate C4 diagrams for application~~
-- ~~Integrate ePub processor into standard processing flow~~
-- ~~Add cover fetching process~~
-- Create test suite, including:
-  - ~~Unit tests for all components~~
-  - Functional tests for each process
-  - Integration tests for the full cluster
-- Update dependencies
+You can monitor deployments in:
+
+- GitHub Actions: `.github/workflows/full-ci-cd.yaml`
+- AWS ECS Console
+
+## Analytics
+
+Analytics projects are in the [analytics](analytics) folder:
+
+- [University Press Backlist Project](analytics/upress_reporting): Generates Counter 5 reports
+  ```bash
+  # Example commands
+  python3 analytics/upress_reporting/runner.py --start 2024-03-01 --end 2024-03-30
+  python3 analytics/upress_reporting/runner.py --year 2025 --quarter Q1
+  ```
+
+## Link Flags
+
+Boolean flags used in the API:
+
+- `reader`: Book has Read Online function
+- `embed`: Uses third party web reader
+- `download`: Book is downloadable
+- `catalog`: Book is requestable but not readable online
+- `nypl_login`: Requestable by NYPL patrons
+- `limited_access`: Limited Access book for NYPL patrons

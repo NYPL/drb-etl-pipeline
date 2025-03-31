@@ -148,7 +148,6 @@ class PublisherBacklistService(SourceService):
 
     def get_records(
         self,
-        full_import: bool=False, 
         start_timestamp: datetime=None,
         offset: Optional[int]=None,
         limit: Optional[int]=None
@@ -185,7 +184,7 @@ class PublisherBacklistService(SourceService):
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
                 
-                webpub_flags=FileFlags(reader=True, fulfill_limited_access=False)
+                webpub_flags=FileFlags(reader=True, limited_access=True)
                 self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
                 self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, flags=webpub_flags, path='/publisher_backlist')
                 

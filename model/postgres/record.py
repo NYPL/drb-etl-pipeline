@@ -6,6 +6,7 @@ from sqlalchemy import Column, DateTime, Integer, Unicode, Boolean, Index
 from sqlalchemy.dialects.postgresql import ARRAY, UUID, ENUM
 from sqlalchemy.ext.hybrid import hybrid_property
 from model.utilities.extractDailyEdition import extract
+from textwrap import shorten
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -20,7 +21,8 @@ class Part:
     file_type: str
     flags: str
 
-    def get_file_bucket(self) -> Optional[str]:
+    @property
+    def file_bucket(self) -> Optional[str]:
         parsed_url = urlparse(self.url)
 
         if 'localhost' in parsed_url.hostname:
@@ -33,7 +35,8 @@ class Part:
         
         return parsed_url.hostname.split('.')[0]
 
-    def get_file_key(self) -> Optional[str]:
+    @property
+    def file_key(self) -> Optional[str]:
         parsed_url = urlparse(self.url)
 
         if 'localhost' in parsed_url.hostname:
@@ -68,10 +71,11 @@ class FileFlags:
     embed: bool = False
     download: bool = False
     cover: bool = False
-    fulfill_limited_access: bool = False
+    limited_access: bool = False
+    nypl_login: bool = False
 
     def __str__(self):
-        return json.dumps(asdict(self))
+        return json.dumps({ flag_name: flag for flag_name, flag in asdict(self).items() if flag is True })
 
 
 class Record(Base, Core):
@@ -117,9 +121,7 @@ class Record(Base, Core):
         self._deletion_flag = False
 
     def __repr__(self):
-        return '<Record(title={}, uuid={}, authors={})>'.format(
-            self.title, self.uuid, self.authors
-        )
+        return f"<Record(title={shorten(self.title, width=50, placeholder='...')}, uuid={self.uuid})>"
     
     def __dir__(self):
         return ['uuid', 'frbr_status', 'cluster_status', 'source', 'publisher_project_source', 'source_id',
@@ -136,6 +138,9 @@ class Record(Base, Core):
     @property
     def parts(self) -> list[Part]:
         parts = []
+
+        if not self.has_part:
+            return parts
 
         for part in self.has_part:
             index, file_url, source, file_type, flags = part.split('|')

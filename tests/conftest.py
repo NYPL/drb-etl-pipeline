@@ -6,7 +6,7 @@ from sqlalchemy import text, delete
 from uuid import uuid4
 
 from processes import ClusterProcess
-from model import Collection, Edition, FileFlags, Item, Link, Record, Work
+from model import Collection, Edition, FileFlags, Item, Link, Part, Record, Work
 from model.postgres.item import ITEM_LINKS
 from logger import create_log
 from managers import DBManager, RabbitMQManager, S3Manager
@@ -79,11 +79,11 @@ def rabbitmq_manager():
     rabbitmq_manager = RabbitMQManager()
 
     try: 
-        rabbitmq_manager.createRabbitConnection()
+        rabbitmq_manager.create_connection()
 
         yield rabbitmq_manager
 
-        rabbitmq_manager.closeRabbitConnection()
+        rabbitmq_manager.close_connection()
     except:
         yield None
 
@@ -236,10 +236,46 @@ def unfrbrized_record_uuid(db_manager):
 
     return unfrbrized_record.uuid
 
+@pytest.fixture(scope='session')
+def unfrbrized_pipeline_record_uuid(db_manager):
+    test_unfrbrized_record_data = {
+        'title': 'Sense and sensibility',
+        'uuid': uuid4(),
+        'frbr_status': 'to_do',
+        'cluster_status': False,
+        "source": TEST_SOURCE,
+        'authors': ['Austen, Jane||true'],
+        'identifiers': ['1503292738|isbn'],
+        'source_id': '1503292738|isbn',
+        'dates': ['1811|publication_date'],
+        'has_part': [
+            str(Part(
+                index=1,
+                url='https://example.com/book.epub',
+                source=TEST_SOURCE,
+                file_type='application/epub+zip',
+                flags=str(FileFlags(embed=True))
+            )),
+        ],
+        'date_modified': datetime.now(timezone.utc).replace(tzinfo=None)
+    }
+
+    unfrbrized_record = create_or_update_record(record_data=test_unfrbrized_record_data, db_manager=db_manager)
+
+    return unfrbrized_record.uuid
 
 @pytest.fixture(scope='session')
 def unclustered_record_uuid(db_manager):
     test_unclustered_record_data = generate_test_data(title='unclustered record', uuid=uuid4(), source_id='unclustered|test')
+
+    unclustered_record = create_or_update_record(record_data=test_unclustered_record_data, db_manager=db_manager)
+
+    return unclustered_record.uuid
+
+
+@pytest.fixture(scope='session')
+def unclustered_pipeline_record_uuid(db_manager):
+    test_unclustered_record_data = generate_test_data(title='unclustered pipeline record', uuid=uuid4(), source_id='unclustered|test')
 
     unclustered_record = create_or_update_record(record_data=test_unclustered_record_data, db_manager=db_manager)
 
@@ -292,8 +328,15 @@ def limited_access_record_uuid(db_manager):
         'source': TEST_SOURCE,
         'source_id': 'pbtestSourceID',
         'publisher_project_source': ['University of Michigan Press'],
-        'has_part': [f'1|https://example.com/book.epub|{TEST_SOURCE}|application/epub+zip|{json.dumps({"reader": True})}']
-
+        'has_part': [
+            str(Part(
+                index=1,
+                url='https://example.com/book.epub',
+                source=TEST_SOURCE,
+                file_type='application/epub+zip',
+                flags=str(FileFlags(reader=True, nypl_login=True))
+            )),
+        ],
     }
 
     limited_access_record = create_or_update_record(record_data=test_limited_access_record_data, db_manager=db_manager)

@@ -1,11 +1,12 @@
 from dataclasses import dataclass
+from dateutil import parser
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 
 def get_start_datetime(process_type: Optional[str]=None, ingest_period: Optional[str]=None) -> Optional[str]:
     if ingest_period is not None:
-        return datetime.strptime(ingest_period, '%Y-%m-%dT%H:%M:%S')
+        return parser.parse(ingest_period)
 
     if process_type == 'daily':
         return datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)

@@ -3,7 +3,8 @@ import requests
 from typing import Generator, Optional, Union
 
 from logger import create_log
-from mappings.met import METMapping
+from mappings.met import map_met_record
+from model import Record
 from .source_service import SourceService
 
 logger = create_log(__name__)
@@ -21,11 +22,10 @@ class METService(SourceService):
 
     def get_records(
         self,
-        full_import: bool=False,
         start_timestamp: Optional[datetime]=None,
         offset: int=0,
         limit: Optional[int]=None
-    ) -> Generator[METMapping, None, None]:
+    ) -> Generator[Record, None, None]:
         current_position = offset
         page_size = 50
 
@@ -34,7 +34,7 @@ class METService(SourceService):
                 modified_at = record.get('dmmodified')
                 rights = record.get('rights')
 
-                if (start_timestamp and datetime.strptime(modified_at, '%Y-%m-%d') >=  start_timestamp) or rights == 'copyrighted':
+                if (start_timestamp and datetime.strptime(modified_at, '%Y-%m-%d') >=  start_timestamp) or 'copyright' in rights.lower():
                     continue
 
                 mapped_met_record = self._map_met_record(record)
@@ -68,11 +68,11 @@ class METService(SourceService):
             logger.exception('Faile to get met records')   
             return []
 
-    def _map_met_record(self, record: dict) -> Optional[METMapping]:
+    def _map_met_record(self, record: dict) -> Optional[Record]:
         try:            
             met_record = self.query_met_api(query=self.ITEM_INFO_QUERY.format(record.get('pointer')))
 
-            return METMapping(met_record)
+            return map_met_record(met_record)
         except Exception:
             logger.exception('Failed to process MET record')
             return None

@@ -24,7 +24,6 @@ jobs:
       IS_CI: 'true'
       AWS_ACCESS: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      ENVIRONMENT: local
       DOCKER_BUILDKIT: 1
       COMPOSE_DOCKER_CLI_BUILD: 1
 
@@ -52,6 +51,10 @@ jobs:
           python -m pip install --upgrade pip wheel
           pip install -r requirements.txt -r dev-requirements.txt
 
+      - name: Run unit tests
+        run: |
+          make unit
+
       - name: Build Docker images with cache
         run: |
           docker compose build --progress plain \
@@ -65,9 +68,11 @@ jobs:
         run: |
           echo "Waiting for services..." && sleep 90
 
-      - name: Run test suite
+      - name: Run functional and integration tests
+        env:
+          ENVIRONMENT: local
         run: |
-          make unit functional integration
+          make functional integration
 
       - name: Cleanup
         if: always()
