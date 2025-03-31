@@ -1,38 +1,29 @@
-name: 'ETL Pipeline Tests (Self-Hosted)'
-
+name: QA Environment Tests (Self-Hosted)
 on:
   pull_request:
     types: [opened, synchronize]
     paths:
-      - 'api/**'
-      - 'managers/**'
-      - 'mappings/**'
-      - 'model/**'
-      - 'processes/**'
-      - 'services/**'
-      - 'tests/**'
-      - 'utils/**'
-      - 'dev-requirements.txt'
-      - 'requirements.txt'
-      - 'main.py'
-      - 'Makefile'
-
-permissions:
-  contents: read
-  id-token: write
+      - "tests/**"
+      - "services/**"
+      - "docker-compose.yml"
+      - "Dockerfile"
+      - "requirements.txt"
 
 env:
   AWS_REGION: us-east-1
   AWS_ACCOUNTID: "491147561046"
-  ELASTICSEARCH_HOST: ${{ secrets.ELASTICSEARCH_HOST }}
-  ELASTICSEARCH_INDEX: ${{ secrets.ELASTICSEARCH_INDEX }}
-  ELASTICSEARCH_PORT: ${{ secrets.ELASTICSEARCH_PORT }}
-  ELASTICSEARCH_SCHEME: ${{ secrets.ELASTICSEARCH_SCHEME }}
-  REDIS_HOST: ${{ secrets.REDIS_HOST }}
+  IMAGE_TAG: nypl-nginx-test
+  ENVIRONMENT: qa
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  run-tests:
+  qa-tests:
+    name: QA Integration Tests
     runs-on: self-hosted
+    environment: qa
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,72 +33,25 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GHARunnerSession-${{ github.run_id }}
+          role-session-name: GHARunnerSession
 
-      - name: Verify AWS access
-        run: aws sts get-caller-identity
-
-      - name: Detect and install system dependencies
+      - name: Verify AWS permissions
         run: |
-          # Package manager detection and installation
-          if command -v apt-get >/dev/null 2>&1; then
-            echo "Debian/Ubuntu system detected - using apt"
-            sudo apt-get update
-            sudo apt-get install -y \
-              python3.9 \
-              python3.9-dev \
-              python3.9-venv \
-              gcc \
-              g++ \
-              make \
-              libssl-dev
-            sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
-            sudo update-alternatives --set python3 /usr/bin/python3.9
-          elif command -v dnf >/dev/null 2>&1; then
-            echo "RHEL/Fedora system detected - using dnf"
-            sudo dnf groupinstall -y "Development Tools"
-            sudo dnf install -y \
-              python39 \
-              python39-devel \
-              openssl-devel
-            sudo alternatives --set python3 /usr/bin/python3.9
-          elif command -v yum >/dev/null 2>&1; then
-            echo "CentOS/RHEL system detected - using yum"
-            sudo yum groupinstall -y "Development Tools"
-            sudo yum install -y \
-              python39 \
-              python39-devel \
-              openssl-devel
-            sudo alternatives --set python3 /usr/bin/python3.9
-          else
-            echo "ERROR: Unsupported package manager"
-            exit 1
-          fi
+          echo "Testing AWS access for QA environment..."
+          aws sts get-caller-identity
+          aws ssm get-parameter --name /drb/qa/elasticsearch/user --with-decryption --query Parameter.Value --output text
 
-          # Verify Python installation
-          python3 --version
-          pip3 --version
+      - name: Install Amazon Linux dependencies
+        run: |
+          sudo dnf groupinstall -y "Development Tools"
+          sudo dnf install -y python39 python39-devel
+          sudo alternatives --set python3 /usr/bin/python3.9
 
       - name: Set up Python environment
         run: |
           python3 -m pip install --upgrade pip wheel
-          pip3 install -r dev-requirements.txt
           pip3 install -r requirements.txt
 
-      - name: Run integration tests
+      - name: Run QA integration tests
         run: |
-          pytest tests/integration \
-            --env=qa \
-            -v \
-            --cov=./ \
-            --cov-report=xml:coverage.xml \
-            --junitxml=test-results.xml
-
-      - name: Upload test results
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: test-results
-          path: |
-            test-results.xml
-            coverage.xml
+          pytest tests/integration --env=qa
