@@ -23,7 +23,17 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  AWS_ACCOUNTID: "491147561046"
+  PRIMARY_AWS_ACCOUNTID: "491147561046"  # Your primary account
+  SECONDARY_AWS_ACCOUNTID: "946183545209"  # Cross-account access
+  IMAGE_TAG: nypl-nginx-test
+  ENVIRONMENT: qa
+  # Service credentials
+  NYPL_BIB_USER: ${{ secrets.NYPL_BIB_USER }}
+  NYPL_BIB_PASSWORD: ${{ secrets.NYPL_BIB_PASSWORD }}
+  GITHUB_API_KEY: ${{ secrets.GITHUB_API_KEY }}
+  OCLC_WSKEY: ${{ secrets.OCLC_WSKEY }}
+  OCLC_SECRET: ${{ secrets.OCLC_SECRET }}
+  # AWS service parameters
   ELASTICSEARCH_HOST: ${{ secrets.ELASTICSEARCH_HOST }}
   ELASTICSEARCH_INDEX: ${{ secrets.ELASTICSEARCH_INDEX }}
   ELASTICSEARCH_PORT: ${{ secrets.ELASTICSEARCH_PORT }}
@@ -33,16 +43,39 @@ env:
 jobs:
   run-tests:
     runs-on: self-hosted
+    environment: qa
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS credentials
+      # Primary account credentials
+      - name: Configure primary AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
+          role-to-assume: arn:aws:iam::${{ env.PRIMARY_AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GHAPrimarySession-${{ github.run_id }}
+          audience: sts.amazonaws.com
 
+      # Secondary account credentials (from DevOps sample)
+      - name: Configure cross-account AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.SECONDARY_AWS_ACCOUNTID }}:role/GHACrossAccountRole
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: GHASecondarySession-${{ github.run_id }}
+          role-chaining: true
+          role-duration-seconds: 1800
+          audience: sts.amazonaws.com
+
+      - name: Verify AWS access
+        run: |
+          echo "Primary account identity:"
+          aws sts get-caller-identity
+          echo "Cross-account access test:"
+          aws ssm describe-parameters --max-items 1 --region ${{ env.AWS_REGION }}
+
+      # Python environment setup
       - name: Install Python 3.9 and build tools
         run: |
           sudo apt update
@@ -55,25 +88,41 @@ jobs:
             python3.9-venv \
             gcc \
             g++ \
-            build-essential
+            build-essential \
+            cmake  # Required for fasttext
           sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
           sudo update-alternatives --set python3 /usr/bin/python3.9
 
       - name: Set up Python environment
         run: |
-          python3 -m ensurepip
-          python3 -m pip install --upgrade pip wheel
-          pip3 install -r requirements.txt -r dev-requirements.txt
+          python3 -m pip install --upgrade pip wheel setuptools
+          # Install requirements with fallback for problematic packages
+          pip3 install --prefer-binary -r requirements.txt -r dev-requirements.txt || \
+            (echo "Fallback to source installation..." && \
+             pip3 install -r requirements.txt -r dev-requirements.txt)
 
-      - name: Handle fasttext separately (if needed)
+      - name: Handle fasttext separately
         run: |
           if ! python3 -c "import fasttext" 2>/dev/null; then
-            echo "Installing fasttext with build optimizations..."
+            echo "Building fasttext from source..."
             pip3 install --no-cache-dir --force-reinstall \
               --global-option=build_ext \
+              --global-option="-I/usr/include" \
               fasttext
           fi
 
-      - name: Run integration tests
+      - name: Verify critical packages
         run: |
-          python3 -m pytest tests/integration --env=qa
+          python3 -c "import fasttext; print(f'fasttext version: {fasttext.__version__}')"
+          python3 -m pytest --version
+
+      - name: Run QA integration tests
+        run: |
+          python3 -m pytest tests/integration --env=qa --junitxml=test-results.xml
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results
+          path: test-results.xml
