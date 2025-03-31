@@ -17,70 +17,82 @@ on:
       - 'main.py'
       - 'Makefile'
 
+# CRITICAL SECURITY PERMISSIONS
 permissions:
-  contents: read
-  id-token: write
+  id-token: write    # Required for AWS OIDC authentication
+  contents: read     # Required for code checkout
+  secrets: read      # Explicitly enables secrets access
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ACCOUNTID: "491147561046"  # Your primary AWS account
 
 jobs:
   run-tests:
     runs-on: self-hosted
-    env:
-      AWS_REGION: us-east-1
-      AWS_ACCOUNTID: "491147561046"
-      ELASTICSEARCH_HOST: ${{ secrets.ELASTICSEARCH_HOST }}
-      ELASTICSEARCH_INDEX: ${{ secrets.ELASTICSEARCH_INDEX }}
-      ELASTICSEARCH_PORT: ${{ secrets.ELASTICSEARCH_PORT }}
-      ELASTICSEARCH_SCHEME: ${{ secrets.ELASTICSEARCH_SCHEME }}
-      REDIS_HOST: ${{ secrets.REDIS_HOST }}
+    environment: qa  # Links to environment-specific secrets
 
     steps:
+      # ===== SETUP PHASE =====
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # ===== AWS AUTHENTICATION =====
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
           aws-region: ${{ env.AWS_REGION }}
+          role-session-name: github-action-${{ github.run_id }}
+          mask-aws-account-id: false  # Disabled for debugging
 
-      - name: Install system dependencies
+      - name: Verify AWS access
         run: |
-          sudo apt update
-          sudo apt install -y software-properties-common
-          sudo add-apt-repository -y ppa:deadsnakes/ppa
-          sudo apt update
-          sudo apt install -y python3.9 python3.9-dev python3.9-distutils python3.9-venv
-          sudo apt install -y gcc-12 g++-12
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 60
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 60
-          sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
-          sudo update-alternatives --set python3 /usr/bin/python3.9
+          echo "AWS Identity:"
+          aws sts get-caller-identity
+          echo "Secrets Test:"
+          aws secretsmanager list-secrets --max-items 1  # Test AWS access
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-          cache: "pip"
-          cache-dependency-path: |
-            requirements.txt
-            dev-requirements.txt
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-
-      - name: Install Python dependencies
+      # ===== ENVIRONMENT SETUP =====
+      - name: Install Amazon Linux dependencies
         run: |
-          python -m ensurepip
-          python -m pip install --upgrade pip wheel
-          pip install -r dev-requirements.txt
-          pip install -r requirements.txt
+          echo "Installing system packages..."
+          sudo dnf groupinstall -y "Development Tools"
+          sudo dnf install -y \
+            python39 \
+            python39-devel \
+            openssl-devel \
+            bzip2-devel \
+            libffi-devel
+          sudo alternatives --set python3 /usr/bin/python3.9
 
+      - name: Set up Python environment
+        run: |
+          python3 --version
+          python3 -m pip install --upgrade pip wheel
+          pip3 install -r dev-requirements.txt
+          pip3 install -r requirements.txt
+
+      # ===== TEST EXECUTION =====
       - name: Run integration tests
+        env:
+          ELASTICSEARCH_HOST: ${{ secrets.ELASTICSEARCH_HOST }}
+          ELASTICSEARCH_INDEX: ${{ secrets.ELASTICSEARCH_INDEX }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
         run: |
-          pytest tests/integration --env=qa
+          echo "Testing environment variables..."
+          echo "ES Host: $ELASTICSEARCH_HOST"
+          echo "Redis Host: $REDIS_HOST"
+          
+          python3 -m pytest tests/integration \
+            --env=qa \
+            -v \
+            --capture=no  # Shows live test output
+
+      # ===== POST-TEST VERIFICATION =====
+      - name: Verify resource cleanup
+        if: always()
+        run: |
+          echo "Checking for leftover resources..."
+          docker ps -aq | xargs -r docker rm -f
+          aws sts get-caller-identity  # Verify session still active
