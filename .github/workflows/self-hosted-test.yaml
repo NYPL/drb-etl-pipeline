@@ -35,17 +35,50 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: GHARunnerSession
 
-      - name: Install system build tools
+      - name: Install complete build toolchain
         run: |
           # Ubuntu/Debian
           if command -v apt-get >/dev/null 2>&1; then
             sudo apt-get update
-            sudo apt-get install -y build-essential cmake git
+            sudo apt-get install -y \
+              build-essential \
+              cmake \
+              git \
+              autoconf \
+              automake \
+              libtool \
+              pkg-config \
+              python3-dev \
+              libffi-dev \
+              zlib1g-dev \
+              libssl-dev
           # RHEL/CentOS
           elif command -v dnf >/dev/null 2>&1; then
-            sudo dnf install -y gcc cmake git
+            sudo dnf groupinstall -y "Development Tools"
+            sudo dnf install -y \
+              cmake \
+              git \
+              autoconf \
+              automake \
+              libtool \
+              pkgconfig \
+              python3-devel \
+              libffi-devel \
+              zlib-devel \
+              openssl-devel
           elif command -v yum >/dev/null 2>&1; then
-            sudo yum install -y gcc cmake git
+            sudo yum groupinstall -y "Development Tools"
+            sudo yum install -y \
+              cmake \
+              git \
+              autoconf \
+              automake \
+              libtool \
+              pkgconfig \
+              python3-devel \
+              libffi-devel \
+              zlib-devel \
+              openssl-devel
           fi
 
       - name: Set up Python 3.9
@@ -66,16 +99,20 @@ jobs:
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
 
-      - name: Install Python dependencies
+      - name: Install Python dependencies (with retries)
         run: |
           python -m pip install --upgrade pip wheel setuptools
-          # Install fasttext first with build dependencies
-          python -m pip install --no-cache-dir --force-reinstall \
+          # First try installing with pre-built wheels
+          pip install --prefer-binary -r requirements.txt || \
+          # If that fails, try building from source
+          (echo "Falling back to source builds..." && \
+           pip install -r requirements.txt)
+          
+          # Special handling for problematic packages
+          pip install --no-cache-dir --force-reinstall \
             --global-option=build_ext \
+            --global-option="-I/usr/include" \
             fasttext
-          # Then install remaining requirements
-          pip install -r requirements.txt
-          pip install -r dev-requirements.txt
 
       - name: Verify installations
         run: |
