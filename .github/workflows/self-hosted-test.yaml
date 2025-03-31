@@ -35,47 +35,53 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           role-session-name: GHARunnerSession
 
-      - name: Install Python 3.9 (Universal Approach)
-        run: |
-          # For any Linux distribution
-          PYTHON_VERSION=3.9.18
-          wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz
-          tar xzf Python-${PYTHON_VERSION}.tgz
-          cd Python-${PYTHON_VERSION}
-          ./configure --enable-optimizations
-          make -j $(nproc)
-          sudo make altinstall
-          cd ..
-          python3.9 --version
-          python3.9 -m ensurepip --upgrade
-          python3.9 -m pip install --upgrade pip wheel
-
-      - name: Install system build dependencies
+      - name: Install system build tools
         run: |
           # Ubuntu/Debian
           if command -v apt-get >/dev/null 2>&1; then
             sudo apt-get update
-            sudo apt-get install -y build-essential cmake git libssl-dev zlib1g-dev libffi-dev
+            sudo apt-get install -y build-essential cmake git
           # RHEL/CentOS
           elif command -v dnf >/dev/null 2>&1; then
-            sudo dnf install -y gcc cmake git openssl-devel zlib-devel libffi-devel
+            sudo dnf install -y gcc cmake git
           elif command -v yum >/dev/null 2>&1; then
-            sudo yum install -y gcc cmake git openssl-devel zlib-devel libffi-devel
+            sudo yum install -y gcc cmake git
           fi
 
-      - name: Install project dependencies
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            dev-requirements.txt
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            ${{ runner.os }}-
+
+      - name: Install Python dependencies
         run: |
-          python3.9 -m pip install -r requirements.txt
-          # Special handling for fasttext
-          python3.9 -m pip install --no-cache-dir --force-reinstall \
+          python -m pip install --upgrade pip wheel setuptools
+          # Install fasttext first with build dependencies
+          python -m pip install --no-cache-dir --force-reinstall \
             --global-option=build_ext \
             fasttext
+          # Then install remaining requirements
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
 
       - name: Verify installations
         run: |
-          python3.9 -m pytest --version
-          python3.9 -c "import fasttext; print(f'fasttext version: {fasttext.__version__}')"
+          python -m pytest --version
+          python -c "import fasttext; print(f'fasttext version: {fasttext.__version__}')"
 
       - name: Run QA integration tests
         run: |
-          python3.9 -m pytest tests/integration --env=qa
+          python -m pytest tests/integration --env=qa
