@@ -166,6 +166,8 @@ class PublisherBacklistService(SourceService):
                 
                 try:
                     file_url = self.download_file_from_location(record_metadata, record_permissions, publisher_backlist_record.record)
+                    if not file_url:
+                        continue
                 except Exception:
                     logger.exception(f'Failed to download file for {record}')
                     continue
@@ -194,17 +196,21 @@ class PublisherBacklistService(SourceService):
             if hath_identifier is not None:
                 hathi_id = hath_identifier.split('|')[0]
 
-                s3 = boto3.client("s3")
-
                 try:
-                    s3.head_object(Bucket=os.environ.get('PDF_BUCKET', None), Key=f'tagged_pdfs/{hathi_id}.pdf')
+                    self.s3_manager.s3Client.head_object(Bucket=aws_file_bucket, Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
+                except Exception:
+                    return None
+                
+                try:
+                    pdf_bucket = os.environ["PDF_BUCKET"]
+                    self.s3_manager.s3Client.head_object(Bucket=pdf_bucket, Key=f'tagged_pdfs/{hathi_id}.pdf')
                 except Exception:
                     logger.exception('PDF object does not exist')
                     raise Exception
-
-                source_bucket_key = {'Bucket': os.environ.get('PDF_BUCKET', None), 'Key': f'tagged_pdfs/{hathi_id}.pdf'}
+                
+                source_bucket_key = {'Bucket': pdf_bucket, 'Key': f'tagged_pdfs/{hathi_id}.pdf'}
                 try:
-                    s3.copy(
+                    self.s3_manager.s3Client.copy(
                         source_bucket_key,
                         Bucket=aws_file_bucket,
                         Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf'
