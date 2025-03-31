@@ -88,7 +88,7 @@ jobs:
           # Mask the key in logs and set as output
           echo "::add-mask::$GITHUB_API_KEY"
           echo "GITHUB_API_KEY=${GITHUB_API_KEY}" >> $GITHUB_ENV
-          echo "Key retrieved successfully (first 5 chars: ${GITHUB_API_KEY:0:5}...)"
+          echo "Key retrieved successfully"
 
       # Python environment setup
       - name: Install Python 3.9 and build tools
@@ -107,7 +107,7 @@ jobs:
             cmake \
             libblas-dev \
             liblapack-dev \
-            jq  # For JSON parsing
+            jq
           sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
           sudo update-alternatives --set python3 /usr/bin/python3.9
 
@@ -131,14 +131,12 @@ jobs:
             echo "::error::Invalid GitHub API credentials"
             exit 1
           fi
-          
-          remaining=$(echo "$response" | jq -r '.resources.graphql.remaining')
-          echo "GitHub API validated successfully (remaining calls: $remaining)"
 
       - name: Set up Python environment
         run: |
           python3 -m pip install --upgrade pip wheel
           pip install setuptools==58.2.0
+          pip install pytest-rerunfailures  # Required for retry functionality
           pip install --prefer-binary -r requirements.txt -r dev-requirements.txt
 
       - name: Handle fasttext separately if still needed
@@ -158,14 +156,12 @@ jobs:
       - name: Run QA integration tests
         env:
           GITHUB_API_KEY: ${{ env.GITHUB_API_KEY }}
-          GITHUB_API_RETRIES: 3
-          GITHUB_API_TIMEOUT: 30
         run: |
           python3 -m pytest tests/integration \
             --env=qa \
             --junitxml=test-results.xml \
-            --reruns $GITHUB_API_RETRIES \
-            --reruns-delay 5
+            --reruns=3 \
+            --reruns-delay=5
 
       - name: Cleanup GitHub API Key
         run: |
