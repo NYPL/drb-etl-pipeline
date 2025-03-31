@@ -17,6 +17,7 @@ jobs:
         with:
           node-version-file: "web/.nvmrc"
           cache: npm
+          cache-dependency-path: "web/package-lock.json"
 
       - name: Configure AWS credentials from Production account
         uses: aws-actions/configure-aws-credentials@v4

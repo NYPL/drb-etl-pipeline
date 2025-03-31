@@ -104,6 +104,7 @@ jobs:
         with:
           node-version-file: "web/.nvmrc"
           cache: npm
+          cache-dependency-path: "web/package-lock.json"
 
       - name: Cache node modules
         uses: actions/cache@v4
