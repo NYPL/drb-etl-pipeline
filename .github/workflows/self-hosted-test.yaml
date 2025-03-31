@@ -1,29 +1,38 @@
-name: QA Environment Tests (Self-Hosted)
+name: 'ETL Pipeline Tests (Self-Hosted)'
+
 on:
   pull_request:
     types: [opened, synchronize]
     paths:
-      - "tests/**"
-      - "services/**"
-      - "docker-compose.yml"
-      - "Dockerfile"
-      - "requirements.txt"
+      - 'api/**'
+      - 'managers/**'
+      - 'mappings/**'
+      - 'model/**'
+      - 'processes/**'
+      - 'services/**'
+      - 'tests/**'
+      - 'utils/**'
+      - 'dev-requirements.txt'
+      - 'requirements.txt'
+      - 'main.py'
+      - 'Makefile'
+
+permissions:
+  contents: read
+  id-token: write
 
 env:
   AWS_REGION: us-east-1
   AWS_ACCOUNTID: "491147561046"
-  IMAGE_TAG: nypl-nginx-test
-  ENVIRONMENT: qa
-
-permissions:
-  id-token: write
-  contents: read
+  ELASTICSEARCH_HOST: ${{ secrets.ELASTICSEARCH_HOST }}
+  ELASTICSEARCH_INDEX: ${{ secrets.ELASTICSEARCH_INDEX }}
+  ELASTICSEARCH_PORT: ${{ secrets.ELASTICSEARCH_PORT }}
+  ELASTICSEARCH_SCHEME: ${{ secrets.ELASTICSEARCH_SCHEME }}
+  REDIS_HOST: ${{ secrets.REDIS_HOST }}
 
 jobs:
-  qa-tests:
-    name: QA Integration Tests
+  run-tests:
     runs-on: self-hosted
-    environment: qa
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -33,92 +42,38 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GHARunnerSession
 
-      - name: Install complete build toolchain
+      - name: Install Python 3.9 and build tools
         run: |
-          # Ubuntu/Debian
-          if command -v apt-get >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y \
-              build-essential \
-              cmake \
-              git \
-              autoconf \
-              automake \
-              libtool \
-              pkg-config \
-              python3-dev \
-              libffi-dev \
-              zlib1g-dev \
-              libssl-dev
-          # RHEL/CentOS
-          elif command -v dnf >/dev/null 2>&1; then
-            sudo dnf groupinstall -y "Development Tools"
-            sudo dnf install -y \
-              cmake \
-              git \
-              autoconf \
-              automake \
-              libtool \
-              pkgconfig \
-              python3-devel \
-              libffi-devel \
-              zlib-devel \
-              openssl-devel
-          elif command -v yum >/dev/null 2>&1; then
-            sudo yum groupinstall -y "Development Tools"
-            sudo yum install -y \
-              cmake \
-              git \
-              autoconf \
-              automake \
-              libtool \
-              pkgconfig \
-              python3-devel \
-              libffi-devel \
-              zlib-devel \
-              openssl-devel
+          sudo apt update
+          sudo apt install -y software-properties-common
+          sudo add-apt-repository -y ppa:deadsnakes/ppa
+          sudo apt update
+          sudo apt install -y \
+            python3.9 \
+            python3.9-dev \
+            python3.9-venv \
+            gcc \
+            g++ \
+            build-essential
+          sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+          sudo update-alternatives --set python3 /usr/bin/python3.9
+
+      - name: Set up Python environment
+        run: |
+          python3 -m ensurepip
+          python3 -m pip install --upgrade pip wheel
+          pip3 install -r requirements.txt -r dev-requirements.txt
+
+      - name: Handle fasttext separately (if needed)
+        run: |
+          if ! python3 -c "import fasttext" 2>/dev/null; then
+            echo "Installing fasttext with build optimizations..."
+            pip3 install --no-cache-dir --force-reinstall \
+              --global-option=build_ext \
+              fasttext
           fi
 
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-          cache: "pip"
-          cache-dependency-path: |
-            requirements.txt
-            dev-requirements.txt
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-            ${{ runner.os }}-
-
-      - name: Install Python dependencies (with retries)
+      - name: Run integration tests
         run: |
-          python -m pip install --upgrade pip wheel setuptools
-          # First try installing with pre-built wheels
-          pip install --prefer-binary -r requirements.txt || \
-          # If that fails, try building from source
-          (echo "Falling back to source builds..." && \
-           pip install -r requirements.txt)
-          
-          # Special handling for problematic packages
-          pip install --no-cache-dir --force-reinstall \
-            --global-option=build_ext \
-            --global-option="-I/usr/include" \
-            fasttext
-
-      - name: Verify installations
-        run: |
-          python -m pytest --version
-          python -c "import fasttext; print(f'fasttext version: {fasttext.__version__}')"
-
-      - name: Run QA integration tests
-        run: |
-          python -m pytest tests/integration --env=qa
+          python3 -m pytest tests/integration --env=qa
