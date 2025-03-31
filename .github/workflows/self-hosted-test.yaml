@@ -33,25 +33,48 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GHARunnerSession-${{ github.run_id }}
+          role-session-name: GHARunnerSession
 
-      - name: Verify AWS access
-        run: aws sts get-caller-identity
-
-      - name: Test SSM access (non-critical)
-        continue-on-error: true
+      - name: Install system dependencies
         run: |
-          if aws ssm get-parameter --name /drb/qa/elasticsearch/user --with-decryption --query Parameter.Value --output text; then
-            echo "SSM access successful"
+          # Detect package manager and install dependencies
+          if command -v apt-get >/dev/null 2>&1; then
+            echo "Debian/Ubuntu system detected - using apt"
+            sudo apt-get update
+            sudo apt-get install -y \
+              python3.9 \
+              python3.9-dev \
+              python3.9-venv \
+              gcc \
+              g++ \
+              make \
+              libssl-dev
+            sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+            sudo update-alternatives --set python3 /usr/bin/python3.9
+          elif command -v dnf >/dev/null 2>&1; then
+            echo "RHEL/Fedora system detected - using dnf"
+            sudo dnf groupinstall -y "Development Tools"
+            sudo dnf install -y \
+              python39 \
+              python39-devel \
+              openssl-devel
+            sudo alternatives --set python3 /usr/bin/python3.9
+          elif command -v yum >/dev/null 2>&1; then
+            echo "CentOS/RHEL system detected - using yum"
+            sudo yum groupinstall -y "Development Tools"
+            sudo yum install -y \
+              python39 \
+              python39-devel \
+              openssl-devel
+            sudo alternatives --set python3 /usr/bin/python3.9
           else
-            echo "Warning: SSM access failed - some tests may fail"
+            echo "ERROR: Unsupported package manager"
+            exit 1
           fi
 
-      - name: Install Amazon Linux dependencies
-        run: |
-          sudo dnf groupinstall -y "Development Tools"
-          sudo dnf install -y python39 python39-devel
-          sudo alternatives --set python3 /usr/bin/python3.9
+          # Verify installation
+          python3 --version
+          pip3 --version
 
       - name: Set up Python environment
         run: |
