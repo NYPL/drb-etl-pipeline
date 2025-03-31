@@ -91,7 +91,8 @@ jobs:
             build-essential \
             cmake \
             libblas-dev \
-            liblapack-dev  # Required for fasttext
+            liblapack-dev \
+            jq  # Added for JSON parsing
           sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
           sudo update-alternatives --set python3 /usr/bin/python3.9
 
@@ -99,12 +100,43 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      - name: Validate GitHub API Key
+        run: |
+          if [ -z "$GITHUB_API_KEY" ]; then
+            echo "::error::GITHUB_API_KEY secret is missing"
+            exit 1
+          fi
+          
+          # Test token validity
+          response=$(curl -s -H "Authorization: bearer $GITHUB_API_KEY" \
+            https://api.github.com/rate_limit)
+          
+          if [[ "$response" == *"Bad credentials"* ]]; then
+            echo "::error::Invalid GitHub API token"
+            exit 1
+          fi
+          
+          echo "GitHub API token is valid"
+
+      - name: Check GitHub API rate limits
+        run: |
+          response=$(curl -s -H "Authorization: bearer $GITHUB_API_KEY" \
+            https://api.github.com/rate_limit)
+          
+          remaining=$(echo "$response" | jq -r '.resources.graphql.remaining')
+          reset_time=$(echo "$response" | jq -r '.resources.graphql.reset')
+          
+          if [ "$remaining" -lt 100 ]; then
+            echo "::warning::Low GitHub API calls remaining ($remaining)"
+            echo "Next reset at $(date -d @$reset_time)"
+          else
+            echo "GitHub API calls remaining: $remaining"
+          fi
+
       - name: Set up Python environment
         run: |
           python3 -m pip install --upgrade pip wheel
-          # Install compatible setuptools version first
           pip install setuptools==58.2.0
-          # Install requirements
           pip install --prefer-binary -r requirements.txt -r dev-requirements.txt
 
       - name: Handle fasttext separately if still needed
@@ -122,5 +154,13 @@ jobs:
           python3 -m pytest --version
 
       - name: Run QA integration tests
+        env:
+          GITHUB_API_KEY: ${{ secrets.GITHUB_API_KEY }}
+          GITHUB_API_RETRIES: 3
+          GITHUB_API_TIMEOUT: 30
         run: |
-          python3 -m pytest tests/integration --env=qa --junitxml=test-results.xml
+          python3 -m pytest tests/integration \
+            --env=qa \
+            --junitxml=test-results.xml \
+            --reruns $GITHUB_API_RETRIES \
+            --reruns-delay 5
