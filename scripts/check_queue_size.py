@@ -16,8 +16,8 @@ def main(*args):
     try:
         rabbitmq_manager = RabbitMQManager()
 
-        rabbitmq_manager.create_connection()
-        rabbitmq_manager.create_or_connect_queue(queue_name=queue_name, routing_key=routing_key)
+        rabbitmq_manager.createRabbitConnection()
+        rabbitmq_manager.createOrConnectQueue(queueName=queue_name, routingKey=routing_key)
 
         queue = rabbitmq_manager.channel.queue_declare(queue=queue_name, passive=True)
 

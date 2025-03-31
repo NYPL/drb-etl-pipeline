@@ -58,7 +58,7 @@ class TestS3Process:
         mock_rabbit_mq_manager.return_value = mock_rabbit_mq
         mock_message_propse = mocker.MagicMock()
         mock_message_propse.delivery_tag = 'rabbitMQTag'
-        mock_rabbit_mq.get_message_from_queue.side_effect = [
+        mock_rabbit_mq.getMessageFromQueue.side_effect = [
             (mock_message_propse, {}, test_file_message),
             (None, None, None),
             (None, None, None),
@@ -74,8 +74,8 @@ class TestS3Process:
 
         S3Process.process_files(4)
 
-        assert mock_rabbit_mq.get_message_from_queue.call_count == 5
-        mock_rabbit_mq.get_message_from_queue.assert_called_with('test_file_queue')
+        assert mock_rabbit_mq.getMessageFromQueue.call_count == 5
+        mock_rabbit_mq.getMessageFromQueue.assert_called_with('test_file_queue')
 
         mock_sleep.assert_has_calls([
             mocker.call(30), mocker.call(60), mocker.call(90)
@@ -87,7 +87,7 @@ class TestS3Process:
             mocker.call('testFileBytes', 'testBucketPath.epub', 'test_aws_bucket'),
             mocker.call('testWebpubJson', 'testBucketPath/manifest.json', 'test_aws_bucket')
         ])
-        mock_rabbit_mq.acknowledge_message_processed.assert_called_once_with('rabbitMQTag')
+        mock_rabbit_mq.acknowledgeMessageProcessed.assert_called_once_with('rabbitMQTag')
 
     def test_get_file_contents_success(self, test_instance, mocker):
         mock_get_request = mocker.patch.object(requests, 'get')

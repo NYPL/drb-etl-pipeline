@@ -1,0 +1,77 @@
+name: Deploy Web to Production
+on:
+  workflow_call:
+
+jobs:
+  tag_release:
+    name: Tag and Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release
+        id: create_release
+        if: steps.tag_version.outputs.new_tag != ''
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          name: ${{ steps.tag_version.outputs.new_tag }}
+          body: ${{ steps.tag_version.outputs.changelog }}
+          draft: false
+          prerelease: false
+
+  publish_prod:
+    name: Publish image to ECR
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: "web/.nvmrc"
+          cache: npm
+
+      - name: Configure AWS credentials from Test account
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          APP_ENV: production
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: sfr-front-end
+          IMAGE_TAG: ${{ github.sha }}
+          AIRTABLE_KEY: ${{ secrets.AIRTABLE_API_KEY }}
+          NEW_RELIC_LICENSE_KEY: ${{ secrets.NEW_RELIC_LICENSE_KEY }}
+        working-directory: ./web
+        run: |
+          docker build -f Dockerfile --build-arg airtable_api_key=$AIRTABLE_KEY -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          --build-arg APP_ENV=$APP_ENV \
+          --build-arg NEW_RELIC_APP_NAME="Digital Research Books (PROD)" \
+          --build-arg NEW_RELIC_LICENSE_KEY=$NEW_RELIC_LICENSE_KEY \
+          --build-arg NEXT_PUBLIC_ADOBE_ANALYTICS="https://assets.adobedtm.com/1a9376472d37/8519dfce636d/launch-672b7e7f98ee.min.js" .
+          MANIFEST=$(aws ecr batch-get-image --repository-name $ECR_REPOSITORY --image-ids imageTag="production-latest" --output json | jq --raw-output --join-output '.images[0].imageManifest')
+          aws ecr put-image --repository-name $ECR_REPOSITORY --image-tag "production-previous" --image-manifest "$MANIFEST"
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:production-latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:production-latest
+
+      - name: Force ECS Update
+        run: |
+          aws ecs update-service --cluster sfr-frontend-production-tf --service sfr-frontend-production-tf --force-new-deployment

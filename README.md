@@ -2,7 +2,9 @@
 
 ![ETL_Pipeline_Tests](https://github.com/NYPL/drb-etl-pipeline/workflows/ETL_Pipeline_Tests/badge.svg)
 
-A containerized python application for importing data from multiple source projects and transforming this data into a unified format that can be accessed via an API (which powers [Digital Research Books Beta](http://digital-research-books-beta.nypl.org/)).
+A containerized python application for importing data from multiple source projects and transforming this data into a unified format that can be accessed via an API (which powers [Digital Research Books Beta](http://digital-research-books-beta.nypl.org/)). The application runs a set of individual processes that can be orchestrated with AWS ECS, Kubernetes, or run as standalone processes.
+
+The overall goal of this project is to provide access to the universe of open source and public domain monographs through a single portal, making it much easier for researchers, students, and others to discover obscure works and newly digitized materials that they may otherwise be unaware of.
 
 ## Process Overview
 
@@ -90,31 +92,6 @@ This guide provides step-by-step instructions to get the DRB ETL pipeline runnin
      Password: localpsql
      ```
 
-6. Set up local python env:
-
-Create a virtual environment
-```sh
-python -m venv venv
-```
-
-Activate the virtual environment. You will need to do this for every terminal session.
-```sh
-source venv/bin/activate
-```
-
-Make sure `wheel` is upgraded to avoid installation errors later
-```sh
-pip install --upgrade wheel
-```
-
-Install requirements
-```sh
-pip install -r requirements.txt
-```
-
-You're now ready to run individual processes documented in the following section.
-
-
 ### Running Individual Processes
 
 While Docker handles the main services, you can run individual processes using:
@@ -141,8 +118,8 @@ The main processes available in this pipeline are:
 
 Core Setup:
 
-- `LocalDevelopmentSetupProcess`: Initialize development database
-- `SeedLocalDataProcess`: Import sample data
+- `LocalDevelopmentSetupProcess`: Initialize a testing/development database
+- `SeedLocalDataProcess`: Import a sample set of HathiTrust records and FRBRizes/clusters them
 - `APIProcess`: Run the DRB API
 
 Data Ingestion:

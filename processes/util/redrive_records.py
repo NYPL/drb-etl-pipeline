@@ -20,8 +20,8 @@ class RedriveRecordsProcess:
         self.records_route = os.environ.get('RECORD_PIPELINE_ROUTING_KEY')
 
         self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.create_connection()
-        self.rabbitmq_manager.create_or_connect_queue(queue_name=self.records_queue, routing_key=self.records_route)
+        self.rabbitmq_manager.createRabbitConnection()
+        self.rabbitmq_manager.createOrConnectQueue(queueName=self.records_queue, routingKey=self.records_route)
 
     def runProcess(self):
         try:
@@ -39,9 +39,9 @@ class RedriveRecordsProcess:
             redrive_count = 0
 
             for count, (source_id, *_) in enumerate(source_ids, start=1):
-                self.rabbitmq_manager.send_message_to_queue(
-                    queue_name=self.records_queue, 
-                    routing_key=self.records_route, 
+                self.rabbitmq_manager.sendMessageToQueue(
+                    queueName=self.records_queue, 
+                    routingKey=self.records_route, 
                     message={ 'source': self.params.source, 'sourceId': source_id }
                 )
 
@@ -56,4 +56,4 @@ class RedriveRecordsProcess:
             logger.info(f'Failed to redrive {self.params.source} records for source')
         finally:
             self.db_manager.close_connection()
-            self.rabbitmq_manager.close_connection()
+            self.rabbitmq_manager.closeRabbitConnection()

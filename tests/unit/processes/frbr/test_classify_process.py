@@ -202,7 +202,7 @@ class TestOCLCClassifyProcess:
         test_instance.get_oclc_catalog_records(['1|owi', '2|oclc'])
 
         test_instance.redis_manager.multiCheckSetRedis.assert_called_once_with('catalog', ['2'], 'oclc')
-        test_instance.rabbitmq_manager.send_message_to_queue.assert_called_once_with('test_oclc_queue', 'test_oclc_key', {'oclcNo': '2', 'owiNo': '1'})
+        test_instance.rabbitmq_manager.sendMessageToQueue.assert_called_once_with('test_oclc_queue', 'test_oclc_key', {'oclcNo': '2', 'owiNo': '1'})
         test_instance.redis_manager.setIncrementerRedis.assert_called_once_with('oclcCatalog', 'API', amount=1)
 
     def test_get_oclc_catalog_records_redis_match(self, test_instance, mocker):
@@ -211,7 +211,7 @@ class TestOCLCClassifyProcess:
         test_instance.get_oclc_catalog_records(['1|test', '2|oclc'])
 
         test_instance.redis_manager.multiCheckSetRedis.assert_called_once_with('catalog', ['2'], 'oclc')
-        test_instance.rabbitmq_manager.send_message_to_queue.assert_not_called()
+        test_instance.rabbitmq_manager.sendMessageToQueue.assert_not_called()
         test_instance.redis_manager.setIncrementerReids.assert_not_called()
     
     def test_get_queryable_identifiers(self, test_instance):

@@ -39,7 +39,7 @@ class TestOCLCCatalogProcess:
         mock_sleep = mocker.patch('processes.frbr.catalog.sleep')
         mock_message_props = mocker.MagicMock()
         mock_message_props.delivery_tag = 'rabbitMQTag'
-        test_instance.rabbitmq_manager.get_message_from_queue.side_effect = [
+        test_instance.rabbitmq_manager.getMessageFromQueue.side_effect = [
             (mock_message_props, {}, 'oclc_record'),
             (None, None, None),
             (None, None, None),
@@ -50,15 +50,15 @@ class TestOCLCCatalogProcess:
 
         test_instance.process_catalog_messages()
 
-        assert test_instance.rabbitmq_manager.get_message_from_queue.call_count == 5
-        test_instance.rabbitmq_manager.get_message_from_queue.assert_called_with('test_oclc_queue')
+        assert test_instance.rabbitmq_manager.getMessageFromQueue.call_count == 5
+        test_instance.rabbitmq_manager.getMessageFromQueue.assert_called_with('test_oclc_queue')
 
         mock_sleep.assert_has_calls([
             mocker.call(60), mocker.call(120), mocker.call(180)
         ])
 
         mock_process_catalog_message.assert_called_once_with('oclc_record')
-        test_instance.rabbitmq_manager.acknowledge_message_processed.assert_called_once_with('rabbitMQTag')
+        test_instance.rabbitmq_manager.acknowledgeMessageProcessed.assert_called_once_with('rabbitMQTag')
 
     def test_process_catalog_message_success(self, test_instance, mocker):
         test_instance.oclc_catalog_manager.query_catalog.return_value = 'testXML'

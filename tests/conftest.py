@@ -79,11 +79,11 @@ def rabbitmq_manager():
     rabbitmq_manager = RabbitMQManager()
 
     try: 
-        rabbitmq_manager.create_connection()
+        rabbitmq_manager.createRabbitConnection()
 
         yield rabbitmq_manager
 
-        rabbitmq_manager.close_connection()
+        rabbitmq_manager.closeRabbitConnection()
     except:
         yield None
 
