@@ -24,13 +24,6 @@ permissions:
 env:
   AWS_REGION: us-east-1
   AWS_ACCOUNTID: "491147561046"
-  # Core service credentials
-  NYPL_BIB_USER: ${{ secrets.NYPL_BIB_USER }}
-  NYPL_BIB_PASSWORD: ${{ secrets.NYPL_BIB_PASSWORD }}
-  GITHUB_API_KEY: ${{ secrets.GITHUB_API_KEY }}
-  OCLC_WSKEY: ${{ secrets.OCLC_WSKEY }}
-  OCLC_SECRET: ${{ secrets.OCLC_SECRET }}
-  # AWS service parameters
   ELASTICSEARCH_HOST: ${{ secrets.ELASTICSEARCH_HOST }}
   ELASTICSEARCH_INDEX: ${{ secrets.ELASTICSEARCH_INDEX }}
   ELASTICSEARCH_PORT: ${{ secrets.ELASTICSEARCH_PORT }}
@@ -40,7 +33,6 @@ env:
 jobs:
   run-tests:
     runs-on: self-hosted
-    environment: qa
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -50,19 +42,8 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: GHARunnerSession
-          # Add cross-account access if needed
-          role-chaining: true
-          role-duration-seconds: 1800
 
-      - name: Verify AWS permissions
-        run: |
-          aws sts get-caller-identity
-          # Test SSM access if needed
-          aws ssm get-parameter --name /drb/qa/nypl-api/public-key --with-decryption --query Parameter.Value --output text || \
-          echo "Warning: SSM access test failed - some tests may fail"
-
-      - name: Install Python 3.9 and tools
+      - name: Install Python 3.9 and build tools
         run: |
           sudo apt update
           sudo apt install -y software-properties-common
@@ -70,8 +51,8 @@ jobs:
           sudo apt update
           sudo apt install -y \
             python3.9 \
-            python3.9-venv \
             python3.9-dev \
+            python3.9-venv \
             gcc \
             g++ \
             build-essential
@@ -80,8 +61,18 @@ jobs:
 
       - name: Set up Python environment
         run: |
+          python3 -m ensurepip
           python3 -m pip install --upgrade pip wheel
           pip3 install -r requirements.txt -r dev-requirements.txt
+
+      - name: Handle fasttext separately (if needed)
+        run: |
+          if ! python3 -c "import fasttext" 2>/dev/null; then
+            echo "Installing fasttext with build optimizations..."
+            pip3 install --no-cache-dir --force-reinstall \
+              --global-option=build_ext \
+              fasttext
+          fi
 
       - name: Run integration tests
         run: |
