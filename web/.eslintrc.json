@@ -1,0 +1,18 @@
+{
+  "extends": [
+    "eslint:recommended",
+    "next",
+    "next/core-web-vitals",
+    "next/typescript",
+    "plugin:jest-dom/recommended",
+    "plugin:jsx-a11y/strict",
+    "plugin:testing-library/dom",
+    "prettier",
+    "prettier/@typescript-eslint"
+  ],
+  "rules": {
+    // TODO: SFR-2318 enable in the future
+    "@typescript-eslint/no-explicit-any": "off",
+    "testing-library/no-node-access": "off"
+  }
+}
