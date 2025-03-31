@@ -17,82 +17,49 @@ on:
       - 'main.py'
       - 'Makefile'
 
-# CRITICAL SECURITY PERMISSIONS
 permissions:
-  id-token: write    # Required for AWS OIDC authentication
-  contents: read     # Required for code checkout
-  secrets: read      # Explicitly enables secrets access
+  contents: read
+  id-token: write
 
 env:
   AWS_REGION: us-east-1
-  AWS_ACCOUNTID: "491147561046"  # Your primary AWS account
+  AWS_ACCOUNTID: "491147561046"
 
 jobs:
   run-tests:
     runs-on: self-hosted
-    environment: qa  # Links to environment-specific secrets
-
     steps:
-      # ===== SETUP PHASE =====
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ===== AWS AUTHENTICATION =====
+    
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNTID }}:role/GithubActionsRunnerRole
           aws-region: ${{ env.AWS_REGION }}
-          role-session-name: github-action-${{ github.run_id }}
-          mask-aws-account-id: false  # Disabled for debugging
+          role-session-name: GHARunnerSession-${{ github.run_id }}
 
       - name: Verify AWS access
-        run: |
-          echo "AWS Identity:"
-          aws sts get-caller-identity
-          echo "Secrets Test:"
-          aws secretsmanager list-secrets --max-items 1  # Test AWS access
+        run: aws sts get-caller-identity
 
-      # ===== ENVIRONMENT SETUP =====
-      - name: Install Amazon Linux dependencies
+    
+      - name: Install system dependencies
         run: |
-          echo "Installing system packages..."
           sudo dnf groupinstall -y "Development Tools"
-          sudo dnf install -y \
-            python39 \
-            python39-devel \
-            openssl-devel \
-            bzip2-devel \
-            libffi-devel
+          sudo dnf install -y python39 python39-devel openssl-devel
           sudo alternatives --set python3 /usr/bin/python3.9
 
       - name: Set up Python environment
         run: |
-          python3 --version
           python3 -m pip install --upgrade pip wheel
           pip3 install -r dev-requirements.txt
           pip3 install -r requirements.txt
 
-      # ===== TEST EXECUTION =====
       - name: Run integration tests
         env:
           ELASTICSEARCH_HOST: ${{ secrets.ELASTICSEARCH_HOST }}
           ELASTICSEARCH_INDEX: ${{ secrets.ELASTICSEARCH_INDEX }}
           REDIS_HOST: ${{ secrets.REDIS_HOST }}
         run: |
-          echo "Testing environment variables..."
-          echo "ES Host: $ELASTICSEARCH_HOST"
-          echo "Redis Host: $REDIS_HOST"
-          
-          python3 -m pytest tests/integration \
-            --env=qa \
-            -v \
-            --capture=no  # Shows live test output
-
-      # ===== POST-TEST VERIFICATION =====
-      - name: Verify resource cleanup
-        if: always()
-        run: |
-          echo "Checking for leftover resources..."
-          docker ps -aq | xargs -r docker rm -f
-          aws sts get-caller-identity  # Verify session still active
+          pytest tests/integration --env=qa
