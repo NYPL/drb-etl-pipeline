@@ -1,0 +1,73 @@
+name: Playwright Tests for DRB Web
+
+on:
+  workflow_call:
+    inputs:
+      base_url:
+        description: "Base URL for environment"
+        default: "http://local.nypl.org:3000/"
+        required: false
+        type: string
+
+jobs:
+  tests:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: "web/.nvmrc"
+          cache: npm
+          cache-dependency-path: "web/package-lock.json"
+
+      - name: Set environment for branch
+        working-directory: ./web
+        run: |
+          touch .env
+          echo "BASE_URL=${{ inputs.base_url }}" >> .env
+        shell: bash
+
+      - name: Add hosts to /etc/hosts
+        if: inputs.base_url == 'http://local.nypl.org:3000/'
+        run: |
+          sudo echo "127.0.0.1 local.nypl.org" | sudo tee -a /etc/hosts
+
+      - name: Install Test Dependencies
+        working-directory: ./web
+        run: npm i @playwright/test@1.49.1
+
+      - name: Install Playwright
+        working-directory: ./web
+        run: npx playwright install --with-deps
+
+      - name: Build app
+        working-directory: ./web
+        run: NODE_ENV=test npm run build
+
+      - name: Start the app
+        if: inputs.base_url == 'http://local.nypl.org:3000/'
+        working-directory: ./web
+        run: |
+          NODE_ENV=test npm start &
+          sleep 5
+        shell: bash
+
+      - name: Run your tests
+        working-directory: ./web
+        run: npm run playwright
+        env:
+          CATALOG_USERNAME: ${{ secrets.CATALOG_USERNAME }}
+          CATALOG_USER_PIN: ${{ secrets.CATALOG_USER_PIN }}
+
+      - name: Slack Notification
+        if: ${{ always() }}
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_CHANNEL: test_reports
+          SLACK_MESSAGE: https://reports.cucumber.io/report-collections/01dbd6e8-653b-4597-b901-6caf2e653b07
+          SLACK_TITLE: DRB Cucumber/Playwright Test Results
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_USERNAME: nyplorgBot
