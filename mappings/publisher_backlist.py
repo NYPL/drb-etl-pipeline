@@ -13,7 +13,8 @@ class PublisherBacklistMapping(JSONMapping):
             'publisher': ('Publisher (from Project)', '{0}||'),
             'identifiers': [
                 ('ISBN', '{0}|isbn'),
-                ('OCLC', '{0}|oclc')
+                ('OCLC', '{0}|oclc'),
+                ('Hathi ID', '{0}|hathi')
             ],
             'rights': ('DRB Rights Classification', '{0}||||'),
             'contributors': [('Contributors', '{0}|||contributor')],
