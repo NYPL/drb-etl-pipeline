@@ -67,13 +67,6 @@ jobs:
           role-duration-seconds: 1800
           audience: sts.amazonaws.com
 
-      - name: Verify AWS access
-        run: |
-          echo "Primary account identity:"
-          aws sts get-caller-identity
-          echo "Cross-account access test:"
-          aws ssm describe-parameters --max-items 1 --region ${{ env.AWS_REGION }}
-
       # Retrieve GitHub API Key from SSM
       - name: Get GitHub API Key from SSM
         id: get-github-key
@@ -115,43 +108,12 @@ jobs:
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Validate GitHub API Key
-        run: |
-          if [ -z "$GITHUB_API_KEY" ]; then
-            echo "::error::GitHub API key is empty"
-            exit 1
-          fi
-          
-          echo "Validating GitHub API key..."
-          response=$(curl -s -H "Authorization: bearer $GITHUB_API_KEY" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/rate_limit)
-          
-          if [[ "$response" == *"Bad credentials"* ]]; then
-            echo "::error::Invalid GitHub API credentials"
-            exit 1
-          fi
-
       - name: Set up Python environment
         run: |
           python3 -m pip install --upgrade pip wheel
           pip install setuptools==58.2.0
           pip install pytest-rerunfailures  # Required for retry functionality
           pip install --prefer-binary -r requirements.txt -r dev-requirements.txt
-
-      - name: Handle fasttext separately if still needed
-        if: contains(needs.setup.outputs.requirements, 'fasttext')
-        run: |
-          echo "Building fasttext from source with workarounds..."
-          pip install --no-cache-dir --force-reinstall \
-            --global-option=build_ext \
-            --global-option="-I/usr/include" \
-            fasttext==0.9.2
-
-      - name: Verify critical packages
-        run: |
-          python3 -c "import fasttext; print(f'fasttext version: {fasttext.__version__}')" || echo "Fasttext verification failed"
-          python3 -m pytest --version
 
       - name: Run QA integration tests
         env:
