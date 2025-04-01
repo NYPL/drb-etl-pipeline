@@ -199,6 +199,7 @@ class PublisherBacklistService(SourceService):
                 try:
                     self.s3_manager.s3Client.head_object(Bucket=aws_file_bucket, Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
                 except Exception:
+                    logger.exception(f'PDF already exists at key: titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
                     return None
                 
                 try:
