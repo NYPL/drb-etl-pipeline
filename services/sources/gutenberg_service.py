@@ -24,6 +24,7 @@ class GutenbergService(SourceService):
         'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
         'pgterms': 'http://www.gutenberg.org/2009/pgterms/'
     }
+    RETRYABLE_HTTP_STASUSES = { 502 }
 
     def __init__(self):
         self.github_api_key = os.environ.get('GITHUB_API_KEY')
@@ -172,24 +173,23 @@ class GutenbergService(SourceService):
 
         return yaml.full_load(yaml_text)
 
-    def query_graphql(self, query):
+    def query_graphql(self, query, retries: int=3):
         if self.requests_remaining == 0:
             self.wait_until_request_limit_reset()
 
-        try:
-            header = { 'Authorization': f'bearer {self.github_api_key}' }
-            
-            graphql_response = requests.post(self.github_api_root, json={'query': query}, headers=header)
+        for _ in range(retries):
+            graphql_response = requests.post(self.github_api_root, json={'query': query}, headers={ 'Authorization': f'bearer {self.github_api_key}' })
 
             self.set_rate_limit_fields(graphql_response=graphql_response)
             
             if graphql_response.status_code == 200:
                 return graphql_response.json()
             
-            raise Exception(f'Unable to execute Gutenberg GraphQL query {query} - status {graphql_response.status_code}')
-        except Exception as e:
-            logger.exception(f'Failed to query Gutenberg GraphQL API with query {query}')
-            raise e
+            if graphql_response.status_code not in self.RETRYABLE_HTTP_STASUSES:
+                break
+            
+        raise Exception(f'Unable to execute Gutenberg GraphQL query {query} - status {graphql_response.status_code}')
+
         
     def set_rate_limit_fields(self, graphql_response):
         self.requests_remaining = int(graphql_response.headers.get('X-RateLimit-Remaining', 1))
