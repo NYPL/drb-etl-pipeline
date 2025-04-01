@@ -24,7 +24,6 @@ class GutenbergService(SourceService):
         'rdfs': 'http://www.w3.org/2000/01/rdf-schema#',
         'pgterms': 'http://www.gutenberg.org/2009/pgterms/'
     }
-    RETRYABLE_HTTP_STASUSES = { 502 }
 
     def __init__(self):
         self.github_api_key = os.environ.get('GITHUB_API_KEY')
@@ -185,7 +184,7 @@ class GutenbergService(SourceService):
             if graphql_response.status_code == 200:
                 return graphql_response.json()
             
-            if graphql_response.status_code not in self.RETRYABLE_HTTP_STASUSES:
+            if graphql_response.status_code < 500:
                 break
             
         raise Exception(f'Unable to execute Gutenberg GraphQL query {query} - status {graphql_response.status_code}')
