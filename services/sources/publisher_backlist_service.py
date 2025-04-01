@@ -219,7 +219,8 @@ class PublisherBacklistService(SourceService):
                 except Exception:
                     logger.exception("Error during copy response")
 
-                return f'https://{aws_file_bucket}.s3.us-east-1.amazonaws.com/titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf'
+                manifest_url = get_stored_file_url(storage_name=aws_file_bucket, file_path=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
+                return manifest_url
                 
             raise Exception(f'Unable to get file for {record}')
 
