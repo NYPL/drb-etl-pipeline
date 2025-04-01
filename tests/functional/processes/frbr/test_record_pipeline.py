@@ -13,6 +13,8 @@ from tests.functional.processes.frbr.test_frbr_process import assert_record_frbr
 def test_record_pipeline(db_manager, rabbitmq_manager: RabbitMQManager, unfrbrized_pipeline_record_uuid):
     record_queue = os.environ['RECORD_PIPELINE_QUEUE']
     record_route = os.environ['RECORD_PIPELINE_ROUTING_KEY']
+    print('record queue: ',record_queue)
+    print('record route: ',record_route)
 
     rabbitmq_manager.create_or_connect_queue(record_queue, record_route)
 
