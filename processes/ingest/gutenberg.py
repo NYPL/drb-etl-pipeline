@@ -28,8 +28,8 @@ class GutenbergProcess():
         self.file_route = os.environ['FILE_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
+        self.rabbitmq_manager.create_connection()
+        self.rabbitmq_manager.create_or_connect_queue(self.file_queue, self.file_route)
 
         self.file_bucket = os.environ['FILE_BUCKET']
 
@@ -78,7 +78,7 @@ class GutenbergProcess():
                     flags=part.flags
                 )))
 
-                self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(part.url, epub_path))
+                self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(part.url, epub_path))
             else:
                 container_path = f'epubs/{part.source}/{gutenberg_id}_{gutenberg_type}/META-INF/container.xml'
                 manifest_path = f'epubs/{part.source}/{gutenberg_id}_{gutenberg_type}/manifest.json'
@@ -129,4 +129,4 @@ class GutenbergProcess():
             cover_root = yaml_file.get('url').replace('ebooks', 'files')
             cover_source_url = f"{cover_root}/{cover_data.get('image_path')}"
 
-            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(cover_source_url, cover_path))
+            self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(cover_source_url, cover_path))

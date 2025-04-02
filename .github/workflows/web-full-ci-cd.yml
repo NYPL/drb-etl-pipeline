@@ -1,0 +1,28 @@
+name: Web Full CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - web/**
+
+jobs:
+  # Job to deploy to the QA environment on successful merge to `main`
+  deploy_to_qa:
+    uses: ./.github/workflows/web-deploy-qa.yml
+    secrets: inherit
+
+  # Job to run e2e tests on the QA environment after deployment
+  run_e2e_tests:
+    needs: deploy_to_qa
+    uses: ./.github/workflows/playwright.yml
+    with:
+      base_url: "https://drb-qa.nypl.org/"
+    secrets: inherit
+
+  # Job to deploy to production after successful e2e tests on QA
+  deploy_to_production:
+    needs: run_e2e_tests
+    uses: ./.github/workflows/web-deploy-production.yaml
+    secrets: inherit

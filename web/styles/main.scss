@@ -1,0 +1,32 @@
+/**
+* Import font
+*/
+@import "~system-font-css/system-font";
+
+$fontFamily: "system-ui";
+
+/** Import Design System Styles */
+@import "~@nypl/design-system-react-components/dist/styles.css";
+
+@import "./../src/components/SearchHeader/SearchHeader.scss";
+
+@import "./components/IFrameReader.scss";
+@import "./components/Loading.scss";
+
+html {
+  font-family: $fontFamily;
+  height: 100%;
+}
+body {
+  height: 100%;
+}
+
+// min height on header container to prevent content shift on page load
+#nypl-header {
+  min-height: 62px;
+}
+@media screen and (min-width: 832px) {
+  #nypl-header {
+    min-height: 130px;
+  }
+}
