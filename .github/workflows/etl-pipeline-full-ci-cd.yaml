@@ -12,15 +12,15 @@ concurrency:
 
 jobs:
   deploy_to_qa:
-    uses: ./.github/workflows/etl-pipeline-deploy-qa.yaml@main
+    uses: ./.github/workflows/etl-pipeline-deploy-qa.yaml
     secrets: inherit
 
   run_ci:
     needs: deploy_to_qa
-    uses: ./.github/workflows/etl-pipeline-ci.yaml@main
+    uses: ./.github/workflows/etl-pipeline-ci.yaml
     secrets: inherit
 
   deploy_to_production:
     needs: run_ci
-    uses: ./.github/workflows/etl-pipeline-deploy-production.yaml@main
+    uses: ./.github/workflows/etl-pipeline-deploy-production.yaml
     secrets: inherit
