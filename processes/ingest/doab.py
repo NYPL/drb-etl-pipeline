@@ -28,8 +28,8 @@ class DOABProcess():
         self.file_route = os.environ['FILE_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.file_queue, self.file_route)
+        self.rabbitmq_manager.create_connection()
+        self.rabbitmq_manager.create_or_connect_queue(self.file_queue, self.file_route)
 
         self.dspace_service = DSpaceService(base_url=self.DOAB_BASE_URL, source_mapping=DOABMapping)
 
@@ -73,7 +73,7 @@ class DOABProcess():
 
         for epub_link in link_manager.epub_links:
             epub_path, epub_uri = epub_link
-            self.rabbitmq_manager.sendMessageToQueue(self.file_queue, self.file_route, get_file_message(epub_uri, epub_path))
+            self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(epub_uri, epub_path))
 
     def _process_record(self, record: Record):
         if record.deletion_flag:

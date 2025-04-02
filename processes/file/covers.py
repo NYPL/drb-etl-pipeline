@@ -21,7 +21,7 @@ class CoverProcess():
         self.db_manager.createSession()
 
         self.redis_manager = RedisManager()
-        self.redis_manager.createRedisClient()
+        self.redis_manager.create_client()
 
         self.s3_manager = S3Manager()
         self.fileBucket = os.environ['FILE_BUCKET']
@@ -79,7 +79,7 @@ class CoverProcess():
 
     def get_edition_identifiers(self, edition: Edition):
         for id in edition.identifiers:
-            if self.redis_manager.checkSetRedis('sfrCovers', id.identifier, id.authority, expirationTime=60*60*24*30):
+            if self.redis_manager.check_or_set_key('sfrCovers', id.identifier, id.authority, expiration_time=60*60*24*30):
                 continue
 
             yield (id.identifier, id.authority)

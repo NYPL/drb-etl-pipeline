@@ -20,8 +20,8 @@ class CatalogProcess():
         self.db_manager.createSession()
 
         self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createChannel()
+        self.rabbitmq_manager.create_connection()
+        self.rabbitmq_manager.create_channel()
 
         self.oclc_catalog_manager = OCLCCatalogManager()
 
@@ -40,14 +40,14 @@ class CatalogProcess():
                 logger.info(f'Waiting {wait_time}s for OCLC catalog messages')
                 sleep(wait_time)
 
-            while message := self.rabbitmq_manager.getMessageFromQueue(os.environ['OCLC_QUEUE']):
+            while message := self.rabbitmq_manager.get_message_from_queue(os.environ['OCLC_QUEUE']):
                 message_props, _, message_body = message
 
                 if not message_props or not message_body:
                     break
 
                 self.process_catalog_message(message_body)
-                self.rabbitmq_manager.acknowledgeMessageProcessed(message_props.delivery_tag)
+                self.rabbitmq_manager.acknowledge_message_processed(message_props.delivery_tag)
 
     def process_catalog_message(self, message_body):
         message = json.loads(message_body)
@@ -73,7 +73,7 @@ class CatalogProcess():
 
         try:
             catalog_record_mapping.applyMapping()
-            catalog_record_mapping.record.identifiers.append('{}|owi'.format(owi_number))
+            catalog_record_mapping.record.identifiers.append(f'{owi_number}|owi')
             
             self.record_buffer.add(catalog_record_mapping.record)
         except Exception:

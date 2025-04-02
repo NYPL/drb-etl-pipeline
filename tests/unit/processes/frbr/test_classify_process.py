@@ -88,7 +88,7 @@ class TestOCLCClassifyProcess:
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
         mock_query.first.side_effect = mock_records + [None]
 
-        test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 100
+        test_instance.redis_manager.check_incrementer.side_effect = [False] * 100
 
         test_instance.classify_records()
 
@@ -104,7 +104,7 @@ class TestOCLCClassifyProcess:
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
         mock_query.first.side_effect = mock_records + [None]
 
-        test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 100
+        test_instance.redis_manager.check_incrementer.side_effect = [False] * 100
 
         test_instance.classify_records(start_datetime=datetime.now())
 
@@ -119,7 +119,7 @@ class TestOCLCClassifyProcess:
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
         mock_query.first.side_effect = mock_records + [None]
 
-        test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 50 + [True]
+        test_instance.redis_manager.check_incrementer.side_effect = [False] * 50 + [True]
 
         test_instance.classify_records()
 
@@ -134,7 +134,7 @@ class TestOCLCClassifyProcess:
         mock_records = [mocker.MagicMock(name=i) for i in range(100)]
         mock_query.first.side_effect = mock_records + [None]
 
-        test_instance.redis_manager.checkIncrementerRedis.side_effect = [False] * 100
+        test_instance.redis_manager.check_incrementer.side_effect = [False] * 100
 
         test_instance.ingest_limit = 100
         test_instance.classify_records()
@@ -145,21 +145,21 @@ class TestOCLCClassifyProcess:
         mock_identifiers = mocker.patch.object(ClassifyProcess, '_get_queryable_identifiers')
         mock_identifiers.return_value = ['1|test']
 
-        test_instance.redis_manager.checkSetRedis.return_value = False
+        test_instance.redis_manager.check_or_set_key.return_value = False
 
         mock_classify_record = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata')
 
         test_instance.frbrize_record(test_record)
 
         mock_identifiers.assert_called_once_with(test_record.identifiers)
-        test_instance.redis_manager.checkSetRedis.assert_called_once_with('classify', '1', 'test')
+        test_instance.redis_manager.check_or_set_key.assert_called_once_with('classify', '1', 'test')
         mock_classify_record.assert_called_once_with('1', 'test', 'Author, Test', 'Test Record')
 
     def test_frbrize_record_success_author_missing(self, test_instance, test_record, mocker):
         mock_identifiers = mocker.patch.object(ClassifyProcess, '_get_queryable_identifiers')
         mock_identifiers.return_value = ['1|test']
 
-        test_instance.redis_manager.checkSetRedis.return_value = False
+        test_instance.redis_manager.check_or_set_key.return_value = False
 
         mock_classify_record = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata')
 
@@ -167,14 +167,14 @@ class TestOCLCClassifyProcess:
         test_instance.frbrize_record(test_record)
 
         mock_identifiers.assert_called_once_with(test_record.identifiers)
-        test_instance.redis_manager.checkSetRedis.assert_called_once_with('classify', '1', 'test')
+        test_instance.redis_manager.check_or_set_key.assert_called_once_with('classify', '1', 'test')
         mock_classify_record.assert_called_once_with('1', 'test', None, 'Test Record')
 
     def test_frbrize_record_identifier_in_redis(self, test_instance, test_record, mocker):
         mock_identifiers = mocker.patch.object(ClassifyProcess, '_get_queryable_identifiers')
         mock_identifiers.return_value = ['1|test']
 
-        test_instance.redis_manager.checkSetRedis.return_value = True
+        test_instance.redis_manager.check_or_set_key.return_value = True
 
         mock_classify_record = mocker.patch.object(ClassifyProcess, 'classify_record_by_metadata')
 
@@ -182,7 +182,7 @@ class TestOCLCClassifyProcess:
         test_instance.frbrize_record(test_record)
 
         mock_identifiers.assert_called_once_with(test_record.identifiers)
-        test_instance.redis_manager.checkSetRedis.assert_called_once_with('classify', '1', 'test')
+        test_instance.redis_manager.check_or_set_key.assert_called_once_with('classify', '1', 'test')
         mock_classify_record.assert_not_called
 
     def test_frbrize_record_identifier_missing(self, test_instance, test_record, mocker):
@@ -193,26 +193,26 @@ class TestOCLCClassifyProcess:
         test_instance.frbrize_record(test_record)
 
         mock_identifiers.assert_called_once_with(test_record.identifiers)
-        test_instance.redis_manager.checkSetRedis.assert_not_called()
+        test_instance.redis_manager.check_or_set_key.assert_not_called()
         mock_classify_record.assert_called_once_with(None, None, 'Author, Test', 'Test Record')
 
     def test_get_oclc_catalog_records_no_redis_match(self, test_instance, mocker):
-        test_instance.redis_manager.multiCheckSetRedis.return_value = [('2', True)]
+        test_instance.redis_manager.multi_check_or_set_key.return_value = [('2', True)]
 
         test_instance.get_oclc_catalog_records(['1|owi', '2|oclc'])
 
-        test_instance.redis_manager.multiCheckSetRedis.assert_called_once_with('catalog', ['2'], 'oclc')
-        test_instance.rabbitmq_manager.sendMessageToQueue.assert_called_once_with('test_oclc_queue', 'test_oclc_key', {'oclcNo': '2', 'owiNo': '1'})
-        test_instance.redis_manager.setIncrementerRedis.assert_called_once_with('oclcCatalog', 'API', amount=1)
+        test_instance.redis_manager.multi_check_or_set_key.assert_called_once_with('catalog', ['2'], 'oclc')
+        test_instance.rabbitmq_manager.send_message_to_queue.assert_called_once_with('test_oclc_queue', 'test_oclc_key', {'oclcNo': '2', 'owiNo': '1'})
+        test_instance.redis_manager.set_incrementer.assert_called_once_with('oclcCatalog', 'API', amount=1)
 
     def test_get_oclc_catalog_records_redis_match(self, test_instance, mocker):
-        test_instance.redis_manager.multiCheckSetRedis.return_value = [(2, False)]
+        test_instance.redis_manager.multi_check_or_set_key.return_value = [(2, False)]
 
         test_instance.get_oclc_catalog_records(['1|test', '2|oclc'])
 
-        test_instance.redis_manager.multiCheckSetRedis.assert_called_once_with('catalog', ['2'], 'oclc')
-        test_instance.rabbitmq_manager.sendMessageToQueue.assert_not_called()
-        test_instance.redis_manager.setIncrementerReids.assert_not_called()
+        test_instance.redis_manager.multi_check_or_set_key.assert_called_once_with('catalog', ['2'], 'oclc')
+        test_instance.rabbitmq_manager.send_message_to_queue.assert_not_called()
+        test_instance.redis_manager.set_incrementer.assert_not_called()
     
     def test_get_queryable_identifiers(self, test_instance):
         assert test_instance._get_queryable_identifiers(['1|isbn', '2|test']) == ['1|isbn']

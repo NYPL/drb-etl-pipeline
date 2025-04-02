@@ -1,0 +1,44 @@
+name: Web Rollback Production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  # Rollback job in case of failure (Revert production to the previous task definition)
+  rollback:
+    name: Rollback to Previous Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: "web/.nvmrc"
+          cache: npm
+          cache-dependency-path: "web/package-lock.json"
+
+      - name: Configure AWS credentials from Production account
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Pull and tag previous image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: sfr-front-end
+        run: |
+          docker pull $ECR_REGISTRY/$ECR_REPOSITORY:production-previous
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:production-previous $ECR_REGISTRY/$ECR_REPOSITORY:production-latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:production-latest
+
+      - name: Force ECS Update
+        run: |
+          aws ecs update-service --cluster sfr-frontend-production-tf --service sfr-frontend-production-tf --force-new-deployment

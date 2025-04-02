@@ -35,19 +35,20 @@ class APIUtils():
     }
 
     SOURCE_PRIORITY = {
-        'gutenberg': 1,
-        'doab': 2,
-        'loc': 3,
-        'muse': 4,
-        'met': 5,
-        'isac': 6,
-        'UofMichigan Backlist': 7,
-        'UofMichigan': 7,
-        'UofM': 7,
-        'UofSC': 8,
-        'hathitrust': 9,
-        'oclc': 10,
-        'nypl': 11
+        'SCH Collection/Hathi files': 1,
+        'gutenberg': 2,
+        'doab': 3,
+        'loc': 4,
+        'muse': 5,
+        'met': 6,
+        'isac': 7,
+        'UofMichigan Backlist': 8,
+        'UofMichigan': 8,
+        'UofM': 8,
+        'UofSC': 9,
+        'hathitrust': 10,
+        'oclc': 11,
+        'nypl': 12
     }
 
     DEFAULT_PRIORITY = 100

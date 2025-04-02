@@ -104,7 +104,7 @@ class TestDOABProcess:
 
         mock_manager.parse_links.assert_called_once()
         test_instance.s3_manager.create_manifest_in_s3.assert_called_once_with('pdfPath', 'pdfJSON', test_instance.s3_bucket)
-        test_instance.rabbitmq_manager.sendMessageToQueue.assert_called_once_with(
+        test_instance.rabbitmq_manager.send_message_to_queue.assert_called_once_with(
             test_instance.file_queue, 
             test_instance.file_route, 
             get_file_message('epubURI', 'epubPath')

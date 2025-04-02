@@ -14,19 +14,19 @@ def test_record_pipeline(db_manager, rabbitmq_manager: RabbitMQManager, unfrbriz
     record_queue = os.environ['RECORD_PIPELINE_QUEUE']
     record_route = os.environ['RECORD_PIPELINE_ROUTING_KEY']
 
-    rabbitmq_manager.createOrConnectQueue(record_queue, record_route)
+    rabbitmq_manager.create_or_connect_queue(record_queue, record_route)
 
     record_pipeline = RecordPipelineProcess()
 
-    rabbitmq_manager.sendMessageToQueue(
-        queueName=record_queue,
-        routingKey=record_route,
+    rabbitmq_manager.send_message_to_queue(
+        queue_name=record_queue,
+        routing_key=record_route,
         message={'sourceId': '1503292738|isbn', 'source': 'test_source'}
     )
 
     sleep(1)
 
-    record_pipeline.runProcess()
+    record_pipeline.runProcess(max_attempts=1)
 
     assert_record_frbrized(record_uuid=unfrbrized_pipeline_record_uuid, db_manager=db_manager)
     assert_record_clustered(record_uuid=unfrbrized_pipeline_record_uuid, db_manager=db_manager)

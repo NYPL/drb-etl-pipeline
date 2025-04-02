@@ -1,6 +1,6 @@
-from datetime import datetime, timedelta, timezone
-import json
+from datetime import datetime
 import os
+import boto3
 import requests
 import urllib.parse
 from enum import Enum
@@ -8,6 +8,7 @@ from typing import Optional
 from model import Record, Work, Edition, Item
 from sqlalchemy.orm import joinedload
 
+from digital_assets import get_stored_file_url
 from logger import create_log
 from mappings.publisher_backlist import PublisherBacklistMapping
 from managers import S3Manager
@@ -15,7 +16,7 @@ from services.ssm_service import SSMService
 from services.google_drive_service import GoogleDriveService
 from .source_service import SourceService
 from managers import DBManager, ElasticsearchManager
-from model import FileFlags
+from model import FileFlags, Part
 
 logger = create_log(__name__)
 
@@ -157,41 +158,90 @@ class PublisherBacklistService(SourceService):
         for record in records:
             try:
                 record_metadata = record.get('fields')
-                try:
-                    file_id = f'{self.drive_service.id_from_url(record_metadata.get("DRB_File Location"))}'
-                except Exception:
-                    logger.error(f'Could not extract a Drive identifier from {record_metadata.get("DRB_Record ID")}')
-                    continue
-                file_name = self.drive_service.get_file_metadata(file_id).get('name')
-                file = self.drive_service.get_drive_file(file_id)
-                
-                if not file:
-                    logger.error(f'Failed to retrieve file for {record_metadata.get("DRB_Record ID")} from Google Drive')
-                    continue
-
                 record_permissions = self.parse_permissions(record_metadata.get('Access type in DRB (from Access types)')[0])
-                bucket = self.file_bucket if not record_permissions['requires_login'] else self.limited_file_bucket
-                s3_path = f'{self.title_prefix}/{record_metadata[SOURCE_FIELD][0]}/{file_name}'
-                s3_response = self.s3_manager.put_object(file.getvalue(), s3_path, bucket)
-                
-                if not s3_response.get('ResponseMetadata').get('HTTPStatusCode') == 200:
-                    logger.error(f'Failed to upload file for {record_metadata.get("DRB_Record ID")} to S3')
-                    continue
-
-                s3_url = f'https://{bucket}.s3.amazonaws.com/{s3_path}'
                 
                 publisher_backlist_record = PublisherBacklistMapping(record_metadata)
                 publisher_backlist_record.applyMapping()
                 
-                webpub_flags=FileFlags(reader=True, limited_access=True)
-                self.add_has_part_mapping(s3_url, publisher_backlist_record.record, record_permissions['is_downloadable'], record_permissions['requires_login'])
-                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, flags=webpub_flags, path='/publisher_backlist')
+                try:
+                    file_url = self.download_file_from_location(record_metadata, record_permissions, publisher_backlist_record.record)
+                    if not file_url:
+                        continue
+                except Exception:
+                    logger.exception(f'Failed to download file for {record}')
+                    continue
                 
+                publisher_backlist_record.record.has_part.append(str(Part(
+                    index=1,
+                    url=file_url,
+                    source=publisher_backlist_record.record.source,
+                    file_type='application/pdf',
+                    flags=str(FileFlags(download=record_permissions['is_downloadable'], nypl_login=record_permissions['requires_login']))
+                )))
+                self.s3_manager.store_pdf_manifest(publisher_backlist_record.record, self.file_bucket, flags=FileFlags(reader=True, nypl_login=record_permissions['requires_login']), path='publisher_backlist')
                 mapped_records.append(publisher_backlist_record)
             except Exception:
                 logger.exception(f'Failed to process Publisher Backlist record: {record_metadata}')
         
         return mapped_records
+    
+    def download_file_from_location(self, record_metadata: dict, record_permissions: dict, record: Record) -> str:
+        file_location = record_metadata.get('DRB_File Location')
+        destination_file_bucket = os.environ.get("FILE_BUCKET", "drb-files-local")
+
+        if not file_location:
+            hath_identifier = next((identifier for identifier in record.identifiers if identifier.endswith('hathi')), None)
+
+            if hath_identifier is not None:
+                hathi_id = hath_identifier.split('|')[0]
+
+
+                try:
+                    self.s3_manager.client.head_object(Bucket=destination_file_bucket, Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
+                    logger.exception(f'PDF already exists at key: titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
+                    return None
+                except Exception:
+                    logger.exception(f'PDF does not exist at key: titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
+
+                try:
+                    pdf_bucket = os.environ["PDF_BUCKET"]
+                    self.s3_manager.client.head_object(Bucket=pdf_bucket, Key=f'tagged_pdfs/{hathi_id}.pdf')
+                except Exception:
+                    logger.exception('PDF object does not exist')
+                    raise Exception
+                
+                source_bucket_key = {'Bucket': pdf_bucket, 'Key': f'tagged_pdfs/{hathi_id}.pdf'}
+                try:
+                    extra_args = {
+                        'ACL': 'public-read'
+                    }
+                    self.s3_manager.client.copy(
+                        source_bucket_key,
+                        destination_file_bucket,
+                        f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf',
+                        extra_args
+                    )
+                except Exception:
+                    logger.exception("Error during copy response")
+
+                manifest_url = get_stored_file_url(storage_name=destination_file_bucket, file_path=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
+                return manifest_url
+                
+            raise Exception(f'Unable to get file for {record}')
+
+        
+        file_id = f'{self.drive_service.id_from_url(file_location)}'
+        file_name = self.drive_service.get_file_metadata(file_id).get('name')
+        file = self.drive_service.get_drive_file(file_id)
+        
+        if not file:
+            raise Exception(f'Unable to get file for: {record}')
+
+        bucket = self.file_bucket if not record_permissions['requires_login'] else self.limited_file_bucket
+        file_path = f'{self.title_prefix}/{record_metadata[SOURCE_FIELD][0]}/{file_name}'
+        self.s3_manager.put_object(file.getvalue(), file_path, bucket)
+
+        return get_stored_file_url(storage_name=bucket, file_path=file_path)
         
     def build_filter_by_formula_parameter(self, deleted=None, start_timestamp: Optional[datetime]=None) -> str:
         if deleted:
@@ -235,19 +285,6 @@ class PublisherBacklistService(SourceService):
 
             publisher_backlist_records.extend(records_response_json.get('records', []))
         return publisher_backlist_records
-
-    def add_has_part_mapping(self, s3_url: str, record: Record, is_downloadable: bool, requires_login: bool):
-        item_no = '1'
-        media_type = 'application/pdf'
-        flags = {
-            'catalog': False,
-            'download': is_downloadable,
-            'reader': False,
-            'embed': False,
-            'nypl_login': requires_login,
-        }
-
-        record.has_part.append('|'.join([item_no, s3_url, record.source, media_type, json.dumps(flags)]))
 
     @staticmethod
     def parse_permissions(permissions: str) -> dict:

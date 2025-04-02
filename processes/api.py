@@ -16,7 +16,7 @@ class APIProcess():
             logger.info('Starting API...')
 
             db_engine = self.db_manager.generateEngine()
-            redis_client = self.redis_manager.createRedisClient()
+            redis_client = self.redis_manager.create_client()
             self.elastic_search_manager.createElasticConnection()
             
             api = FlaskAPI(db_engine, redis_client)

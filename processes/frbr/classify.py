@@ -25,14 +25,14 @@ class ClassifyProcess():
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.redis_manager = RedisManager()
-        self.redis_manager.createRedisClient()
+        self.redis_manager.create_client()
 
         self.catalog_queue = os.environ['OCLC_QUEUE']
         self.catalog_route = os.environ['OCLC_ROUTING_KEY']
 
         self.rabbitmq_manager = RabbitMQManager()
-        self.rabbitmq_manager.createRabbitConnection()
-        self.rabbitmq_manager.createOrConnectQueue(self.catalog_queue, self.catalog_route)
+        self.rabbitmq_manager.create_connection()
+        self.rabbitmq_manager.create_or_connect_queue(self.catalog_queue, self.catalog_route)
 
         self.oclc_catalog_manager = OCLCCatalogManager()
 
@@ -79,7 +79,7 @@ class ClassifyProcess():
             if self.params.limit and self.record_buffer.ingest_count >= self.params.limit:
                 break
 
-            if self.redis_manager.checkIncrementerRedis('oclcCatalog', 'API'):
+            if self.redis_manager.check_incrementer('oclcCatalog', 'API'):
                 logger.warning('Exceeded max requests to OCLC catalog')
                 break
 
@@ -100,7 +100,7 @@ class ClassifyProcess():
             except Exception:
                 author = None
 
-            if identifier and self.redis_manager.checkSetRedis('classify', identifier, identifier_type):
+            if identifier and self.redis_manager.check_or_set_key('classify', identifier, identifier_type):
                 continue
 
             try:
@@ -145,21 +145,21 @@ class ClassifyProcess():
 
         oclc_numbers = list(oclc_numbers)
 
-        cached_oclc_numbers = self.redis_manager.multiCheckSetRedis('catalog', oclc_numbers, 'oclc')
+        cached_oclc_numbers = self.redis_manager.multi_check_or_set_key('catalog', oclc_numbers, 'oclc')
 
         for oclc_number, uncached in cached_oclc_numbers:
             if not uncached:
                 logger.debug(f'Skipping catalog lookup process for OCLC number {oclc_number}')
                 continue
 
-            self.rabbitmq_manager.sendMessageToQueue(self.catalog_queue, self.catalog_route, { 'oclcNo': oclc_number, 'owiNo': owi_number })
+            self.rabbitmq_manager.send_message_to_queue(self.catalog_queue, self.catalog_route, { 'oclcNo': oclc_number, 'owiNo': owi_number })
             catalogued_record_count += 1
 
         if catalogued_record_count > 0:
-            self.redis_manager.setIncrementerRedis('oclcCatalog', 'API', amount=catalogued_record_count)
+            self.redis_manager.set_incrementer('oclcCatalog', 'API', amount=catalogued_record_count)
 
     def check_if_classify_work_fetched(self, owi_number: int) -> bool:
-        return self.redis_manager.checkSetRedis('classifyWork', owi_number, 'owi')
+        return self.redis_manager.check_or_set_key('classifyWork', owi_number, 'owi')
 
     def _get_queryable_identifiers(self, identifiers):
         return list(filter(

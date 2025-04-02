@@ -1,0 +1,35 @@
+Chris Mulholland working notes file. - not to be confused with a ReadMe file.
+
+"paths": ["playwright/features/**/*.feature"],
+
+npm run cucumber -- features/homePageElements.feature 
+will only work if you also comment out the paths: ["playwright/features/**/*.feature"], line in the cucumber.js file. It seems that cucmber.js paths option is also being sent whenever you pass the specific feature file argument, so it’s running all the tests and the one you’re passing in as an argument on the command line.
+
+actually need to run:
+npm run cucumber -- playwright/features/homePageElements.feature to specify the playwright directory at the root
+
+run all tests: 
+npm run cucumber -- playwright/features
+
+run single test: 
+npm run cucumber -- playwright/features/homePageElements.feature
+
+to add a sleep:
+await this.page.waitForTimeout(3000);
+
+to debug:
+this.page.pause()
+
+to debug a test:
+PWDEBUG=1 npm run cucumber -- playwright/features/subjectSearch.feature
+
+support/setup.ts - you can uncomment sloMo here to slow down a test.
+
+to target the nth:
+    await this.page.locator("text=Read Online >> nth=0").click();
+
+to run test on qa site instead of prod, change the url here:
+npm run cucumber -- playwright/features/ReadOnlineTargets.feature --world-parameters '{"appUrl": "https://drb-qa.nypl.org/"}'
+
+
+https://digital-research-books-beta.nypl.org/

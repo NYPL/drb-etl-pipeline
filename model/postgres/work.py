@@ -7,8 +7,8 @@ from textwrap import shorten
 from .base import Base, Core
 
 WORK_IDENTIFIERS = Table('work_identifiers', Base.metadata,
-    Column('work_id', Integer, ForeignKey('works.id', ondelete='CASCADE'), unique=True),
-    Column('identifier_id', Integer, ForeignKey('identifiers.id', ondelete='CASCADE'), unique=True)
+    Column('work_id', Integer, ForeignKey('works.id', ondelete='CASCADE')),
+    Column('identifier_id', Integer, ForeignKey('identifiers.id', ondelete='CASCADE'))
 )
 
 WORK_RIGHTS = Table('work_rights', Base.metadata,
@@ -39,7 +39,9 @@ class Work(Base, Core):
     rights = relationship('Rights', secondary=WORK_RIGHTS, backref='works')
 
     def __repr__(self):
-        return f"<Work(title={shorten(self.title, width=50, placeholder='...')}, uuid={self.uuid})>"
+        title = shorten(self.title, width=50, placeholder='...') if self.title else self.title
+
+        return f"<Work(title={title}, uuid={self.uuid})>"
 
     def __dir__(self):
         return [

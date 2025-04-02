@@ -71,9 +71,9 @@ class RecordIngestor:
     @staticmethod
     def _send_record_pipeline_message(source_id: str, source: str):
         with RabbitMQManager(queue_name=os.environ.get('RECORD_PIPELINE_QUEUE'), routing_key=os.environ.get('RECORD_PIPELINE_ROUTING_KEY')) as rabbitmq_manager:
-            rabbitmq_manager.sendMessageToQueue(
-                queueName=rabbitmq_manager.queue_name, 
-                routingKey=rabbitmq_manager.routing_key, 
+            rabbitmq_manager.send_message_to_queue(
+                queue_name=rabbitmq_manager.queue_name, 
+                routing_key=rabbitmq_manager.routing_key, 
                 message=json.dumps({ 'sourceId': source_id, 'source': source })
             )
 
