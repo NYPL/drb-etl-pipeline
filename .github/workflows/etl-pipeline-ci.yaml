@@ -1,4 +1,4 @@
-name: 'Continuous Integration'
+name: ETL Pipeline CI
 
 on:
   workflow_call:
@@ -28,7 +28,7 @@ jobs:
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: "3.9"
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -50,4 +50,4 @@ jobs:
           pip install -r requirements.txt
       - name: Run API tests
         run: |
-          pytest tests/integration/api --env=qa
+          pytest etl-pipeline/tests/integration/api --env=qa
