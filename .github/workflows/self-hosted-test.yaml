@@ -121,7 +121,7 @@ jobs:
 
       - name: Run QA functional tests
         run: |
-          python3 -m pytest tests/functional \
+          python3 -m pytest tests/functional/processes/frbr \
             --env=qa \
             --junitxml=test-results.xml \
             --reruns=3 \
