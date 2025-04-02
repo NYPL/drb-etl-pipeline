@@ -4,7 +4,6 @@ import os
 import re
 
 from model import Record
-from mappings.gutenberg import GutenbergMapping
 from managers import S3Manager
 from logger import create_log
 from ..record_file_saver import RecordFileSaver
