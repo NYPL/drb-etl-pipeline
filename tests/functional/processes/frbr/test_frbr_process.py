@@ -61,5 +61,5 @@ def assert_record_frbrized(record_uuid: str, db_manager):
             )
             .all()
     )
-    print(catalog_records)
+
     assert len(catalog_records) == len(oclc_identifiers)
