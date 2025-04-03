@@ -20,7 +20,7 @@ class RecordFRBRizer:
         self.oclc_catalog_manager = OCLCCatalogManager()
         
         self.redis_manager = RedisManager()
-        self.redis_manager.createRedisClient()
+        self.redis_manager.create_client()
 
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
@@ -43,7 +43,7 @@ class RecordFRBRizer:
         title = record.title
 
         for id, id_type in self._get_queryable_identifiers(record.identifiers):
-            if self.redis_manager.checkSetRedis('classify', id, id_type):
+            if self.redis_manager.check_or_set_key('classify', id, id_type):
                 continue
 
             search_query = self.oclc_catalog_manager.generate_search_query(identifier=id, identifier_type=id_type)
@@ -57,7 +57,7 @@ class RecordFRBRizer:
         for oclc_bib in oclc_bibs:
             owi_number, related_oclc_numbers = self._add_work(oclc_bib) 
             
-            for oclc_number, uncached in self.redis_manager.multiCheckSetRedis('catalog', related_oclc_numbers, 'oclc'):
+            for oclc_number, uncached in self.redis_manager.multi_check_or_set_key('catalog', related_oclc_numbers, 'oclc'):
                 if not uncached:
                     continue
 
@@ -72,7 +72,7 @@ class RecordFRBRizer:
             logger.warning(f'Unable to get identifiers for bib: {oclc_bib}')
             return (owi_number, related_oclc_numbers)
 
-        if self.redis_manager.checkSetRedis('classifyWork', owi_number, 'owi'):
+        if self.redis_manager.check_or_set_key('classifyWork', owi_number, 'owi'):
             return (owi_number, related_oclc_numbers)
 
         related_oclc_numbers = self.oclc_catalog_manager.get_related_oclc_numbers(oclc_number=oclc_number)

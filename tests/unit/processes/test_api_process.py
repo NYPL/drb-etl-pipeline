@@ -31,7 +31,7 @@ class TestAPIProcess:
             api_process.runProcess()
 
             api_process.db_manager.generateEngine.assert_called_once()
-            api_process.redis_manager.createRedisClient.assert_called_once()
+            api_process.redis_manager.create_client.assert_called_once()
             api_process.elastic_search_manager.create_elastic_connection.assert_called_once()
             mock_flask_api.createErrorResponses.assert_called_once()
             mock_flask_api.run.assert_called_once()
