@@ -13,7 +13,8 @@ on:
 jobs:
   Deploy-Preview:
     runs-on: ubuntu-latest
-    environment: preview
+    outputs:
+      url: ${{ steps.deploy.outputs.deployment_url }}
     steps:
       - uses: actions/checkout@v4
 
