@@ -36,7 +36,19 @@ jobs:
           deployment_url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
           echo "deployment_url=$deployment_url" >> $GITHUB_OUTPUT
 
-      - name: Update GitHub Job Summary
-        run: |
-          echo "## Vercel Preview Deployment" >> $GITHUB_STEP_SUMMARY
-          echo "Preview URL: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
+      - name: Create GitHub Deployment
+        uses: chrnorm/deployment-action@v2
+        id: deployment
+        with:
+          token: ${{ github.token }}
+          environment-url: ${{ steps.deploy.outputs.deployment_url }}
+          environment: Preview
+          ref: ${{ github.head_ref }}
+
+      - name: Update Deployment Status
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ github.token }}
+          environment-url: ${{ steps.deploy.outputs.deployment_url }}
+          state: "success"
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
