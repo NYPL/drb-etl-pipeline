@@ -35,3 +35,8 @@ jobs:
         run: |
           deployment_url=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
           echo "deployment_url=$deployment_url" >> $GITHUB_OUTPUT
+
+      - name: Update GitHub Job Summary
+        run: |
+          echo "## Vercel Preview Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "Preview URL: ${{ steps.deploy.outputs.deployment_url }}" >> $GITHUB_STEP_SUMMARY
