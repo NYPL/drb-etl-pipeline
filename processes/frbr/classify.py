@@ -25,7 +25,7 @@ class ClassifyProcess:
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.redis_manager = RedisManager()
-        self.redis_manager.createRedisClient()
+        self.redis_manager.create_client()
 
         self.catalog_queue = os.environ["OCLC_QUEUE"]
         self.catalog_route = os.environ["OCLC_ROUTING_KEY"]
@@ -98,8 +98,8 @@ class ClassifyProcess:
             ):
                 break
 
-            if self.redis_manager.checkIncrementerRedis("oclcCatalog", "API"):
-                logger.warning("Exceeded max requests to OCLC catalog")
+            if self.redis_manager.check_incrementer('oclcCatalog', 'API'):
+                logger.warning('Exceeded max requests to OCLC catalog')
                 break
 
     def frbrize_record(self, record: Record):
@@ -119,9 +119,7 @@ class ClassifyProcess:
             except Exception:
                 author = None
 
-            if identifier and self.redis_manager.checkSetRedis(
-                "classify", identifier, identifier_type
-            ):
+            if identifier and self.redis_manager.check_or_set_key('classify', identifier, identifier_type):
                 continue
 
             try:
@@ -172,9 +170,7 @@ class ClassifyProcess:
 
         oclc_numbers = list(oclc_numbers)
 
-        cached_oclc_numbers = self.redis_manager.multiCheckSetRedis(
-            "catalog", oclc_numbers, "oclc"
-        )
+        cached_oclc_numbers = self.redis_manager.multi_check_or_set_key('catalog', oclc_numbers, 'oclc')
 
         for oclc_number, uncached in cached_oclc_numbers:
             if not uncached:
@@ -191,12 +187,10 @@ class ClassifyProcess:
             catalogued_record_count += 1
 
         if catalogued_record_count > 0:
-            self.redis_manager.setIncrementerRedis(
-                "oclcCatalog", "API", amount=catalogued_record_count
-            )
+            self.redis_manager.set_incrementer('oclcCatalog', 'API', amount=catalogued_record_count)
 
     def check_if_classify_work_fetched(self, owi_number: int) -> bool:
-        return self.redis_manager.checkSetRedis("classifyWork", owi_number, "owi")
+        return self.redis_manager.check_or_set_key('classifyWork', owi_number, 'owi')
 
     def _get_queryable_identifiers(self, identifiers):
         return list(

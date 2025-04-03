@@ -8,7 +8,7 @@ from model import Record
 def test_frbr_processes(db_manager, unfrbrized_record_uuid):
     redis_manager = RedisManager()
 
-    redis_manager.createRedisClient()
+    redis_manager.create_client()
     redis_manager.clear_cache()
 
     classify_process = ClassifyProcess(None, None, None, unfrbrized_record_uuid)
@@ -24,7 +24,7 @@ def test_frbr_processes(db_manager, unfrbrized_record_uuid):
 def test_frbrize_record(db_manager, unfrbrized_record_uuid):
     redis_manager = RedisManager()
 
-    redis_manager.createRedisClient()
+    redis_manager.create_client()
     redis_manager.clear_cache()
 
     record_frbrizer = RecordFRBRizer(db_manager=db_manager)

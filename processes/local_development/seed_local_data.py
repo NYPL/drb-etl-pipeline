@@ -34,7 +34,7 @@ class SeedLocalDataProcess:
 
             process_args = ["complete"] + ([None] * 4)
 
-            self.redis_manager.createRedisClient()
+            self.redis_manager.create_client()
             self.redis_manager.clear_cache()
 
             classify_process = ClassifyProcess(*process_args)

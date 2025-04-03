@@ -174,7 +174,7 @@ class TestCoverProcess:
         mockManager.resizeCoverFile.assert_not_called()
 
     def test_get_edition_identifiers(self, testProcess, mocker):
-        testProcess.redis_manager.checkSetRedis.side_effect = [True, False]
+        testProcess.redis_manager.check_or_set_key.side_effect = [True, False]
 
         mockIdentifiers = [
             mocker.MagicMock(identifier=1, authority="test"),
@@ -183,14 +183,12 @@ class TestCoverProcess:
         mockEdition = mocker.MagicMock(identifiers=mockIdentifiers)
 
         testIdentifiers = list(testProcess.get_edition_identifiers(mockEdition))
-
-        assert testIdentifiers == [(2, "test")]
-        testProcess.redis_manager.checkSetRedis.assert_has_calls(
-            [
-                mocker.call("sfrCovers", 1, "test", expirationTime=2592000),
-                mocker.call("sfrCovers", 2, "test", expirationTime=2592000),
-            ]
-        )
+        
+        assert testIdentifiers == [(2, 'test')]
+        testProcess.redis_manager.check_or_set_key.assert_has_calls([
+            mocker.call('sfrCovers', 1, 'test', expiration_time=2592000),
+            mocker.call('sfrCovers', 2, 'test', expiration_time=2592000)
+        ])
 
     def test_store_cover(self, testProcess: CoverProcess, mocker):
 

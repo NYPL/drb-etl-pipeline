@@ -31,7 +31,7 @@ class ClusterProcess:
         self.db_manager.create_session()
 
         self.redis_manager = RedisManager()
-        self.redis_manager.createRedisClient()
+        self.redis_manager.create_client()
 
         self.elastic_search_manager = ElasticsearchManager()
 
