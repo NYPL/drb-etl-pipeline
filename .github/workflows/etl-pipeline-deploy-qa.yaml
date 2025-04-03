@@ -1,7 +1,9 @@
 name: Deploy ETL Pipeline to QA
 
 on:
-  workflow_call:
+  push:
+    branches: [monorepo-v1]
+  # workflow_call:
 
 jobs:
   publish_qa:
