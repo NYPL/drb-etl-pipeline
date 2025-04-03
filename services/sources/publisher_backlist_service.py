@@ -48,7 +48,7 @@ class PublisherBacklistService(SourceService):
         self.db_manager.generate_engine()
 
         self.es_manager = ElasticsearchManager()
-        self.es_manager.createElasticConnection()
+        self.es_manager.create_elastic_connection()
 
         self.ssm_service = SSMService()
         self.airtable_auth_token = self.ssm_service.get_parameter(

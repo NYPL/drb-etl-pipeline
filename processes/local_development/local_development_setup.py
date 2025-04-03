@@ -23,9 +23,9 @@ class LocalDevelopmentSetupProcess:
             self.db_manager.create_session()
             self.db_manager.initialize_database()
 
-            self.elastic_search_manager.createElasticConnection()
+            self.elastic_search_manager.create_elastic_connection()
             self.wait_for_elastic_search()
-            self.elastic_search_manager.createElasticSearchIndex()
+            self.elastic_search_manager.create_elastic_search_index()
 
             logger.info("Completed local development setup")
         except Exception:

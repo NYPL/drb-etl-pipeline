@@ -18,7 +18,7 @@ def main():
     )
 
     esManager = ElasticsearchManager()
-    esManager.createElasticConnection()
+    esManager.create_elastic_connection()
 
     dbManager.generate_engine()
 
@@ -60,6 +60,7 @@ def main():
                 break
 
     dbManager.close_connection()
+
 
 
 if __name__ == "__main__":

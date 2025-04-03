@@ -35,9 +35,9 @@ class ClusterProcess:
 
         self.elastic_search_manager = ElasticsearchManager()
 
-        self.elastic_search_manager.createElasticConnection()
-        self.elastic_search_manager.createElasticSearchIngestPipeline()
-        self.elastic_search_manager.createElasticSearchIndex()
+        self.elastic_search_manager.create_elastic_connection()
+        self.elastic_search_manager.create_elastic_search_ingest_pipeline()
+        self.elastic_search_manager.create_elastic_search_index()
 
         self.constants = get_constants()
 
@@ -145,7 +145,7 @@ class ClusterProcess:
         )
 
     def update_elastic_search(self, works_to_index: list, word_ids_to_delete: set):
-        self.elastic_search_manager.deleteWorkRecords(word_ids_to_delete)
+        self.elastic_search_manager.delete_work_records(word_ids_to_delete)
         self.index_works_in_elastic_search(works_to_index)
 
     def delete_stale_works(self, work_ids: set[str]):
@@ -273,7 +273,7 @@ class ClusterProcess:
             elastic_manager.getCreateWork()
             work_documents.append(elastic_manager.work)
 
-        self.elastic_search_manager.saveWorkRecords(work_documents)
+        self.elastic_search_manager.save_work_records(work_documents)
 
     def titles_overlap(
         self, tokenized_record_title: set, tokenized_matched_record_title: set

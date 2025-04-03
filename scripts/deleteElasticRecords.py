@@ -24,7 +24,7 @@ def main():
     )
 
     esManager = ElasticsearchManager()
-    esManager.createElasticConnection()
+    esManager.create_elastic_connection()
 
     dbManager.generate_engine()
 
@@ -53,6 +53,7 @@ def main():
     )  # For any remainder ES works
 
     dbManager.close_connection()
+
 
 
 def findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDS, dbManager, esManager):

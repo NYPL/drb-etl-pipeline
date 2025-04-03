@@ -25,9 +25,9 @@ class RecordClusterer:
 
         self.elastic_search_manager = ElasticsearchManager()
 
-        self.elastic_search_manager.createElasticConnection()
-        self.elastic_search_manager.createElasticSearchIngestPipeline()
-        self.elastic_search_manager.createElasticSearchIndex()
+        self.elastic_search_manager.create_elastic_connection()
+        self.elastic_search_manager.create_elastic_search_ingest_pipeline()
+        self.elastic_search_manager.create_elastic_search_index()
 
         self.constants = get_constants()
 
@@ -70,7 +70,7 @@ class RecordClusterer:
             raise e
 
     def _update_elastic_search(self, work_to_index: Work, works_to_delete: set):
-        self.elastic_search_manager.deleteWorkRecords(works_to_delete)
+        self.elastic_search_manager.delete_work_records(works_to_delete)
         self._index_works_in_elastic_search(work_to_index)
 
     def _delete_stale_works(self, work_ids: set[str]):
@@ -205,7 +205,7 @@ class RecordClusterer:
         work_documents.append(elastic_manager.work)
 
         # TODO: save single work
-        self.elastic_search_manager.saveWorkRecords(work_documents)
+        self.elastic_search_manager.save_work_records(work_documents)
 
     def _titles_overlap(
         self, tokenized_record_title: set, tokenized_matched_record_title: set
