@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from typing import Union
 import os
 from redis import Redis
 
@@ -6,92 +7,113 @@ from logger import create_log
 
 logger = create_log(__name__)
 
+ONE_WEEK = 60 * 60 * 24 * 7
+
 
 class RedisManager:
     def __init__(self, host=None, port=None):
         super(RedisManager, self).__init__()
-        self.redisHost = host or os.environ.get('REDIS_HOST', None)
-        self.redisPort = port or os.environ.get('REDIS_PORT', None)
-        self.environment = os.environ.get('ENVIRONMENT', 'test')
+        self.host = host or os.environ.get("REDIS_HOST", None)
+        self.port = port or os.environ.get("REDIS_PORT", None)
+        self.environment = os.environ.get("ENVIRONMENT", "test")
 
-        self.presentTime = datetime.now(timezone.utc).replace(tzinfo=None)
-        self.oneDayAgo = self.presentTime - timedelta(days=1)
+        self.present_time = datetime.now(timezone.utc).replace(tzinfo=None)
+        self.one_day_ago = self.present_time - timedelta(days=1)
 
-        self.oclcLimit = int(os.environ.get('OCLC_QUERY_LIMIT', 400000))
-    
-    def createRedisClient(self):
-        self.redisClient = Redis(
-            host=self.redisHost,
-            port=self.redisPort,
-            socket_timeout=5
-        )
+        self.oclc_limit = int(os.environ.get("OCLC_QUERY_LIMIT", 400000))
 
-        return self.redisClient
+    def create_client(self) -> Redis:
+        self.client = Redis(host=self.host, port=self.port, socket_timeout=5)
+        return self.client
 
     def clear_cache(self):
-        self.redisClient.flushall()
-    
-    def checkSetRedis(self, service, identifier, idenType, expirationTime=60*60*24*7):
-        queryTime = self.redisClient.get('{}/{}/{}/{}'.format(self.environment, service, identifier, idenType))
+        self.client.flushall()
 
-        if queryTime is not None and datetime.strptime(queryTime.decode('utf-8'), '%Y-%m-%dT%H:%M:%S') >= self.oneDayAgo:
-            logger.debug('Identifier {} recently queried'.format(identifier))    
+    def check_or_set_key(
+        self,
+        service: str,
+        identifier: Union[int, str],
+        identifier_type: str,
+        expiration_time: int = ONE_WEEK,
+    ) -> bool:
+        query_time = self.client.get(
+            f"{self.environment}/{service}/{identifier}/{identifier_type}"
+        )
+
+        if query_time is not None and datetime.strptime(query_time.decode("utf-8"), "%Y-%m-%dT%H:%M:%S") >= self.one_day_ago:
+            logger.debug(f"Identifier {identifier} recently queried")
             return True
-        
-        self.setRedis(service, identifier, idenType, expirationTime=expirationTime)
+
+        self.set_key(service, identifier, identifier_type, expiration_time=expiration_time)
         return False
-        
-    def multiCheckSetRedis(self, service, identifiers, idenType, expirationTime=60*60*24*7):
-        checkArr = [
-            '{}/{}/{}/{}'.format(self.environment, service, identifier, idenType)
+
+    def multi_check_or_set_key(
+        self,
+        service: str,
+        identifiers: list[Union[int, str]],
+        identifier_type: str,
+        expiration_time: int = ONE_WEEK,
+    ) -> list[tuple[Union[str, int], bool]]:
+        keys_to_check = [
+            f"{self.environment}/{service}/{identifier}/{identifier_type}"
             for identifier in identifiers
         ]
 
-        idenQueryTimes = self.redisClient.mget(checkArr)
+        identifier_query_times = self.client.mget(keys_to_check)
 
-        outputArr = []
-        for i, queryTime in enumerate(idenQueryTimes):
-            updateReq = True
-            if queryTime is not None and datetime.strptime(queryTime.decode('utf-8'), '%Y-%m-%dT%H:%M:%S') >= self.oneDayAgo:
-                logger.debug('Identifier {} recently queried'.format(identifiers[i]))
-                updateReq = False
+        output = []
+        for i, query_time in enumerate(identifier_query_times):
+            update_required = True
+            if query_time is not None and datetime.strptime(query_time.decode("utf-8"), "%Y-%m-%dT%H:%M:%S") >= self.one_day_ago:
+                logger.debug(f"Identifier {identifiers[i]} recently queried")
+                update_required = False
 
-            outputArr.append((identifiers[i], updateReq))
-        
-        setArr = [key[0] for key in outputArr if key[1] is True]
-        self.multiSetRedis(service, setArr, idenType, expirationTime=expirationTime)
+            output.append((identifiers[i], update_required))
 
-        return outputArr
+        keys_to_set = [key[0] for key in output if key[1] is True]
+        self.multi_set_key(service, keys_to_set, identifier_type, expiration_time=expiration_time)
 
-    def setRedis(self, service, identifier, idenType, expirationTime=60*60*24*7):
-        self.redisClient.set(
-            '{}/{}/{}/{}'.format(self.environment, service, identifier, idenType),
-            self.presentTime.strftime('%Y-%m-%dT%H:%M:%S'),
-            ex=expirationTime
+        return output
+
+    def set_key(
+        self,
+        service: str,
+        identifier: Union[int, str],
+        identifier_type: str,
+        expiration_time: int = ONE_WEEK,
+    ):
+        self.client.set(
+            f"{self.environment}/{service}/{identifier}/{identifier_type}",
+            self.present_time.strftime("%Y-%m-%dT%H:%M:%S"),
+            ex=expiration_time,
         )
 
-    def multiSetRedis(self, service, identifiers, idenType, expirationTime=60*60*24*7):
-        pipe = self.redisClient.pipeline()
+    def multi_set_key(
+        self,
+        service: str,
+        identifiers: list[Union[int, str]],
+        identifier_type: str,
+        expiration_time: int = ONE_WEEK,
+    ):
+        pipe = self.client.pipeline()
 
         for identifier in identifiers:
             pipe.set(
-                '{}/{}/{}/{}'.format(self.environment, service, identifier, idenType),
-                self.presentTime.strftime('%Y-%m-%dT%H:%M:%S'),
-                ex=expirationTime
+                f"{self.environment}/{service}/{identifier}/{identifier_type}",
+                self.present_time.strftime("%Y-%m-%dT%H:%M:%S"),
+                ex=expiration_time,
             )
 
         pipe.execute()
 
-    def checkIncrementerRedis(self, service, identifier):
-        incrementValue = self.redisClient.get('{}/{}/{}'.format(
-            service, self.presentTime.strftime('%Y-%m-%d'), identifier
-        ))
-
-        return bool(incrementValue) and (int(incrementValue) >= self.oclcLimit)
-
-    def setIncrementerRedis(self, service, identifier, amount=1):
-        redisKey = '{}/{}/{}'.format(
-            service, self.presentTime.strftime('%Y-%m-%d'), identifier
+    def check_incrementer(self, service: str, identifier: str) -> bool:
+        increment_value = self.client.get(
+            f"{service}/{self.present_time.strftime('%Y-%m-%d')}/{identifier}"
         )
 
-        self.redisClient.incr(redisKey, amount=amount)
+        return bool(increment_value) and (int(increment_value) >= self.oclc_limit)
+
+    def set_incrementer(self, service: str, identifier: str, amount: int = 1):
+        key = f"{service}/{self.present_time.strftime('%Y-%m-%d')}/{identifier}"
+
+        self.client.incr(key, amount=amount)

@@ -188,7 +188,7 @@ class PublisherBacklistService(SourceService):
     
     def download_file_from_location(self, record_metadata: dict, record_permissions: dict, record: Record) -> str:
         file_location = record_metadata.get('DRB_File Location')
-        aws_file_bucket = os.environ.get("FILE_BUCKET", "drb-files-local")
+        destination_file_bucket = os.environ.get("FILE_BUCKET", "drb-files-local")
 
         if not file_location:
             hath_identifier = next((identifier for identifier in record.identifiers if identifier.endswith('hathi')), None)
@@ -196,12 +196,14 @@ class PublisherBacklistService(SourceService):
             if hath_identifier is not None:
                 hathi_id = hath_identifier.split('|')[0]
 
+
                 try:
-                    self.s3_manager.s3Client.head_object(Bucket=aws_file_bucket, Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
-                except Exception:
+                    self.s3_manager.s3Client.head_object(Bucket=destination_file_bucket, Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
                     logger.exception(f'PDF already exists at key: titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
                     return None
-                
+                except Exception:
+                    logger.exception(f'PDF does not exist at key: titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
+
                 try:
                     pdf_bucket = os.environ["PDF_BUCKET"]
                     self.s3_manager.s3Client.head_object(Bucket=pdf_bucket, Key=f'tagged_pdfs/{hathi_id}.pdf')
@@ -211,15 +213,19 @@ class PublisherBacklistService(SourceService):
                 
                 source_bucket_key = {'Bucket': pdf_bucket, 'Key': f'tagged_pdfs/{hathi_id}.pdf'}
                 try:
+                    extra_args = {
+                        'ACL': 'public-read'
+                    }
                     self.s3_manager.s3Client.copy(
                         source_bucket_key,
-                        Bucket=aws_file_bucket,
-                        Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf'
+                        destination_file_bucket,
+                        f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf',
+                        extra_args
                     )
                 except Exception:
                     logger.exception("Error during copy response")
 
-                manifest_url = get_stored_file_url(storage_name=aws_file_bucket, file_path=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
+                manifest_url = get_stored_file_url(storage_name=destination_file_bucket, file_path=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
                 return manifest_url
                 
             raise Exception(f'Unable to get file for {record}')
