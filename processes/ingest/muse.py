@@ -16,24 +16,26 @@ from .. import utils
 logger = create_log(__name__)
 
 
-class MUSEProcess():
-    MARC_URL = 'https://about.muse.jhu.edu/lib/metadata?format=marc&content=book&include=oa&filename=open_access_books&no_auth=1'
-    MARC_CSV_URL = 'https://about.muse.jhu.edu/static/org/local/holdings/muse_book_metadata.csv'
-    MUSE_ROOT_URL = 'https://muse.jhu.edu'
+class MUSEProcess:
+    MARC_URL = "https://about.muse.jhu.edu/lib/metadata?format=marc&content=book&include=oa&filename=open_access_books&no_auth=1"
+    MARC_CSV_URL = (
+        "https://about.muse.jhu.edu/static/org/local/holdings/muse_book_metadata.csv"
+    )
+    MUSE_ROOT_URL = "https://muse.jhu.edu"
 
     def __init__(self, *args):
         self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
-        self.db_manager.createSession()
+        self.db_manager.create_session()
 
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.s3_manager = S3Manager()
         self.s3_manager.createS3Client()
 
-        self.file_queue = os.environ['FILE_QUEUE']
-        self.file_route = os.environ['FILE_ROUTING_KEY']
+        self.file_queue = os.environ["FILE_QUEUE"]
+        self.file_route = os.environ["FILE_ROUTING_KEY"]
 
         self.rabbitmq_manager = RabbitMQManager()
         self.rabbitmq_manager.create_connection()
@@ -41,27 +43,25 @@ class MUSEProcess():
 
     def runProcess(self):
 
-        if self.params.process_type == 'daily':
+        if self.params.process_type == "daily":
             self.importMARCRecords()
-        elif self.params.process_type == 'complete':
+        elif self.params.process_type == "complete":
             self.importMARCRecords(full=True)
-        elif self.params.process_type == 'custom':
+        elif self.params.process_type == "custom":
             self.importMARCRecords(startTimestamp=self.params.ingest_period)
         elif self.params.record_id:
             self.importMARCRecords(recID=self.params.record_id)
 
         self.record_buffer.flush()
 
-        logger.info(f'Ingested {self.record_buffer.ingest_count} MUSE records')
+        logger.info(f"Ingested {self.record_buffer.ingest_count} MUSE records")
 
     def parse_muse_record(self, marc_record):
         record = map_muse_record(marc_record)
 
         # Use the available source link to create a PDF manifest file and
         # store in S3
-        _, muse_link, _, muse_type, _ = list(
-            record.has_part[0].split('|')
-        )
+        _, muse_link, _, muse_type, _ = list(record.has_part[0].split("|"))
 
         muse_manager = MUSEManager(record, muse_link, muse_type)
 
@@ -73,13 +73,17 @@ class MUSEProcess():
 
         if muse_manager.pdfWebpubManifest:
             self.s3_manager.putObjectInBucket(
-                muse_manager.pdfWebpubManifest.toJson().encode('utf-8'),
+                muse_manager.pdfWebpubManifest.toJson().encode("utf-8"),
                 muse_manager.s3PDFReadPath,
-                muse_manager.s3Bucket
+                muse_manager.s3Bucket,
             )
 
         if muse_manager.epubURL:
-            self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(muse_manager.epubURL, muse_manager.s3EpubPath))
+            self.rabbitmq_manager.send_message_to_queue(
+                self.file_queue,
+                self.file_route,
+                get_file_message(muse_manager.epubURL, muse_manager.s3EpubPath),
+            )
 
         self.record_buffer.add(record=record)
 
@@ -91,9 +95,11 @@ class MUSEProcess():
         startDateTime = None
         if full is False:
             if not startTimestamp:
-                startDateTime = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=24)
+                startDateTime = datetime.now(timezone.utc).replace(
+                    tzinfo=None
+                ) - timedelta(hours=24)
             else:
-                startDateTime = datetime.strptime(startTimestamp, '%Y-%m-%d')
+                startDateTime = datetime.strptime(startTimestamp, "%Y-%m-%d")
 
         marcReader = MARCReader(museFile)
 
@@ -103,26 +109,26 @@ class MUSEProcess():
             if self.params.limit and processed_record_count >= self.params.limit:
                 break
 
-            if (startDateTime or recID) \
-                    and self.recordToBeUpdated(record, startDateTime, recID)\
-                    is False:
+            if (startDateTime or recID) and self.recordToBeUpdated(
+                record, startDateTime, recID
+            ) is False:
                 continue
 
             try:
                 self.parse_muse_record(record)
                 processed_record_count += 1
             except MUSEError as e:
-                logger.warning('Unable to parse MUSE record')
+                logger.warning("Unable to parse MUSE record")
                 logger.debug(e)
 
     def downloadMARCRecords(self):
         try:
             museResponse = requests.get(MUSEProcess.MARC_URL, stream=True, timeout=30)
             museResponse.raise_for_status()
-        except(ReadTimeout, HTTPError) as e:
-            logger.error('Unable to load MUSE MARC records')
+        except (ReadTimeout, HTTPError) as e:
+            logger.error("Unable to load MUSE MARC records")
             logger.debug(e)
-            raise Exception('Unable to load Project MUSE MARC file')
+            raise Exception("Unable to load Project MUSE MARC file")
 
         content = bytes()
         for chunk in museResponse.iter_content(1024 * 250):
@@ -132,12 +138,14 @@ class MUSEProcess():
 
     def downloadRecordUpdates(self):
         try:
-            csvResponse = requests.get(MUSEProcess.MARC_CSV_URL, stream=True, timeout=30)
+            csvResponse = requests.get(
+                MUSEProcess.MARC_CSV_URL, stream=True, timeout=30
+            )
             csvResponse.raise_for_status()
-        except(ReadTimeout, HTTPError) as e:
-            logger.error('Unable to load MUSE CSV records')
+        except (ReadTimeout, HTTPError) as e:
+            logger.error("Unable to load MUSE CSV records")
             logger.debug(e)
-            raise Exception('Unable to load Project MUSE CSV file')
+            raise Exception("Unable to load Project MUSE CSV file")
 
         csvReader = csv.reader(
             csvResponse.iter_lines(decode_unicode=True),
@@ -150,17 +158,16 @@ class MUSEProcess():
         self.updateDates = {}
         for row in csvReader:
             try:
-                self.updateDates[row[7]] = \
-                    datetime.strptime(row[11], '%Y-%m-%d')
+                self.updateDates[row[7]] = datetime.strptime(row[11], "%Y-%m-%d")
             except (IndexError, ValueError):
-                logger.warning('Unable to parse MUSE')
+                logger.warning("Unable to parse MUSE")
                 logger.debug(row)
 
     def recordToBeUpdated(self, record, startDate, recID):
-        recordURL = record.get_fields('856')[0]['u']
+        recordURL = record.get_fields("856")[0]["u"]
 
         updateDate = self.updateDates.get(recordURL[:-1], datetime(1970, 1, 1))
 
-        updateURL = 'https://muse.jhu.edu/book/{}'.format(recID)
+        updateURL = "https://muse.jhu.edu/book/{}".format(recID)
 
         return (updateDate >= startDate) or updateURL == recordURL[:-1]

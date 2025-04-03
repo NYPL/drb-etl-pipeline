@@ -5,7 +5,7 @@ from managers import DBManager, ElasticsearchManager, RedisManager
 logger = create_log(__name__)
 
 
-class APIProcess():
+class APIProcess:
     def __init__(self, *args):
         self.db_manager = DBManager()
         self.elastic_search_manager = ElasticsearchManager()
@@ -13,16 +13,16 @@ class APIProcess():
 
     def runProcess(self):
         try:
-            logger.info('Starting API...')
+            logger.info("Starting API...")
 
-            db_engine = self.db_manager.generateEngine()
+            db_engine = self.db_manager.generate_engine()
             redis_client = self.redis_manager.createRedisClient()
             self.elastic_search_manager.createElasticConnection()
-            
+
             api = FlaskAPI(db_engine, redis_client)
 
             api.createErrorResponses()
             api.run()
         except Exception as e:
-            logger.exception('Failed to start API')
+            logger.exception("Failed to start API")
             raise e
