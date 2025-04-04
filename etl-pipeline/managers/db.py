@@ -74,7 +74,6 @@ class DBManager:
         self.session.rollback()
 
     def close_connection(self):
-        self.commit_changes()
         self.session.close()
         self.engine.dispose()
 
