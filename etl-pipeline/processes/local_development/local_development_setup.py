@@ -20,8 +20,8 @@ class LocalDevelopmentSetupProcess:
         try:
             self.initialize_db()
 
-            self.db_manager.createSession()
-            self.db_manager.initializeDatabase()
+            self.db_manager.create_session()
+            self.db_manager.initialize_database()
 
             self.elastic_search_manager.create_elastic_connection()
             self.wait_for_elastic_search()
@@ -40,7 +40,7 @@ class LocalDevelopmentSetupProcess:
             db="postgres",
         )
 
-        admin_db_manager.generateEngine()
+        admin_db_manager.generate_engine()
 
         with admin_db_manager.engine.connect() as admin_db_connection:
             admin_db_connection.connection.set_isolation_level(

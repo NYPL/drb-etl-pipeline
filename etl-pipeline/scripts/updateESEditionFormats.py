@@ -19,9 +19,9 @@ def main():
     esManager = ElasticsearchManager()
     esManager.create_elastic_connection()
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
     catalogLinkQuery = (
         dbManager.session.query(Work)
@@ -58,7 +58,7 @@ def main():
         if saveWork:
             workRec.save()
 
-    dbManager.closeConnection()
+    dbManager.close_connection()
 
 
 def getEditionFormats(items):

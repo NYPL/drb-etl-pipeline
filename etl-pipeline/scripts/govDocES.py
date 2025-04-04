@@ -20,9 +20,9 @@ def main():
     esManager = ElasticsearchManager()
     esManager.create_elastic_connection()
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
     batchSize = 1000
     for work in (
@@ -59,7 +59,7 @@ def main():
             if break_out_flag:
                 break
 
-    dbManager.closeConnection()
+    dbManager.close_connection()
 
 
 if __name__ == "__main__":

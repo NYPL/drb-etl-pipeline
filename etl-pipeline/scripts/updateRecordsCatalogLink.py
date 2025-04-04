@@ -17,9 +17,9 @@ def main():
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
     catalogRegex = r'catalog\": true' 
     linkRegex = r'text\/html'
@@ -38,7 +38,7 @@ def main():
 
             record.has_part = recordArray
 
-    dbManager.commitChanges()
+    dbManager.commit_changes()
     
 
 if __name__ == '__main__':

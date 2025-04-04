@@ -16,9 +16,9 @@ def main():
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
     for edit in dbManager.session.query(Edition) \
         .filter(Edition.edition_statement != None) \
@@ -28,7 +28,7 @@ def main():
             editNumber = extract(edit.edition_statement, edit.languages[0]['language'])
             edit.edition = editNumber
 
-    dbManager.commitChanges()
+    dbManager.commit_changes()
 
 if __name__ == '__main__':
     main()

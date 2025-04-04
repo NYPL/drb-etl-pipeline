@@ -26,9 +26,9 @@ def main():
     esManager = ElasticsearchManager()
     esManager.create_elastic_connection()
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
     batchSize = 1000
     esWorkUUIDS = set()
@@ -52,7 +52,7 @@ def main():
         esWorkUUIDS, psqlWorkUUIDS, dbManager, esManager
     )  # For any remainder ES works
 
-    dbManager.closeConnection()
+    dbManager.close_connection()
 
 
 def findESOnlyWorks(esWorkUUIDS, psqlWorkUUIDS, dbManager, esManager):

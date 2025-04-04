@@ -24,9 +24,9 @@ def main(dryRun=False):
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
     countAuth = 0
     countWorkContrib = 0
@@ -59,12 +59,12 @@ def main(dryRun=False):
     if dryRun == True:
         logging.info('________DRY RUN COMPLETED________')
 
-        dbManager.rollbackChanges()
+        dbManager.rollback_changes()
         dbManager.session.close()
         dbManager.engine.dispose()
     else:
         logging.info('________DELETION COMPLETED________')
-        dbManager.closeConnection()
+        dbManager.close_connection()
 
 
 def deleteDuplicateAgents(agentID, agent, count, type):

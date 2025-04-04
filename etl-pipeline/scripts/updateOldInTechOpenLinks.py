@@ -18,9 +18,9 @@ def main():
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
     doabProcess = DOABProcess('single', None, None, None, None, None)
 
@@ -40,7 +40,7 @@ def main():
                 doabProcess.saveRecords()
                 doabProcess.records = set()     #Clears memory space for process class after each import
 
-    dbManager.commitChanges()
+    dbManager.commit_changes()
 
 if __name__ == '__main__':
     main()

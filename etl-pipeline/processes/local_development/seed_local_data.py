@@ -15,7 +15,7 @@ class SeedLocalDataProcess():
         self.redis_manager = RedisManager()
 
         self.db_manager = DBManager()
-        self.db_manager.createSession()
+        self.db_manager.create_session()
 
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 

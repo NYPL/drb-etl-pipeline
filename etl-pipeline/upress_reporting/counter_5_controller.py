@@ -46,8 +46,8 @@ class Counter5Controller:
 
     def setup_db_manager(self):
         self.db_manager = DBManager()
-        self.db_manager.generateEngine()
-        self.db_manager.createSession()
+        self.db_manager.generate_engine()
+        self.db_manager.create_session()
 
     def create_reports(self):
         print("Generating Counter 5 reports...", datetime.now())
@@ -106,7 +106,7 @@ class Counter5Controller:
                 print("Terminating process. Exception encountered: ", e)
                 raise e
 
-        self.db_manager.closeConnection()
+        self.db_manager.close_connection()
         print("Done building Counter 5 reports! ", datetime.now())
 
     def pull_aggregated_logs(self):

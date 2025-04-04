@@ -20,9 +20,9 @@ def main():
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
     editionCount = 0
     workCount = 0
@@ -56,7 +56,7 @@ def main():
     print(editionCount, workCount)
     print(editionCount + workCount)
 
-    dbManager.closeConnection()
+    dbManager.close_connection()
 
 if __name__ == '__main__':
     main()

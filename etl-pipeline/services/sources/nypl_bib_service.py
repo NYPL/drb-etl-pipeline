@@ -24,7 +24,7 @@ class NYPLBibService(SourceService):
             port=os.environ['NYPL_BIB_PORT'],
             db=os.environ['NYPL_BIB_NAME']
         )
-        self.bib_db_connection.generateEngine()
+        self.bib_db_connection.generate_engine()
 
         self.nypl_api_manager = NyplApiManager()
         self.nypl_api_manager.generateAccessToken()

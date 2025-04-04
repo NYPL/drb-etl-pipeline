@@ -11,7 +11,7 @@ class HathiTrustProcess():
         self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
-        self.db_manager.createSession()
+        self.db_manager.create_session()
 
         self.record_buffer = RecordBuffer(db_manager=self.db_manager, batch_size=1000)
 

@@ -64,7 +64,7 @@ def db_manager():
     db_manager = DBManager()
     
     try:
-        db_manager.createSession()
+        db_manager.create_session()
         db_manager.session.execute(text('SELECT 1'))
 
         yield db_manager

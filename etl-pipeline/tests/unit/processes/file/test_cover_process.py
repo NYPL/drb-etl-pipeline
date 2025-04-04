@@ -97,7 +97,7 @@ class TestCoverProcess:
             store_cover=mocker.DEFAULT,
         )
         processMocks['search_for_cover'].side_effect = ['manager1', None, 'manager2']
-        testProcess.db_manager.windowedQuery.return_value = ['ed1', 'ed2', 'ed3']
+        testProcess.db_manager.windowed_query.return_value = ['ed1', 'ed2', 'ed3']
 
         testProcess.run_start_time = datetime.now(timezone.utc).replace(tzinfo=None)
 
@@ -116,7 +116,7 @@ class TestCoverProcess:
             store_cover=mocker.DEFAULT,
         )
         processMocks['search_for_cover'].side_effect = ['manager1', None, 'manager2']
-        testProcess.db_manager.windowedQuery.return_value = ['ed1', 'ed2', 'ed3']
+        testProcess.db_manager.windowed_query.return_value = ['ed1', 'ed2', 'ed3']
 
         testProcess.run_start_time = datetime.now() - timedelta(13)
 
@@ -189,5 +189,5 @@ class TestCoverProcess:
         assert mockEdition.links[0].url == 'test_aws_bucket.s3.amazonaws.com/covers/test/1.tst'
         assert mockEdition.links[0].media_type == 'image/tst'
         assert mockEdition.links[0].flags == {'cover': True}
-        testProcess.db_manager.bulkSaveObjects.assert_called_once_with(testProcess.editions_to_update)
+        testProcess.db_manager.bulk_save_objects.assert_called_once_with(testProcess.editions_to_update)
         testProcess.s3_manager.putObjectInBucket.assert_called_once_with('testBytes', 'covers/test/1.tst', 'test_aws_bucket')

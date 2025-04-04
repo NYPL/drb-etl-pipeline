@@ -17,9 +17,9 @@ def main():
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
     for record in dbManager.session.query(Record) \
         .filter(Record.source == 'isac').all():
@@ -59,7 +59,7 @@ def main():
         .filter(Link.flags == '{"embed": false,"reader": false,"catalog": false,"download": true}').all():
             link.flags = {"embed": False, "reader": True, "catalog": False, "download": False}
 
-    dbManager.commitChanges()
+    dbManager.commit_changes()
 
 if __name__ == '__main__':
     main()

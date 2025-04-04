@@ -16,9 +16,9 @@ def main():
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generateEngine()
+    dbManager.generate_engine()
 
-    dbManager.createSession()
+    dbManager.create_session()
 
 
     for item in dbManager.session.query(Item) \
@@ -29,7 +29,7 @@ def main():
             .filter(Link.media_type == 'application/webpub+json'):   
                 dbManager.session.delete(link)
 
-    dbManager.commitChanges()
+    dbManager.commit_changes()
 
 if __name__ == '__main__':
     main()
