@@ -18,7 +18,7 @@ class CoverProcess():
         self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
-        self.db_manager.createSession()
+        self.db_manager.create_session()
 
         self.redis_manager = RedisManager()
         self.redis_manager.create_client()
@@ -36,7 +36,7 @@ class CoverProcess():
 
             self.get_edition_covers(editions_with_covers_query)
 
-            self.db_manager.bulkSaveObjects(self.editions_to_update)
+            self.db_manager.bulk_save_objects(self.editions_to_update)
         except Exception:
             logger.exception('Failed to run cover process')
         finally:
@@ -58,7 +58,7 @@ class CoverProcess():
         return base_query.filter(*filters)
 
     def get_edition_covers(self, cover_query):
-        for edition in self.db_manager.windowedQuery(Edition, cover_query, windowSize=CoverProcess.BATCH_SIZE):
+        for edition in self.db_manager.windowed_query(Edition, cover_query, window_size=CoverProcess.BATCH_SIZE):
             cover_manager = self.search_for_cover(edition)
 
             if cover_manager: 
@@ -98,5 +98,5 @@ class CoverProcess():
         self.editions_to_update.add(edition)
 
         if len(self.editions_to_update) >= CoverProcess.BATCH_SIZE:
-            self.db_manager.bulkSaveObjects(self.editions_to_update)
+            self.db_manager.bulk_save_objects(self.editions_to_update)
             self.editions_to_update.clear()

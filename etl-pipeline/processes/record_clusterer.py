@@ -64,7 +64,7 @@ class RecordClusterer:
 
     def _commit_changes(self):
         try:
-            self.db_manager.commitChanges()
+            self.db_manager.commit_changes()
         except Exception as e:
             self.db_manager.session.rollback()
             raise e
@@ -74,7 +74,7 @@ class RecordClusterer:
         self._index_works_in_elastic_search(work_to_index)
 
     def _delete_stale_works(self, work_ids: set[str]):
-        self.db_manager.deleteRecordsByQuery(
+        self.db_manager.delete_records_by_query(
             self.db_manager.session.query(Work).filter(Work.id.in_(list(work_ids)))
         )
 

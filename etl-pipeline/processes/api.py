@@ -15,7 +15,7 @@ class APIProcess:
         try:
             logger.info("Starting API...")
 
-            db_engine = self.db_manager.generateEngine()
+            db_engine = self.db_manager.generate_engine()
             redis_client = self.redis_manager.create_client()
             self.elastic_search_manager.create_elastic_connection()
 

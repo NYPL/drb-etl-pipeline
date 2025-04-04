@@ -42,7 +42,7 @@ class PublisherBacklistService(SourceService):
         self.drive_service = GoogleDriveService()
 
         self.db_manager = DBManager()
-        self.db_manager.generateEngine()
+        self.db_manager.generate_engine()
 
         self.es_manager = ElasticsearchManager()
         self.es_manager.create_elastic_connection()
@@ -55,7 +55,7 @@ class PublisherBacklistService(SourceService):
     def delete_records(self):
         records = self.get_publisher_backlist_records(deleted=True)
 
-        self.db_manager.createSession()
+        self.db_manager.create_session()
 
         for record in records:
             record_metadata = record.get("fields")

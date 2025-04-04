@@ -14,8 +14,7 @@ class DatabaseMaintenanceProcess():
 
     def runProcess(self):
         try:
-            self.db_manager.generateEngine()
-            self.db_manager.createSession()
+            self.db_manager.create_session()
 
             self.vacuum_tables()
 
@@ -24,7 +23,7 @@ class DatabaseMaintenanceProcess():
             logger.exception('Failed to run database maintenance')
             raise e
         finally:
-            self.db_manager.closeConnection()
+            self.db_manager.close_connection()
 
     def vacuum_tables(self):
         logger.info(f'Vacuuming tables: {self.VACUUMING_TABLES}')

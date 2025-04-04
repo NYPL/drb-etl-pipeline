@@ -28,7 +28,7 @@ class ClusterProcess:
         self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
-        self.db_manager.createSession()
+        self.db_manager.create_session()
 
         self.redis_manager = RedisManager()
         self.redis_manager.create_client()
@@ -149,7 +149,7 @@ class ClusterProcess:
         self.index_works_in_elastic_search(works_to_index)
 
     def delete_stale_works(self, work_ids: set[str]):
-        self.db_manager.deleteRecordsByQuery(
+        self.db_manager.delete_records_by_query(
             self.db_manager.session.query(Work).filter(Work.id.in_(list(work_ids)))
         )
 

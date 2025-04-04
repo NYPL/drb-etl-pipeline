@@ -50,7 +50,7 @@ def is_record_missing_files(record_parts: tuple) -> bool:
 
 def main(*args):
     db_manager = DBManager()
-    db_manager.createSession()
+    db_manager.create_session()
 
     source_arg = next((option for option in args if option.startswith('source=')), None)
     source = source_arg.split('=')[1] if source_arg else 'gutenberg'

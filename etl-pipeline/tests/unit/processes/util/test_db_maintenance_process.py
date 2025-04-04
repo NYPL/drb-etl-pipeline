@@ -19,11 +19,10 @@ class TestDatabaseMaintenanceProcess:
 
         db_maintenance_process.runProcess()
 
-        db_maintenance_process.db_manager.generateEngine.assert_called_once()
-        db_maintenance_process.db_manager.createSession.assert_called_once()
+        db_maintenance_process.db_manager.create_session.assert_called_once()
 
         mock_connection.execution_options.assert_called_once_with(isolation_level='AUTOCOMMIT')
         
         assert mock_connection.execute.call_count == len(db_maintenance_process.VACUUMING_TABLES)
         
-        db_maintenance_process.db_manager.closeConnection.assert_called_once()    
+        db_maintenance_process.db_manager.close_connection.assert_called_once()    

@@ -17,7 +17,7 @@ class CatalogProcess():
         self.db_manager = DBManager()
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
-        self.db_manager.createSession()
+        self.db_manager.create_session()
 
         self.rabbitmq_manager = RabbitMQManager()
         self.rabbitmq_manager.create_connection()

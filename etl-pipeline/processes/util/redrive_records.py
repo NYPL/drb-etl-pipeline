@@ -14,7 +14,7 @@ class RedriveRecordsProcess:
         self.params = utils.parse_process_args(*args)
 
         self.db_manager = DBManager()
-        self.db_manager.createSession()
+        self.db_manager.create_session()
 
         self.records_queue = os.environ.get('RECORD_PIPELINE_QUEUE')
         self.records_route = os.environ.get('RECORD_PIPELINE_ROUTING_KEY')

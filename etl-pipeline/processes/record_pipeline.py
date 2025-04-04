@@ -54,7 +54,7 @@ class RecordPipelineProcess:
     
     def _process_message(self, message):
         try:
-            self.db_manager.createSession()
+            self.db_manager.create_session()
 
             message_props, _, message_body = message
             source_id, source = self._parse_message(message_body=message_body)
