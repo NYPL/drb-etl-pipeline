@@ -1,4 +1,4 @@
-from .coverManager import CoverManager
+from .cover_manager import CoverManager
 from .db import DBManager
 from .doabParser import DOABLinkManager
 from .kMeans import KMeansManager

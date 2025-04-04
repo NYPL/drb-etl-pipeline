@@ -71,11 +71,11 @@ class CoverProcess():
         identifiers = [i for i in self.get_edition_identifiers(edition)]
         manager = CoverManager(identifiers, self.db_manager.session)
 
-        if manager.fetchCover() is True:
-            manager.fetchCoverFile()
-            manager.resizeCoverFile()
+        if manager.fetch_cover() is True:
+            manager.fetch_cover_file()
+            manager.resize_cover_file()
 
-            return manager if manager.coverContent else None
+            return manager if manager.cover_content else None
 
     def get_edition_identifiers(self, edition: Edition):
         for id in edition.identifiers:
