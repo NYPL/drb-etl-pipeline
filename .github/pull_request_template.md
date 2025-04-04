@@ -1,3 +1,3 @@
 ## Describe your changes
 
-## Describe how you tested
+## How to test
