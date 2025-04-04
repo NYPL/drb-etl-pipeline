@@ -1,0 +1,29 @@
+/__pycache__/*
+.DS_Store
+.coverage
+/.vscode/*
+*.pyc
+*.xml
+*.code-workspace
+config/local*
+!config/local.yaml
+!config/local-compose.yaml
+/allure-results
+/scripts/*.log
+# ctags generated file
+tags
+# Vim
+*.swp
+/*venv*
+
+analytics/upress_reporting/log_files
+
+service-account.json
+
+# functional test files
+!test-doab.xml
+!test-doab-deleted.xml
+!test-clacso.xml
+
+#mise local version manager config
+mise.local.toml

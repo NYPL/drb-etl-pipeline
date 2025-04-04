@@ -1,4 +1,4 @@
-name: 'Continuous Integration'
+name: ETL Pipeline CI
 
 on:
   workflow_call:
@@ -28,7 +28,8 @@ jobs:
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: "3.9"
+
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -37,17 +38,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
             ${{ runner.os }}-
+
       - name: Install GCC 12
         run: |
           sudo apt update
           sudo apt install -y gcc-12 g++-12
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 60
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-12 60
+
       - name: Install dependencies
+        working-directory: ./etl-pipeline
         run: |
           python -m pip install --upgrade pip wheel
           pip install -r dev-requirements.txt
           pip install -r requirements.txt
+
       - name: Run API tests
+        working-directory: ./etl-pipeline
         run: |
           pytest tests/integration/api --env=qa
