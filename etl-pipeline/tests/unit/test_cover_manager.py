@@ -6,104 +6,104 @@ from managers import CoverManager
 
 class TestCoverManager:
     @pytest.fixture
-    def testManager(self, mocker):
+    def test_manager(self, mocker):
         class MockCoverManager(CoverManager):
-            def __init__(self, identifiers, dbSession):
+            def __init__(self, identifiers, db_session):
                 self.identifiers = identifiers
-                self.dbSession = dbSession
+                self.db_session = db_session
 
         return MockCoverManager([(1, 'test')], mocker.MagicMock())
 
     @pytest.fixture
-    def mockImageCreator(self, mocker):
-        def createImageMocks(width, height, format):
-            mockOriginal = mocker.MagicMock(width=width, height=height, format=format)
-            mockResized = mocker.MagicMock()
+    def mock_image_creator(self, mocker):
+        def create_image_mocks(width, height, format):
+            mock_original = mocker.MagicMock(width=width, height=height, format=format)
+            mock_resized = mocker.MagicMock()
 
-            mockOriginal.resize.return_value = mockResized
+            mock_original.resize.return_value = mock_resized
 
-            return mockOriginal
+            return mock_original
 
-        return createImageMocks
+        return create_image_mocks
 
-    def test_loadFetchers(self, testManager):
-        testManager.loadFetchers()
+    def test_load_fetchers(self, test_manager):
+        test_manager.load_fetchers()
 
-        assert len(testManager.fetchers) == 4
-        assert testManager.fetchers[0].__name__ == 'HathiFetcher'
-        assert testManager.fetchers[3].__name__ == 'ContentCafeFetcher'
+        assert len(test_manager.fetchers) == 4
+        assert test_manager.fetchers[0].__name__ == 'HathiFetcher'
+        assert test_manager.fetchers[3].__name__ == 'ContentCafeFetcher'
 
-    def test_fetchCover_success(self, testManager, mocker):
-        mockFetcher = mocker.MagicMock()
-        mockFetcher.hasCover.return_value = True
-        testManager.fetchers = [mocker.MagicMock(return_value=mockFetcher)]
+    def test_fetch_cover_success(self, test_manager, mocker):
+        mock_fetcher = mocker.MagicMock()
+        mock_fetcher.hasCover.return_value = True
+        test_manager.fetchers = [mocker.MagicMock(return_value=mock_fetcher)]
 
-        assert testManager.fetchCover() == True
+        assert test_manager.fetch_cover() == True
 
-        testManager.fetchers[0].assert_called_once_with([(1, 'test')], testManager.dbSession)
-        mockFetcher.hasCover.assert_called_once()
+        test_manager.fetchers[0].assert_called_once_with([(1, 'test')], test_manager.db_session)
+        mock_fetcher.hasCover.assert_called_once()
 
-    def test_fetchCover_none(self, testManager, mocker):
-        mockFetcher = mocker.MagicMock()
-        mockFetcher.hasCover.return_value = False
-        testManager.fetchers = [mocker.MagicMock(return_value=mockFetcher)]
+    def test_fetch_cover_none(self, test_manager, mocker):
+        mock_fetcher = mocker.MagicMock()
+        mock_fetcher.has_cover.return_value = False
+        test_manager.fetchers = [mocker.MagicMock(return_value=mock_fetcher)]
 
-        assert testManager.fetchCover() == False
+        assert test_manager.fetch_cover() == False
 
-    def test_fetchCoverFile(self, testManager, mocker):
-        testManager.fetcher = mocker.MagicMock()
-        testManager.fetcher.downloadCoverFile.return_value = 'testContent'
+    def test_fetch_cover_file(self, test_manager, mocker):
+        test_manager.fetcher = mocker.MagicMock()
+        test_manager.fetcher.downloadCoverFile.return_value = 'test_content'
 
-        testManager.fetchCoverFile()
+        test_manager.fetch_cover_file()
 
-        assert testManager.coverContent == 'testContent'
-        testManager.fetcher.downloadCoverFile.assert_called_once()
+        assert test_manager.cover_content == 'test_content'
+        test_manager.fetcher.downloadCoverFile.assert_called_once()
 
-    def test_resizeCover_tall(self, testManager, mockImageCreator, mocker):
-        mockImage = mocker.patch.object(Image, 'open')
+    def test_resize_cover_tall(self, test_manager, mock_image_creator, mocker):
+        mock_image = mocker.patch.object(Image, 'open')
 
-        mockOriginal = mockImageCreator(500, 900, 'test')
-        mockImage.return_value = mockOriginal
+        mock_original = mock_image_creator(500, 900, 'test')
+        mock_image.return_value = mock_original
 
-        testManager.coverContent = b'testImageBytes'
-        testManager.resizeCoverFile()
+        test_manager.cover_content = b'test_image_bytes'
+        test_manager.resize_cover_file()
 
-        assert testManager.coverContent == b''
-        assert testManager.coverFormat == 'test'
-        mockOriginal.resize.assert_called_once_with((222, 400))
+        assert test_manager.cover_content == b''
+        assert test_manager.cover_format == 'test'
+        mock_original.resize.assert_called_once_with((222, 400))
 
-    def test_resizeCover_short(self, testManager, mockImageCreator, mocker):
-        mockImage = mocker.patch.object(Image, 'open')
+    def test_resize_cover_short(self, test_manager, mock_image_creator, mocker):
+        mock_image = mocker.patch.object(Image, 'open')
 
-        mockOriginal = mockImageCreator(900, 500, 'test')
-        mockImage.return_value = mockOriginal
+        mock_original = mock_image_creator(900, 500, 'test')
+        mock_image.return_value = mock_original
 
-        testManager.coverContent = b'testImageBytes'
-        testManager.resizeCoverFile()
+        test_manager.cover_content = b'test_image_bytes'
+        test_manager.resize_cover_file()
 
-        assert testManager.coverContent == b''
-        assert testManager.coverFormat == 'test'
-        mockOriginal.resize.assert_called_once_with((300, 167))
+        assert test_manager.cover_content == b''
+        assert test_manager.cover_format == 'test'
+        mock_original.resize.assert_called_once_with((300, 167))
 
-    def test_resizeCover_square(self, testManager, mockImageCreator, mocker):
-        mockImage = mocker.patch.object(Image, 'open')
+    def test_resize_cover_square(self, test_manager, mock_image_creator, mocker):
+        mock_image = mocker.patch.object(Image, 'open')
 
-        mockOriginal = mockImageCreator(500, 500, 'test')
-        mockImage.return_value = mockOriginal
+        mock_original = mock_image_creator(500, 500, 'test')
+        mock_image.return_value = mock_original
 
-        testManager.coverContent = b'testImageBytes'
-        testManager.resizeCoverFile()
+        test_manager.cover_content = b'test_image_bytes'
+        test_manager.resize_cover_file()
 
-        assert testManager.coverContent == b''
-        assert testManager.coverFormat == 'test'
-        mockOriginal.resize.assert_called_once_with((300, 300))
+        assert test_manager.cover_content == b''
+        assert test_manager.cover_format == 'test'
+        mock_original.resize.assert_called_once_with((300, 300))
 
-    def test_resizeCover_error(self, testManager, mocker):
-        mockImage = mocker.patch.object(Image, 'open')
-        mockImage.side_effect = UnidentifiedImageError
+    def test_resize_cover_error(self, test_manager, mocker):
+        mock_image = mocker.patch.object(Image, 'open')
+        mock_image.side_effect = UnidentifiedImageError
 
-        testManager.coverContent = b'testImageBytes'
+        test_manager.cover_content = b'test_image_bytes'
 
-        assert testManager.resizeCoverFile() == None
-        assert testManager.coverContent == None
+        assert test_manager.resize_cover_file() == None
+        assert test_manager.cover_content == None
         

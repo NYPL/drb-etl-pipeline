@@ -130,7 +130,7 @@ class TestCoverProcess:
         mockIdentifierGet.return_value = [(1, 'test')]
 
         mockManager = mocker.MagicMock()
-        mockManager.fetchCover.return_value = True
+        mockManager.fetch_cover.return_value = True
 
         mockGenerator = mocker.patch('processes.file.covers.CoverManager')
         mockGenerator.return_value = mockManager
@@ -140,9 +140,9 @@ class TestCoverProcess:
         assert testManager == mockManager
         mockIdentifierGet.assert_called_once_with('testEdition')
         mockGenerator.assert_called_once_with([(1, 'test')], testProcess.db_manager.session)
-        mockManager.fetchCover.assert_called_once()
-        mockManager.fetchCoverFile.assert_called_once()
-        mockManager.resizeCoverFile.assert_called_once()
+        mockManager.fetch_cover.assert_called_once()
+        mockManager.fetch_cover_file.assert_called_once()
+        mockManager.resize_cover_file.assert_called_once()
 
     def test_search_for_cover_missing(self, testProcess: CoverProcess, mocker):
         mockIdentifierGet = mocker.patch.object(CoverProcess, 'get_edition_identifiers')
@@ -159,9 +159,9 @@ class TestCoverProcess:
         assert testManager == None
         mockIdentifierGet.assert_called_once_with('testEdition')
         mockGenerator.assert_called_once_with([(1, 'test')], testProcess.db_manager.session)
-        mockManager.fetchCover.assert_called_once()
-        mockManager.fetchCoverFile.assert_not_called()
-        mockManager.resizeCoverFile.assert_not_called()
+        mockManager.fetch_cover.assert_called_once()
+        mockManager.fetch_cover_file.assert_not_called()
+        mockManager.resize_cover_file.assert_not_called()
 
     def test_get_edition_identifiers(self, testProcess, mocker):
         testProcess.redis_manager.check_or_set_key.side_effect = [True, False]

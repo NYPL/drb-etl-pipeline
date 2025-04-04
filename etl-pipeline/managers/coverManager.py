@@ -6,28 +6,28 @@ import managers.coverFetchers as fetchers
 
 
 class CoverManager:
-    def __init__(self, identifiers, dbSession):
+    def __init__(self, identifiers, db_session):
         self.identifiers = identifiers
-        self.dbSession = dbSession
+        self.db_session = db_session
 
-        self.loadFetchers()
+        self.load_fetchers()
 
         self.fetcher = None
-        self.coverContent = None
-        self.coverFormat = None
+        self.cover_content = None
+        self.cover_format = None
 
-    def loadFetchers(self):
-        fetcherList = inspect.getmembers(fetchers, inspect.isclass)
+    def load_fetchers(self):
+        fetcher_list = inspect.getmembers(fetchers, inspect.isclass)
 
-        self.fetchers = [None] * len(fetcherList)
+        self.fetchers = [None] * len(fetcher_list)
 
-        for fetcher in fetcherList:
-            _, fetcherClass = fetcher
-            self.fetchers[fetcherClass.ORDER - 1] = fetcherClass
+        for fetcher in fetcher_list:
+            _, FetcherClass = fetcher
+            self.fetchers[FetcherClass.ORDER - 1] = FetcherClass
 
-    def fetchCover(self):
-        for fetcherClass in self.fetchers:
-            fetcher = fetcherClass(self.identifiers, self.dbSession)
+    def fetch_cover(self):
+        for fetcher in self.fetchers:
+            fetcher = fetcher(self.identifiers, self.db_session)
             
             if fetcher.hasCover() is True:
                 self.fetcher = fetcher
@@ -35,32 +35,32 @@ class CoverManager:
 
         return False
 
-    def fetchCoverFile(self):
-        self.coverContent = self.fetcher.downloadCoverFile()
+    def fetch_cover_file(self):
+        self.cover_content = self.fetcher.downloadCoverFile()
 
-    def resizeCoverFile(self):
+    def resize_cover_file(self):
         try:
-            original = Image.open(BytesIO(self.coverContent))
+            original = Image.open(BytesIO(self.cover_content))
         except UnidentifiedImageError:
-            self.coverContent = None
+            self.cover_content = None
             return None
 
-        originalRatio = original.width / original.height
+        original_ratio = original.width / original.height
 
-        resizeHeight = 400
-        resizeWidth = 300
+        resize_height = 400
+        resize_width = 300
 
-        if 400 * originalRatio > 300 and originalRatio > 1:
-            resizeHeight = int(round(300 / originalRatio))
-        elif 400 * originalRatio > 300:
-            resizeHeight = int(round(300 * originalRatio))
+        if 400 * original_ratio > 300 and original_ratio > 1:
+            resize_height = int(round(300 / original_ratio))
+        elif 400 * original_ratio > 300:
+            resize_height = int(round(300 * original_ratio))
         else:
-            resizeWidth = int(round(400 * originalRatio))
+            resize_width = int(round(400 * original_ratio))
 
-        resized = original.resize((resizeWidth, resizeHeight))
+        resized = original.resize((resize_width, resize_height))
 
-        resizedContent = BytesIO()
-        resized.save(resizedContent, format=original.format)
+        resized_content = BytesIO()
+        resized.save(resized_content, format=original.format)
 
-        self.coverContent = resizedContent.getvalue()
-        self.coverFormat = original.format
+        self.cover_content = resized_content.getvalue()
+        self.cover_format = original.format
