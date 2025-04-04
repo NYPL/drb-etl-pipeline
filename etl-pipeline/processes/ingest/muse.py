@@ -70,11 +70,11 @@ class MUSEProcess():
 
         muse_manager.add_readable_links()
 
-        if muse_manager.pdfWebpubManifest:
+        if muse_manager.pdf_webpub_manifest:
             self.s3_manager.put_object(
-                muse_manager.pdfWebpubManifest.toJson().encode('utf-8'),
-                muse_manager.s3PDFReadPath,
-                muse_manager.s3Bucket
+                muse_manager.pdf_webpub_manifest.toJson().encode('utf-8'),
+                muse_manager.s3_pdf_read_path,
+                muse_manager.s3_bucket
             )
 
         if muse_manager.epub_url:
