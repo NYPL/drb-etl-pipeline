@@ -24,8 +24,6 @@ def main(dryRun=False):
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generate_engine()
-
     dbManager.create_session()
 
     countAuth = 0
