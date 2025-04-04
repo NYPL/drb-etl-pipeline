@@ -16,29 +16,15 @@ logger = create_log(__name__)
 
 
 class S3Manager:
-    def __init__(self):
-        pass
 
-    def createS3Client(self):
-        self.s3Client = boto3.client(
+    def __init__(self):
+        self.client = boto3.client(
             's3',
             aws_access_key_id=os.environ.get('AWS_ACCESS', None),
             aws_secret_access_key=os.environ.get('AWS_SECRET', None),
             region_name=os.environ.get('AWS_REGION', None),
             endpoint_url=os.environ.get('S3_ENDPOINT_URL', None)
         )
-
-    def createS3Bucket(self, bucketName, bucketPermissions):
-        s3Resp = self.s3Client.create_bucket(
-            ACL=bucketPermissions,
-            Bucket=bucketName
-        )
-
-        if 'Location' in s3Resp:
-            return True
-
-        raise S3Error('Unable to create bucket in s3')
-
 
     def store_pdf_manifest(self, record: Record, bucket_name, flags=FileFlags(reader=True), path: str=None):
         record_id = record.source_id.split('|')[0]
@@ -53,7 +39,7 @@ class S3Manager:
             manifest_url = get_stored_file_url(storage_name=bucket_name, file_path=manifest_path)
             manifest_json = self.generate_manifest(record=record, source_url=pdf_part.url, manifest_url=manifest_url)
 
-            self.create_manifest_in_s3(manifest_path=manifest_path, manifest_json=manifest_json, s3_bucket=bucket_name)
+            self.create_manifest_in_s3(manifest_path=manifest_path, manifest_json=manifest_json, bucket=bucket_name)
 
             record.has_part.insert(0, str(Part(
                 index=pdf_part.index,
@@ -63,18 +49,14 @@ class S3Manager:
                 flags=str(flags)
             )))
 
-    def create_manifest_in_s3(self, manifest_path, manifest_json, s3_bucket: str):
-        self.putObjectInBucket(
-            manifest_json.encode('utf-8'), manifest_path, s3_bucket
-        )
+    def create_manifest_in_s3(self, manifest_path: str, manifest_json, bucket: str):
+        self.put_object(manifest_json.encode('utf-8'), manifest_path, bucket)
 
-    def generate_manifest(self, record, source_url, manifest_url):
+    def generate_manifest(self, record: Record, source_url: str, manifest_url: str):
         manifest = WebpubManifest(source_url, 'application/pdf')
 
         manifest.addMetadata(record)
-        
         manifest.addChapter(source_url, record.title)
-
         manifest.links.append({
             'rel': 'self',
             'href': manifest_url,
@@ -83,81 +65,64 @@ class S3Manager:
 
         return manifest.toJson()
 
-    def putObjectInBucket(
-        self, obj, objKey, bucket, bucketPermissions='public-read'
-    ):
-        objMD5 = S3Manager.getmd5HashOfObject(obj)
-        objExtension = objKey[-4:].lower()
+    def put_object(self, object, key: str, bucket: str, bucket_permissions: str='public-read'):
+        object_md5 = S3Manager.get_md5_hash(object)
+        object_extension = key[-4:].lower()
+        get_object_response = None
 
-        existingObject = None
         try:
-            if objExtension == 'epub':
-                existingObject = self.getObjectFromBucket(
-                    objKey, bucket, md5Hash=objMD5
-                )
+            if object_extension == 'epub':
+                get_object_response = self.get_object(key, bucket, md5_hash=object_md5)
         except S3Error:
-            logger.info('{} does not yet exist'.format(objKey))
+            logger.info(f'{key} does not yet exist')
 
-        if existingObject and (
-            existingObject['ResponseMetadata']['HTTPStatusCode'] == 304
-            or existingObject['Metadata'].get('md5checksum', None) == objMD5
-        ):
-            logger.info('Skipping existing, unmodified file {}'.format(objKey))
+        if get_object_response and (get_object_response['ResponseMetadata']['HTTPStatusCode'] == 304 or get_object_response['Metadata'].get('md5checksum', None) == object_md5):
+            logger.info(f'Skipping save of unmodified file: {key}')
             return None
 
         try:
-            if objExtension == 'epub':
-                self.putExplodedEpubComponentsInBucket(obj, objKey, bucket)
+            if object_extension == 'epub':
+                self.store_epub(object, key, bucket)
 
-            objectType = mimetypes.guess_type(objKey)[0]\
-                or 'binary/octet-stream'
+            object_type = mimetypes.guess_type(key)[0] or 'binary/octet-stream'
 
-            return self.s3Client.put_object(
-                ACL=bucketPermissions,
-                Body=obj,
+            return self.client.put_object(
+                ACL=bucket_permissions,
+                Body=object,
                 Bucket=bucket,
-                Key=objKey,
-                ContentMD5=objMD5,
-                ContentType=objectType,
-                Metadata={'md5Checksum': objMD5}
+                Key=key,
+                ContentMD5=object_md5,
+                ContentType=object_type,
+                Metadata={ 'md5Checksum': object_md5 }
             )
         except ClientError as e:
-            raise S3Error(f'Unable to store file {objKey} in s3: {e}')
+            raise S3Error(f'Unable to store file {key} in s3: {e}')
 
-    def putExplodedEpubComponentsInBucket(self, obj, objKey, bucket):
-        keyRoot = '.'.join(objKey.split('.')[:-1])
+    def store_epub(self, object, key: str, bucket: str):
+        key_prefix = '.'.join(key.split('.')[:-1])
 
-        with ZipFile(BytesIO(obj), 'r') as epubZip:
-            for component in epubZip.namelist():
-                componentObj = epubZip.open(component).read()
-                componentKey = '{}/{}'.format(keyRoot, component)
-                self.putObjectInBucket(componentObj, componentKey, bucket)
+        with ZipFile(BytesIO(object), 'r') as epub_zip:
+            for component in epub_zip.namelist():
+                self.put_object(object=epub_zip.open(component).read(), key=f'{key_prefix}/{component}', bucket=bucket)
 
-    def getObjectFromBucket(self, objKey, bucket, md5Hash=None):
+    def get_object(self, key: str, bucket: str, md5_hash=None):
         try:
-            if md5Hash:
-                return self.s3Client.get_object(
+            if md5_hash:
+                return self.client.get_object(
                     Bucket=bucket,
-                    Key=objKey,
-                    IfNoneMatch=md5Hash
+                    Key=key,
+                    IfNoneMatch=md5_hash
                 )
             
-            return self.s3Client.get_object(Bucket=bucket, Key=objKey)
+            return self.client.get_object(Bucket=bucket, Key=key)
         except ClientError:
             raise S3Error('Unable to get object from s3')
-        
-    def load_batches(self, objKey, bucket):
-
-        '''# Loading batches of data using a paginator until there are no more batches'''
-
-        paginator = self.s3Client.get_paginator('list_objects_v2')
-        page_iterator = paginator.paginate(Bucket=bucket, Prefix=objKey)
-        return page_iterator
 
     @staticmethod
-    def getmd5HashOfObject(obj):
+    def get_md5_hash(object):
         m = hashlib.md5()
-        m.update(obj)
+        m.update(object)
+        
         return base64.b64encode(m.digest()).decode('utf-8')
 
 

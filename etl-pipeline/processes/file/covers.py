@@ -24,7 +24,6 @@ class CoverProcess():
         self.redis_manager.create_client()
 
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
         self.fileBucket = os.environ['FILE_BUCKET']
 
         self.run_start_time = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -87,7 +86,7 @@ class CoverProcess():
 
     def store_cover(self, manager, edition):
         cover_path = f'covers/{manager.fetcher.SOURCE}/{manager.fetcher.coverID}.{manager.coverFormat.lower()}'
-        self.s3_manager.putObjectInBucket(manager.coverContent, cover_path, self.fileBucket)
+        self.s3_manager.put_object(manager.coverContent, cover_path, self.fileBucket)
 
         cover_link = Link(
             url=get_stored_file_url(storage_name=self.fileBucket, file_path=cover_path),
