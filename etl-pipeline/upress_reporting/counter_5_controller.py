@@ -46,7 +46,6 @@ class Counter5Controller:
 
     def setup_db_manager(self):
         self.db_manager = DBManager()
-        self.db_manager.generate_engine()
         self.db_manager.create_session()
 
     def create_reports(self):
