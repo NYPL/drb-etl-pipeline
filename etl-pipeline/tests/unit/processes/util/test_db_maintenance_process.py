@@ -19,7 +19,6 @@ class TestDatabaseMaintenanceProcess:
 
         db_maintenance_process.runProcess()
 
-        db_maintenance_process.db_manager.generate_engine.assert_called_once()
         db_maintenance_process.db_manager.create_session.assert_called_once()
 
         mock_connection.execution_options.assert_called_once_with(isolation_level='AUTOCOMMIT')

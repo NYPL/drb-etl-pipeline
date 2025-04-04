@@ -30,7 +30,6 @@ class MUSEProcess():
         self.record_buffer = RecordBuffer(db_manager=self.db_manager)
 
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
 
         self.file_queue = os.environ['FILE_QUEUE']
         self.file_route = os.environ['FILE_ROUTING_KEY']
@@ -71,11 +70,11 @@ class MUSEProcess():
 
         muse_manager.add_readable_links()
 
-        if muse_manager.pdf_webpub_manifest:
-            self.s3_manager.putObjectInBucket(
-                muse_manager.pdf_webpub_manifest.toJson().encode('utf-8'),
-                muse_manager.s3_pdf_read_path,
-                muse_manager.s3_bucket
+        if muse_manager.pdfWebpubManifest:
+            self.s3_manager.put_object(
+                muse_manager.pdfWebpubManifest.toJson().encode('utf-8'),
+                muse_manager.s3PDFReadPath,
+                muse_manager.s3Bucket
             )
 
         if muse_manager.epub_url:

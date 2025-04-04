@@ -20,7 +20,6 @@ def main():
         port=os.environ.get("POSTGRES_PORT", "5432"),
         db=os.environ.get("POSTGRES_NAME", "drb_test_db"),
     )
-    dbManager.generate_engine()
     dbManager.create_session()
 
     uuid = uuid4()

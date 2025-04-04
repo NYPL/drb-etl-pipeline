@@ -24,8 +24,6 @@ def main(dryRun=False):
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generate_engine()
-
     dbManager.create_session()
 
     countAuth = 0
@@ -64,6 +62,7 @@ def main(dryRun=False):
         dbManager.engine.dispose()
     else:
         logging.info('________DELETION COMPLETED________')
+        dbManager.commit_changes()
         dbManager.close_connection()
 
 
