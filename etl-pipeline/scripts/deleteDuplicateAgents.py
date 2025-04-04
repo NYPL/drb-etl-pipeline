@@ -62,6 +62,7 @@ def main(dryRun=False):
         dbManager.engine.dispose()
     else:
         logging.info('________DELETION COMPLETED________')
+        dbManager.commit_changes()
         dbManager.close_connection()
 
 
