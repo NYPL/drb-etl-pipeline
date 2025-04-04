@@ -17,154 +17,154 @@ class TestMUSEManager:
         TestHelpers.clearEnvVars()
 
     @pytest.fixture
-    def testManager(self, mocker):
+    def test_manager(self, mocker):
         class TestMUSE(MUSEManager):
             def __init__(self):
-                self.record = mocker.MagicMock(record='testRecord')
-                self.museID = 1
-                self.link = 'testLink'
-                self.mediaType = 'testType'
-                self.s3Bucket = 'test_aws_bucket'
+                self.record = mocker.MagicMock(record='test_record')
+                self.muse_id = 1
+                self.link = 'test_link'
+                self.media_type = 'test_type'
+                self.s3_bucket = 'test_aws_bucket'
 
-                self.pdfDownloadURL = None
-                self.epubURL = None
-                self.pdfWebpubManifest = None
+                self.pdf_download_url = None
+                self.epub_url = None
+                self.pdf_webpub_manifest = None
 
         return TestMUSE()
 
     @pytest.fixture
-    def testMUSEPage(self):
+    def test_muse_page(self):
         return open('./tests/fixtures/muse_book_42.html', 'r').read()
 
     @pytest.fixture
-    def testMUSEPageUnreleased(self):
+    def test_muse_page_unreleased(self):
         return open('./tests/fixtures/muse_book_63320.html', 'r').read()
 
-    def test_parseMusePage_success(self, testManager, mocker):
-        mockLoad = mocker.patch.object(MUSEManager, 'loadMusePage')
-        mockLoad.return_value = 'testHTML'
-        mockSoup = mocker.patch('managers.muse.BeautifulSoup')
-        mockSoup.return_value = 'testSoup'
+    def test_parse_muse_page_success(self, test_manager, mocker):
+        mock_load = mocker.patch.object(MUSEManager, 'load_muse_page')
+        mock_load.return_value = 'test_html'
+        mock_soup = mocker.patch('managers.muse.BeautifulSoup')
+        mock_soup.return_value = 'test_soup'
 
-        testManager.parseMusePage()
+        test_manager.parse_muse_page()
 
-        assert testManager.museSoup == 'testSoup'
-        mockLoad.assert_called_once()
-        mockSoup.assert_called_once_with('testHTML', features='lxml')
+        assert test_manager.muse_soup == 'test_soup'
+        mock_load.assert_called_once()
+        mock_soup.assert_called_once_with('test_html', features='lxml')
 
-    def test_parseMusePage_error(self, testManager, mocker):
-        mockLoad = mocker.patch.object(MUSEManager, 'loadMusePage')
-        mockLoad.side_effect = ReadTimeout
-        mockSoup = mocker.patch('managers.muse.BeautifulSoup')
+    def test_parse_muse_page_error(self, test_manager, mocker):
+        mock_load = mocker.patch.object(MUSEManager, 'load_muse_page')
+        mock_load.side_effect = ReadTimeout
+        mock_soup = mocker.patch('managers.muse.BeautifulSoup')
 
         with pytest.raises(MUSEError):
-            testManager.parseMusePage()
+            test_manager.parse_muse_page()
 
-        mockSoup.assert_not_called()
+        mock_soup.assert_not_called()
 
-    def test_identifyReadableVersions_w_pdf(self, testManager, mocker):
-        baseSoup = mocker.MagicMock()
-        chapterSoup = mocker.MagicMock()
-        buttonSoup = mocker.MagicMock()
-        buttonSoup.parent = {'href': '/pdfURL'}
+    def test_identify_readable_versions_w_pdf(self, test_manager, mocker):
+        base_soup = mocker.MagicMock()
+        chapter_soup = mocker.MagicMock()
+        button_soup = mocker.MagicMock()
+        button_soup.parent = {'href': '/pdfURL'}
 
-        baseSoup.find.return_value = chapterSoup
-        chapterSoup.find.side_effect = [buttonSoup, None]
+        base_soup.find.return_value = chapter_soup
+        chapter_soup.find.side_effect = [button_soup, None]
 
-        testManager.museSoup = baseSoup
+        test_manager.muse_soup = base_soup
 
-        testManager.identifyReadableVersions()
+        test_manager.identify_readable_versions()
 
-        assert testManager.pdfDownloadURL == 'https://muse.jhu.edu/pdfURL'
-        baseSoup.find.assert_called_once_with(id='available_items_list_wrap')
-        chapterSoup.find.assert_has_calls([
+        assert test_manager.pdf_download_url == 'https://muse.jhu.edu/pdfURL'
+        base_soup.find.assert_called_once_with(id='available_items_list_wrap')
+        chapter_soup.find.assert_has_calls([
             mocker.call(alt='Download PDF'), mocker.call(alt='Download EPUB')
         ])
 
-    def test_identifyReadableVersions_w_epub(self, testManager, mocker):
-        baseSoup = mocker.MagicMock()
-        chapterSoup = mocker.MagicMock()
-        buttonSoup = mocker.MagicMock()
-        buttonSoup.parent = {'href': '/epubURL'}
+    def test_identify_readable_versions_w_epub(self, test_manager, mocker):
+        base_soup = mocker.MagicMock()
+        chapter_soup = mocker.MagicMock()
+        button_soup = mocker.MagicMock()
+        button_soup.parent = {'href': '/epubURL'}
 
-        baseSoup.find.return_value = chapterSoup
-        chapterSoup.find.side_effect = [None, buttonSoup]
+        base_soup.find.return_value = chapter_soup
+        chapter_soup.find.side_effect = [None, button_soup]
 
-        testManager.museSoup = baseSoup
+        test_manager.muse_soup = base_soup
 
-        testManager.identifyReadableVersions()
+        test_manager.identify_readable_versions()
 
-        assert testManager.epubURL == 'https://muse.jhu.edu/epubURL'
-        baseSoup.find.assert_called_once_with(id='available_items_list_wrap')
-        chapterSoup.find.assert_has_calls([
+        assert test_manager.epub_url == 'https://muse.jhu.edu/epubURL'
+        base_soup.find.assert_called_once_with(id='available_items_list_wrap')
+        chapter_soup.find.assert_has_calls([
             mocker.call(alt='Download PDF'), mocker.call(alt='Download EPUB')
         ])
 
-    def test_identifyReadableVersions_none(self, testManager, mocker):
-        baseSoup = mocker.MagicMock()
+    def test_identify_readable_versions_none(self, test_manager, mocker):
+        base_soup = mocker.MagicMock()
 
-        baseSoup.find.return_value = None
+        base_soup.find.return_value = None
 
-        testManager.museSoup = baseSoup
+        test_manager.muse_soup = base_soup
 
-        assert testManager.identifyReadableVersions() is None
+        assert test_manager.identify_readable_versions() is None
 
-    def test_addReadableLinks_pdf(self, testManager, mocker):
-        mockConstruct = mocker.patch.object(MUSEManager, 'constructWebpubManifest')
+    def test_add_readable_links_pdf(self, test_manager, mocker):
+        mock_construct = mocker.patch.object(MUSEManager, 'construct_webpub_manifest')
 
-        testManager.pdfDownloadURL = 'testPDFURL'
+        test_manager.pdf_download_url = 'testPDFURL'
 
-        testManager.addReadableLinks()
+        test_manager.add_readable_links()
 
-        mockConstruct.assert_called_once()
+        mock_construct.assert_called_once()
 
-    def test_addReadableLinks_epub(self, testManager, mocker):
-        mockConstruct = mocker.patch.object(MUSEManager, 'constructWebpubManifest')
-        mockS3 = mocker.patch.object(MUSEManager, 'constructS3Link')
-        mockS3.side_effect = ['epubDownloadURL', 'epubReadURL']
+    def test_add_readable_links_epub(self, test_manager, mocker):
+        mock_construct = mocker.patch.object(MUSEManager, 'construct_webpub_manifest')
+        mock_s3 = mocker.patch.object(MUSEManager, 'construct_s3_link')
+        mock_s3.side_effect = ['epub_download_url', 'epub_read_url']
 
-        testManager.epubURL = 'testEpubURL'
+        test_manager.epub_url = 'test_epub_url'
 
-        testManager.addReadableLinks()
+        test_manager.add_readable_links()
 
-        mockS3.assert_has_calls([
+        mock_s3.assert_has_calls([
             mocker.call('epubs/muse/1.epub'),
             mocker.call('epubs/muse/1/manifest.json')
         ])
-        mockConstruct.assert_called_once()
+        mock_construct.assert_called_once()
 
-    def test_addReadableLinks_manifest(self, testManager, mocker):
-        mockConstruct = mocker.patch.object(MUSEManager, 'constructWebpubManifest')
-        mockS3 = mocker.patch.object(MUSEManager, 'create_manifest_in_s3')
-        mockS3.return_value = 'webpubReadURL'
+    def test_add_readable_links_manifest(self, test_manager, mocker):
+        mock_construct = mocker.patch.object(MUSEManager, 'construct_webpub_manifest')
+        mock_s3 = mocker.patch.object(MUSEManager, 'create_manifest_in_s3')
+        mock_s3.return_value = 'webpub_read_url'
 
-        testManager.pdfWebpubManifest = 'testManifestURL'
+        test_manager.pdf_webpub_manifest = 'test_manifest_url'
 
-        testManager.addReadableLinks()
+        test_manager.add_readable_links()
 
-        mockS3.assert_called_once_with('manifests/muse/1.json')
-        mockConstruct.assert_called_once()
+        mock_s3.assert_called_once_with('manifests/muse/1.json')
+        mock_construct.assert_called_once()
 
-    def test_constructWebpubManifest(self, testManager, testMUSEPage, mocker):
-        testManager.museSoup = BeautifulSoup(testMUSEPage, features='lxml')
+    def test_construct_webpub_manifest(self, test_manager, test_muse_page, mocker):
+        test_manager.muse_soup = BeautifulSoup(test_muse_page, features='lxml')
 
-        mockManifest = mocker.MagicMock(readingOrder=[1, 2, 3])
-        mockManifestConstructor = mocker.patch('managers.muse.WebpubManifest')
-        mockManifestConstructor.return_value = mockManifest
+        mock_manifest = mocker.MagicMock(readingOrder=[1, 2, 3])
+        mock_manifest_constructor = mocker.patch('managers.muse.WebpubManifest')
+        mock_manifest_constructor.return_value = mock_manifest
 
-        testManager.constructWebpubManifest()
+        test_manager.construct_webpub_manifest()
 
-        assert testManager.pdfWebpubManifest == mockManifest
+        assert test_manager.pdf_webpub_manifest == mock_manifest
 
-        mockManifestConstructor.assert_called_once_with('testLink', 'testType')
-        mockManifest.addMetadata.assert_called_once_with(testManager.record)
+        mock_manifest_constructor.assert_called_once_with('test_link', 'test_type')
+        mock_manifest.addMetadata.assert_called_once_with(test_manager.record)
 
-        mockManifest.addSection.assert_has_calls([
+        mock_manifest.addSection.assert_has_calls([
             mocker.call('Part One. Reading Reading Historically', ''),
             mocker.call('PART TWO. Contextual Receptions, Reading Experiences, and Patterns of Response: Four Case Studies', '')
         ])
 
-        mockManifest.addChapter.assert_has_calls([
+        mock_manifest.addChapter.assert_has_calls([
             mocker.call('https://muse.jhu.edu/chapter/440/pdf', 'Cover'),
             mocker.call('https://muse.jhu.edu/chapter/2183675/pdf?start=2', 'Title Page'),
             mocker.call('https://muse.jhu.edu/chapter/2183674/pdf?start=2', 'Copyright'),
@@ -182,41 +182,41 @@ class TestMUSEManager:
             mocker.call('https://muse.jhu.edu/chapter/6245/pdf?start=2', 'Index')
         ])
 
-        mockManifest.closeSection.assert_has_calls([mocker.call(), mocker.call()])
+        mock_manifest.closeSection.assert_has_calls([mocker.call(), mocker.call()])
 
-    def test_loadMusePage_success(self, testManager, mocker):
-        mockGet = mocker.patch.object(requests, 'get')
-        mockResp = mocker.MagicMock()
-        mockResp.status_code = 200
-        mockResp.text = 'testHTML'
-        mockGet.return_value = mockResp
+    def test_load_muse_page_success(self, test_manager, mocker):
+        mock_get = mocker.patch.object(requests, 'get')
+        mock_resp = mocker.MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = 'test_html'
+        mock_get.return_value = mock_resp
 
-        assert testManager.loadMusePage() == 'testHTML'
-        mockGet.assert_called_once_with('testLink', timeout=15, headers={'User-agent': 'Mozilla/5.0'})
+        assert test_manager.load_muse_page() == 'test_html'
+        mock_get.assert_called_once_with('test_link', timeout=15, headers={'User-agent': 'Mozilla/5.0'})
 
-    def test_loadMusePage_error(self, testManager, mocker):
-        mockGet = mocker.patch.object(requests, 'get')
-        mockResp = mocker.MagicMock()
-        mockResp.raise_for_status.side_effect = Exception
-        mockGet.return_value = mockResp
+    def test_load_muse_page_error(self, test_manager, mocker):
+        mock_get = mocker.patch.object(requests, 'get')
+        mock_resp = mocker.MagicMock()
+        mock_resp.raise_for_status.side_effect = Exception
+        mock_get.return_value = mock_resp
 
         with pytest.raises(Exception):
-            testManager.loadMusePage()
+            test_manager.load_muse_page()
 
-    def test_constructS3Link(self, testManager):
-        assert testManager.constructS3Link('testLocation')\
-            == 'https://test_aws_bucket.s3.amazonaws.com/testLocation'
+    def test_construct_s3_link(self, test_manager):
+        assert test_manager.construct_s3_link('test_location')\
+            == 'https://test_aws_bucket.s3.amazonaws.com/test_location'
 
-    def test_create_manifest_in_s3(self, testManager, mocker):
-        mockConstruct = mocker.patch.object(MUSEManager, 'constructS3Link')
-        mockConstruct.return_value = 'testS3URL'
+    def test_create_manifest_in_s3(self, test_manager, mocker):
+        mock_construct = mocker.patch.object(MUSEManager, 'construct_s3_link')
+        mock_construct.return_value = 'test_s3_url'
 
-        testManager.pdfWebpubManifest = mocker.MagicMock()
-        testManager.pdfWebpubManifest.links = []
+        test_manager.pdf_webpub_manifest = mocker.MagicMock()
+        test_manager.pdf_webpub_manifest.links = []
 
-        testURL = testManager.create_manifest_in_s3('testPath')
+        test_url = test_manager.create_manifest_in_s3('test_path')
 
-        assert testURL == 'testS3URL'
-        assert testManager.pdfWebpubManifest.links[0]\
-            == {'href': testURL, 'type': 'application/webpub+json', 'rel': 'self'}
-        mockConstruct.assert_called_once_with('testPath')
+        assert test_url == 'test_s3_url'
+        assert test_manager.pdf_webpub_manifest.links[0]\
+            == {'href': test_url, 'type': 'application/webpub+json', 'rel': 'self'}
+        mock_construct.assert_called_once_with('test_path')

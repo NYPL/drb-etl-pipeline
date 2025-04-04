@@ -14,156 +14,156 @@ logger = create_log(__name__)
 class MUSEManager:
     MUSE_ROOT = 'https://muse.jhu.edu'
 
-    def __init__(self, record, link, mediaType):
+    def __init__(self, record, link, media_type):
         self.record = record
-        self.museID = record.source_id
+        self.muse_id = record.source_id
         self.link = link
-        self.mediaType = mediaType
-        self.museSoup = None
+        self.media_type = media_type
+        self.muse_soup = None
 
-        self.s3Bucket = os.environ['FILE_BUCKET']
+        self.s3_bucket = os.environ['FILE_BUCKET']
 
-        self.pdfDownloadURL = None
-        self.epubURL = None
-        self.pdfWebpubManifest = None
+        self.pdf_download_url = None
+        self.epub_url = None
+        self.pdf_webpub_manifest = None
 
-        self.s3EpubPath = None
-        self.s3EpubReadPath = None
-        self.s3PDFReadPath = None
+        self.s3_epub_path = None
+        self.s3_epub_read_path = None
+        self.s3_pdf_read_path = None
 
-    def parseMusePage(self):
+    def parse_muse_page(self):
         try:
-            museHTML = self.loadMusePage()
+            muse_html = self.load_muse_page()
         except (ReadTimeout, ConnectionError, HTTPError) as err:
             logger.debug('error retrieving page: {}'.format(err))
             raise MUSEError(
                 'Unable to load record from link {}'.format(self.link)
             )
 
-        self.museSoup = BeautifulSoup(museHTML, features='lxml')
+        self.muse_soup = BeautifulSoup(muse_html, features='lxml')
 
-    def identifyReadableVersions(self):
+    def identify_readable_versions(self):
         # Extract "TOC" section from Project MUSE detail page
-        chapterTable = self.museSoup.find(id='available_items_list_wrap')
+        chapter_table = self.muse_soup.find(id='available_items_list_wrap')
 
         # If TOC is not present then there are no manifest-able versions
-        if not chapterTable:
+        if not chapter_table:
             logger.info('Cannot extract PDF/ePub version for MUSE #{}'.format(
-                self.museID
+                self.muse_id
             ))
             return None
 
         # Look for PDF Download Link
-        pdfButton = chapterTable.find(alt='Download PDF')
-        if pdfButton:
-            pdfLink = pdfButton.parent['href']
-            self.pdfDownloadURL = '{}{}'.format(self.MUSE_ROOT, pdfLink)
-            logger.debug(self.pdfDownloadURL)
+        pdf_button = chapter_table.find(alt='Download PDF')
+        if pdf_button:
+            pdf_link = pdf_button.parent['href']
+            self.pdf_download_url = '{}{}'.format(self.MUSE_ROOT, pdf_link)
+            logger.debug(self.pdf_download_url)
 
         # Look for ePub Link
-        epubButton = chapterTable.find(alt='Download EPUB')
-        if epubButton:
-            epubRelative = epubButton.parent['href']
-            self.epubURL = '{}{}'.format(self.MUSE_ROOT, epubRelative)
-            logger.debug(self.epubURL)
+        epub_button = chapter_table.find(alt='Download EPUB')
+        if epub_button:
+            epub_relative = epub_button.parent['href']
+            self.epub_url = '{}{}'.format(self.MUSE_ROOT, epub_relative)
+            logger.debug(self.epub_url)
 
-    def addReadableLinks(self):
-        if self.pdfDownloadURL:
+    def add_readable_links(self):
+        if self.pdf_download_url:
             add_has_part_link(
                 self.record,
-                self.pdfDownloadURL,
+                self.pdf_download_url,
                 'application/pdf',
                 json.dumps({'download': True, 'reader': False, 'catalog': False})
             )
 
-        if self.epubURL:
-            self.s3EpubPath = 'epubs/muse/{}.epub'.format(self.museID)
+        if self.epub_url:
+            self.s3_epub_path = 'epubs/muse/{}.epub'.format(self.muse_id)
             add_has_part_link(
                 self.record,
-                self.constructS3Link(self.s3EpubPath),
+                self.construct_s3_link(self.s3_epub_path),
                 'application/epub+zip',
                 json.dumps({'download': True, 'reader': False, 'catalog': False})
             )
 
-            self.epubReadPath = 'epubs/muse/{}/manifest.json'.format(self.museID)
+            self.epub_read_path = 'epubs/muse/{}/manifest.json'.format(self.muse_id)
             add_has_part_link(
                 self.record,
-                self.constructS3Link(self.epubReadPath),
+                self.construct_s3_link(self.epub_read_path),
                 'application/webpub+json',
                 json.dumps({'download': False, 'reader': True, 'catalog': False})
             )
 
-        self.constructWebpubManifest()
-        if self.pdfWebpubManifest:
-            self.s3PDFReadPath = 'manifests/muse/{}.json'.format(self.museID)
+        self.construct_webpub_manifest()
+        if self.pdf_webpub_manifest:
+            self.s3_pdf_read_path = 'manifests/muse/{}.json'.format(self.muse_id)
             add_has_part_link(
                 self.record,
-                self.create_manifest_in_s3(self.s3PDFReadPath),
+                self.create_manifest_in_s3(self.s3_pdf_read_path),
                 'application/webpub+json',
                 json.dumps({'reader': True, 'download': False, 'catalog': False})
             )
 
-    def constructWebpubManifest(self):
-        pdfManifest = WebpubManifest(self.link, self.mediaType)
-        pdfManifest.addMetadata(self.record)
+    def construct_webpub_manifest(self):
+        pdf_manifest = WebpubManifest(self.link, self.media_type)
+        pdf_manifest.addMetadata(self.record)
 
-        chapterTable = self.museSoup.find(id='available_items_list_wrap')
+        chapter_table = self.muse_soup.find(id='available_items_list_wrap')
 
-        if not chapterTable:
-            raise MUSEError('Book {} unavailable'.format(self.museID))
+        if not chapter_table:
+            raise MUSEError('Book {} unavailable'.format(self.muse_id))
 
-        skipCover = ''
+        skip_cover = ''
 
-        for card in chapterTable.find_all(class_='card_text'):
-            titleItem = card.find('li', class_='title')
-            pdfItem = card.find(alt='Download PDF')
+        for card in chapter_table.find_all(class_='card_text'):
+            title_item = card.find('li', class_='title')
+            pdf_item = card.find(alt='Download PDF')
 
-            if not titleItem.span.a:
-                pdfManifest.addSection(titleItem.span.string, '')
+            if not title_item.span.a:
+                pdf_manifest.addSection(title_item.span.string, '')
                 continue
 
             if card.parent.get('style') != 'margin-left:30px;':
-                pdfManifest.closeSection()
+                pdf_manifest.closeSection()
 
-            if pdfItem:
+            if pdf_item:
                 #skipCover is iniitally an empty string since the Cover Page doesn't need a query parameter
-                pdfManifest.addChapter(
+                pdf_manifest.addChapter(
                     '{}{}{}'.format(
-                        self.MUSE_ROOT, pdfItem.parent.get('href'), skipCover
+                        self.MUSE_ROOT, pdf_item.parent.get('href'), skip_cover
                     ),
-                    titleItem.span.a.string,
+                    title_item.span.a.string,
                 )
             #skipCover is updated with a query parameter to skip the intersitital cover page in every future chapter
-            queryParam = '?start=2'
-            skipCover = queryParam
+            query_param = '?start=2'
+            skip_cover = query_param
 
-        pdfManifest.closeSection()
+        pdf_manifest.closeSection()
 
-        if len(pdfManifest.readingOrder) > 0:
-            self.pdfWebpubManifest = pdfManifest
+        if len(pdf_manifest.readingOrder) > 0:
+            self.pdf_webpub_manifest = pdf_manifest
 
-    def loadMusePage(self):
-        museResponse = requests.get(
+    def load_muse_page(self):
+        muse_response = requests.get(
             self.link, timeout=15, headers={'User-agent': 'Mozilla/5.0'}
         )
 
-        museResponse.raise_for_status()
+        muse_response.raise_for_status()
 
-        return museResponse.text
+        return muse_response.text
 
-    def constructS3Link(self, bucketLocation):
+    def construct_s3_link(self, bucket_location):
         return 'https://{}.s3.amazonaws.com/{}'.format(
-            self.s3Bucket, bucketLocation
+            self.s3_bucket, bucket_location
         )
 
-    def create_manifest_in_s3(self, bucketLocation):
-        s3URL = self.constructS3Link(bucketLocation)
+    def create_manifest_in_s3(self, bucket_location):
+        s3_url = self.construct_s3_link(bucket_location)
 
-        self.pdfWebpubManifest.links.append(
-            {'href': s3URL, 'type': 'application/webpub+json', 'rel': 'self'}
+        self.pdf_webpub_manifest.links.append(
+            {'href': s3_url, 'type': 'application/webpub+json', 'rel': 'self'}
         )
 
-        return s3URL
+        return s3_url
 
 class MUSEError(Exception):
     def __init__(self, message):

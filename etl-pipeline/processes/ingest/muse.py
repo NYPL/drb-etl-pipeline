@@ -65,21 +65,21 @@ class MUSEProcess():
 
         muse_manager = MUSEManager(record, muse_link, muse_type)
 
-        muse_manager.parseMusePage()
+        muse_manager.parse_muse_page()
 
-        muse_manager.identifyReadableVersions()
+        muse_manager.identify_readable_versions()
 
-        muse_manager.addReadableLinks()
+        muse_manager.add_readable_links()
 
-        if muse_manager.pdfWebpubManifest:
+        if muse_manager.pdf_webpub_manifest:
             self.s3_manager.putObjectInBucket(
-                muse_manager.pdfWebpubManifest.toJson().encode('utf-8'),
-                muse_manager.s3PDFReadPath,
-                muse_manager.s3Bucket
+                muse_manager.pdf_webpub_manifest.toJson().encode('utf-8'),
+                muse_manager.s3_pdf_read_path,
+                muse_manager.s3_bucket
             )
 
-        if muse_manager.epubURL:
-            self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(muse_manager.epubURL, muse_manager.s3EpubPath))
+        if muse_manager.epub_url:
+            self.rabbitmq_manager.send_message_to_queue(self.file_queue, self.file_route, get_file_message(muse_manager.epub_url, muse_manager.s3_epub_path))
 
         self.record_buffer.add(record=record)
 
