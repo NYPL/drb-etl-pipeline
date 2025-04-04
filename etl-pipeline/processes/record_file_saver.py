@@ -20,14 +20,14 @@ class RecordFileSaver:
     def store_file(self, file_url: str, file_path: str):
         try:
             file_contents = self.get_file_contents(file_url)
-            self.storage_manager.putObjectInBucket(file_contents, file_path, self.file_bucket)
+            self.storage_manager.put_object(file_contents, file_path, self.file_bucket)
             del file_contents
 
             if '.epub' in file_path:
                 file_root = '.'.join(file_path.split('.')[:-1])
 
                 web_pub_manifest = self.generate_webpub(file_root)
-                self.storage_manager.putObjectInBucket(web_pub_manifest, f'{file_root}/manifest.json', self.file_bucket)
+                self.storage_manager.put_object(web_pub_manifest, f'{file_root}/manifest.json', self.file_bucket)
 
             logger.info(f'Stored file {file_path} from {file_url}')
         except Exception as e:

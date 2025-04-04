@@ -90,10 +90,8 @@ def rabbitmq_manager():
 
 @pytest.fixture(scope='session')
 def s3_manager():
-    s3_manager = S3Manager()
-
     try:
-        s3_manager.createS3Client()
+        s3_manager = S3Manager()
 
         yield s3_manager
     except:

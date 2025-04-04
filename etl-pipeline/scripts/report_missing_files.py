@@ -19,7 +19,6 @@ lock = Lock()
 
 def is_record_missing_files(record_parts: tuple) -> bool:
     s3_manager = S3Manager()
-    s3_manager.createS3Client()
 
     parts, *_ = record_parts
 
@@ -32,7 +31,7 @@ def is_record_missing_files(record_parts: tuple) -> bool:
 
         if file_part.file_bucket:
             try:
-                s3_manager.s3Client.head_object(Bucket=file_part.file_bucket, Key = file_part.file_key)
+                s3_manager.client.head_object(Bucket=file_part.file_bucket, Key = file_part.file_key)
             except botocore.exceptions.ClientError:
                 print(f'Missing S3 file: {url}')
                 return True

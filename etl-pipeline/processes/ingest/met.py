@@ -26,7 +26,6 @@ class METProcess():
 
         self.s3_bucket = os.environ['FILE_BUCKET']
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
 
     def runProcess(self):
         records = self.met_service.get_records(

@@ -35,12 +35,9 @@ class LimitedAccessPermissions(Enum):
 class PublisherBacklistService(SourceService):
     def __init__(self):
         self.s3_manager = S3Manager()
-        self.s3_manager.createS3Client()
         self.title_prefix = "titles/publisher_backlist"
         self.file_bucket = os.environ["FILE_BUCKET"]
-        self.limited_file_bucket = (
-            f'drb-files-limited-{os.environ.get("ENVIRONMENT", "qa")}'
-        )
+        self.limited_file_bucket = f'drb-files-limited-{os.environ.get("ENVIRONMENT", "qa")}'
 
         self.drive_service = GoogleDriveService()
 
@@ -90,7 +87,7 @@ class PublisherBacklistService(SourceService):
             bucket_name = url.hostname.split(".")[0]
             file_path = url.path.lstrip("/")
 
-            self.s3_manager.s3Client.delete_object(Bucket=bucket_name, Key=file_path)
+            self.s3_manager.client.delete_object(Bucket=bucket_name, Key=file_path)
 
     def delete_record_data(self, record: Record):
         items = (
@@ -222,7 +219,7 @@ class PublisherBacklistService(SourceService):
 
 
                 try:
-                    self.s3_manager.s3Client.head_object(Bucket=destination_file_bucket, Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
+                    self.s3_manager.client.head_object(Bucket=destination_file_bucket, Key=f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
                     logger.exception(f'PDF already exists at key: titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf')
                     return None
                 except Exception:
@@ -230,7 +227,7 @@ class PublisherBacklistService(SourceService):
 
                 try:
                     pdf_bucket = os.environ["PDF_BUCKET"]
-                    self.s3_manager.s3Client.head_object(Bucket=pdf_bucket, Key=f'tagged_pdfs/{hathi_id}.pdf')
+                    self.s3_manager.client.head_object(Bucket=pdf_bucket, Key=f'tagged_pdfs/{hathi_id}.pdf')
                 except Exception:
                     logger.exception('PDF object does not exist')
                     raise Exception
@@ -240,7 +237,7 @@ class PublisherBacklistService(SourceService):
                     extra_args = {
                         'ACL': 'public-read'
                     }
-                    self.s3_manager.s3Client.copy(
+                    self.s3_manager.client.copy(
                         source_bucket_key,
                         destination_file_bucket,
                         f'titles/publisher_backlist/Schomburg/{hathi_id}/{hathi_id}.pdf',
@@ -264,7 +261,7 @@ class PublisherBacklistService(SourceService):
 
         bucket = self.file_bucket if not record_permissions['requires_login'] else self.limited_file_bucket
         file_path = f'{self.title_prefix}/{record_metadata[SOURCE_FIELD][0]}/{file_name}'
-        self.s3_manager.putObjectInBucket(file.getvalue(), file_path, bucket)
+        self.s3_manager.put_object(file.getvalue(), file_path, bucket)
 
         return get_stored_file_url(storage_name=bucket, file_path=file_path)
         
