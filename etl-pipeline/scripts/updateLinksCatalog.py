@@ -16,8 +16,6 @@ def main():
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generate_engine()
-
     dbManager.create_session()
 
     for link in dbManager.session.query(Link) \

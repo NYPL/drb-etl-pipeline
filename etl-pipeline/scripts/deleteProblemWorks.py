@@ -18,8 +18,6 @@ def main():
     esManager = ElasticsearchManager()
     esManager.create_elastic_connection()
 
-    dbManager.generate_engine()
-
     dbManager.create_session()
 
     uuid = "0288f50c-f2db-47fc-9ff9-b8b95b4cc712"

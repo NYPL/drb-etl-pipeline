@@ -14,7 +14,6 @@ class DatabaseMaintenanceProcess():
 
     def runProcess(self):
         try:
-            self.db_manager.generate_engine()
             self.db_manager.create_session()
 
             self.vacuum_tables()

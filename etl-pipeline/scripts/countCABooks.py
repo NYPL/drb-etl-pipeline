@@ -20,8 +20,6 @@ def main():
         db= os.environ.get('POSTGRES_NAME', None)
     )
 
-    dbManager.generate_engine()
-
     dbManager.create_session()
 
     editionCount = 0

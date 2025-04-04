@@ -26,8 +26,6 @@ def main():
     esManager = ElasticsearchManager()
     esManager.create_elastic_connection()
 
-    dbManager.generate_engine()
-
     dbManager.create_session()
 
     batchSize = 1000

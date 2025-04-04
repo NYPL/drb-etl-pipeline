@@ -95,9 +95,8 @@ def redirect_to_link_url(link_url: str):
 
     if decoded_token.get('iss', None) == 'https://www.nypl.org':
         s3_manager = S3Manager()
-        s3_manager.createS3Client()
         presigned_get_url = APIUtils.getPresignedUrlFromObjectUrl(
-            s3_manager.s3Client, 
+            s3_manager.client, 
             link_url
         )
 
